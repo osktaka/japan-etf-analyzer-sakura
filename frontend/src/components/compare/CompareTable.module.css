@@ -1,0 +1,95 @@
+.wrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.table th,
+.table td {
+  padding: var(--spacing-md);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table th {
+  background-color: var(--color-bg);
+  font-weight: 600;
+}
+
+.table td:first-child {
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  width: 120px;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.etfHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  padding-right: var(--spacing-lg);
+  min-width: 150px;
+}
+
+.code {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.name {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+.removeBtn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--color-bg-hover);
+  border: none;
+  font-size: var(--text-lg);
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.removeBtn:hover {
+  background-color: var(--color-error);
+  color: white;
+}
+
+.highlight {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.best {
+  background-color: rgba(var(--color-primary-rgb), 0.1);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}

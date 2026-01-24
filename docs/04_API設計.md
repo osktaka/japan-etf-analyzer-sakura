@@ -15,7 +15,7 @@
 
 | 環境 | ベースURL |
 |------|-----------|
-| 開発環境 | `http://localhost:5000/api/v1` |
+| 開発環境 | `http://localhost:8902/api/v1` |
 | 本番環境 | `https://example.sakura.ne.jp/api/v1` |
 
 ### 1.3 APIバージョニング

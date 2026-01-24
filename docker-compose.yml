@@ -4,25 +4,26 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "5000:5000"
+      - "8902:8902"
     environment:
       - FLASK_ENV=development
       - FLASK_DEBUG=1
-      - DATABASE_URL=sqlite:///data/etf.db
+      - DATABASE_URL=sqlite:////app/data/etf.db
     volumes:
       - ./backend/src:/app/src
       - ./backend/tests:/app/tests
+      - ./backend/scripts:/app/scripts
       - backend_data:/app/data
-    command: flask run --host=0.0.0.0 --port=5000
+    command: flask run --host=0.0.0.0 --port=8902
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "3000:3000"
+      - "3902:3902"
     environment:
-      - VITE_API_URL=http://localhost:5000
+      - VITE_API_URL=http://localhost:8902
     volumes:
       - ./frontend/src:/app/src
       - ./frontend/index.html:/app/index.html

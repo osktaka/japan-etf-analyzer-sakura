@@ -1,0 +1,83 @@
+/** ETF API functions */
+import apiClient from './client';
+import {
+  ApiResponse,
+  Category,
+  ChartData,
+  ChartPeriod,
+  ETFDetail,
+  ETFSummary,
+  Tag,
+} from './types';
+
+export interface SearchParams {
+  keyword?: string;
+  category_id?: number;
+  tag_ids?: number[];
+  min_dividend_yield?: number;
+  max_expense_ratio?: number;
+  limit?: number;
+  offset?: number;
+}
+
+export async function getCategories(): Promise<Category[]> {
+  const response = await apiClient.get<ApiResponse<Category[]>>('/categories');
+  return response.data.data;
+}
+
+export async function getTags(): Promise<Tag[]> {
+  const response = await apiClient.get<ApiResponse<Tag[]>>('/tags');
+  return response.data.data;
+}
+
+export async function searchETFs(params: SearchParams = {}): Promise<{
+  items: ETFSummary[];
+  total: number;
+}> {
+  const queryParams = new URLSearchParams();
+
+  if (params.keyword) queryParams.append('keyword', params.keyword);
+  if (params.category_id)
+    queryParams.append('category_id', String(params.category_id));
+  if (params.tag_ids?.length)
+    queryParams.append('tag_ids', params.tag_ids.join(','));
+  if (params.min_dividend_yield !== undefined)
+    queryParams.append('min_dividend_yield', String(params.min_dividend_yield));
+  if (params.max_expense_ratio !== undefined)
+    queryParams.append('max_expense_ratio', String(params.max_expense_ratio));
+  if (params.limit) queryParams.append('limit', String(params.limit));
+  if (params.offset) queryParams.append('offset', String(params.offset));
+
+  const response = await apiClient.get<ApiResponse<ETFSummary[]>>(
+    `/etfs?${queryParams.toString()}`
+  );
+  return {
+    items: response.data.data,
+    total: response.data.meta?.total || 0,
+  };
+}
+
+export async function getETFDetail(code: string): Promise<ETFDetail | null> {
+  try {
+    const response = await apiClient.get<ApiResponse<ETFDetail>>(
+      `/etfs/${code}`
+    );
+    return response.data.data;
+  } catch {
+    return null;
+  }
+}
+
+export async function getETFChart(
+  code: string,
+  period: ChartPeriod = '1m'
+): Promise<ChartData | null> {
+  try {
+    const response = await apiClient.get<ApiResponse<ChartData>>(
+      `/etfs/${code}/chart?period=${period}`
+    );
+    return response.data.data;
+  } catch {
+    return null;
+  }
+}
