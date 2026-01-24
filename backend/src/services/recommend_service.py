@@ -1,5 +1,5 @@
 """Recommendation service for ETF recommendations."""
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from src.repositories import ETFRepository, TagRepository
 

@@ -1,7 +1,6 @@
 """Tag service for tag business logic."""
 from typing import List, Optional
 
-from src.models import Tag
 from src.repositories import TagRepository
 
 

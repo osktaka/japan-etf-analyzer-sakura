@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from sqlalchemy import or_
 
-from src.models import Category, ETF, ETFTagRelation, Tag, db
+from src.models import ETF, ETFTagRelation, db
 
 from .base_repository import BaseRepository
 

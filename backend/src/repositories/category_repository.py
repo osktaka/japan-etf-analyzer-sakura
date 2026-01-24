@@ -18,9 +18,7 @@ class CategoryRepository(BaseRepository[Category]):
     def get_all_sorted(self) -> List[Category]:
         """Get all categories sorted by sort_order."""
         return (
-            db.session.query(Category)
-            .order_by(Category.sort_order, Category.id)
-            .all()
+            db.session.query(Category).order_by(Category.sort_order, Category.id).all()
         )
 
     def create_if_not_exists(
@@ -31,7 +29,5 @@ class CategoryRepository(BaseRepository[Category]):
         if existing:
             return existing
 
-        category = Category(
-            name=name, description=description, sort_order=sort_order
-        )
+        category = Category(name=name, description=description, sort_order=sort_order)
         return self.create(category)

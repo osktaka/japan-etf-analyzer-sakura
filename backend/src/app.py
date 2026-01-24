@@ -38,10 +38,7 @@ def create_app(config_name=None):
     # API v1 ルート
     @app.route("/api/v1/")
     def api_root():
-        return jsonify({
-            "message": "Japan ETF Analyzer API",
-            "version": "1.0.0"
-        })
+        return jsonify({"message": "Japan ETF Analyzer API", "version": "1.0.0"})
 
     return app
 

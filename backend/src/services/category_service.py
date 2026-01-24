@@ -1,7 +1,6 @@
 """Category service for category business logic."""
 from typing import List, Optional
 
-from src.models import Category
 from src.repositories import CategoryRepository
 
 

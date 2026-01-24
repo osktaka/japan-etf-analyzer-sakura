@@ -59,14 +59,16 @@ class YahooFinanceClient:
             low = price * (1 - random.uniform(0.005, 0.015))
             open_price = price * (1 + random.uniform(-0.01, 0.01))
 
-            data.append({
-                "date": current_date.strftime("%Y-%m-%d"),
-                "open": round(open_price, 2),
-                "high": round(high, 2),
-                "low": round(low, 2),
-                "close": round(price, 2),
-                "volume": random.randint(100000, 1000000),
-            })
+            data.append(
+                {
+                    "date": current_date.strftime("%Y-%m-%d"),
+                    "open": round(open_price, 2),
+                    "high": round(high, 2),
+                    "low": round(low, 2),
+                    "close": round(price, 2),
+                    "volume": random.randint(100000, 1000000),
+                }
+            )
 
             current_date += timedelta(days=1)
             while current_date.weekday() >= 5:

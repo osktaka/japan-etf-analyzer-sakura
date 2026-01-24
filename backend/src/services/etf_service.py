@@ -1,7 +1,6 @@
 """ETF service for ETF business logic."""
 from typing import Dict, List, Optional
 
-from src.models import ETF
 from src.repositories import ETFRepository
 
 

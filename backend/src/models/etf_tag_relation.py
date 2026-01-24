@@ -29,9 +29,7 @@ class ETFTagRelation(db.Model):
     tag = db.relationship("Tag", back_populates="etf_relations")
 
     # Unique constraint
-    __table_args__ = (
-        db.UniqueConstraint("etf_code", "tag_id", name="uq_etr_etf_tag"),
-    )
+    __table_args__ = (db.UniqueConstraint("etf_code", "tag_id", name="uq_etr_etf_tag"),)
 
     def __repr__(self):
         return f"<ETFTagRelation {self.etf_code} - {self.tag_id}>"
