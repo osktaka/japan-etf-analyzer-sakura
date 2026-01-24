@@ -1,0 +1,20 @@
+# Web Framework
+Flask==2.3.3
+Flask-CORS==4.0.0
+
+# Database
+mysql-connector-python==8.2.0
+SQLAlchemy==2.0.23
+Flask-SQLAlchemy==3.1.1
+
+# Data Processing
+yfinance==0.2.33
+pandas==2.0.3
+
+# Development
+ruff==0.1.6
+pytest==7.4.3
+pytest-cov==4.1.0
+
+# Production (for Sakura)
+gunicorn==21.2.0
