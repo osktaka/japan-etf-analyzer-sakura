@@ -1,0 +1,45 @@
+"""User model for authentication."""
+
+from flask_login import UserMixin
+from werkzeug.security import check_password_hash, generate_password_hash
+
+from . import db
+from .base import TimestampMixin
+
+
+class User(db.Model, UserMixin, TimestampMixin):
+    """User model with Flask-Login support."""
+
+    __tablename__ = "users"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    email = db.Column(db.String(255), nullable=False, unique=True, index=True)
+    password_hash = db.Column(db.String(255), nullable=False)
+    username = db.Column(db.String(50), nullable=False)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+
+    # Relationship to favorites
+    favorites = db.relationship(
+        "Favorite", back_populates="user", lazy="dynamic", cascade="all, delete-orphan"
+    )
+
+    def set_password(self, password: str) -> None:
+        """Set hashed password."""
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password: str) -> bool:
+        """Verify password against hash."""
+        return check_password_hash(self.password_hash, password)
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary representation."""
+        return {
+            "id": self.id,
+            "email": self.email,
+            "username": self.username,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat() if self.created_at else None,
+        }
+
+    def __repr__(self) -> str:
+        return f"<User {self.email}>"

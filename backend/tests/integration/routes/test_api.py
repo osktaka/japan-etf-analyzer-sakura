@@ -1,5 +1,4 @@
 """Integration tests for API endpoints."""
-import pytest
 
 from src.models import Category, ETF, ETFTagRelation, Tag
 

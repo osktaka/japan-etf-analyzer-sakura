@@ -22,4 +22,7 @@ export const PERSPECTIVE_COLORS: Record<string, string> = {
 export const ROUTES = {
   HOME: '/',
   COMPARE: '/compare',
+  LOGIN: '/login',
+  REGISTER: '/register',
+  MYPAGE: '/mypage',
 } as const;

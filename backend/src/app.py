@@ -3,10 +3,28 @@ import os
 
 from flask import Flask, jsonify
 from flask_cors import CORS
+from flask_login import LoginManager
 
 from .config.settings import config
-from .models import db
+from .models import User, db
 from .routes import register_routes
+
+# Flask-Login manager
+login_manager = LoginManager()
+
+
+@login_manager.user_loader
+def load_user(user_id: str):
+    """Load user by ID for Flask-Login."""
+    return db.session.get(User, int(user_id))
+
+
+@login_manager.unauthorized_handler
+def unauthorized():
+    """Handle unauthorized access."""
+    return jsonify(
+        {"success": False, "error": {"message": "認証が必要です", "code": 401}}
+    ), 401
 
 
 def create_app(config_name=None):
@@ -19,13 +37,16 @@ def create_app(config_name=None):
     # 設定読み込み
     app.config.from_object(config.get(config_name, config["default"]))
 
-    # CORS設定
-    CORS(app)
+    # CORS設定（credentialsを許可）
+    CORS(app, supports_credentials=True)
 
     # データベース初期化
     db.init_app(app)
     with app.app_context():
         db.create_all()
+
+    # Flask-Login初期化
+    login_manager.init_app(app)
 
     # APIルート登録
     register_routes(app)

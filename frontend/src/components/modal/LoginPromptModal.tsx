@@ -1,4 +1,6 @@
 /** Login prompt modal component */
+import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '../../utils';
 import styles from './LoginPromptModal.module.css';
 
 interface LoginPromptModalProps {
@@ -7,7 +9,19 @@ interface LoginPromptModalProps {
 }
 
 export function LoginPromptModal({ isOpen, onClose }: LoginPromptModalProps) {
+  const navigate = useNavigate();
+
   if (!isOpen) return null;
+
+  const handleLogin = () => {
+    onClose();
+    navigate(ROUTES.LOGIN);
+  };
+
+  const handleRegister = () => {
+    onClose();
+    navigate(ROUTES.REGISTER);
+  };
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -21,10 +35,15 @@ export function LoginPromptModal({ isOpen, onClose }: LoginPromptModalProps) {
           <p className={styles.description}>
             お気に入り機能はログイン後にご利用いただけます。
           </p>
-          <p className={styles.note}>
-            ※ ログイン機能は今後のアップデートで追加予定です
-          </p>
-          <button className="btn btn-primary" onClick={onClose}>
+          <div className={styles.buttons}>
+            <button className="btn btn-primary" onClick={handleLogin}>
+              ログイン
+            </button>
+            <button className="btn btn-secondary" onClick={handleRegister}>
+              新規登録
+            </button>
+          </div>
+          <button className={styles.closeLink} onClick={onClose}>
             閉じる
           </button>
         </div>

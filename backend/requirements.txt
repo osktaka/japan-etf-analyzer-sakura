@@ -1,6 +1,7 @@
 # Web Framework
 Flask==2.3.3
 Flask-CORS==4.0.0
+Flask-Login==0.6.3
 
 # Database
 SQLAlchemy==2.0.23

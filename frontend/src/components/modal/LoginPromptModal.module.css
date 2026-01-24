@@ -60,3 +60,27 @@
   font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
+
+.buttons {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-sm);
+}
+
+.buttons .btn {
+  flex: 1;
+  min-width: 120px;
+}
+
+.closeLink {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  margin-top: var(--spacing-sm);
+}
+
+.closeLink:hover {
+  text-decoration: underline;
+}

@@ -87,3 +87,30 @@ export interface ApiError {
 }
 
 export type ChartPeriod = '1w' | '1m' | '3m' | '6m' | '1y' | '3y';
+
+export interface User {
+  id: number;
+  email: string;
+  username: string;
+  is_active: boolean;
+  created_at: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+  remember?: boolean;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  username: string;
+}
+
+export interface Favorite {
+  id: number;
+  etf_code: string;
+  created_at: string;
+  etf: ETFSummary;
+}

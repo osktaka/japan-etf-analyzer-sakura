@@ -1,5 +1,4 @@
 """Tests for TagRepository."""
-import pytest
 
 from src.models import Tag
 from src.repositories import TagRepository

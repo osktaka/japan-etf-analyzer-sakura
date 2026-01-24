@@ -1,7 +1,6 @@
 """Tests for ETFRepository."""
 from decimal import Decimal
 
-import pytest
 
 from src.models import Category, ETF, ETFTagRelation, Tag
 from src.repositories import ETFRepository

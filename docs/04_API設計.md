@@ -9,7 +9,7 @@
 | APIスタイル | RESTful |
 | データ形式 | JSON |
 | 文字コード | UTF-8 |
-| 認証 | なし（Phase 1） |
+| 認証 | セッションベース認証（Flask-Login） |
 
 ### 1.2 ベースURL
 
@@ -82,6 +82,8 @@
 
 ## 3. エンドポイント一覧
 
+### 3.1 Phase 1（認証不要）
+
 | メソッド | パス | 機能 | 対応機能ID |
 |----------|------|------|------------|
 | GET | /recommendations | おすすめ銘柄取得 | F-001 |
@@ -91,6 +93,20 @@
 | GET | /etfs/{code}/chart | チャートデータ取得 | F-004 |
 | GET | /categories | カテゴリ一覧取得 | - |
 | GET | /tags | タグ一覧取得 | - |
+
+### 3.2 Phase 2（認証関連）
+
+| メソッド | パス | 機能 | 対応機能ID | 認証 |
+|----------|------|------|------------|------|
+| POST | /auth/register | ユーザー登録 | F-101 | 不要 |
+| POST | /auth/login | ログイン | F-101 | 不要 |
+| POST | /auth/logout | ログアウト | F-101 | 必要 |
+| GET | /auth/me | 現在のユーザー情報取得 | F-101 | 必要 |
+| GET | /favorites | お気に入り一覧取得 | F-102 | 必要 |
+| POST | /favorites | お気に入り追加 | F-102 | 必要 |
+| DELETE | /favorites/{etf_code} | お気に入り削除 | F-102 | 必要 |
+| GET | /favorites/codes | お気に入りETFコード一覧取得 | F-102 | 必要 |
+| GET | /favorites/check/{etf_code} | お気に入り登録確認 | F-102 | 必要 |
 
 ## 4. エンドポイント詳細
 

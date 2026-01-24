@@ -16,5 +16,16 @@ from .category import Category  # noqa: E402
 from .tag import Tag  # noqa: E402
 from .etf import ETF  # noqa: E402
 from .etf_tag_relation import ETFTagRelation  # noqa: E402
+from .user import User  # noqa: E402
+from .favorite import Favorite  # noqa: E402
 
-__all__ = ["db", "init_db", "Category", "Tag", "ETF", "ETFTagRelation"]
+__all__ = [
+    "db",
+    "init_db",
+    "Category",
+    "Tag",
+    "ETF",
+    "ETFTagRelation",
+    "User",
+    "Favorite",
+]

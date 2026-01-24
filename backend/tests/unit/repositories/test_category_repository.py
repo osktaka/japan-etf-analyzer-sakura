@@ -1,5 +1,4 @@
 """Tests for CategoryRepository."""
-import pytest
 
 from src.models import Category
 from src.repositories import CategoryRepository

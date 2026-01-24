@@ -2,7 +2,6 @@
 from datetime import date
 from decimal import Decimal
 
-import pytest
 
 from src.models import Category, ETF, ETFTagRelation, Tag
 
