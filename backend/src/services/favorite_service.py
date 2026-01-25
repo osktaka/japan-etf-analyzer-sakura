@@ -40,7 +40,7 @@ class FavoriteService:
                             if favorite.created_at
                             else None
                         ),
-                        "etf": etf.to_dict(),
+                        "etf": etf.to_summary_dict(),
                     }
                 )
 

@@ -71,9 +71,13 @@ class CompareService:
         """
         # Map days to chart period
         period = self._days_to_period(days)
-        chart_data = self.chart_service.get_chart_data(code, period)
+        result = self.chart_service.get_chart_data(code, period)
 
-        if not chart_data or len(chart_data) < 2:
+        if not result or not result.get("data"):
+            return None
+
+        chart_data = result["data"]
+        if len(chart_data) < 2:
             return None
 
         # Get first and last prices
@@ -96,9 +100,13 @@ class CompareService:
             Annualized volatility percentage or None if data unavailable
         """
         period = self._days_to_period(days)
-        chart_data = self.chart_service.get_chart_data(code, period)
+        result = self.chart_service.get_chart_data(code, period)
 
-        if not chart_data or len(chart_data) < 10:
+        if not result or not result.get("data"):
+            return None
+
+        chart_data = result["data"]
+        if len(chart_data) < 10:
             return None
 
         # Calculate daily returns
