@@ -11,7 +11,9 @@
 | 要件定義を確認したい | docs/01_要件定義.md | MVP機能、Phase 2機能 |
 | アーキテクチャを確認したい | docs/02_アーキテクチャ設計.md | システム構成図、技術スタック詳細 |
 | DB設計を確認したい | docs/03_データベース設計.md | ER図、テーブル定義 |
-| API仕様を確認したい | docs/04_API設計.md | エンドポイント定義（683行、部分読込推奨） |
+| API仕様を確認したい | docs/04_API設計.md | 基本仕様・エンドポイント一覧 |
+| APIの詳細仕様を確認したい | docs/04a_エンドポイント詳細.md | リクエスト/レスポンス例 |
+| API実装例を確認したい | docs/04b_実装サンプル.md | Flask/TypeScript実装例 |
 | 画面設計の概要を確認したい | docs/05_画面設計.md | 画面一覧、遷移図 |
 | 画面・モーダル仕様を確認したい | docs/05a_画面仕様.md | 各画面の詳細、ワイヤーフレーム |
 | UIスタイルガイドを確認したい | docs/05b_UIスタイルガイド.md | コンポーネント、カラー、A11y |
@@ -80,6 +82,34 @@ cd frontend && npm run build
 # ビルド結果を転送
 scp -r dist/* user@server:/home/user/www/
 ```
+
+## 内部構造ガイド
+
+### アーキテクチャパターン（詳細は02を参照）
+
+- **バックエンド**: Repository-Service-Route の4層構造
+- **フロントエンド**: Barrel Export パターン（index.ts）
+
+### ファイルサイズ上限（実績）
+
+| レイヤー | 最大行数 | 備考 |
+|---------|---------|------|
+| backend/routes/ | 128行 | favorite_routes.py |
+| backend/services/ | 116行 | compare_service.py |
+| backend/repositories/ | 135行 | etf_repository.py |
+| frontend/components/ | 161行 | Header.tsx |
+
+### API設計書セクション早見表
+
+| ファイル | 内容 |
+|---------|------|
+| 04_API設計.md | 基本仕様・共通仕様・エンドポイント一覧 |
+| 04a_エンドポイント詳細.md | 各APIの詳細仕様 |
+| 04b_実装サンプル.md | Flask/TypeScript実装例 |
+
+### 外部API
+
+- Yahoo Finance: `backend/src/external/yahoo_finance.py` (106行)
 
 ## 運用ルール
 
