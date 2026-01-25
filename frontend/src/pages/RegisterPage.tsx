@@ -1,56 +1,60 @@
 /** Registration page component */
-import { FormEvent, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import { ROUTES } from '../utils';
-import styles from './AuthPage.module.css';
+import { FormEvent, useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
+import { ROUTES } from '../utils'
+import styles from './AuthPage.module.css'
 
 export function RegisterPage() {
-  const navigate = useNavigate();
-  const { register, isAuthenticated } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [username, setUsername] = useState('');
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate()
+  const { register, isAuthenticated } = useAuth()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [username, setUsername] = useState('')
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(ROUTES.HOME);
+      navigate(ROUTES.HOME)
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate])
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError('');
+    e.preventDefault()
+    setError('')
 
     if (password !== confirmPassword) {
-      setError('パスワードが一致しません');
-      return;
+      setError('パスワードが一致しません')
+      return
     }
 
     if (password.length < 8) {
-      setError('パスワードは8文字以上必要です');
-      return;
+      setError('パスワードは8文字以上必要です')
+      return
     }
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
 
     try {
-      await register({ email, password, username });
-      navigate(ROUTES.HOME);
+      await register({ email, password, username })
+      navigate(ROUTES.HOME)
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
-        const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
-        setError(axiosErr.response?.data?.error?.message || '登録に失敗しました');
+        const axiosErr = err as {
+          response?: { data?: { error?: { message?: string } } }
+        }
+        setError(
+          axiosErr.response?.data?.error?.message || '登録に失敗しました'
+        )
       } else {
-        setError('登録に失敗しました');
+        setError('登録に失敗しました')
       }
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   return (
     <div className={styles.container}>
@@ -140,7 +144,7 @@ export function RegisterPage() {
         </p>
       </div>
     </div>
-  );
+  )
 }
 
-export default RegisterPage;
+export default RegisterPage

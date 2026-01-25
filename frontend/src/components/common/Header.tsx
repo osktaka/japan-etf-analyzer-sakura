@@ -1,18 +1,18 @@
 /** Header component */
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../hooks/useAuth';
-import { ROUTES } from '../../utils';
-import styles from './Header.module.css';
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth'
+import { ROUTES } from '../../utils'
+import styles from './Header.module.css'
 
 export function Header() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { user, isAuthenticated, logout, isLoading } = useAuth();
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { user, isAuthenticated, logout, isLoading } = useAuth()
 
   const handleLogout = async () => {
-    await logout();
-    navigate(ROUTES.HOME);
-  };
+    await logout()
+    navigate(ROUTES.HOME)
+  }
 
   return (
     <header className={styles.header}>
@@ -58,5 +58,5 @@ export function Header() {
         </nav>
       </div>
     </header>
-  );
+  )
 }

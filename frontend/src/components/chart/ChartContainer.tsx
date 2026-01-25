@@ -1,19 +1,19 @@
 /** Chart container with period selector */
-import { useState } from 'react';
-import { ChartPeriod } from '../../api';
-import { useChartData } from '../../hooks';
-import { CHART_PERIODS } from '../../utils';
-import { Loading, ErrorMessage } from '../common';
-import { PriceChart } from './PriceChart';
-import styles from './ChartContainer.module.css';
+import { useState } from 'react'
+import { ChartPeriod } from '../../api'
+import { useChartData } from '../../hooks'
+import { CHART_PERIODS } from '../../utils'
+import { Loading, ErrorMessage } from '../common'
+import { PriceChart } from './PriceChart'
+import styles from './ChartContainer.module.css'
 
 interface ChartContainerProps {
-  code: string;
+  code: string
 }
 
 export function ChartContainer({ code }: ChartContainerProps) {
-  const [period, setPeriod] = useState<ChartPeriod>('1m');
-  const { data, isLoading, error, refetch } = useChartData(code, period);
+  const [period, setPeriod] = useState<ChartPeriod>('1m')
+  const { data, isLoading, error, refetch } = useChartData(code, period)
 
   return (
     <div className={styles.container}>
@@ -32,8 +32,13 @@ export function ChartContainer({ code }: ChartContainerProps) {
         </div>
       </div>
       {isLoading && <Loading />}
-      {error && <ErrorMessage message="チャートの取得に失敗しました" onRetry={refetch} />}
+      {error && (
+        <ErrorMessage
+          message="チャートの取得に失敗しました"
+          onRetry={refetch}
+        />
+      )}
       {data && <PriceChart data={data.data} />}
     </div>
-  );
+  )
 }

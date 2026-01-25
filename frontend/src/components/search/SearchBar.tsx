@@ -1,19 +1,22 @@
 /** Search bar component */
-import { useState, FormEvent } from 'react';
-import styles from './SearchBar.module.css';
+import { useState, FormEvent } from 'react'
+import styles from './SearchBar.module.css'
 
 interface SearchBarProps {
-  onSearch: (keyword: string) => void;
-  placeholder?: string;
+  onSearch: (keyword: string) => void
+  placeholder?: string
 }
 
-export function SearchBar({ onSearch, placeholder = 'ETFを検索...' }: SearchBarProps) {
-  const [value, setValue] = useState('');
+export function SearchBar({
+  onSearch,
+  placeholder = 'ETFを検索...',
+}: SearchBarProps) {
+  const [value, setValue] = useState('')
 
   const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    onSearch(value);
-  };
+    e.preventDefault()
+    onSearch(value)
+  }
 
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
@@ -28,5 +31,5 @@ export function SearchBar({ onSearch, placeholder = 'ETFを検索...' }: SearchB
         検索
       </button>
     </form>
-  );
+  )
 }

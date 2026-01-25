@@ -1,31 +1,35 @@
 /** Compare page component */
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { ETFDetail, getETFDetail, ChartPeriod } from '../api';
-import { useCompareList, useChartData } from '../hooks';
-import { formatPrice, formatPercent, formatAssets, ROUTES, CHART_PERIODS } from '../utils';
-import { Loading, ErrorMessage } from '../components/common';
-import { TagBadge } from '../components/etf';
-import { PriceChart } from '../components/chart';
-import styles from './ComparePage.module.css';
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { ETFDetail, getETFDetail, ChartPeriod } from '../api'
+import { useCompareList, useChartData } from '../hooks'
+import {
+  formatPrice,
+  formatPercent,
+  formatAssets,
+  ROUTES,
+  CHART_PERIODS,
+} from '../utils'
+import { Loading, ErrorMessage } from '../components/common'
+import { TagBadge } from '../components/etf'
+import { PriceChart } from '../components/chart'
+import styles from './ComparePage.module.css'
 
 export function ComparePage() {
-  const { codes, removeCode, clearAll } = useCompareList();
-  const [etfs, setEtfs] = useState<ETFDetail[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('1m');
+  const { codes, removeCode, clearAll } = useCompareList()
+  const [etfs, setEtfs] = useState<ETFDetail[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('1m')
 
   useEffect(() => {
     const fetchETFs = async () => {
-      setIsLoading(true);
-      const results = await Promise.all(
-        codes.map((code) => getETFDetail(code))
-      );
-      setEtfs(results.filter((e): e is ETFDetail => e !== null));
-      setIsLoading(false);
-    };
-    fetchETFs();
-  }, [codes]);
+      setIsLoading(true)
+      const results = await Promise.all(codes.map((code) => getETFDetail(code)))
+      setEtfs(results.filter((e): e is ETFDetail => e !== null))
+      setIsLoading(false)
+    }
+    fetchETFs()
+  }, [codes])
 
   if (codes.length === 0) {
     return (
@@ -36,7 +40,7 @@ export function ComparePage() {
           トップページへ
         </Link>
       </div>
-    );
+    )
   }
 
   return (
@@ -137,25 +141,40 @@ export function ComparePage() {
             </div>
             <div className={styles.charts}>
               {etfs.map((etf) => (
-                <CompareChart key={etf.code} code={etf.code} name={etf.name} period={chartPeriod} />
+                <CompareChart
+                  key={etf.code}
+                  code={etf.code}
+                  name={etf.name}
+                  period={chartPeriod}
+                />
               ))}
             </div>
           </div>
         </>
       )}
     </div>
-  );
+  )
 }
 
-function CompareChart({ code, name, period }: { code: string; name: string; period: ChartPeriod }) {
-  const { data, isLoading, error } = useChartData(code, period);
+function CompareChart({
+  code,
+  name,
+  period,
+}: {
+  code: string
+  name: string
+  period: ChartPeriod
+}) {
+  const { data, isLoading, error } = useChartData(code, period)
 
   return (
     <div className={styles.chartCard}>
-      <h3 className={styles.chartTitle}>{code} {name}</h3>
+      <h3 className={styles.chartTitle}>
+        {code} {name}
+      </h3>
       {isLoading && <Loading />}
       {error && <ErrorMessage message="チャートの取得に失敗しました" />}
       {data && <PriceChart data={data.data} height={200} />}
     </div>
-  );
+  )
 }

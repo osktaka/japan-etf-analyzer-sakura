@@ -1,44 +1,48 @@
 /** Login page component */
-import { FormEvent, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
-import { ROUTES } from '../utils';
-import styles from './AuthPage.module.css';
+import { FormEvent, useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
+import { ROUTES } from '../utils'
+import styles from './AuthPage.module.css'
 
 export function LoginPage() {
-  const navigate = useNavigate();
-  const { login, isAuthenticated } = useAuth();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [remember, setRemember] = useState(false);
-  const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate()
+  const { login, isAuthenticated } = useAuth()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [remember, setRemember] = useState(false)
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(ROUTES.HOME);
+      navigate(ROUTES.HOME)
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate])
 
   const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setIsSubmitting(true);
+    e.preventDefault()
+    setError('')
+    setIsSubmitting(true)
 
     try {
-      await login({ email, password, remember });
-      navigate(ROUTES.HOME);
+      await login({ email, password, remember })
+      navigate(ROUTES.HOME)
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
-        const axiosErr = err as { response?: { data?: { error?: { message?: string } } } };
-        setError(axiosErr.response?.data?.error?.message || 'ログインに失敗しました');
+        const axiosErr = err as {
+          response?: { data?: { error?: { message?: string } } }
+        }
+        setError(
+          axiosErr.response?.data?.error?.message || 'ログインに失敗しました'
+        )
       } else {
-        setError('ログインに失敗しました');
+        setError('ログインに失敗しました')
       }
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   return (
     <div className={styles.container}>
@@ -108,7 +112,7 @@ export function LoginPage() {
         </p>
       </div>
     </div>
-  );
+  )
 }
 
-export default LoginPage;
+export default LoginPage

@@ -1,10 +1,10 @@
 /** Tag badge component */
-import { Tag } from '../../api';
-import styles from './TagBadge.module.css';
+import { Tag } from '../../api'
+import styles from './TagBadge.module.css'
 
 interface TagBadgeProps {
-  tag: Tag;
-  size?: 'sm' | 'md';
+  tag: Tag
+  size?: 'sm' | 'md'
 }
 
 export function TagBadge({ tag, size = 'md' }: TagBadgeProps) {
@@ -15,5 +15,5 @@ export function TagBadge({ tag, size = 'md' }: TagBadgeProps) {
     >
       {tag.name}
     </span>
-  );
+  )
 }

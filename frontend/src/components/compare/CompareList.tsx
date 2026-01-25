@@ -1,16 +1,16 @@
 /** Compare list component showing items in comparison */
-import styles from './CompareList.module.css';
+import styles from './CompareList.module.css'
 
 interface CompareItem {
-  code: string;
-  name?: string;
+  code: string
+  name?: string
 }
 
 interface CompareListProps {
-  items: CompareItem[];
-  onRemove: (code: string) => void;
-  onClear?: () => void;
-  maxItems?: number;
+  items: CompareItem[]
+  onRemove: (code: string) => void
+  onClear?: () => void
+  maxItems?: number
 }
 
 export function CompareList({
@@ -24,7 +24,7 @@ export function CompareList({
       <div className={styles.empty}>
         比較する銘柄がありません。銘柄を追加してください。
       </div>
-    );
+    )
   }
 
   return (
@@ -50,10 +50,15 @@ export function CompareList({
         </div>
       )}
       {items.length < maxItems && (
-        <span style={{ color: 'var(--color-text-secondary)', fontSize: 'var(--text-sm)' }}>
+        <span
+          style={{
+            color: 'var(--color-text-secondary)',
+            fontSize: 'var(--text-sm)',
+          }}
+        >
           あと{maxItems - items.length}件追加可能
         </span>
       )}
     </div>
-  );
+  )
 }

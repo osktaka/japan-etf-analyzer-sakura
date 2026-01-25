@@ -1,2 +1,2 @@
-export { CompareList } from './CompareList';
-export { CompareTable } from './CompareTable';
+export { CompareList } from './CompareList'
+export { CompareTable } from './CompareTable'

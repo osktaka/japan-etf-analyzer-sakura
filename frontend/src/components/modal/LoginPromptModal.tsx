@@ -1,27 +1,27 @@
 /** Login prompt modal component */
-import { useNavigate } from 'react-router-dom';
-import { ROUTES } from '../../utils';
-import styles from './LoginPromptModal.module.css';
+import { useNavigate } from 'react-router-dom'
+import { ROUTES } from '../../utils'
+import styles from './LoginPromptModal.module.css'
 
 interface LoginPromptModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen: boolean
+  onClose: () => void
 }
 
 export function LoginPromptModal({ isOpen, onClose }: LoginPromptModalProps) {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   const handleLogin = () => {
-    onClose();
-    navigate(ROUTES.LOGIN);
-  };
+    onClose()
+    navigate(ROUTES.LOGIN)
+  }
 
   const handleRegister = () => {
-    onClose();
-    navigate(ROUTES.REGISTER);
-  };
+    onClose()
+    navigate(ROUTES.REGISTER)
+  }
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -49,5 +49,5 @@ export function LoginPromptModal({ isOpen, onClose }: LoginPromptModalProps) {
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -7,14 +7,14 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-} from 'recharts';
-import { ChartDataPoint } from '../../api';
-import { formatPrice } from '../../utils';
-import styles from './PriceChart.module.css';
+} from 'recharts'
+import { ChartDataPoint } from '../../api'
+import { formatPrice } from '../../utils'
+import styles from './PriceChart.module.css'
 
 interface PriceChartProps {
-  data: ChartDataPoint[];
-  height?: number;
+  data: ChartDataPoint[]
+  height?: number
 }
 
 export function PriceChart({ data, height = 300 }: PriceChartProps) {
@@ -23,20 +23,23 @@ export function PriceChart({ data, height = 300 }: PriceChartProps) {
       <div className={styles.empty}>
         <p>チャートデータがありません</p>
       </div>
-    );
+    )
   }
 
   return (
     <div className={styles.container} style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+        <LineChart
+          data={data}
+          margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
           <XAxis
             dataKey="date"
             tick={{ fontSize: 12 }}
             tickFormatter={(value) => {
-              const date = new Date(value);
-              return `${date.getMonth() + 1}/${date.getDate()}`;
+              const date = new Date(value)
+              return `${date.getMonth() + 1}/${date.getDate()}`
             }}
           />
           <YAxis
@@ -58,5 +61,5 @@ export function PriceChart({ data, height = 300 }: PriceChartProps) {
         </LineChart>
       </ResponsiveContainer>
     </div>
-  );
+  )
 }

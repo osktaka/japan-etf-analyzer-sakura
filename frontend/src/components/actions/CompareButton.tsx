@@ -1,12 +1,12 @@
 /** Compare button component */
-import styles from './CompareButton.module.css';
+import styles from './CompareButton.module.css'
 
 interface CompareButtonProps {
-  isInCompare: boolean;
-  onToggle: () => void;
-  disabled?: boolean;
-  size?: 'sm' | 'md' | 'lg';
-  iconOnly?: boolean;
+  isInCompare: boolean
+  onToggle: () => void
+  disabled?: boolean
+  size?: 'sm' | 'md' | 'lg'
+  iconOnly?: boolean
 }
 
 export function CompareButton({
@@ -16,7 +16,7 @@ export function CompareButton({
   size = 'md',
   iconOnly = false,
 }: CompareButtonProps) {
-  const sizeClass = size !== 'md' ? styles[size] : '';
+  const sizeClass = size !== 'md' ? styles[size] : ''
 
   return (
     <button
@@ -34,5 +34,5 @@ export function CompareButton({
         </span>
       )}
     </button>
-  );
+  )
 }

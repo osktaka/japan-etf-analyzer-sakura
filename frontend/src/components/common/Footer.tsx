@@ -1,5 +1,5 @@
 /** Footer component */
-import styles from './Footer.module.css';
+import styles from './Footer.module.css'
 
 export function Footer() {
   return (
@@ -13,5 +13,5 @@ export function Footer() {
         </p>
       </div>
     </footer>
-  );
+  )
 }

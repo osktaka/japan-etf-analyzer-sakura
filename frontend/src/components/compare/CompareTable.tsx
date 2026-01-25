@@ -1,16 +1,16 @@
 /** Compare table component for comparing multiple ETFs */
-import { ETFDetail } from '../../api';
-import { formatPrice, formatPercent, formatAssets } from '../../utils';
-import { TagBadge } from '../etf';
-import styles from './CompareTable.module.css';
+import { ETFDetail } from '../../api'
+import { formatPrice, formatPercent, formatAssets } from '../../utils'
+import { TagBadge } from '../etf'
+import styles from './CompareTable.module.css'
 
 interface CompareTableProps {
-  etfs: ETFDetail[];
-  onRemove: (code: string) => void;
-  highlightBest?: boolean;
+  etfs: ETFDetail[]
+  onRemove: (code: string) => void
+  highlightBest?: boolean
 }
 
-type MetricKey = 'dividend_yield' | 'expense_ratio' | 'total_assets';
+type MetricKey = 'dividend_yield' | 'expense_ratio' | 'total_assets'
 
 export function CompareTable({
   etfs,
@@ -18,27 +18,27 @@ export function CompareTable({
   highlightBest = true,
 }: CompareTableProps) {
   const findBest = (key: MetricKey, higher: boolean = true): string | null => {
-    if (!highlightBest || etfs.length < 2) return null;
+    if (!highlightBest || etfs.length < 2) return null
 
-    const valid = etfs.filter((e) => e[key] !== null);
-    if (valid.length === 0) return null;
+    const valid = etfs.filter((e) => e[key] !== null)
+    if (valid.length === 0) return null
 
     const best = valid.reduce((a, b) => {
-      const aVal = a[key] as number;
-      const bVal = b[key] as number;
-      return higher ? (aVal > bVal ? a : b) : (aVal < bVal ? a : b);
-    });
+      const aVal = a[key] as number
+      const bVal = b[key] as number
+      return higher ? (aVal > bVal ? a : b) : aVal < bVal ? a : b
+    })
 
-    return best.code;
-  };
+    return best.code
+  }
 
-  const bestDividend = findBest('dividend_yield', true);
-  const bestExpense = findBest('expense_ratio', false);
-  const bestAssets = findBest('total_assets', true);
+  const bestDividend = findBest('dividend_yield', true)
+  const bestExpense = findBest('expense_ratio', false)
+  const bestAssets = findBest('total_assets', true)
 
   const isBest = (code: string, bestCode: string | null): boolean => {
-    return bestCode === code;
-  };
+    return bestCode === code
+  }
 
   return (
     <div className={styles.wrapper}>
@@ -83,7 +83,11 @@ export function CompareTable({
                 key={etf.code}
                 className={isBest(etf.code, bestDividend) ? styles.best : ''}
               >
-                <span className={isBest(etf.code, bestDividend) ? styles.highlight : ''}>
+                <span
+                  className={
+                    isBest(etf.code, bestDividend) ? styles.highlight : ''
+                  }
+                >
                   {formatPercent(etf.dividend_yield)}
                 </span>
               </td>
@@ -96,7 +100,11 @@ export function CompareTable({
                 key={etf.code}
                 className={isBest(etf.code, bestExpense) ? styles.best : ''}
               >
-                <span className={isBest(etf.code, bestExpense) ? styles.highlight : ''}>
+                <span
+                  className={
+                    isBest(etf.code, bestExpense) ? styles.highlight : ''
+                  }
+                >
                   {formatPercent(etf.expense_ratio)}
                 </span>
               </td>
@@ -109,7 +117,11 @@ export function CompareTable({
                 key={etf.code}
                 className={isBest(etf.code, bestAssets) ? styles.best : ''}
               >
-                <span className={isBest(etf.code, bestAssets) ? styles.highlight : ''}>
+                <span
+                  className={
+                    isBest(etf.code, bestAssets) ? styles.highlight : ''
+                  }
+                >
                   {formatAssets(etf.total_assets)}
                 </span>
               </td>
@@ -130,5 +142,5 @@ export function CompareTable({
         </tbody>
       </table>
     </div>
-  );
+  )
 }

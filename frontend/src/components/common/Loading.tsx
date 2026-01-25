@@ -1,8 +1,8 @@
 /** Loading spinner component */
-import styles from './Loading.module.css';
+import styles from './Loading.module.css'
 
 interface LoadingProps {
-  message?: string;
+  message?: string
 }
 
 export function Loading({ message = '読み込み中...' }: LoadingProps) {
@@ -11,5 +11,5 @@ export function Loading({ message = '読み込み中...' }: LoadingProps) {
       <div className={styles.spinner} />
       <p className={styles.message}>{message}</p>
     </div>
-  );
+  )
 }
