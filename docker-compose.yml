@@ -9,6 +9,7 @@ services:
       - FLASK_ENV=development
       - FLASK_DEBUG=1
       - DATABASE_URL=sqlite:////app/data/etf.db
+      - USE_MOCK_DATA=false
     volumes:
       - ./backend/src:/app/src
       - ./backend/tests:/app/tests

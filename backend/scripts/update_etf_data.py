@@ -14,6 +14,7 @@ This script should be run via cron:
 import argparse
 import json
 import logging
+import math
 import os
 import sys
 import time
@@ -92,6 +93,12 @@ def update_single_etf(code: str, dry_run: bool = False) -> bool:
 
     except Exception as e:
         logger.error(f"Failed to update {code}: {e}")
+        # トランザクションをロールバックして次の処理を可能にする
+        try:
+            from src.models import db
+            db.session.rollback()
+        except Exception:
+            pass
         return False
 
 
@@ -112,8 +119,18 @@ def save_to_db(code: str, df) -> None:
     """Save price data to database."""
     from src.models import PriceHistory, db
 
-    for date, row in df.iterrows():
+    # NaN行を除去
+    df_clean = df.dropna(subset=["Open", "High", "Low", "Close"])
+    skipped = len(df) - len(df_clean)
+    if skipped > 0:
+        logger.warning(f"{code}: Skipped {skipped} rows with NaN values")
+
+    for date, row in df_clean.iterrows():
         date_obj = date.date() if hasattr(date, "date") else date
+
+        # 追加のNaNチェック（念のため）
+        if any(math.isnan(row[col]) for col in ["Open", "High", "Low", "Close"]):
+            continue
 
         existing = PriceHistory.query.filter_by(etf_code=code, date=date_obj).first()
 
