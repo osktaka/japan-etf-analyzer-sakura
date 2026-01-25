@@ -111,6 +111,15 @@
 | DELETE | /favorites/{etf_code} | お気に入り削除 | F-102 | 必要 |
 | GET | /favorites/codes | お気に入りETFコード一覧取得 | F-102 | 必要 |
 | GET | /favorites/check/{etf_code} | お気に入り登録確認 | F-102 | 必要 |
+| GET | /trades | 売買履歴一覧取得 | F-103 | 必要 |
+| POST | /trades | 売買履歴登録 | F-103 | 必要 |
+| GET | /trades/{id} | 売買履歴詳細取得 | F-103 | 必要 |
+| PUT | /trades/{id} | 売買履歴更新 | F-103 | 必要 |
+| DELETE | /trades/{id} | 売買履歴削除 | F-103 | 必要 |
+| GET | /portfolio | ポートフォリオ概要取得 | F-105 | 必要 |
+| GET | /portfolio/holdings | 保有銘柄一覧取得 | F-105 | 必要 |
+| GET | /compare/performance | パフォーマンス比較取得 | F-107 | 不要 |
+| GET | /compare/performance/{code} | 個別パフォーマンス取得 | F-107 | 不要 |
 
 > 各エンドポイントの詳細仕様は [04a_エンドポイント詳細.md](./04a_エンドポイント詳細.md) を参照
 

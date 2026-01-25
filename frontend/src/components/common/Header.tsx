@@ -38,6 +38,12 @@ export function Header() {
               {isAuthenticated ? (
                 <>
                   <Link
+                    to={ROUTES.PORTFOLIO}
+                    className={`${styles.navLink} ${location.pathname === ROUTES.PORTFOLIO ? styles.active : ''}`}
+                  >
+                    ポートフォリオ
+                  </Link>
+                  <Link
                     to={ROUTES.MYPAGE}
                     className={`${styles.navLink} ${location.pathname === ROUTES.MYPAGE ? styles.active : ''}`}
                   >

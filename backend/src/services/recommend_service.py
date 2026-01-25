@@ -3,6 +3,8 @@ from typing import Dict, List
 
 from src.repositories import ETFRepository, TagRepository
 
+from .scoring_service import ScoringService
+
 
 class RecommendService:
     """Service for ETF recommendation operations."""
@@ -11,17 +13,17 @@ class RecommendService:
         {
             "id": "high-dividend",
             "name": "高配当",
-            "description": "配当利回りが高いETFをおすすめ",
+            "description": "配当利回りと安定性を考慮したおすすめ",
         },
         {
             "id": "low-cost",
             "name": "低コスト",
-            "description": "信託報酬が低いETFをおすすめ",
+            "description": "信託報酬と純資産規模を考慮したおすすめ",
         },
         {
             "id": "beginner",
             "name": "初心者向け",
-            "description": "投資初心者におすすめのETF",
+            "description": "低リスク・高流動性のおすすめETF",
         },
         {
             "id": "diversified",
@@ -35,10 +37,14 @@ class RecommendService:
         },
     ]
 
+    # Perspectives that use composite scoring
+    SCORED_PERSPECTIVES = {"high-dividend", "low-cost", "beginner"}
+
     def __init__(self):
         """Initialize service with repositories."""
         self.etf_repository = ETFRepository()
         self.tag_repository = TagRepository()
+        self.scoring_service = ScoringService()
 
     def get_perspectives(self) -> List[Dict]:
         """Get available recommendation perspectives."""
@@ -72,15 +78,13 @@ class RecommendService:
 
     def _get_etfs_by_perspective(self, perspective: str, limit: int) -> List:
         """Get ETFs based on perspective."""
-        if perspective == "high-dividend":
-            return self.etf_repository.get_high_dividend(limit)
+        # Use composite scoring for specific perspectives
+        if perspective in self.SCORED_PERSPECTIVES:
+            return self._get_scored_etfs(perspective, limit)
 
-        elif perspective == "low-cost":
-            return self.etf_repository.get_low_cost(limit)
-
-        elif perspective in ("beginner", "diversified", "popular"):
+        # Tag-based recommendations for other perspectives
+        if perspective in ("diversified", "popular"):
             tag_name_map = {
-                "beginner": "初心者向け",
                 "diversified": "分散投資",
                 "popular": "人気",
             }
@@ -91,3 +95,28 @@ class RecommendService:
             return []
 
         return self.etf_repository.search(limit=limit)
+
+    def _get_scored_etfs(self, perspective: str, limit: int) -> List:
+        """Get ETFs ranked by composite score.
+
+        Args:
+            perspective: Scoring perspective
+            limit: Maximum number of results
+
+        Returns:
+            List of ETFs sorted by composite score
+        """
+        # Get candidate ETFs based on perspective
+        if perspective == "high-dividend":
+            # Get ETFs with dividend data
+            candidates = self.etf_repository.get_high_dividend(limit * 3)
+        elif perspective == "low-cost":
+            # Get ETFs with expense ratio data
+            candidates = self.etf_repository.get_low_cost(limit * 3)
+        else:
+            # Get all ETFs for beginner perspective
+            candidates = self.etf_repository.search(limit=limit * 3)
+
+        # Rank by composite score
+        ranked = self.scoring_service.rank_etfs(candidates, perspective, limit)
+        return [item["etf"] for item in ranked]

@@ -104,6 +104,23 @@
   gap: 4px;
 }
 
+.sectionHeader td {
+  background-color: var(--color-bg);
+  font-weight: 600;
+  color: var(--color-text);
+  padding-top: var(--spacing-lg);
+}
+
+.positive {
+  color: var(--color-success);
+  font-weight: 500;
+}
+
+.negative {
+  color: var(--color-error);
+  font-weight: 500;
+}
+
 .chartSection {
   background-color: var(--color-bg-card);
   border: 1px solid var(--color-border);

@@ -2,7 +2,14 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Header, Footer, ProtectedRoute } from './components/common'
 import { AuthProvider } from './contexts/AuthContext'
-import { TopPage, ComparePage, LoginPage, RegisterPage, MyPage } from './pages'
+import {
+  TopPage,
+  ComparePage,
+  LoginPage,
+  RegisterPage,
+  MyPage,
+  PortfolioPage,
+} from './pages'
 import { ROUTES } from './utils'
 import './styles/global.css'
 
@@ -23,6 +30,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <MyPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path={ROUTES.PORTFOLIO}
+                element={
+                  <ProtectedRoute>
+                    <PortfolioPage />
                   </ProtectedRoute>
                 }
               />

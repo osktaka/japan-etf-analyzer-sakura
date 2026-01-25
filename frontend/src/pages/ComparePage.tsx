@@ -1,7 +1,13 @@
 /** Compare page component */
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { ETFDetail, getETFDetail, ChartPeriod } from '../api'
+import {
+  ETFDetail,
+  getETFDetail,
+  ChartPeriod,
+  PerformanceComparison,
+  getPerformanceComparison,
+} from '../api'
 import { useCompareList, useChartData } from '../hooks'
 import {
   formatPrice,
@@ -18,17 +24,24 @@ import styles from './ComparePage.module.css'
 export function ComparePage() {
   const { codes, removeCode, clearAll } = useCompareList()
   const [etfs, setEtfs] = useState<ETFDetail[]>([])
+  const [performance, setPerformance] = useState<PerformanceComparison | null>(
+    null
+  )
   const [isLoading, setIsLoading] = useState(true)
   const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('1m')
 
   useEffect(() => {
-    const fetchETFs = async () => {
+    const fetchData = async () => {
       setIsLoading(true)
-      const results = await Promise.all(codes.map((code) => getETFDetail(code)))
-      setEtfs(results.filter((e): e is ETFDetail => e !== null))
+      const [etfResults, perfData] = await Promise.all([
+        Promise.all(codes.map((code) => getETFDetail(code))),
+        getPerformanceComparison(codes),
+      ])
+      setEtfs(etfResults.filter((e): e is ETFDetail => e !== null))
+      setPerformance(perfData)
       setIsLoading(false)
     }
-    fetchETFs()
+    fetchData()
   }, [codes])
 
   if (codes.length === 0) {
@@ -120,6 +133,80 @@ export function ComparePage() {
                     </td>
                   ))}
                 </tr>
+                {performance && (
+                  <>
+                    <tr className={styles.sectionHeader}>
+                      <td colSpan={etfs.length + 1}>パフォーマンス</td>
+                    </tr>
+                    <tr>
+                      <td>1ヶ月リターン</td>
+                      {etfs.map((etf) => {
+                        const perf = performance.items.find(
+                          (p) => p.code === etf.code
+                        )
+                        return (
+                          <td key={etf.code}>
+                            <ReturnValue value={perf?.returns['1m']} />
+                          </td>
+                        )
+                      })}
+                    </tr>
+                    <tr>
+                      <td>3ヶ月リターン</td>
+                      {etfs.map((etf) => {
+                        const perf = performance.items.find(
+                          (p) => p.code === etf.code
+                        )
+                        return (
+                          <td key={etf.code}>
+                            <ReturnValue value={perf?.returns['3m']} />
+                          </td>
+                        )
+                      })}
+                    </tr>
+                    <tr>
+                      <td>6ヶ月リターン</td>
+                      {etfs.map((etf) => {
+                        const perf = performance.items.find(
+                          (p) => p.code === etf.code
+                        )
+                        return (
+                          <td key={etf.code}>
+                            <ReturnValue value={perf?.returns['6m']} />
+                          </td>
+                        )
+                      })}
+                    </tr>
+                    <tr>
+                      <td>1年リターン</td>
+                      {etfs.map((etf) => {
+                        const perf = performance.items.find(
+                          (p) => p.code === etf.code
+                        )
+                        return (
+                          <td key={etf.code}>
+                            <ReturnValue value={perf?.returns['1y']} />
+                          </td>
+                        )
+                      })}
+                    </tr>
+                    <tr>
+                      <td>ボラティリティ</td>
+                      {etfs.map((etf) => {
+                        const perf = performance.items.find(
+                          (p) => p.code === etf.code
+                        )
+                        return (
+                          <td key={etf.code}>
+                            {perf?.volatility != null
+                              ? `${perf.volatility.toFixed(2)}%`
+                              : '-'}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  </>
+                )}
               </tbody>
             </table>
           </div>
@@ -176,5 +263,22 @@ function CompareChart({
       {error && <ErrorMessage message="チャートの取得に失敗しました" />}
       {data && <PriceChart data={data.data} height={200} />}
     </div>
+  )
+}
+
+function ReturnValue({ value }: { value: number | null | undefined }) {
+  if (value == null) {
+    return <span>-</span>
+  }
+
+  const isPositive = value >= 0
+  const sign = isPositive ? '+' : ''
+  const className = isPositive ? styles.positive : styles.negative
+
+  return (
+    <span className={className}>
+      {sign}
+      {value.toFixed(2)}%
+    </span>
   )
 }

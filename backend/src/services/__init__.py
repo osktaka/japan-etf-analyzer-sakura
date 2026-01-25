@@ -4,6 +4,8 @@ from .tag_service import TagService
 from .etf_service import ETFService
 from .chart_service import ChartService
 from .recommend_service import RecommendService
+from .scoring_service import ScoringService
+from .compare_service import CompareService
 
 __all__ = [
     "CategoryService",
@@ -11,4 +13,6 @@ __all__ = [
     "ETFService",
     "ChartService",
     "RecommendService",
+    "ScoringService",
+    "CompareService",
 ]

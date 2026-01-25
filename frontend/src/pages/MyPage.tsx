@@ -2,16 +2,27 @@
 import { useState } from 'react'
 import { ETFCard } from '../components/etf/ETFCard'
 import { ETFDetailModal } from '../components/modal/ETFDetailModal'
+import { TradeForm, TradeList } from '../components/trade'
 import { useAuth } from '../hooks/useAuth'
 import { useFavorites } from '../hooks/useFavorites'
-import { ETFSummary } from '../api/types'
+import { useTrades } from '../hooks/useTrades'
+import { ETFSummary, CreateTradeRequest } from '../api/types'
 import styles from './MyPage.module.css'
 
 export function MyPage() {
   const { user } = useAuth()
   const { favorites, isLoading, error, toggleFavorite, isFavorite } =
     useFavorites()
+  const {
+    trades,
+    isLoading: tradesLoading,
+    error: tradesError,
+    createTrade,
+    updateTrade,
+    deleteTrade,
+  } = useTrades()
   const [selectedETF, setSelectedETF] = useState<ETFSummary | null>(null)
+  const [showTradeForm, setShowTradeForm] = useState(false)
 
   const handleCardClick = (etf: ETFSummary) => {
     setSelectedETF(etf)
@@ -19,6 +30,14 @@ export function MyPage() {
 
   const handleCloseModal = () => {
     setSelectedETF(null)
+  }
+
+  const handleCreateTrade = async (data: CreateTradeRequest) => {
+    const success = await createTrade(data)
+    if (success) {
+      setShowTradeForm(false)
+    }
+    return success
   }
 
   return (
@@ -57,6 +76,37 @@ export function MyPage() {
             ))}
           </div>
         )}
+      </section>
+
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>売買履歴</h2>
+          {!showTradeForm && (
+            <button
+              className={styles.addBtn}
+              onClick={() => setShowTradeForm(true)}
+            >
+              取引を追加
+            </button>
+          )}
+        </div>
+
+        {showTradeForm && (
+          <div className={styles.formWrapper}>
+            <TradeForm
+              onSubmit={handleCreateTrade}
+              onCancel={() => setShowTradeForm(false)}
+            />
+          </div>
+        )}
+
+        <TradeList
+          trades={trades}
+          isLoading={tradesLoading}
+          error={tradesError}
+          onUpdate={updateTrade}
+          onDelete={deleteTrade}
+        />
       </section>
 
       {selectedETF && (

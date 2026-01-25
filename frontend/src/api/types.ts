@@ -114,3 +114,71 @@ export interface Favorite {
   created_at: string
   etf: ETFSummary
 }
+
+export interface Trade {
+  id: number
+  user_id: number
+  etf_code: string
+  trade_type: 'buy' | 'sell'
+  quantity: number
+  price: number
+  trade_date: string
+  memo: string | null
+  total_amount: number
+  created_at: string
+  updated_at: string
+  etf?: ETFSummary
+}
+
+export interface CreateTradeRequest {
+  etf_code: string
+  trade_type: 'buy' | 'sell'
+  quantity: number
+  price: number
+  trade_date: string
+  memo?: string
+}
+
+export interface UpdateTradeRequest {
+  trade_type?: 'buy' | 'sell'
+  quantity?: number
+  price?: number
+  trade_date?: string
+  memo?: string
+}
+
+export interface Holding {
+  etf_code: string
+  etf: ETFSummary | null
+  quantity: number
+  average_cost: number
+  total_cost: number
+  current_price: number
+  current_value: number
+  unrealized_pnl: number
+  unrealized_pnl_percent: number
+}
+
+export interface PortfolioSummary {
+  total_value: number
+  total_cost: number
+  total_unrealized_pnl: number
+  total_unrealized_pnl_percent: number
+  holdings_count: number
+}
+
+export interface ETFPerformance {
+  code: string
+  returns: {
+    '1m': number | null
+    '3m': number | null
+    '6m': number | null
+    '1y': number | null
+  }
+  volatility: number | null
+}
+
+export interface PerformanceComparison {
+  items: ETFPerformance[]
+  periods: string[]
+}

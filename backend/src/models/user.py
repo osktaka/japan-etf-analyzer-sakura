@@ -23,6 +23,11 @@ class User(db.Model, UserMixin, TimestampMixin):
         "Favorite", back_populates="user", lazy="dynamic", cascade="all, delete-orphan"
     )
 
+    # Relationship to trades
+    trades = db.relationship(
+        "Trade", back_populates="user", lazy="dynamic", cascade="all, delete-orphan"
+    )
+
     def set_password(self, password: str) -> None:
         """Set hashed password."""
         self.password_hash = generate_password_hash(password)

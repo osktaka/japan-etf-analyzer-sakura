@@ -1,0 +1,116 @@
+/** Holdings list styles */
+.container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.loading,
+.error,
+.empty {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+}
+
+.error {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.hint {
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  color: #94a3b8;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.table th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  background: #f8fafc;
+  text-transform: uppercase;
+}
+
+.table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.right {
+  text-align: right;
+}
+
+.etfBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.etfBtn:hover .code {
+  color: #3b82f6;
+}
+
+.code {
+  font-weight: 600;
+  color: #1e293b;
+  transition: color 0.2s;
+}
+
+.name {
+  font-size: 0.75rem;
+  color: #64748b;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pnl {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.pnlPercent {
+  font-size: 0.75rem;
+}
+
+.positive {
+  color: #16a34a;
+}
+
+.negative {
+  color: #dc2626;
+}
+
+@media (max-width: 768px) {
+  .container {
+    overflow-x: auto;
+  }
+
+  .table {
+    min-width: 600px;
+  }
+}
