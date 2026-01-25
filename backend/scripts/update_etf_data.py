@@ -19,6 +19,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -72,14 +73,39 @@ def update_single_etf(code: str, dry_run: bool = False) -> bool:
             logger.warning(f"No data returned for {ticker}")
             return False
 
+        # ticker.info から配当利回りと総資産を取得
+        info = stock.info
+        dividend_yield = info.get("dividendYield")  # 既にパーセント値 (e.g., 1.94)
+        total_assets = info.get("totalAssets")  # 整数 (円)
+
+        # 配当利回りを丸める
+        if dividend_yield is not None:
+            dividend_yield = round(dividend_yield, 2)
+
         # DBに保存（Flask app contextが必要）
         save_to_db(code, df)
-        logger.info(f"Updated {code}: {len(df)} records")
+        update_etf_info(code, dividend_yield, total_assets)
+        yield_str = f"{dividend_yield}%" if dividend_yield else "N/A"
+        assets_str = f"{total_assets:,}" if total_assets else "N/A"
+        logger.info(f"Updated {code}: {len(df)} records, yield={yield_str}, assets={assets_str}")
         return True
 
     except Exception as e:
         logger.error(f"Failed to update {code}: {e}")
         return False
+
+
+def update_etf_info(code: str, dividend_yield: Optional[float], total_assets: Optional[int]) -> None:
+    """Update ETF info (dividend yield, total assets)."""
+    from src.models import ETF, db
+
+    etf = ETF.query.filter_by(code=code).first()
+    if etf:
+        if dividend_yield is not None:
+            etf.dividend_yield = dividend_yield
+        if total_assets is not None:
+            etf.total_assets = total_assets
+        db.session.commit()
 
 
 def save_to_db(code: str, df) -> None:

@@ -12,6 +12,7 @@ import logging
 import re
 import sys
 from pathlib import Path
+from typing import Optional
 
 import requests
 from bs4 import BeautifulSoup
@@ -23,6 +24,21 @@ logger = logging.getLogger(__name__)
 JPX_ETF_URL = "https://www.jpx.co.jp/equities/products/etfs/issues/01.html"
 
 OUTPUT_PATH = Path(__file__).parent.parent / "src" / "data" / "etf_master.json"
+
+
+def parse_expense_ratio(text: str) -> Optional[float]:
+    """Parse expense ratio from text (e.g., '0.12%' -> 0.12)."""
+    if not text:
+        return None
+    text = text.strip()
+    # 「%」を除去して数値に変換
+    match = re.search(r"([\d.]+)\s*%?", text)
+    if match:
+        try:
+            return float(match.group(1))
+        except ValueError:
+            return None
+    return None
 
 
 def fetch_jpx_etf_list() -> list:
@@ -53,6 +69,11 @@ def fetch_jpx_etf_list() -> list:
         index = cells[0].get_text(strip=True)
         manager = cells[3].get_text(strip=True)
 
+        # 信託報酬（cells[4]）をパース
+        expense_ratio = None
+        if len(cells) > 4:
+            expense_ratio = parse_expense_ratio(cells[4].get_text(strip=True))
+
         # Clean up name (remove iNAV link text)
         name = re.sub(r"iNAV.*$", "", name).strip()
         name = re.sub(r"\s+", " ", name)
@@ -64,14 +85,15 @@ def fetch_jpx_etf_list() -> list:
 
         # Validate code (4-digit or 3-digit+A)
         if re.match(r"^(\d{4}|\d{3}A)$", code):
-            etfs.append(
-                {
-                    "code": code,
-                    "name": name,
-                    "index": index,
-                    "manager": manager,
-                }
-            )
+            etf_entry = {
+                "code": code,
+                "name": name,
+                "index": index,
+                "manager": manager,
+            }
+            if expense_ratio is not None:
+                etf_entry["expense_ratio"] = expense_ratio
+            etfs.append(etf_entry)
 
     return etfs
 

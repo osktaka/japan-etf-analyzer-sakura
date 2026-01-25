@@ -97,6 +97,7 @@ def sync_etf_master():
         name = etf_data.get("name", "")
         index_name = etf_data.get("index", "")
         manager = etf_data.get("manager", "")
+        expense_ratio = etf_data.get("expense_ratio")
 
         # カテゴリを推定
         category_name = estimate_category(index_name, name)
@@ -113,6 +114,10 @@ def sync_etf_master():
             "manager": manager,
             "category_id": category_id,
         }
+
+        # 信託報酬がある場合は追加
+        if expense_ratio is not None:
+            data_to_save["expense_ratio"] = expense_ratio
 
         etf_repo.create_or_update(data_to_save)
 
