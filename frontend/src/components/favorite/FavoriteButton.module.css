@@ -1,0 +1,45 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  transition: all 0.2s;
+}
+
+.button:hover {
+  color: var(--color-danger);
+  background-color: rgba(239, 68, 68, 0.1);
+}
+
+.button.active {
+  color: var(--color-danger);
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.icon {
+  display: block;
+}
+
+.sm .icon {
+  width: 16px;
+  height: 16px;
+}
+
+.md .icon {
+  width: 20px;
+  height: 20px;
+}
+
+.lg .icon {
+  width: 24px;
+  height: 24px;
+}

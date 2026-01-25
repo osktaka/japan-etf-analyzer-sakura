@@ -44,6 +44,12 @@
   margin-bottom: var(--spacing-lg);
 }
 
+.headerTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .code {
   font-weight: 700;
   font-size: var(--text-xl);

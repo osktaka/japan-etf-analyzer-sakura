@@ -1,30 +1,34 @@
 /** Recommend section component */
-import { useState, useEffect } from 'react';
-import { getPerspectives, Perspective } from '../../api';
-import { useRecommendations } from '../../hooks';
-import { Loading, ErrorMessage } from '../common';
-import { ETFCard } from '../etf';
-import { PerspectiveTabs } from './PerspectiveTabs';
-import styles from './RecommendSection.module.css';
+import { useState, useEffect } from 'react'
+import { getPerspectives, Perspective } from '../../api'
+import { useRecommendations } from '../../hooks'
+import { Loading, ErrorMessage } from '../common'
+import { ETFCard } from '../etf'
+import { PerspectiveTabs } from './PerspectiveTabs'
+import styles from './RecommendSection.module.css'
 
 interface RecommendSectionProps {
-  onETFClick: (code: string) => void;
-  isInCompare?: (code: string) => boolean;
-  onCompareToggle?: (code: string) => void;
+  onETFClick: (code: string) => void
+  isInCompare?: (code: string) => boolean
+  onCompareToggle?: (code: string) => void
+  isFavorite?: (code: string) => boolean
+  onFavoriteToggle?: (code: string) => void
 }
 
 export function RecommendSection({
   onETFClick,
   isInCompare,
   onCompareToggle,
+  isFavorite,
+  onFavoriteToggle,
 }: RecommendSectionProps) {
-  const [perspectives, setPerspectives] = useState<Perspective[]>([]);
-  const [selected, setSelected] = useState('popular');
-  const { data, isLoading, error } = useRecommendations(selected);
+  const [perspectives, setPerspectives] = useState<Perspective[]>([])
+  const [selected, setSelected] = useState('popular')
+  const { data, isLoading, error } = useRecommendations(selected)
 
   useEffect(() => {
-    getPerspectives().then(setPerspectives);
-  }, []);
+    getPerspectives().then(setPerspectives)
+  }, [])
 
   return (
     <section className={styles.section}>
@@ -51,10 +55,14 @@ export function RecommendSection({
               isSelected={isInCompare?.(etf.code)}
               showCompareButton={!!onCompareToggle}
               onCompareToggle={() => onCompareToggle?.(etf.code)}
+              isFavorite={isFavorite?.(etf.code)}
+              onFavoriteToggle={
+                onFavoriteToggle ? () => onFavoriteToggle(etf.code) : undefined
+              }
             />
           ))}
         </div>
       )}
     </section>
-  );
+  )
 }

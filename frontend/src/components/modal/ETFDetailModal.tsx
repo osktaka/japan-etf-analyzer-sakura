@@ -1,16 +1,24 @@
 /** ETF detail modal component */
-import { useETFDetail } from '../../hooks';
-import { formatPrice, formatPercent, formatAssets, formatDate } from '../../utils';
-import { Loading, ErrorMessage } from '../common';
-import { TagBadge } from '../etf';
-import { ChartContainer } from '../chart';
-import styles from './ETFDetailModal.module.css';
+import { useETFDetail } from '../../hooks'
+import {
+  formatPrice,
+  formatPercent,
+  formatAssets,
+  formatDate,
+} from '../../utils'
+import { Loading, ErrorMessage } from '../common'
+import { TagBadge } from '../etf'
+import { FavoriteButton } from '../favorite'
+import { ChartContainer } from '../chart'
+import styles from './ETFDetailModal.module.css'
 
 interface ETFDetailModalProps {
-  code: string | null;
-  onClose: () => void;
-  isInCompare?: boolean;
-  onCompareToggle?: () => void;
+  code: string | null
+  onClose: () => void
+  isInCompare?: boolean
+  onCompareToggle?: () => void
+  isFavorite?: boolean
+  onFavoriteToggle?: () => void
 }
 
 export function ETFDetailModal({
@@ -18,10 +26,12 @@ export function ETFDetailModal({
   onClose,
   isInCompare,
   onCompareToggle,
+  isFavorite,
+  onFavoriteToggle,
 }: ETFDetailModalProps) {
-  const { data, isLoading, error, refetch } = useETFDetail(code);
+  const { data, isLoading, error, refetch } = useETFDetail(code)
 
-  if (!code) return null;
+  if (!code) return null
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -32,16 +42,30 @@ export function ETFDetailModal({
 
         {isLoading && <Loading />}
         {error && (
-          <ErrorMessage message="データの取得に失敗しました" onRetry={refetch} />
+          <ErrorMessage
+            message="データの取得に失敗しました"
+            onRetry={refetch}
+          />
         )}
 
         {data && (
           <>
             <div className={styles.header}>
-              <div>
-                <span className={styles.code}>{data.code}</span>
-                {data.category && (
-                  <span className={styles.category}>{data.category.name}</span>
+              <div className={styles.headerTop}>
+                <div>
+                  <span className={styles.code}>{data.code}</span>
+                  {data.category && (
+                    <span className={styles.category}>
+                      {data.category.name}
+                    </span>
+                  )}
+                </div>
+                {onFavoriteToggle && (
+                  <FavoriteButton
+                    isFavorite={isFavorite ?? false}
+                    onClick={onFavoriteToggle}
+                    size="lg"
+                  />
                 )}
               </div>
               <h2 className={styles.name}>{data.name}</h2>
@@ -57,7 +81,9 @@ export function ETFDetailModal({
             <div className={styles.metrics}>
               <div className={styles.metric}>
                 <span className={styles.label}>市場価格</span>
-                <span className={styles.value}>{formatPrice(data.market_price)}</span>
+                <span className={styles.value}>
+                  {formatPrice(data.market_price)}
+                </span>
               </div>
               <div className={styles.metric}>
                 <span className={styles.label}>基準価額</span>
@@ -83,7 +109,9 @@ export function ETFDetailModal({
               </div>
               <div className={styles.metric}>
                 <span className={styles.label}>純資産総額</span>
-                <span className={styles.value}>{formatAssets(data.total_assets)}</span>
+                <span className={styles.value}>
+                  {formatAssets(data.total_assets)}
+                </span>
               </div>
             </div>
 
@@ -112,5 +140,5 @@ export function ETFDetailModal({
         )}
       </div>
     </div>
-  );
+  )
 }

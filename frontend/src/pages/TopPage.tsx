@@ -1,35 +1,45 @@
 /** Top page component */
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useETFSearch, useCompareList } from '../hooks';
-import { SearchBar, SearchResults } from '../components/search';
-import { RecommendSection } from '../components/recommend';
-import { ETFDetailModal, LoginPromptModal } from '../components/modal';
-import { ROUTES, MAX_COMPARE_ITEMS } from '../utils';
-import styles from './TopPage.module.css';
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useETFSearch, useCompareList, useFavorites, useAuth } from '../hooks'
+import { SearchBar, SearchResults } from '../components/search'
+import { RecommendSection } from '../components/recommend'
+import { ETFDetailModal, LoginPromptModal } from '../components/modal'
+import { ROUTES, MAX_COMPARE_ITEMS } from '../utils'
+import styles from './TopPage.module.css'
 
 export function TopPage() {
-  const navigate = useNavigate();
-  const [selectedCode, setSelectedCode] = useState<string | null>(null);
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
-  const { items, isLoading, error, search, reset } = useETFSearch();
-  const { count, isInList, toggleCode, canAdd } = useCompareList();
+  const navigate = useNavigate()
+  const [selectedCode, setSelectedCode] = useState<string | null>(null)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  const { items, isLoading, error, search, reset } = useETFSearch()
+  const { count, isInList, toggleCode, canAdd } = useCompareList()
+  const { isAuthenticated } = useAuth()
+  const { isFavorite, toggleFavorite } = useFavorites()
 
   const handleSearch = (keyword: string) => {
     if (keyword.trim()) {
-      search({ keyword });
+      search({ keyword })
     } else {
-      reset();
+      reset()
     }
-  };
+  }
 
   const handleCompareToggle = (code: string) => {
     if (!isInList(code) && !canAdd) {
-      alert(`比較は最大${MAX_COMPARE_ITEMS}件までです`);
-      return;
+      alert(`比較は最大${MAX_COMPARE_ITEMS}件までです`)
+      return
     }
-    toggleCode(code);
-  };
+    toggleCode(code)
+  }
+
+  const handleFavoriteToggle = (code: string) => {
+    if (!isAuthenticated) {
+      setShowLoginPrompt(true)
+      return
+    }
+    toggleFavorite(code)
+  }
 
   return (
     <div className={styles.page}>
@@ -39,7 +49,10 @@ export function TopPage() {
           ETFを検索・比較して、あなたに最適な投資先を見つけましょう
         </p>
         <div className={styles.searchWrapper}>
-          <SearchBar onSearch={handleSearch} placeholder="銘柄コードまたは名前で検索..." />
+          <SearchBar
+            onSearch={handleSearch}
+            placeholder="銘柄コードまたは名前で検索..."
+          />
         </div>
       </section>
 
@@ -53,6 +66,8 @@ export function TopPage() {
             onETFClick={setSelectedCode}
             isInCompare={isInList}
             onCompareToggle={handleCompareToggle}
+            isFavorite={isFavorite}
+            onFavoriteToggle={handleFavoriteToggle}
           />
         </section>
       )}
@@ -61,6 +76,8 @@ export function TopPage() {
         onETFClick={setSelectedCode}
         isInCompare={isInList}
         onCompareToggle={handleCompareToggle}
+        isFavorite={isFavorite}
+        onFavoriteToggle={handleFavoriteToggle}
       />
 
       {count > 0 && (
@@ -79,7 +96,13 @@ export function TopPage() {
         code={selectedCode}
         onClose={() => setSelectedCode(null)}
         isInCompare={selectedCode ? isInList(selectedCode) : false}
-        onCompareToggle={() => selectedCode && handleCompareToggle(selectedCode)}
+        onCompareToggle={() =>
+          selectedCode && handleCompareToggle(selectedCode)
+        }
+        isFavorite={selectedCode ? isFavorite(selectedCode) : false}
+        onFavoriteToggle={() =>
+          selectedCode && handleFavoriteToggle(selectedCode)
+        }
       />
 
       <LoginPromptModal
@@ -87,5 +110,5 @@ export function TopPage() {
         onClose={() => setShowLoginPrompt(false)}
       />
     </div>
-  );
+  )
 }

@@ -1,2 +1,1 @@
-export { FavoriteButton } from './FavoriteButton';
-export { CompareButton } from './CompareButton';
+export { CompareButton } from './CompareButton'

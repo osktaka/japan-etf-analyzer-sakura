@@ -1,15 +1,18 @@
 /** ETF card component */
-import { ETFSummary } from '../../api';
-import { formatPrice, formatPercent } from '../../utils';
-import { TagBadge } from './TagBadge';
-import styles from './ETFCard.module.css';
+import { ETFSummary } from '../../api'
+import { formatPrice, formatPercent } from '../../utils'
+import { FavoriteButton } from '../favorite'
+import { TagBadge } from './TagBadge'
+import styles from './ETFCard.module.css'
 
 interface ETFCardProps {
-  etf: ETFSummary;
-  onClick?: () => void;
-  isSelected?: boolean;
-  showCompareButton?: boolean;
-  onCompareToggle?: () => void;
+  etf: ETFSummary
+  onClick?: () => void
+  isSelected?: boolean
+  showCompareButton?: boolean
+  onCompareToggle?: () => void
+  isFavorite?: boolean
+  onFavoriteToggle?: () => void
 }
 
 export function ETFCard({
@@ -18,6 +21,8 @@ export function ETFCard({
   isSelected,
   showCompareButton,
   onCompareToggle,
+  isFavorite,
+  onFavoriteToggle,
 }: ETFCardProps) {
   return (
     <div
@@ -29,7 +34,16 @@ export function ETFCard({
     >
       <div className={styles.header}>
         <span className={styles.code}>{etf.code}</span>
-        {etf.category && <span className={styles.category}>{etf.category}</span>}
+        {etf.category && (
+          <span className={styles.category}>{etf.category}</span>
+        )}
+        {onFavoriteToggle && (
+          <FavoriteButton
+            isFavorite={isFavorite ?? false}
+            onClick={onFavoriteToggle}
+            size="sm"
+          />
+        )}
       </div>
       <h3 className={styles.name}>{etf.name}</h3>
       <div className={styles.metrics}>
@@ -39,11 +53,15 @@ export function ETFCard({
         </div>
         <div className={styles.metric}>
           <span className={styles.label}>配当利回り</span>
-          <span className={styles.value}>{formatPercent(etf.dividend_yield)}</span>
+          <span className={styles.value}>
+            {formatPercent(etf.dividend_yield)}
+          </span>
         </div>
         <div className={styles.metric}>
           <span className={styles.label}>信託報酬</span>
-          <span className={styles.value}>{formatPercent(etf.expense_ratio)}</span>
+          <span className={styles.value}>
+            {formatPercent(etf.expense_ratio)}
+          </span>
         </div>
       </div>
       {etf.tags.length > 0 && (
@@ -57,13 +75,13 @@ export function ETFCard({
         <button
           className={`${styles.compareBtn} ${isSelected ? styles.active : ''}`}
           onClick={(e) => {
-            e.stopPropagation();
-            onCompareToggle?.();
+            e.stopPropagation()
+            onCompareToggle?.()
           }}
         >
           {isSelected ? '比較から外す' : '比較に追加'}
         </button>
       )}
     </div>
-  );
+  )
 }

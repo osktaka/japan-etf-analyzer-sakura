@@ -24,6 +24,10 @@
   margin-bottom: var(--spacing-sm);
 }
 
+.header > :last-child:not(.code):not(.category) {
+  margin-left: auto;
+}
+
 .code {
   font-weight: 700;
   font-size: var(--text-lg);

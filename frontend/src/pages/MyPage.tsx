@@ -1,25 +1,25 @@
 /** My page component */
-import { useState } from 'react';
-import { FavoriteButton } from '../components/actions/FavoriteButton';
-import { ETFCard } from '../components/etf/ETFCard';
-import { ETFDetailModal } from '../components/modal/ETFDetailModal';
-import { useAuth } from '../hooks/useAuth';
-import { useFavorites } from '../hooks/useFavorites';
-import { ETFSummary } from '../api/types';
-import styles from './MyPage.module.css';
+import { useState } from 'react'
+import { ETFCard } from '../components/etf/ETFCard'
+import { ETFDetailModal } from '../components/modal/ETFDetailModal'
+import { useAuth } from '../hooks/useAuth'
+import { useFavorites } from '../hooks/useFavorites'
+import { ETFSummary } from '../api/types'
+import styles from './MyPage.module.css'
 
 export function MyPage() {
-  const { user } = useAuth();
-  const { favorites, isLoading, error, toggleFavorite } = useFavorites();
-  const [selectedETF, setSelectedETF] = useState<ETFSummary | null>(null);
+  const { user } = useAuth()
+  const { favorites, isLoading, error, toggleFavorite, isFavorite } =
+    useFavorites()
+  const [selectedETF, setSelectedETF] = useState<ETFSummary | null>(null)
 
   const handleCardClick = (etf: ETFSummary) => {
-    setSelectedETF(etf);
-  };
+    setSelectedETF(etf)
+  }
 
   const handleCloseModal = () => {
-    setSelectedETF(null);
-  };
+    setSelectedETF(null)
+  }
 
   return (
     <div className={styles.container}>
@@ -47,20 +47,13 @@ export function MyPage() {
         ) : (
           <div className={styles.grid}>
             {favorites.map((favorite) => (
-              <div key={favorite.id} className={styles.cardWrapper}>
-                <ETFCard
-                  etf={favorite.etf}
-                  onClick={() => handleCardClick(favorite.etf)}
-                />
-                <div className={styles.favoriteAction}>
-                  <FavoriteButton
-                    isFavorite={true}
-                    onToggle={() => toggleFavorite(favorite.etf_code)}
-                    isLoggedIn={true}
-                    size="sm"
-                  />
-                </div>
-              </div>
+              <ETFCard
+                key={favorite.id}
+                etf={favorite.etf}
+                onClick={() => handleCardClick(favorite.etf)}
+                isFavorite={isFavorite(favorite.etf_code)}
+                onFavoriteToggle={() => toggleFavorite(favorite.etf_code)}
+              />
             ))}
           </div>
         )}
@@ -70,7 +63,7 @@ export function MyPage() {
         <ETFDetailModal code={selectedETF.code} onClose={handleCloseModal} />
       )}
     </div>
-  );
+  )
 }
 
-export default MyPage;
+export default MyPage

@@ -1,16 +1,18 @@
 /** Search results component */
-import { ETFSummary } from '../../api';
-import { ETFCard } from '../etf';
-import { Loading, ErrorMessage } from '../common';
-import styles from './SearchResults.module.css';
+import { ETFSummary } from '../../api'
+import { ETFCard } from '../etf'
+import { Loading, ErrorMessage } from '../common'
+import styles from './SearchResults.module.css'
 
 interface SearchResultsProps {
-  items: ETFSummary[];
-  isLoading: boolean;
-  error: Error | null;
-  onETFClick: (code: string) => void;
-  isInCompare?: (code: string) => boolean;
-  onCompareToggle?: (code: string) => void;
+  items: ETFSummary[]
+  isLoading: boolean
+  error: Error | null
+  onETFClick: (code: string) => void
+  isInCompare?: (code: string) => boolean
+  onCompareToggle?: (code: string) => void
+  isFavorite?: (code: string) => boolean
+  onFavoriteToggle?: (code: string) => void
 }
 
 export function SearchResults({
@@ -20,13 +22,15 @@ export function SearchResults({
   onETFClick,
   isInCompare,
   onCompareToggle,
+  isFavorite,
+  onFavoriteToggle,
 }: SearchResultsProps) {
   if (isLoading) {
-    return <Loading message="検索中..." />;
+    return <Loading message="検索中..." />
   }
 
   if (error) {
-    return <ErrorMessage message="検索に失敗しました" />;
+    return <ErrorMessage message="検索に失敗しました" />
   }
 
   if (items.length === 0) {
@@ -34,7 +38,7 @@ export function SearchResults({
       <div className={styles.empty}>
         <p>検索結果がありません</p>
       </div>
-    );
+    )
   }
 
   return (
@@ -47,8 +51,12 @@ export function SearchResults({
           isSelected={isInCompare?.(etf.code)}
           showCompareButton={!!onCompareToggle}
           onCompareToggle={() => onCompareToggle?.(etf.code)}
+          isFavorite={isFavorite?.(etf.code)}
+          onFavoriteToggle={
+            onFavoriteToggle ? () => onFavoriteToggle(etf.code) : undefined
+          }
         />
       ))}
     </div>
-  );
+  )
 }
