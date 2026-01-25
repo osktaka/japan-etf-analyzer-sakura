@@ -21,6 +21,8 @@ class ETF(TimestampMixin, db.Model):
     deviation_rate = db.Column(db.Numeric(5, 2), nullable=True)
     total_assets = db.Column(db.Numeric(15, 0), nullable=True)
     listing_date = db.Column(db.Date, nullable=True)
+    index_name = db.Column(db.String(100), nullable=True)
+    manager = db.Column(db.String(100), nullable=True)
 
     # Relationships
     category = db.relationship("Category", back_populates="etfs")
@@ -63,6 +65,8 @@ class ETF(TimestampMixin, db.Model):
             "listing_date": (
                 self.listing_date.isoformat() if self.listing_date else None
             ),
+            "index_name": self.index_name,
+            "manager": self.manager,
         }
         if include_tags:
             data["tags"] = [tag.to_dict() for tag in self.tags]

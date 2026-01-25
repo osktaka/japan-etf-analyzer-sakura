@@ -14,6 +14,9 @@ class Config:
     BASE_DIR = Path("/app")
     DATA_DIR = BASE_DIR / "data"
 
+    # モックデータ使用フラグ（True: モック、False: 本番yfinance）
+    USE_MOCK_DATA = os.environ.get("USE_MOCK_DATA", "true").lower() == "true"
+
     @classmethod
     def init_app(cls, app):
         """Initialize application with this config."""
