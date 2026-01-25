@@ -43,10 +43,16 @@ make help
 
 ## ポート番号
 
-| サービス | ホスト | コンテナ |
-|---------|--------|---------|
-| Frontend | 3000 | 3000 |
-| Backend | 5000 | 5000 |
+| サービス | ホスト | コンテナ | URL |
+|---------|--------|---------|-----|
+| Frontend | 3902 | 3902 | http://localhost:3902 |
+| Backend | 8902 | 8902 | http://localhost:8902 |
+
+## テストユーザー
+
+| Email | Password | Username |
+|-------|----------|----------|
+| test@example.com | testpass123 | test |
 
 ## ディレクトリ構成
 
