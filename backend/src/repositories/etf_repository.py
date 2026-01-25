@@ -8,6 +8,15 @@ from src.models import ETF, ETFTagRelation, db
 from .base_repository import BaseRepository
 
 
+SORT_COLUMNS = {
+    "code": ETF.code,
+    "name": ETF.name,
+    "dividend_yield": ETF.dividend_yield,
+    "expense_ratio": ETF.expense_ratio,
+    "total_assets": ETF.total_assets,
+}
+
+
 class ETFRepository(BaseRepository[ETF]):
     """Repository for ETF operations."""
 
@@ -17,17 +26,15 @@ class ETFRepository(BaseRepository[ETF]):
         """Get ETF by code."""
         return db.session.get(ETF, code)
 
-    def search(
+    def _build_filter_query(
         self,
         keyword: str = None,
         category_id: int = None,
         tag_ids: List[int] = None,
         min_dividend_yield: float = None,
         max_expense_ratio: float = None,
-        limit: int = 50,
-        offset: int = 0,
-    ) -> List[ETF]:
-        """Search ETFs with filters."""
+    ):
+        """Build filtered query with common conditions."""
         query = db.session.query(ETF)
 
         if keyword:
@@ -54,7 +61,57 @@ class ETFRepository(BaseRepository[ETF]):
         if max_expense_ratio is not None:
             query = query.filter(ETF.expense_ratio <= max_expense_ratio)
 
+        return query
+
+    def search(
+        self,
+        keyword: str = None,
+        category_id: int = None,
+        tag_ids: List[int] = None,
+        min_dividend_yield: float = None,
+        max_expense_ratio: float = None,
+        sort: str = None,
+        order: str = "asc",
+        limit: int = 50,
+        offset: int = 0,
+    ) -> List[ETF]:
+        """Search ETFs with filters."""
+        query = self._build_filter_query(
+            keyword=keyword,
+            category_id=category_id,
+            tag_ids=tag_ids,
+            min_dividend_yield=min_dividend_yield,
+            max_expense_ratio=max_expense_ratio,
+        )
+
+        if sort and sort in SORT_COLUMNS:
+            column = SORT_COLUMNS[sort]
+            if order == "desc":
+                query = query.order_by(column.desc().nulls_last())
+            else:
+                query = query.order_by(column.asc().nulls_last())
+        else:
+            query = query.order_by(ETF.code.asc())
+
         return query.offset(offset).limit(limit).all()
+
+    def count(
+        self,
+        keyword: str = None,
+        category_id: int = None,
+        tag_ids: List[int] = None,
+        min_dividend_yield: float = None,
+        max_expense_ratio: float = None,
+    ) -> int:
+        """Count ETFs matching filters."""
+        query = self._build_filter_query(
+            keyword=keyword,
+            category_id=category_id,
+            tag_ids=tag_ids,
+            min_dividend_yield=min_dividend_yield,
+            max_expense_ratio=max_expense_ratio,
+        )
+        return query.count()
 
     def get_by_category(self, category_id: int) -> List[ETF]:
         """Get ETFs by category."""

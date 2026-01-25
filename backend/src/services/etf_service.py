@@ -18,6 +18,8 @@ class ETFService:
         tag_ids: Optional[List[int]] = None,
         min_dividend_yield: Optional[float] = None,
         max_expense_ratio: Optional[float] = None,
+        sort: Optional[str] = None,
+        order: str = "asc",
         limit: int = 50,
         offset: int = 0,
     ) -> Dict:
@@ -28,13 +30,22 @@ class ETFService:
             tag_ids=tag_ids,
             min_dividend_yield=min_dividend_yield,
             max_expense_ratio=max_expense_ratio,
+            sort=sort,
+            order=order,
             limit=limit,
             offset=offset,
+        )
+        total = self.repository.count(
+            keyword=keyword,
+            category_id=category_id,
+            tag_ids=tag_ids,
+            min_dividend_yield=min_dividend_yield,
+            max_expense_ratio=max_expense_ratio,
         )
 
         return {
             "items": [etf.to_summary_dict() for etf in etfs],
-            "total": len(etfs),
+            "total": total,
             "limit": limit,
             "offset": offset,
         }

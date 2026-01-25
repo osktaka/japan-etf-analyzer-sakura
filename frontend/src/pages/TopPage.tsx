@@ -1,29 +1,105 @@
 /** Top page component */
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useETFSearch, useCompareList, useFavorites, useAuth } from '../hooks'
-import { SearchBar, SearchResults } from '../components/search'
+import {
+  SearchBar,
+  SearchResults,
+  FilterPanel,
+  SortSelector,
+} from '../components/search'
+import { SearchParams, SortField, SortOrder } from '../api'
 import { RecommendSection } from '../components/recommend'
 import { ETFDetailModal, LoginPromptModal } from '../components/modal'
+import { Pagination } from '../components/common'
 import { ROUTES, MAX_COMPARE_ITEMS } from '../utils'
 import styles from './TopPage.module.css'
+
+const PAGE_SIZE = 50
 
 export function TopPage() {
   const navigate = useNavigate()
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
-  const { items, isLoading, error, search, reset } = useETFSearch()
+  const [hasSearched, setHasSearched] = useState(false)
+  const [currentKeyword, setCurrentKeyword] = useState('')
+  const [currentFilters, setCurrentFilters] = useState<SearchParams>({})
+  const [currentSort, setCurrentSort] = useState<SortField>('code')
+  const [currentOrder, setCurrentOrder] = useState<SortOrder>('asc')
+  const [currentPage, setCurrentPage] = useState(1)
+  const etfListRef = useRef<HTMLElement>(null)
+  const { items, total, isLoading, error, search } = useETFSearch()
   const { count, isInList, toggleCode, canAdd } = useCompareList()
   const { isAuthenticated } = useAuth()
   const { isFavorite, toggleFavorite } = useFavorites()
 
+  useEffect(() => {
+    search({ sort: currentSort, order: currentOrder, limit: PAGE_SIZE })
+  }, [search, currentSort, currentOrder])
+
   const handleSearch = (keyword: string) => {
-    if (keyword.trim()) {
-      search({ keyword })
-    } else {
-      reset()
-    }
+    const trimmed = keyword.trim()
+    setCurrentKeyword(trimmed)
+    setHasSearched(!!trimmed)
+    setCurrentPage(1)
+    search({
+      ...currentFilters,
+      keyword: trimmed || undefined,
+      sort: currentSort,
+      order: currentOrder,
+      limit: PAGE_SIZE,
+      offset: 0,
+    })
   }
+
+  const handleFilter = (filters: SearchParams) => {
+    setCurrentFilters(filters)
+    const hasFilters = !!(
+      filters.category_id ||
+      filters.tag_ids?.length ||
+      filters.min_dividend_yield ||
+      filters.max_expense_ratio
+    )
+    setHasSearched(hasFilters || !!currentKeyword)
+    setCurrentPage(1)
+    search({
+      ...filters,
+      keyword: currentKeyword || undefined,
+      sort: currentSort,
+      order: currentOrder,
+      limit: PAGE_SIZE,
+      offset: 0,
+    })
+  }
+
+  const handleSortChange = (sort: SortField, order: SortOrder) => {
+    setCurrentSort(sort)
+    setCurrentOrder(order)
+    setCurrentPage(1)
+    search({
+      ...currentFilters,
+      keyword: currentKeyword || undefined,
+      sort,
+      order,
+      limit: PAGE_SIZE,
+      offset: 0,
+    })
+  }
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    search({
+      ...currentFilters,
+      keyword: currentKeyword || undefined,
+      sort: currentSort,
+      order: currentOrder,
+      limit: PAGE_SIZE,
+      offset: (page - 1) * PAGE_SIZE,
+    })
+    etfListRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  const totalPages = Math.ceil(total / PAGE_SIZE)
 
   const handleCompareToggle = (code: string) => {
     if (!isInList(code) && !canAdd) {
@@ -56,21 +132,38 @@ export function TopPage() {
         </div>
       </section>
 
-      {items.length > 0 && (
-        <section className={styles.section}>
-          <h2 className={styles.sectionTitle}>検索結果</h2>
-          <SearchResults
-            items={items}
-            isLoading={isLoading}
-            error={error}
-            onETFClick={setSelectedCode}
-            isInCompare={isInList}
-            onCompareToggle={handleCompareToggle}
-            isFavorite={isFavorite}
-            onFavoriteToggle={handleFavoriteToggle}
+      <section className={styles.filterSection}>
+        <FilterPanel onFilter={handleFilter} />
+      </section>
+
+      <section ref={etfListRef} className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>
+            {hasSearched ? '検索結果' : '全銘柄一覧'}
+          </h2>
+          <SortSelector
+            sort={currentSort}
+            order={currentOrder}
+            onSortChange={handleSortChange}
           />
-        </section>
-      )}
+        </div>
+        <SearchResults
+          items={items}
+          total={total}
+          isLoading={isLoading}
+          error={error}
+          onETFClick={setSelectedCode}
+          isInCompare={isInList}
+          onCompareToggle={handleCompareToggle}
+          isFavorite={isFavorite}
+          onFavoriteToggle={handleFavoriteToggle}
+        />
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
+      </section>
 
       <RecommendSection
         onETFClick={setSelectedCode}
@@ -78,6 +171,9 @@ export function TopPage() {
         onCompareToggle={handleCompareToggle}
         isFavorite={isFavorite}
         onFavoriteToggle={handleFavoriteToggle}
+        onShowAll={() =>
+          etfListRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }
       />
 
       {count > 0 && (

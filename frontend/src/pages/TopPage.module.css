@@ -25,15 +25,28 @@
   justify-content: center;
 }
 
+.filterSection {
+  margin-bottom: var(--spacing-lg);
+}
+
 .section {
   margin-bottom: var(--spacing-2xl);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
 }
 
 .sectionTitle {
   font-size: var(--text-2xl);
   font-weight: 700;
   color: var(--color-text);
-  margin-bottom: var(--spacing-lg);
+  margin: 0;
 }
 
 .compareBar {

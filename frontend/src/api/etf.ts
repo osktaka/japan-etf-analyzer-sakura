@@ -10,12 +10,22 @@ import {
   Tag,
 } from './types'
 
+export type SortField =
+  | 'code'
+  | 'name'
+  | 'dividend_yield'
+  | 'expense_ratio'
+  | 'total_assets'
+export type SortOrder = 'asc' | 'desc'
+
 export interface SearchParams {
   keyword?: string
   category_id?: number
   tag_ids?: number[]
   min_dividend_yield?: number
   max_expense_ratio?: number
+  sort?: SortField
+  order?: SortOrder
   limit?: number
   offset?: number
 }
@@ -45,6 +55,8 @@ export async function searchETFs(params: SearchParams = {}): Promise<{
     queryParams.append('min_dividend_yield', String(params.min_dividend_yield))
   if (params.max_expense_ratio !== undefined)
     queryParams.append('max_expense_ratio', String(params.max_expense_ratio))
+  if (params.sort) queryParams.append('sort', params.sort)
+  if (params.order) queryParams.append('order', params.order)
   if (params.limit) queryParams.append('limit', String(params.limit))
   if (params.offset) queryParams.append('offset', String(params.offset))
 

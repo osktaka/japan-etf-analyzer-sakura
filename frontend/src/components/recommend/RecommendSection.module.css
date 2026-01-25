@@ -19,3 +19,25 @@
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: var(--spacing-lg);
 }
+
+.showAllWrapper {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--spacing-xl);
+}
+
+.showAllLink {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border: none;
+  background: none;
+  color: var(--color-primary);
+  font-size: var(--text-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.showAllLink:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}

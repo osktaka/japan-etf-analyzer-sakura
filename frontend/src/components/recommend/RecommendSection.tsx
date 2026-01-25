@@ -13,6 +13,7 @@ interface RecommendSectionProps {
   onCompareToggle?: (code: string) => void
   isFavorite?: (code: string) => boolean
   onFavoriteToggle?: (code: string) => void
+  onShowAll?: () => void
 }
 
 export function RecommendSection({
@@ -21,6 +22,7 @@ export function RecommendSection({
   onCompareToggle,
   isFavorite,
   onFavoriteToggle,
+  onShowAll,
 }: RecommendSectionProps) {
   const [perspectives, setPerspectives] = useState<Perspective[]>([])
   const [selected, setSelected] = useState('popular')
@@ -61,6 +63,17 @@ export function RecommendSection({
               }
             />
           ))}
+        </div>
+      )}
+      {onShowAll && (
+        <div className={styles.showAllWrapper}>
+          <button
+            type="button"
+            className={styles.showAllLink}
+            onClick={onShowAll}
+          >
+            もっと見る →
+          </button>
         </div>
       )}
     </section>
