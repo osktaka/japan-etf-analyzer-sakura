@@ -1,0 +1,32 @@
+# ビルド成果物
+node_modules/
+dist/
+build/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# キャッシュ
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+coverage/
+.turbo/
+
+# ログ・一時ファイル
+*.log
+logs/
+tmp/
+temp/
+worklogs/
+
+# IDE設定
+.idea/
+.vscode/
+*.swp
+
+# データベース（本番データ除外）
+*.sqlite
+*.db
+data/raw/
