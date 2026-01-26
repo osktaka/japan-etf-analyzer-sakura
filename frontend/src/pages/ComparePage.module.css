@@ -142,6 +142,38 @@
   font-weight: 600;
 }
 
+.chartControls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.modeToggle {
+  display: flex;
+  background-color: var(--color-bg);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.modeBtn {
+  padding: 6px 16px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  background-color: transparent;
+  transition: all 0.2s;
+}
+
+.modeBtn:hover {
+  color: var(--color-text);
+}
+
+.modeBtn.active {
+  background-color: var(--color-primary);
+  color: white;
+}
+
 .periods {
   display: flex;
   gap: 4px;
