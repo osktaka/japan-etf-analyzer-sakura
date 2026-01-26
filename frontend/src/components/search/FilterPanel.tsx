@@ -8,12 +8,14 @@ interface FilterPanelProps {
   onFilter: (params: SearchParams) => void
   onSearch: (keyword: string) => void
   initialParams?: SearchParams
+  initialKeyword?: string
 }
 
 export function FilterPanel({
   onFilter,
   onSearch,
   initialParams = {},
+  initialKeyword = '',
 }: FilterPanelProps) {
   const [categories, setCategories] = useState<Category[]>([])
   const [tags, setTags] = useState<Tag[]>([])
@@ -48,6 +50,20 @@ export function FilterPanel({
     }
     loadFilters()
   }, [])
+
+  // 親からのパラメータ変更（ブラウザバック等）を反映
+  // 各プロパティを個別に依存配列に指定して無限ループを防止
+  useEffect(() => {
+    setSelectedCategory(initialParams.category_id || null)
+    setSelectedTags(initialParams.tag_ids || [])
+    setMinDividend(initialParams.min_dividend_yield?.toString() || '')
+    setMaxExpense(initialParams.max_expense_ratio?.toString() || '')
+  }, [
+    initialParams.category_id,
+    initialParams.tag_ids,
+    initialParams.min_dividend_yield,
+    initialParams.max_expense_ratio,
+  ])
 
   // フィルタ適用ロジック
   const applyFilters = (
@@ -119,6 +135,7 @@ export function FilterPanel({
         <SearchBar
           onSearch={onSearch}
           placeholder="銘柄コードまたは名前で検索..."
+          initialKeyword={initialKeyword}
         />
       </div>
 

@@ -1,6 +1,6 @@
 /** Top page component */
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useETFSearch, useCompareList, useFavorites, useAuth } from '../hooks'
 import {
   SearchResults,
@@ -18,29 +18,131 @@ const PAGE_SIZE = 50
 
 export function TopPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // URLパラメータから初期状態を復元
+  const getInitialFilters = (): SearchParams => {
+    const filters: SearchParams = {}
+    const cat = searchParams.get('category')
+    const tags = searchParams.get('tags')
+    const minD = searchParams.get('min_dividend')
+    const maxE = searchParams.get('max_expense')
+
+    if (cat) filters.category_id = Number(cat)
+    if (tags) filters.tag_ids = tags.split(',').map(Number)
+    if (minD) filters.min_dividend_yield = Number(minD)
+    if (maxE) filters.max_expense_ratio = Number(maxE)
+    return filters
+  }
+
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
-  const [currentKeyword, setCurrentKeyword] = useState('')
-  const [currentFilters, setCurrentFilters] = useState<SearchParams>({})
-  const [currentSort, setCurrentSort] = useState<SortField>('code')
-  const [currentOrder, setCurrentOrder] = useState<SortOrder>('asc')
-  const [currentPage, setCurrentPage] = useState(1)
+
+  // おすすめタブの状態
+  const [recommendTab, setRecommendTab] = useState(
+    searchParams.get('tab') || 'popular'
+  )
+
+  const [currentKeyword, setCurrentKeyword] = useState(
+    searchParams.get('q') || ''
+  )
+  const [currentFilters, setCurrentFilters] = useState<SearchParams>(
+    getInitialFilters()
+  )
+  const [currentSort, setCurrentSort] = useState<SortField>(
+    (searchParams.get('sort') as SortField) || 'code'
+  )
+  const [currentOrder, setCurrentOrder] = useState<SortOrder>(
+    (searchParams.get('order') as SortOrder) || 'asc'
+  )
+  const [currentPage, setCurrentPage] = useState(
+    Number(searchParams.get('page')) || 1
+  )
+
   const etfListRef = useRef<HTMLElement>(null)
   const { items, total, isLoading, error, search } = useETFSearch()
   const { count, isInList, toggleCode, canAdd } = useCompareList()
   const { isAuthenticated } = useAuth()
   const { isFavorite, toggleFavorite } = useFavorites()
 
+  // URLパラメータ更新ヘルパー
+  const updateURL = useCallback(
+    (
+      params: Partial<{
+        tab: string
+        q: string
+        sort: string
+        order: string
+        page: string
+        category: string
+        tags: string
+        min_dividend: string
+        max_expense: string
+      }>
+    ) => {
+      setSearchParams((prev) => {
+        const newParams = new URLSearchParams(prev)
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '') {
+            newParams.set(key, value)
+          } else {
+            newParams.delete(key)
+          }
+        })
+        return newParams
+      }, { replace: true })
+    },
+    [setSearchParams]
+  )
+
   useEffect(() => {
-    search({ sort: currentSort, order: currentOrder, limit: PAGE_SIZE })
-  }, [search, currentSort, currentOrder])
+    // 初回マウント時、URLパラメータがあれば検索を実行
+    const filters = getInitialFilters()
+    const keyword = searchParams.get('q') || undefined
+    const sort = (searchParams.get('sort') as SortField) || 'code'
+    const order = (searchParams.get('order') as SortOrder) || 'asc'
+    const page = Number(searchParams.get('page')) || 1
+
+    // フィルタ条件があるか判定
+    const hasInitFilters = !!(
+      filters.category_id ||
+      filters.tag_ids?.length ||
+      filters.min_dividend_yield ||
+      filters.max_expense_ratio
+    )
+
+    if (keyword || hasInitFilters) {
+      setHasSearched(true)
+    }
+
+    search({
+      ...filters,
+      keyword,
+      sort,
+      order,
+      limit: PAGE_SIZE,
+      offset: (page - 1) * PAGE_SIZE,
+    })
+    // eslint-disable-next-line
+  }, []) // 初回のみ実行
+
+  const handleRecommendTabChange = (tab: string) => {
+    setRecommendTab(tab)
+    updateURL({ tab })
+  }
 
   const handleSearch = (keyword: string) => {
     const trimmed = keyword.trim()
     setCurrentKeyword(trimmed)
     setHasSearched(!!trimmed)
     setCurrentPage(1)
+
+    updateURL({
+      q: trimmed,
+      page: '1',
+    })
+
     search({
       ...currentFilters,
       keyword: trimmed || undefined,
@@ -49,11 +151,10 @@ export function TopPage() {
       limit: PAGE_SIZE,
       offset: 0,
     })
-    // 検索実行時は一覧へスクロール
+
     etfListRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  // 依存配列に含める値を定義（変更検知のため）
   const handleFilter = useCallback((filters: SearchParams) => {
     setCurrentFilters(filters)
     const hasFilters = !!(
@@ -64,6 +165,15 @@ export function TopPage() {
     )
     setHasSearched(hasFilters || !!currentKeyword)
     setCurrentPage(1)
+
+    updateURL({
+      category: filters.category_id?.toString(),
+      tags: filters.tag_ids?.join(','),
+      min_dividend: filters.min_dividend_yield?.toString(),
+      max_expense: filters.max_expense_ratio?.toString(),
+      page: '1',
+    })
+
     search({
       ...filters,
       keyword: currentKeyword || undefined,
@@ -72,12 +182,19 @@ export function TopPage() {
       limit: PAGE_SIZE,
       offset: 0,
     })
-  }, [currentKeyword, currentSort, currentOrder, search])
+  }, [currentKeyword, currentSort, currentOrder, search, updateURL])
 
   const handleSortChange = (sort: SortField, order: SortOrder) => {
     setCurrentSort(sort)
     setCurrentOrder(order)
     setCurrentPage(1)
+
+    updateURL({
+      sort,
+      order,
+      page: '1',
+    })
+
     search({
       ...currentFilters,
       keyword: currentKeyword || undefined,
@@ -90,6 +207,11 @@ export function TopPage() {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
+
+    updateURL({
+      page: page.toString(),
+    })
+
     search({
       ...currentFilters,
       keyword: currentKeyword || undefined,
@@ -138,6 +260,8 @@ export function TopPage() {
         onShowAll={() =>
           etfListRef.current?.scrollIntoView({ behavior: 'smooth' })
         }
+        selectedPerspective={recommendTab}
+        onSelectPerspective={handleRecommendTabChange}
       />
 
       {/* 検索・一覧セクション */}
@@ -147,7 +271,12 @@ export function TopPage() {
         </div>
 
         <div className={styles.filterSection}>
-          <FilterPanel onFilter={handleFilter} onSearch={handleSearch} />
+          <FilterPanel
+            onFilter={handleFilter}
+            onSearch={handleSearch}
+            initialParams={currentFilters}
+            initialKeyword={currentKeyword}
+          />
         </div>
 
         <div className={styles.sectionHeader}>

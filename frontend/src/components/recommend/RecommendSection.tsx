@@ -14,6 +14,8 @@ interface RecommendSectionProps {
   isFavorite?: (code: string) => boolean
   onFavoriteToggle?: (code: string) => void
   onShowAll?: () => void
+  selectedPerspective?: string
+  onSelectPerspective?: (perspective: string) => void
 }
 
 export function RecommendSection({
@@ -23,9 +25,22 @@ export function RecommendSection({
   isFavorite,
   onFavoriteToggle,
   onShowAll,
+  selectedPerspective,
+  onSelectPerspective,
 }: RecommendSectionProps) {
   const [perspectives, setPerspectives] = useState<Perspective[]>([])
-  const [selected, setSelected] = useState('popular')
+  // 制御/非制御ハイブリッド: propsがあれば使用、なければ内部state（既存互換）
+  const [internalSelected, setInternalSelected] = useState('popular')
+
+  const selected = selectedPerspective ?? internalSelected
+  const handleSelect = (p: string) => {
+    if (onSelectPerspective) {
+      onSelectPerspective(p)
+    } else {
+      setInternalSelected(p)
+    }
+  }
+
   const { data, isLoading, error } = useRecommendations(selected)
 
   useEffect(() => {
@@ -39,7 +54,7 @@ export function RecommendSection({
         <PerspectiveTabs
           perspectives={perspectives}
           selected={selected}
-          onSelect={setSelected}
+          onSelect={handleSelect}
         />
       )}
       {data && (
