@@ -1,13 +1,17 @@
 """Flask application entry point."""
+import logging
 import os
 
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_login import LoginManager
+from werkzeug.exceptions import HTTPException
 
 from .config.settings import config
 from .models import User, db
 from .routes import register_routes
+
+logger = logging.getLogger(__name__)
 
 # Flask-Login manager
 login_manager = LoginManager()
@@ -60,6 +64,36 @@ def create_app(config_name=None):
     @app.route("/api/v1/")
     def api_root():
         return jsonify({"message": "Japan ETF Analyzer API", "version": "1.0.0"})
+
+    # グローバルエラーハンドラー
+    @app.errorhandler(Exception)
+    def handle_exception(e):
+        """Handle uncaught exceptions."""
+        # HTTPException（400番台など）はそのまま返す
+        if isinstance(e, HTTPException):
+            return e
+        logger.exception(f"Unhandled exception: {e}")
+        response = jsonify(
+            {
+                "success": False,
+                "error": {"message": "サーバーエラーが発生しました", "code": 500},
+            }
+        )
+        response.status_code = 500
+        return response
+
+    @app.errorhandler(500)
+    def handle_500(e):
+        """Handle 500 errors."""
+        logger.error(f"500 error: {e}")
+        response = jsonify(
+            {
+                "success": False,
+                "error": {"message": "サーバーエラーが発生しました", "code": 500},
+            }
+        )
+        response.status_code = 500
+        return response
 
     return app
 

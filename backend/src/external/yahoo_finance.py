@@ -1,5 +1,6 @@
 """Yahoo Finance API client for chart data."""
 import logging
+import math
 import os
 import random
 from datetime import datetime, timedelta
@@ -73,6 +74,13 @@ class YahooFinanceClient:
 
         data = []
         for date, row in df.iterrows():
+            # NaN値を含むレコードはスキップ
+            if any(
+                math.isnan(v) if isinstance(v, float) else False
+                for v in [row["Open"], row["High"], row["Low"], row["Close"]]
+            ):
+                logger.debug(f"Skipping NaN record for {code} on {date}")
+                continue
             data.append(
                 {
                     "date": date.strftime("%Y-%m-%d"),
@@ -80,7 +88,9 @@ class YahooFinanceClient:
                     "high": round(float(row["High"]), 2),
                     "low": round(float(row["Low"]), 2),
                     "close": round(float(row["Close"]), 2),
-                    "volume": int(row["Volume"]),
+                    "volume": int(row["Volume"])
+                    if not math.isnan(row["Volume"])
+                    else 0,
                 }
             )
 
@@ -144,6 +154,10 @@ class YahooFinanceClient:
             db.session.commit()
         except Exception as e:
             logger.warning(f"Cache save failed for {code}: {e}")
+            try:
+                db.session.rollback()
+            except Exception:
+                pass
 
     @staticmethod
     def get_current_price(code: str) -> Optional[Dict]:

@@ -1,5 +1,5 @@
 /** Compare page component */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import {
   ETFDetail,
@@ -19,6 +19,7 @@ import {
   CHART_PERIODS,
 } from '../utils'
 import { Loading, ErrorMessage } from '../components/common'
+import { FavoriteSelectModal } from '../components/modal'
 import { TagBadge } from '../components/etf'
 import { PriceChart, OverlayChart } from '../components/chart'
 import styles from './ComparePage.module.css'
@@ -26,7 +27,7 @@ import styles from './ComparePage.module.css'
 type ChartMode = 'overlay' | 'individual'
 
 export function ComparePage() {
-  const { codes, removeCode, clearAll } = useCompareList()
+  const { codes, removeCode, addCode, clearAll } = useCompareList()
   const [etfs, setEtfs] = useState<ETFDetail[]>([])
   const [performance, setPerformance] = useState<PerformanceComparison | null>(
     null
@@ -38,22 +39,76 @@ export function ComparePage() {
     Array<{ code: string; name: string; data: ChartData }>
   >([])
   const [isChartLoading, setIsChartLoading] = useState(false)
+  const [isFavoriteModalOpen, setIsFavoriteModalOpen] = useState(false)
+  const initialCodesRef = useRef<string[]>(codes)
 
+  // 初回読み込み時のみAPI取得
   useEffect(() => {
     const fetchData = async () => {
+      const currentCodes = initialCodesRef.current
+      if (currentCodes.length === 0) {
+        setEtfs([])
+        setPerformance(null)
+        setIsLoading(false)
+        return
+      }
       setIsLoading(true)
       const [etfResults, perfData] = await Promise.all([
-        Promise.all(codes.map((code) => getETFDetail(code))),
-        getPerformanceComparison(codes),
+        Promise.all(currentCodes.map((code) => getETFDetail(code))),
+        getPerformanceComparison(currentCodes),
       ])
       setEtfs(etfResults.filter((e): e is ETFDetail => e !== null))
       setPerformance(perfData)
       setIsLoading(false)
     }
     fetchData()
-  }, [codes])
+  }, [])
 
-  // Fetch chart data for overlay mode
+  // 銘柄削除時のローカル非表示（API再取得なし）
+  const handleRemove = useCallback(
+    (code: string) => {
+      removeCode(code)
+      setEtfs((prev) => prev.filter((etf) => etf.code !== code))
+      setChartDatasets((prev) => prev.filter((ds) => ds.code !== code))
+    },
+    [removeCode]
+  )
+
+  // 銘柄追加時は新規銘柄のみAPI取得
+  const handleAddFromFavorite = useCallback(
+    async (code: string) => {
+      addCode(code)
+      setIsFavoriteModalOpen(false)
+
+      // 新規銘柄のみAPI取得
+      const newEtf = await getETFDetail(code)
+      if (newEtf) {
+        setEtfs((prev) => [...prev, newEtf])
+        // チャートデータも取得
+        const chartData = await getETFChart(code, chartPeriod)
+        if (chartData) {
+          setChartDatasets((prev) => [
+            ...prev,
+            { code, name: newEtf.name, data: chartData },
+          ])
+        }
+      }
+    },
+    [addCode, chartPeriod]
+  )
+
+  // リストクリア（全Hooks呼び出し後に定義）
+  const handleClearAll = useCallback(() => {
+    clearAll()
+    setEtfs([])
+    setChartDatasets([])
+    setPerformance(null)
+  }, [clearAll])
+
+  // チャートデータ再取得用の依存キー
+  const etfCodesKey = useMemo(() => etfs.map((e) => e.code).join(','), [etfs])
+
+  // Fetch chart data for overlay mode (period変更時のみ再取得)
   useEffect(() => {
     const fetchChartData = async () => {
       if (etfs.length === 0) {
@@ -61,8 +116,9 @@ export function ComparePage() {
         return
       }
       setIsChartLoading(true)
+      const currentEtfs = etfs
       const results = await Promise.all(
-        etfs.map(async (etf) => {
+        currentEtfs.map(async (etf) => {
           const data = await getETFChart(etf.code, chartPeriod)
           return data ? { code: etf.code, name: etf.name, data } : null
         })
@@ -76,7 +132,8 @@ export function ComparePage() {
       setIsChartLoading(false)
     }
     fetchChartData()
-  }, [etfs, chartPeriod])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chartPeriod, etfCodesKey])
 
   if (codes.length === 0) {
     return (
@@ -94,10 +151,25 @@ export function ComparePage() {
     <div className={styles.page}>
       <div className={styles.header}>
         <h1 className={styles.title}>ETF比較</h1>
-        <button className="btn btn-secondary" onClick={clearAll}>
-          リストをクリア
-        </button>
+        <div className={styles.headerButtons}>
+          <button
+            className="btn btn-primary"
+            onClick={() => setIsFavoriteModalOpen(true)}
+          >
+            お気に入りから追加
+          </button>
+          <button className="btn btn-secondary" onClick={handleClearAll}>
+            リストをクリア
+          </button>
+        </div>
       </div>
+
+      <FavoriteSelectModal
+        isOpen={isFavoriteModalOpen}
+        onClose={() => setIsFavoriteModalOpen(false)}
+        onSelect={handleAddFromFavorite}
+        existingCodes={codes}
+      />
 
       {isLoading && <Loading />}
 
@@ -115,7 +187,7 @@ export function ComparePage() {
                         <span className={styles.name}>{etf.name}</span>
                         <button
                           className={styles.removeBtn}
-                          onClick={() => removeCode(etf.code)}
+                          onClick={() => handleRemove(etf.code)}
                         >
                           &times;
                         </button>

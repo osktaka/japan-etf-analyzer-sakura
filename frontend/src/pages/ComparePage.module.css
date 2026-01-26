@@ -29,6 +29,11 @@
   font-weight: 700;
 }
 
+.headerButtons {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
 .tableWrapper {
   overflow-x: auto;
   margin-bottom: var(--spacing-xl);
