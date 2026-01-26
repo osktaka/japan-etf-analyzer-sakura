@@ -5,7 +5,7 @@
 .hero {
   text-align: center;
   padding: var(--spacing-2xl) 0;
-  margin-bottom: var(--spacing-xl);
+  margin-bottom: var(--spacing-lg);
 }
 
 .title {
@@ -17,16 +17,36 @@
 
 .subtitle {
   color: var(--color-text-secondary);
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: 0;
 }
 
-.searchWrapper {
+.searchHeader {
+  text-align: center;
+  margin-bottom: var(--spacing-lg);
+  position: relative;
   display: flex;
+  align-items: center;
   justify-content: center;
 }
 
+.searchHeader::before,
+.searchHeader::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--color-border);
+  margin: 0 var(--spacing-lg);
+}
+
+.searchTitle {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  margin: 0;
+}
+
 .filterSection {
-  margin-bottom: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
 }
 
 .section {

@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from sqlalchemy import or_
 
-from src.models import ETF, ETFTagRelation, db
+from src.models import ETF, ETFTagRelation, Category, Tag, db
 
 from .base_repository import BaseRepository
 
@@ -39,12 +39,20 @@ class ETFRepository(BaseRepository[ETF]):
 
         if keyword:
             search_term = f"%{keyword}%"
-            query = query.filter(
-                or_(
-                    ETF.code.ilike(search_term),
-                    ETF.name.ilike(search_term),
-                    ETF.description.ilike(search_term),
+            query = (
+                query.outerjoin(ETF.category)
+                .outerjoin(ETF.tag_relations)
+                .outerjoin(ETFTagRelation.tag)
+                .filter(
+                    or_(
+                        ETF.code.ilike(search_term),
+                        ETF.name.ilike(search_term),
+                        ETF.description.ilike(search_term),
+                        Category.name.ilike(search_term),
+                        Tag.name.ilike(search_term),
+                    )
                 )
+                .distinct()
             )
 
         if category_id:

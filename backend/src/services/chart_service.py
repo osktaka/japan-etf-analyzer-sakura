@@ -8,7 +8,7 @@ from src.repositories import ETFRepository
 class ChartService:
     """Service for chart data operations."""
 
-    VALID_PERIODS = ["1w", "1m", "3m", "6m", "1y", "3y"]
+    VALID_PERIODS = ["1m", "3m", "6m", "1y", "3y", "5y", "10y", "20y"]
 
     def __init__(self):
         """Initialize service."""
@@ -24,7 +24,7 @@ class ChartService:
 
         Args:
             code: ETF code
-            period: Time period (1w, 1m, 3m, 6m, 1y, 3y)
+            period: Time period (1m, 3m, 6m, 1y, 3y, 5y, 10y, 20y)
 
         Returns:
             Chart data dictionary or None if ETF not found

@@ -12,7 +12,7 @@ interface ChartContainerProps {
 }
 
 export function ChartContainer({ code }: ChartContainerProps) {
-  const [period, setPeriod] = useState<ChartPeriod>('1m')
+  const [period, setPeriod] = useState<ChartPeriod>('1y')
   const { data, isLoading, error, refetch } = useChartData(code, period)
 
   return (

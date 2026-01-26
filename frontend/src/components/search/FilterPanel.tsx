@@ -1,15 +1,18 @@
 /** Filter panel component for ETF search */
 import { useState, useEffect } from 'react'
 import { Category, Tag, getCategories, getTags, SearchParams } from '../../api'
+import { SearchBar } from './SearchBar'
 import styles from './FilterPanel.module.css'
 
 interface FilterPanelProps {
   onFilter: (params: SearchParams) => void
+  onSearch: (keyword: string) => void
   initialParams?: SearchParams
 }
 
 export function FilterPanel({
   onFilter,
+  onSearch,
   initialParams = {},
 }: FilterPanelProps) {
   const [categories, setCategories] = useState<Category[]>([])
@@ -46,24 +49,46 @@ export function FilterPanel({
     loadFilters()
   }, [])
 
+  // フィルタ適用ロジック
+  const applyFilters = (
+    cat: number | null,
+    tgs: number[],
+    minD: string,
+    maxE: string
+  ) => {
+    const params: SearchParams = {}
+    if (cat) params.category_id = cat
+    if (tgs.length > 0) params.tag_ids = tgs
+    if (minD) params.min_dividend_yield = parseFloat(minD)
+    if (maxE) params.max_expense_ratio = parseFloat(maxE)
+    onFilter(params)
+  }
+
+  // カテゴリ・タグ変更時は即時反映
   const handleCategoryClick = (id: number) => {
-    setSelectedCategory(selectedCategory === id ? null : id)
+    const newCat = selectedCategory === id ? null : id
+    setSelectedCategory(newCat)
+    applyFilters(newCat, selectedTags, minDividend, maxExpense)
   }
 
   const handleTagClick = (id: number) => {
-    setSelectedTags((prev) =>
-      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id]
-    )
+    const newTags = selectedTags.includes(id)
+      ? selectedTags.filter((t) => t !== id)
+      : [...selectedTags, id]
+    setSelectedTags(newTags)
+    applyFilters(selectedCategory, newTags, minDividend, maxExpense)
   }
 
-  const handleApply = () => {
-    const params: SearchParams = {}
-    if (selectedCategory) params.category_id = selectedCategory
-    if (selectedTags.length > 0) params.tag_ids = selectedTags
-    if (minDividend) params.min_dividend_yield = parseFloat(minDividend)
-    if (maxExpense) params.max_expense_ratio = parseFloat(maxExpense)
-    onFilter(params)
-  }
+  // 数値入力の変更検知（デバウンス）
+  // 意図的にminDividend, maxExpenseのみをトリガーとする
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      applyFilters(selectedCategory, selectedTags, minDividend, maxExpense)
+    }, 500)
+
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minDividend, maxExpense])
 
   const handleClear = () => {
     setSelectedCategory(null)
@@ -90,15 +115,21 @@ export function FilterPanel({
         </button>
       </div>
 
+      <div className={styles.searchSection}>
+        <SearchBar
+          onSearch={onSearch}
+          placeholder="銘柄コードまたは名前で検索..."
+        />
+      </div>
+
       <div className={styles.section}>
         <div className={styles.sectionTitle}>カテゴリ</div>
         <div className={styles.categories}>
           {categories.map((cat) => (
             <button
               key={cat.id}
-              className={`${styles.categoryBtn} ${
-                selectedCategory === cat.id ? styles.active : ''
-              }`}
+              className={`${styles.categoryBtn} ${selectedCategory === cat.id ? styles.active : ''
+                }`}
               onClick={() => handleCategoryClick(cat.id)}
             >
               {cat.name}
@@ -113,9 +144,8 @@ export function FilterPanel({
           {tags.map((tag) => (
             <button
               key={tag.id}
-              className={`${styles.tagBtn} ${
-                selectedTags.includes(tag.id) ? styles.active : ''
-              }`}
+              className={`${styles.tagBtn} ${selectedTags.includes(tag.id) ? styles.active : ''
+                }`}
               onClick={() => handleTagClick(tag.id)}
             >
               {tag.name}
@@ -151,13 +181,6 @@ export function FilterPanel({
           </div>
         </div>
       </div>
-
-      <button
-        className={`btn btn-primary ${styles.applyBtn}`}
-        onClick={handleApply}
-      >
-        フィルターを適用
-      </button>
     </div>
   )
 }

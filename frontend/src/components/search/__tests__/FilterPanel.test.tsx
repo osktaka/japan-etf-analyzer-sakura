@@ -30,12 +30,12 @@ describe('FilterPanel', () => {
     vi.mocked(api.getCategories).mockReturnValue(new Promise(() => {}))
     vi.mocked(api.getTags).mockReturnValue(new Promise(() => {}))
 
-    render(<FilterPanel onFilter={vi.fn()} />)
+    render(<FilterPanel onFilter={vi.fn()} onSearch={vi.fn()} />)
     expect(screen.getByText('読み込み中...')).toBeInTheDocument()
   })
 
   it('カテゴリが表示される', async () => {
-    render(<FilterPanel onFilter={vi.fn()} />)
+    render(<FilterPanel onFilter={vi.fn()} onSearch={vi.fn()} />)
 
     await waitFor(() => {
       expect(screen.getByText('国内株式')).toBeInTheDocument()
@@ -44,7 +44,7 @@ describe('FilterPanel', () => {
   })
 
   it('タグが表示される', async () => {
-    render(<FilterPanel onFilter={vi.fn()} />)
+    render(<FilterPanel onFilter={vi.fn()} onSearch={vi.fn()} />)
 
     await waitFor(() => {
       expect(screen.getByText('TOPIX連動')).toBeInTheDocument()
@@ -53,7 +53,7 @@ describe('FilterPanel', () => {
   })
 
   it('カテゴリ選択/解除が動作する', async () => {
-    render(<FilterPanel onFilter={vi.fn()} />)
+    render(<FilterPanel onFilter={vi.fn()} onSearch={vi.fn()} />)
 
     await waitFor(() => {
       expect(screen.getByText('国内株式')).toBeInTheDocument()
@@ -68,7 +68,7 @@ describe('FilterPanel', () => {
   })
 
   it('タグ選択/解除が動作する', async () => {
-    render(<FilterPanel onFilter={vi.fn()} />)
+    render(<FilterPanel onFilter={vi.fn()} onSearch={vi.fn()} />)
 
     await waitFor(() => {
       expect(screen.getByText('TOPIX連動')).toBeInTheDocument()
@@ -82,23 +82,22 @@ describe('FilterPanel', () => {
     expect(tagBtn.closest('button')?.className).not.toContain('active')
   })
 
-  it('フィルター適用ボタンでonFilterが呼ばれる', async () => {
+  it('カテゴリ選択で即座にonFilterが呼ばれる', async () => {
     const handleFilter = vi.fn()
-    render(<FilterPanel onFilter={handleFilter} />)
+    render(<FilterPanel onFilter={handleFilter} onSearch={vi.fn()} />)
 
     await waitFor(() => {
       expect(screen.getByText('国内株式')).toBeInTheDocument()
     })
 
     fireEvent.click(screen.getByText('国内株式'))
-    fireEvent.click(screen.getByText('フィルターを適用'))
 
     expect(handleFilter).toHaveBeenCalledWith({ category_id: 1 })
   })
 
   it('クリアボタンでフィルターがリセットされる', async () => {
     const handleFilter = vi.fn()
-    render(<FilterPanel onFilter={handleFilter} />)
+    render(<FilterPanel onFilter={handleFilter} onSearch={vi.fn()} />)
 
     await waitFor(() => {
       expect(screen.getByText('クリア')).toBeInTheDocument()
@@ -108,9 +107,9 @@ describe('FilterPanel', () => {
     expect(handleFilter).toHaveBeenCalledWith({})
   })
 
-  it('配当利回りの入力が反映される', async () => {
+  it('配当利回りの入力がデバウンス後に反映される', async () => {
     const handleFilter = vi.fn()
-    render(<FilterPanel onFilter={handleFilter} />)
+    render(<FilterPanel onFilter={handleFilter} onSearch={vi.fn()} />)
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText('例: 3.0')).toBeInTheDocument()
@@ -119,14 +118,19 @@ describe('FilterPanel', () => {
     fireEvent.change(screen.getByPlaceholderText('例: 3.0'), {
       target: { value: '3.0' },
     })
-    fireEvent.click(screen.getByText('フィルターを適用'))
 
-    expect(handleFilter).toHaveBeenCalledWith({ min_dividend_yield: 3.0 })
+    // デバウンス待ち（500ms）
+    await waitFor(
+      () => {
+        expect(handleFilter).toHaveBeenCalledWith({ min_dividend_yield: 3.0 })
+      },
+      { timeout: 1000 }
+    )
   })
 
-  it('信託報酬の入力が反映される', async () => {
+  it('信託報酬の入力がデバウンス後に反映される', async () => {
     const handleFilter = vi.fn()
-    render(<FilterPanel onFilter={handleFilter} />)
+    render(<FilterPanel onFilter={handleFilter} onSearch={vi.fn()} />)
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText('例: 0.5')).toBeInTheDocument()
@@ -135,15 +139,20 @@ describe('FilterPanel', () => {
     fireEvent.change(screen.getByPlaceholderText('例: 0.5'), {
       target: { value: '0.5' },
     })
-    fireEvent.click(screen.getByText('フィルターを適用'))
 
-    expect(handleFilter).toHaveBeenCalledWith({ max_expense_ratio: 0.5 })
+    // デバウンス待ち（500ms）
+    await waitFor(
+      () => {
+        expect(handleFilter).toHaveBeenCalledWith({ max_expense_ratio: 0.5 })
+      },
+      { timeout: 1000 }
+    )
   })
 
   it('APIエラー時にエラーメッセージ表示', async () => {
     vi.mocked(api.getCategories).mockRejectedValue(new Error('API Error'))
 
-    render(<FilterPanel onFilter={vi.fn()} />)
+    render(<FilterPanel onFilter={vi.fn()} onSearch={vi.fn()} />)
 
     await waitFor(() => {
       expect(
@@ -156,6 +165,7 @@ describe('FilterPanel', () => {
     render(
       <FilterPanel
         onFilter={vi.fn()}
+        onSearch={vi.fn()}
         initialParams={{
           category_id: 1,
           tag_ids: [1],

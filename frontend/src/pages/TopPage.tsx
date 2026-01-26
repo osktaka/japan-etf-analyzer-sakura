@@ -1,9 +1,8 @@
 /** Top page component */
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useETFSearch, useCompareList, useFavorites, useAuth } from '../hooks'
 import {
-  SearchBar,
   SearchResults,
   FilterPanel,
   SortSelector,
@@ -50,9 +49,12 @@ export function TopPage() {
       limit: PAGE_SIZE,
       offset: 0,
     })
+    // 検索実行時は一覧へスクロール
+    etfListRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const handleFilter = (filters: SearchParams) => {
+  // 依存配列に含める値を定義（変更検知のため）
+  const handleFilter = useCallback((filters: SearchParams) => {
     setCurrentFilters(filters)
     const hasFilters = !!(
       filters.category_id ||
@@ -70,7 +72,7 @@ export function TopPage() {
       limit: PAGE_SIZE,
       offset: 0,
     })
-  }
+  }, [currentKeyword, currentSort, currentOrder, search])
 
   const handleSortChange = (sort: SortField, order: SortOrder) => {
     setCurrentSort(sort)
@@ -124,19 +126,30 @@ export function TopPage() {
         <p className={styles.subtitle}>
           ETFを検索・比較して、あなたに最適な投資先を見つけましょう
         </p>
-        <div className={styles.searchWrapper}>
-          <SearchBar
-            onSearch={handleSearch}
-            placeholder="銘柄コードまたは名前で検索..."
-          />
-        </div>
       </section>
 
-      <section className={styles.filterSection}>
-        <FilterPanel onFilter={handleFilter} />
-      </section>
+      {/* おすすめセクションを上部に移動 */}
+      <RecommendSection
+        onETFClick={setSelectedCode}
+        isInCompare={isInList}
+        onCompareToggle={handleCompareToggle}
+        isFavorite={isFavorite}
+        onFavoriteToggle={handleFavoriteToggle}
+        onShowAll={() =>
+          etfListRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }
+      />
 
+      {/* 検索・一覧セクション */}
       <section ref={etfListRef} className={styles.section}>
+        <div className={styles.searchHeader}>
+          <h2 className={styles.searchTitle}>銘柄を探す</h2>
+        </div>
+
+        <div className={styles.filterSection}>
+          <FilterPanel onFilter={handleFilter} onSearch={handleSearch} />
+        </div>
+
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>
             {hasSearched ? '検索結果' : '全銘柄一覧'}
@@ -164,17 +177,6 @@ export function TopPage() {
           onPageChange={handlePageChange}
         />
       </section>
-
-      <RecommendSection
-        onETFClick={setSelectedCode}
-        isInCompare={isInList}
-        onCompareToggle={handleCompareToggle}
-        isFavorite={isFavorite}
-        onFavoriteToggle={handleFavoriteToggle}
-        onShowAll={() =>
-          etfListRef.current?.scrollIntoView({ behavior: 'smooth' })
-        }
-      />
 
       {count > 0 && (
         <div className={styles.compareBar}>

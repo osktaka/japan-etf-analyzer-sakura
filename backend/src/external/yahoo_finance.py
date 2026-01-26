@@ -17,12 +17,14 @@ class YahooFinanceClient:
     """Client for fetching data from Yahoo Finance."""
 
     PERIOD_DAYS = {
-        "1w": 7,
         "1m": 30,
         "3m": 90,
         "6m": 180,
         "1y": 365,
         "3y": 1095,
+        "5y": 1825,
+        "10y": 3650,
+        "20y": 7300,
     }
 
     @staticmethod
@@ -31,7 +33,7 @@ class YahooFinanceClient:
 
         Args:
             code: ETF code (e.g., "1306")
-            period: Time period ("1w", "1m", "3m", "6m", "1y", "3y")
+            period: Time period ("1m", "3m", "6m", "1y", "3y", "5y", "10y", "20y")
 
         Returns:
             List of price data dictionaries

@@ -86,7 +86,7 @@ export interface ApiError {
   }
 }
 
-export type ChartPeriod = '1w' | '1m' | '3m' | '6m' | '1y' | '3y'
+export type ChartPeriod = '1m' | '3m' | '6m' | '1y' | '3y' | '5y' | '10y' | '20y'
 
 export interface User {
   id: number
