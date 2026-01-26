@@ -2,11 +2,12 @@
 """Update ETF price data from Yahoo Finance.
 
 Usage:
-    python scripts/update_etf_data.py [--limit N] [--dry-run]
+    python scripts/update_etf_data.py [--limit N] [--dry-run] [--skip-performance]
 
 Options:
-    --limit N    Only update first N ETFs (for testing)
-    --dry-run    Show what would be updated without actually fetching
+    --limit N           Only update first N ETFs (for testing)
+    --dry-run           Show what would be updated without actually fetching
+    --skip-performance  Skip performance cache calculation
 
 This script should be run via cron:
     0 19 * * 1-5 cd ~/app/backend && python3 scripts/update_etf_data.py >> ~/logs/etf_update.log 2>&1
@@ -88,7 +89,9 @@ def update_single_etf(code: str, dry_run: bool = False) -> bool:
         update_etf_info(code, dividend_yield, total_assets)
         yield_str = f"{dividend_yield}%" if dividend_yield else "N/A"
         assets_str = f"{total_assets:,}" if total_assets else "N/A"
-        logger.info(f"Updated {code}: {len(df)} records, yield={yield_str}, assets={assets_str}")
+        logger.info(
+            f"Updated {code}: {len(df)} records, yield={yield_str}, assets={assets_str}"
+        )
         return True
 
     except Exception as e:
@@ -96,13 +99,16 @@ def update_single_etf(code: str, dry_run: bool = False) -> bool:
         # トランザクションをロールバックして次の処理を可能にする
         try:
             from src.models import db
+
             db.session.rollback()
         except Exception:
             pass
         return False
 
 
-def update_etf_info(code: str, dividend_yield: Optional[float], total_assets: Optional[int]) -> None:
+def update_etf_info(
+    code: str, dividend_yield: Optional[float], total_assets: Optional[int]
+) -> None:
     """Update ETF info (dividend yield, total assets)."""
     from src.models import ETF, db
 
@@ -156,12 +162,131 @@ def save_to_db(code: str, df) -> None:
     db.session.commit()
 
 
+# 上昇率計算用の期間定義
+PERIODS = {
+    "1m": 30,
+    "3m": 90,
+    "6m": 180,
+    "1y": 365,
+    "3y": 1095,
+    "5y": 1825,
+    "10y": 3650,
+    "20y": 7300,
+}
+
+
+def calculate_return_from_df(df, days: int) -> Optional[float]:
+    """Calculate return rate from a DataFrame.
+
+    Args:
+        df: DataFrame with price data (requires 'Close' column)
+        days: Number of days for the period
+
+    Returns:
+        Return percentage or None if insufficient data
+    """
+    if df.empty or len(df) < 2:
+        return None
+
+    # 必要な日数分のデータがあるか（80%以上で許容）
+    if len(df) < days * 0.5:
+        return None
+
+    # 指定日数分の範囲を取得（最新から遡って）
+    df_period = df.tail(min(days, len(df)))
+    if len(df_period) < 2:
+        return None
+
+    first_close = df_period.iloc[0]["Close"]
+    last_close = df_period.iloc[-1]["Close"]
+
+    if first_close is None or last_close is None or first_close == 0:
+        return None
+
+    if math.isnan(first_close) or math.isnan(last_close):
+        return None
+
+    return round(((last_close - first_close) / first_close) * 100, 2)
+
+
+def update_performance_cache(codes: list) -> tuple:
+    """Update performance cache for given ETF codes.
+
+    Args:
+        codes: List of ETF codes to update
+
+    Returns:
+        Tuple of (success_count, fail_count)
+    """
+    import yfinance as yf
+    from src.models import PerformanceCache, db
+
+    logger.info(f"Calculating performance cache for {len(codes)} ETFs...")
+    success = 0
+    fail = 0
+
+    for i, code in enumerate(codes, 1):
+        try:
+            ticker = f"{code}.T"
+            stock = yf.Ticker(ticker)
+
+            # 最大期間のデータを取得（20年分）
+            df = stock.history(period="max")
+            if df.empty:
+                logger.warning(
+                    f"[{i}/{len(codes)}] {code}: No data for performance calc"
+                )
+                fail += 1
+                continue
+
+            # 各期間の上昇率を計算
+            for period_id, days in PERIODS.items():
+                return_rate = calculate_return_from_df(df, days)
+
+                # DBに保存（UPSERT）
+                existing = PerformanceCache.query.filter_by(
+                    etf_code=code, period=period_id
+                ).first()
+
+                if existing:
+                    existing.return_rate = return_rate
+                    existing.calculated_at = datetime.utcnow()
+                else:
+                    cache = PerformanceCache(
+                        etf_code=code,
+                        period=period_id,
+                        return_rate=return_rate,
+                        calculated_at=datetime.utcnow(),
+                    )
+                    db.session.add(cache)
+
+            db.session.commit()
+            success += 1
+            logger.info(f"[{i}/{len(codes)}] {code}: Performance cache updated")
+
+            # レート制限対策
+            if i < len(codes):
+                time.sleep(RATE_LIMIT_SECONDS)
+
+        except Exception as e:
+            logger.error(f"[{i}/{len(codes)}] {code}: Performance calc failed - {e}")
+            db.session.rollback()
+            fail += 1
+
+    return success, fail
+
+
 def main() -> int:
     """Main entry point."""
     parser = argparse.ArgumentParser(description="Update ETF price data")
     parser.add_argument("--limit", type=int, help="Limit number of ETFs to update")
     parser.add_argument(
         "--dry-run", action="store_true", help="Show what would be updated"
+    )
+    parser.add_argument(
+        "--skip-performance",
+        action="store_true",
+        help="Skip performance cache calculation",
     )
     args = parser.parse_args()
 
@@ -205,6 +330,16 @@ def main() -> int:
             # レート制限対策（最後の銘柄以外）
             if i < len(etfs) and not args.dry_run:
                 time.sleep(RATE_LIMIT_SECONDS)
+
+        # パフォーマンスキャッシュの更新
+        if not args.dry_run and not args.skip_performance:
+            logger.info("-" * 60)
+            logger.info("Starting performance cache calculation...")
+            codes = [etf["code"] for etf in etfs]
+            perf_success, perf_fail = update_performance_cache(codes)
+            logger.info(
+                f"Performance cache: {perf_success} success, {perf_fail} failed"
+            )
 
     finally:
         if not args.dry_run:

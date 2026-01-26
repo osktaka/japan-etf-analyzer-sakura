@@ -17,6 +17,14 @@ export type SortField =
   | 'dividend_yield'
   | 'expense_ratio'
   | 'total_assets'
+  | 'return_1m'
+  | 'return_3m'
+  | 'return_6m'
+  | 'return_1y'
+  | 'return_3y'
+  | 'return_5y'
+  | 'return_10y'
+  | 'return_20y'
 export type SortOrder = 'asc' | 'desc'
 
 export interface SearchParams {

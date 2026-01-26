@@ -12,8 +12,12 @@ def validate_etf_code(code: str) -> Tuple[bool, Optional[str]]:
     if not code:
         return False, "ETF code is required"
 
-    if not re.match(r"^\d{4}$", code):
-        return False, "ETF code must be 4 digits"
+    # 4桁の数字、または3桁の数字+アルファベット1文字を許可
+    if not re.match(r"^(\d{4}|\d{3}[A-Z])$", code):
+        return (
+            False,
+            "ETF code must be 4 digits or 3 digits + letter (e.g., 1306, 449A)",
+        )
 
     return True, None
 

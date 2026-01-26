@@ -364,6 +364,9 @@ export function TopPage() {
             onCompareToggle={handleCompareToggle}
             isFavorite={isFavorite}
             onFavoriteToggle={handleFavoriteToggle}
+            sortField={currentSort}
+            sortOrder={currentOrder}
+            onSortChange={handleSortChange}
           />
         )}
         <Pagination

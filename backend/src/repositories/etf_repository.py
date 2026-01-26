@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from sqlalchemy import or_
 
-from src.models import ETF, ETFTagRelation, Category, Tag, db
+from src.models import ETF, ETFTagRelation, Category, Tag, PerformanceCache, db
 
 from .base_repository import BaseRepository
 
@@ -14,6 +14,18 @@ SORT_COLUMNS = {
     "dividend_yield": ETF.dividend_yield,
     "expense_ratio": ETF.expense_ratio,
     "total_assets": ETF.total_assets,
+}
+
+# Performance sort options (maps to period in performance_cache)
+PERFORMANCE_SORT_PERIODS = {
+    "return_1m": "1m",
+    "return_3m": "3m",
+    "return_6m": "6m",
+    "return_1y": "1y",
+    "return_3y": "3y",
+    "return_5y": "5y",
+    "return_10y": "10y",
+    "return_20y": "20y",
 }
 
 
@@ -98,6 +110,18 @@ class ETFRepository(BaseRepository[ETF]):
                 query = query.order_by(column.desc().nulls_last())
             else:
                 query = query.order_by(column.asc().nulls_last())
+        elif sort and sort in PERFORMANCE_SORT_PERIODS:
+            # Join with performance_cache for sorting by return rate
+            period = PERFORMANCE_SORT_PERIODS[sort]
+            query = query.outerjoin(
+                PerformanceCache,
+                (ETF.code == PerformanceCache.etf_code)
+                & (PerformanceCache.period == period),
+            )
+            if order == "desc":
+                query = query.order_by(PerformanceCache.return_rate.desc().nulls_last())
+            else:
+                query = query.order_by(PerformanceCache.return_rate.asc().nulls_last())
         else:
             query = query.order_by(ETF.code.asc())
 

@@ -1,20 +1,29 @@
 /** ETF Table view component */
-import { useState, useMemo } from 'react'
 import {
   ETFSummary,
   PerformancePeriod,
   PerformanceReturns,
 } from '../../api/types'
+import { SortField, SortOrder } from '../../api/etf'
 import styles from './ETFTableView.module.css'
 
-type SortKey =
-  | 'code'
-  | 'name'
-  | 'category'
-  | 'price'
-  | 'dividend'
-  | 'expense'
-  | PerformancePeriod
+// Map table column keys to API sort fields
+const SORT_FIELD_MAP: Record<string, SortField> = {
+  code: 'code',
+  name: 'name',
+  dividend: 'dividend_yield',
+  expense: 'expense_ratio',
+  '1m': 'return_1m',
+  '3m': 'return_3m',
+  '6m': 'return_6m',
+  '1y': 'return_1y',
+  '3y': 'return_3y',
+  '5y': 'return_5y',
+  '10y': 'return_10y',
+  '20y': 'return_20y',
+}
+
+type SortKey = keyof typeof SORT_FIELD_MAP | 'category' | 'price'
 type SortDirection = 'asc' | 'desc'
 
 interface ETFTableViewProps {
@@ -26,6 +35,9 @@ interface ETFTableViewProps {
   onCompareToggle?: (code: string) => void
   isFavorite?: (code: string) => boolean
   onFavoriteToggle?: (code: string) => void
+  sortField?: SortField
+  sortOrder?: SortOrder
+  onSortChange?: (field: SortField, order: SortOrder) => void
 }
 
 export function ETFTableView({
@@ -37,67 +49,47 @@ export function ETFTableView({
   onCompareToggle,
   isFavorite,
   onFavoriteToggle,
+  sortField,
+  sortOrder,
+  onSortChange,
 }: ETFTableViewProps) {
-  const [sortKey, setSortKey] = useState<SortKey>('code')
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
-
-  const handleSort = (key: SortKey) => {
-    if (sortKey === key) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortKey(key)
-      setSortDirection('asc')
+  // Derive current sort key from sortField prop
+  const getCurrentSortKey = (): SortKey => {
+    if (!sortField) return 'code'
+    for (const [key, field] of Object.entries(SORT_FIELD_MAP)) {
+      if (field === sortField) return key as SortKey
     }
+    return 'code'
   }
 
-  const sortedItems = useMemo(() => {
-    return [...items].sort((a, b) => {
-      let aVal: number | string | null = null
-      let bVal: number | string | null = null
+  const currentSortKey = getCurrentSortKey()
+  const currentSortDirection: SortDirection = sortOrder || 'asc'
 
-      switch (sortKey) {
-        case 'code':
-          aVal = a.code
-          bVal = b.code
-          break
-        case 'name':
-          aVal = a.name
-          bVal = b.name
-          break
-        case 'category':
-          aVal = a.category || ''
-          bVal = b.category || ''
-          break
-        case 'price':
-          aVal = a.market_price
-          bVal = b.market_price
-          break
-        case 'dividend':
-          aVal = a.dividend_yield
-          bVal = b.dividend_yield
-          break
-        case 'expense':
-          aVal = a.expense_ratio
-          bVal = b.expense_ratio
-          break
-        default:
-          // Performance periods
-          aVal = performance[a.code]?.[sortKey as PerformancePeriod] ?? null
-          bVal = performance[b.code]?.[sortKey as PerformancePeriod] ?? null
-      }
+  const handleSort = (key: SortKey) => {
+    // category and price are not sortable via API
+    if (key === 'category' || key === 'price') return
 
-      if (aVal === null && bVal === null) return 0
-      if (aVal === null) return 1
-      if (bVal === null) return -1
+    const apiField = SORT_FIELD_MAP[key]
+    if (!apiField || !onSortChange) return
 
-      const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0
-      return sortDirection === 'asc' ? cmp : -cmp
-    })
-  }, [items, performance, sortKey, sortDirection])
+    let newDirection: SortOrder
+    if (currentSortKey === key) {
+      // Toggle direction
+      newDirection = currentSortDirection === 'asc' ? 'desc' : 'asc'
+    } else {
+      // New column: default desc for performance, asc for others
+      const isPerformanceSort = apiField.startsWith('return_')
+      newDirection = isPerformanceSort ? 'desc' : 'asc'
+    }
+    onSortChange(apiField, newDirection)
+  }
+
+  // Items are already sorted by the API, just use them directly
+  const sortedItems = items
 
   const renderSortIcon = (key: SortKey) => {
-    if (sortKey !== key) return null
-    return sortDirection === 'asc' ? ' \u25B2' : ' \u25BC'
+    if (currentSortKey !== key) return null
+    return currentSortDirection === 'asc' ? ' \u25B2' : ' \u25BC'
   }
 
   const formatPerformance = (value: number | null | undefined) => {

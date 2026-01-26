@@ -163,7 +163,7 @@ class CompareService:
             return "20y"
 
     def get_batch_performance(self, codes: List[str]) -> Dict[str, Dict]:
-        """Get performance metrics for multiple ETFs.
+        """Get performance metrics for multiple ETFs from cache.
 
         Args:
             codes: List of ETF codes (max 50)
@@ -171,8 +171,25 @@ class CompareService:
         Returns:
             Dictionary mapping ETF code to its performance metrics
         """
+        from src.models import PerformanceCache
+
         result = {}
-        for code in codes[:50]:  # Limit to 50 codes
-            perf = self.get_performance(code)
-            result[code] = perf.get("returns", {})
+        codes_limited = codes[:50]  # Limit to 50 codes
+
+        # Fetch all cached data for the requested codes in one query
+        cache_entries = PerformanceCache.query.filter(
+            PerformanceCache.etf_code.in_(codes_limited)
+        ).all()
+
+        # Build lookup dict: {etf_code: {period: return_rate}}
+        cache_lookup = {}
+        for entry in cache_entries:
+            if entry.etf_code not in cache_lookup:
+                cache_lookup[entry.etf_code] = {}
+            cache_lookup[entry.etf_code][entry.period] = entry.return_rate
+
+        # Build result for each code (empty dict if no cache)
+        for code in codes_limited:
+            result[code] = cache_lookup.get(code, {})
+
         return result
