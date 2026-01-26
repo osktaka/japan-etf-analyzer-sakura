@@ -2,6 +2,7 @@
 import apiClient from './client'
 import {
   ApiResponse,
+  BatchPerformanceData,
   Category,
   ChartData,
   ChartPeriod,
@@ -91,5 +92,19 @@ export async function getETFChart(
     return response.data.data
   } catch {
     return null
+  }
+}
+
+export async function getBatchPerformance(
+  codes: string[]
+): Promise<BatchPerformanceData> {
+  if (codes.length === 0) return {}
+  try {
+    const response = await apiClient.get<ApiResponse<BatchPerformanceData>>(
+      `/etfs/performance/batch?codes=${codes.join(',')}`
+    )
+    return response.data.data
+  } catch {
+    return {}
   }
 }

@@ -86,7 +86,15 @@ export interface ApiError {
   }
 }
 
-export type ChartPeriod = '1m' | '3m' | '6m' | '1y' | '3y' | '5y' | '10y' | '20y'
+export type ChartPeriod =
+  | '1m'
+  | '3m'
+  | '6m'
+  | '1y'
+  | '3y'
+  | '5y'
+  | '10y'
+  | '20y'
 
 export interface User {
   id: number
@@ -181,4 +189,24 @@ export interface ETFPerformance {
 export interface PerformanceComparison {
   items: ETFPerformance[]
   periods: string[]
+}
+
+export type PerformancePeriod =
+  | '1m'
+  | '3m'
+  | '6m'
+  | '1y'
+  | '3y'
+  | '5y'
+  | '10y'
+  | '20y'
+
+export type PerformanceReturns = Partial<
+  Record<PerformancePeriod, number | null>
+>
+
+export type BatchPerformanceData = Record<string, PerformanceReturns>
+
+export interface ETFWithPerformance extends ETFSummary {
+  performance?: PerformanceReturns
 }

@@ -95,6 +95,7 @@
 | GET | /etfs | ETF一覧・検索 | F-002 |
 | GET | /etfs/{code} | ETF詳細取得 | F-003 |
 | GET | /etfs/{code}/chart | チャートデータ取得 | F-004 |
+| GET | /etfs/performance/batch | 複数ETFパフォーマンス一括取得 | F-002 |
 | GET | /categories | カテゴリ一覧取得 | - |
 | GET | /tags | タグ一覧取得 | - |
 

@@ -1,7 +1,7 @@
 """ETF API routes."""
 from flask import Blueprint, request
 
-from src.services import ChartService, ETFService
+from src.services import ChartService, CompareService, ETFService
 from src.utils import (
     api_response,
     error_response,
@@ -133,5 +133,39 @@ def create_etf_bp():
             return error_response("ETF not found", 404)
 
         return api_response(data=chart_data)
+
+    @bp.route("/performance/batch", methods=["GET"])
+    def get_batch_performance():
+        """Get performance metrics for multiple ETFs.
+
+        GET /api/v1/etfs/performance/batch
+
+        Query Parameters:
+            codes: Comma-separated ETF codes (max 50)
+
+        Returns:
+            Performance data for each ETF
+        """
+        codes_param = request.args.get("codes", "")
+        if not codes_param:
+            return error_response("codes parameter is required", 400)
+
+        codes = [c.strip() for c in codes_param.split(",") if c.strip()]
+        if not codes:
+            return error_response("At least one valid code is required", 400)
+
+        if len(codes) > 50:
+            return error_response("Maximum 50 codes allowed", 400)
+
+        # Validate each code
+        for code in codes:
+            is_valid, error = validate_etf_code(code)
+            if not is_valid:
+                return error_response(f"Invalid code '{code}': {error}", 400)
+
+        service = CompareService()
+        result = service.get_batch_performance(codes)
+
+        return api_response(data=result)
 
     return bp

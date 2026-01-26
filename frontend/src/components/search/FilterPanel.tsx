@@ -145,8 +145,9 @@ export function FilterPanel({
           {categories.map((cat) => (
             <button
               key={cat.id}
-              className={`${styles.categoryBtn} ${selectedCategory === cat.id ? styles.active : ''
-                }`}
+              className={`${styles.categoryBtn} ${
+                selectedCategory === cat.id ? styles.active : ''
+              }`}
               onClick={() => handleCategoryClick(cat.id)}
             >
               {cat.name}
@@ -161,8 +162,9 @@ export function FilterPanel({
           {tags.map((tag) => (
             <button
               key={tag.id}
-              className={`${styles.tagBtn} ${selectedTags.includes(tag.id) ? styles.active : ''
-                }`}
+              className={`${styles.tagBtn} ${
+                selectedTags.includes(tag.id) ? styles.active : ''
+              }`}
               onClick={() => handleTagClick(tag.id)}
             >
               {tag.name}

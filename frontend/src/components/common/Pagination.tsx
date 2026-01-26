@@ -21,10 +21,14 @@ export function Pagination({
     const maxVisible = 5
     const half = Math.floor(maxVisible / 2)
 
-    const end = Math.min(totalPages, Math.max(1, currentPage - half) + maxVisible - 1)
-    const start = end - Math.max(1, currentPage - half) + 1 < maxVisible
-      ? Math.max(1, end - maxVisible + 1)
-      : Math.max(1, currentPage - half)
+    const end = Math.min(
+      totalPages,
+      Math.max(1, currentPage - half) + maxVisible - 1
+    )
+    const start =
+      end - Math.max(1, currentPage - half) + 1 < maxVisible
+        ? Math.max(1, end - maxVisible + 1)
+        : Math.max(1, currentPage - half)
 
     if (start > 1) {
       pages.push(1)
@@ -58,7 +62,12 @@ export function Pagination({
         typeof page === 'number' ? (
           <button
             key={index}
-            className={[styles.button, currentPage === page ? styles.active : ''].filter(Boolean).join(' ')}
+            className={[
+              styles.button,
+              currentPage === page ? styles.active : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
             onClick={() => onPageChange(page)}
             aria-current={currentPage === page ? 'page' : undefined}
           >

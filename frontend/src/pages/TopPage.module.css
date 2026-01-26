@@ -69,6 +69,22 @@
   margin: 0;
 }
 
+.sectionControls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.resultCount {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-sm);
+  text-align: right;
+}
+
 .compareBar {
   position: fixed;
   bottom: 0;

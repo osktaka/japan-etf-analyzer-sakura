@@ -13,6 +13,10 @@ class CompareService:
         "3m": 90,
         "6m": 180,
         "1y": 365,
+        "3y": 1095,
+        "5y": 1825,
+        "10y": 3650,
+        "20y": 7300,
     }
 
     def __init__(self):
@@ -139,7 +143,7 @@ class CompareService:
             days: Number of days
 
         Returns:
-            Period string (1m, 3m, 6m, 1y, 3y)
+            Period string (1m, 3m, 6m, 1y, 3y, 5y, 10y, 20y)
         """
         if days <= 30:
             return "1m"
@@ -149,5 +153,26 @@ class CompareService:
             return "6m"
         elif days <= 365:
             return "1y"
-        else:
+        elif days <= 1095:
             return "3y"
+        elif days <= 1825:
+            return "5y"
+        elif days <= 3650:
+            return "10y"
+        else:
+            return "20y"
+
+    def get_batch_performance(self, codes: List[str]) -> Dict[str, Dict]:
+        """Get performance metrics for multiple ETFs.
+
+        Args:
+            codes: List of ETF codes (max 50)
+
+        Returns:
+            Dictionary mapping ETF code to its performance metrics
+        """
+        result = {}
+        for code in codes[:50]:  # Limit to 50 codes
+            perf = self.get_performance(code)
+            result[code] = perf.get("returns", {})
+        return result

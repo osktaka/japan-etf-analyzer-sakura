@@ -6,7 +6,6 @@ import styles from './SearchResults.module.css'
 
 interface SearchResultsProps {
   items: ETFSummary[]
-  total: number
   isLoading: boolean
   error: Error | null
   onETFClick: (code: string) => void
@@ -18,7 +17,6 @@ interface SearchResultsProps {
 
 export function SearchResults({
   items,
-  total,
   isLoading,
   error,
   onETFClick,
@@ -45,24 +43,21 @@ export function SearchResults({
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
-        <span className={styles.count}>{total}件</span>
-      </div>
       <div className={styles.grid}>
-      {items.map((etf) => (
-        <ETFCard
-          key={etf.code}
-          etf={etf}
-          onClick={() => onETFClick(etf.code)}
-          isSelected={isInCompare?.(etf.code)}
-          showCompareButton={!!onCompareToggle}
-          onCompareToggle={() => onCompareToggle?.(etf.code)}
-          isFavorite={isFavorite?.(etf.code)}
-          onFavoriteToggle={
-            onFavoriteToggle ? () => onFavoriteToggle(etf.code) : undefined
-          }
-        />
-      ))}
+        {items.map((etf) => (
+          <ETFCard
+            key={etf.code}
+            etf={etf}
+            onClick={() => onETFClick(etf.code)}
+            isSelected={isInCompare?.(etf.code)}
+            showCompareButton={!!onCompareToggle}
+            onCompareToggle={() => onCompareToggle?.(etf.code)}
+            isFavorite={isFavorite?.(etf.code)}
+            onFavoriteToggle={
+              onFavoriteToggle ? () => onFavoriteToggle(etf.code) : undefined
+            }
+          />
+        ))}
       </div>
     </div>
   )
