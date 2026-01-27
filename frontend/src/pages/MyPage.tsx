@@ -5,6 +5,7 @@ import { ETFDetailModal } from '../components/modal/ETFDetailModal'
 import { TradeForm, TradeList } from '../components/trade'
 import { useAuth } from '../hooks/useAuth'
 import { useFavorites } from '../hooks/useFavorites'
+import { useCompareList } from '../hooks/useCompareList'
 import { useTrades } from '../hooks/useTrades'
 import { ETFSummary, CreateTradeRequest } from '../api/types'
 import styles from './MyPage.module.css'
@@ -13,6 +14,7 @@ export function MyPage() {
   const { user } = useAuth()
   const { favorites, isLoading, error, toggleFavorite, isFavorite } =
     useFavorites()
+  const { isInList: isInCompare, toggleCode: toggleCompare } = useCompareList()
   const {
     trades,
     isLoading: tradesLoading,
@@ -72,6 +74,9 @@ export function MyPage() {
                 onClick={() => handleCardClick(favorite.etf)}
                 isFavorite={isFavorite(favorite.etf_code)}
                 onFavoriteToggle={() => toggleFavorite(favorite.etf_code)}
+                showCompareButton
+                isSelected={isInCompare(favorite.etf_code)}
+                onCompareToggle={() => toggleCompare(favorite.etf_code)}
               />
             ))}
           </div>
@@ -110,7 +115,14 @@ export function MyPage() {
       </section>
 
       {selectedETF && (
-        <ETFDetailModal code={selectedETF.code} onClose={handleCloseModal} />
+        <ETFDetailModal
+          code={selectedETF.code}
+          onClose={handleCloseModal}
+          isFavorite={isFavorite(selectedETF.code)}
+          onFavoriteToggle={() => toggleFavorite(selectedETF.code)}
+          isInCompare={isInCompare(selectedETF.code)}
+          onCompareToggle={() => toggleCompare(selectedETF.code)}
+        />
       )}
     </div>
   )

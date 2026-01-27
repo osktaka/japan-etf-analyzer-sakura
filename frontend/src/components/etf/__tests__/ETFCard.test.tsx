@@ -63,14 +63,14 @@ describe('ETFCard', () => {
     expect(handleClick).toHaveBeenCalled()
   })
 
-  it('比較ボタンが表示される（showCompareButton=true）', () => {
+  it('比較チェックボックスが表示される（showCompareButton=true）', () => {
     render(
       <ETFCard etf={mockETF} showCompareButton onCompareToggle={vi.fn()} />
     )
-    expect(screen.getByText('比較に追加')).toBeInTheDocument()
+    expect(screen.getByLabelText('比較に追加')).toBeInTheDocument()
   })
 
-  it('選択状態で比較ボタンテキストが変わる', () => {
+  it('選択状態でaria-labelが変わる', () => {
     render(
       <ETFCard
         etf={mockETF}
@@ -79,16 +79,16 @@ describe('ETFCard', () => {
         onCompareToggle={vi.fn()}
       />
     )
-    expect(screen.getByText('比較から外す')).toBeInTheDocument()
+    expect(screen.getByLabelText('比較から外す')).toBeInTheDocument()
   })
 
-  it('比較ボタンクリック時にonCompareToggleが呼ばれる', () => {
+  it('比較チェックボックスクリック時にonCompareToggleが呼ばれる', () => {
     const handleToggle = vi.fn()
     render(
       <ETFCard etf={mockETF} showCompareButton onCompareToggle={handleToggle} />
     )
 
-    fireEvent.click(screen.getByText('比較に追加'))
+    fireEvent.click(screen.getByLabelText('比較に追加'))
     expect(handleToggle).toHaveBeenCalled()
   })
 

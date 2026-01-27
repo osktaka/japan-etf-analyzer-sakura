@@ -5,6 +5,8 @@ import {
   PerformanceReturns,
 } from '../../api/types'
 import { SortField, SortOrder } from '../../api/etf'
+import { FavoriteButton } from '../favorite'
+import { CompareCheckbox } from '../actions'
 import styles from './ETFTableView.module.css'
 
 // Map table column keys to API sort fields
@@ -109,6 +111,7 @@ export function ETFTableView({
         <table className={styles.table}>
           <thead>
             <tr>
+              {onFavoriteToggle && <th className={styles.favoriteCol}></th>}
               <th
                 onClick={() => handleSort('code')}
                 className={styles.sortable}
@@ -155,9 +158,7 @@ export function ETFTableView({
                   {renderSortIcon(period)}
                 </th>
               ))}
-              {(onCompareToggle || onFavoriteToggle) && (
-                <th className={styles.actions}>操作</th>
-              )}
+              {onCompareToggle && <th className={styles.compareCol}>比較</th>}
             </tr>
           </thead>
           <tbody>
@@ -167,6 +168,18 @@ export function ETFTableView({
                 onClick={() => onETFClick(etf.code)}
                 className={styles.row}
               >
+                {onFavoriteToggle && (
+                  <td
+                    className={styles.favoriteCol}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <FavoriteButton
+                      isFavorite={isFavorite?.(etf.code) ?? false}
+                      onClick={() => onFavoriteToggle(etf.code)}
+                      size="sm"
+                    />
+                  </td>
+                )}
                 <td className={styles.code}>{etf.code}</td>
                 <td className={styles.name}>{etf.name}</td>
                 <td className={styles.category}>{etf.category || '-'}</td>
@@ -191,29 +204,16 @@ export function ETFTableView({
                     {formatPerformance(performance[etf.code]?.[period])}
                   </td>
                 ))}
-                {(onCompareToggle || onFavoriteToggle) && (
+                {onCompareToggle && (
                   <td
-                    className={styles.actions}
+                    className={styles.compareCol}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {onCompareToggle && (
-                      <button
-                        className={`${styles.actionBtn} ${isInCompare?.(etf.code) ? styles.active : ''}`}
-                        onClick={() => onCompareToggle(etf.code)}
-                        title="比較"
-                      >
-                        比較
-                      </button>
-                    )}
-                    {onFavoriteToggle && (
-                      <button
-                        className={`${styles.actionBtn} ${isFavorite?.(etf.code) ? styles.active : ''}`}
-                        onClick={() => onFavoriteToggle(etf.code)}
-                        title="お気に入り"
-                      >
-                        お気に入り
-                      </button>
-                    )}
+                    <CompareCheckbox
+                      isInCompare={isInCompare?.(etf.code) ?? false}
+                      onToggle={() => onCompareToggle(etf.code)}
+                      size="sm"
+                    />
                   </td>
                 )}
               </tr>

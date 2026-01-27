@@ -26,6 +26,23 @@ import { ROUTES, MAX_COMPARE_ITEMS } from '../utils'
 import styles from './TopPage.module.css'
 
 const PAGE_SIZE = 50
+const PERIODS_STORAGE_KEY = 'etf-table-view-periods'
+
+// ローカルストレージから表示期間を復元
+const getStoredPeriods = (): PerformancePeriod[] => {
+  try {
+    const stored = localStorage.getItem(PERIODS_STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed
+      }
+    }
+  } catch {
+    // パースエラー時はデフォルト値を返す
+  }
+  return ['6m', '1y', '3y']
+}
 
 export function TopPage() {
   const navigate = useNavigate()
@@ -55,11 +72,8 @@ export function TopPage() {
     (searchParams.get('view') as ViewMode) || 'card'
   )
   const [performance, setPerformance] = useState<BatchPerformanceData>({})
-  const [selectedPeriods, setSelectedPeriods] = useState<PerformancePeriod[]>([
-    '6m',
-    '1y',
-    '3y',
-  ])
+  const [selectedPeriods, setSelectedPeriods] =
+    useState<PerformancePeriod[]>(getStoredPeriods)
 
   // おすすめタブの状態
   const [recommendTab, setRecommendTab] = useState(
@@ -94,6 +108,11 @@ export function TopPage() {
       getBatchPerformance(codes).then(setPerformance)
     }
   }, [viewMode, items])
+
+  // 表示期間をローカルストレージに保存
+  useEffect(() => {
+    localStorage.setItem(PERIODS_STORAGE_KEY, JSON.stringify(selectedPeriods))
+  }, [selectedPeriods])
 
   // URLパラメータ更新ヘルパー
   const updateURL = useCallback(
@@ -298,9 +317,6 @@ export function TopPage() {
         onCompareToggle={handleCompareToggle}
         isFavorite={isFavorite}
         onFavoriteToggle={handleFavoriteToggle}
-        onShowAll={() =>
-          etfListRef.current?.scrollIntoView({ behavior: 'smooth' })
-        }
         selectedPerspective={recommendTab}
         onSelectPerspective={handleRecommendTabChange}
       />

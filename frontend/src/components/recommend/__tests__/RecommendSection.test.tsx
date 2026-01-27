@@ -128,7 +128,7 @@ describe('RecommendSection', () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByText('比較に追加')).toBeInTheDocument()
+      expect(screen.getByLabelText('比較に追加')).toBeInTheDocument()
     })
   })
 

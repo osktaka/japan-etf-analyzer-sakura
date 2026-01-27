@@ -71,7 +71,7 @@ export function FavoriteSelectModal({
             &times;
           </button>
           <div className={styles.content}>
-            <div className={styles.icon}>&#9829;</div>
+            <div className={styles.icon}>★</div>
             <h2 className={styles.title}>お気に入りから追加</h2>
             <p className={styles.description}>
               お気に入り機能はログイン後にご利用いただけます。

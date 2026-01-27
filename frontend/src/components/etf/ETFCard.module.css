@@ -24,7 +24,7 @@
   margin-bottom: var(--spacing-sm);
 }
 
-.header > :last-child:not(.code):not(.category) {
+.header > :last-child {
   margin-left: auto;
 }
 
@@ -79,25 +79,4 @@
   flex-wrap: wrap;
   gap: var(--spacing-xs);
   margin-bottom: var(--spacing-md);
-}
-
-.compareBtn {
-  width: 100%;
-  padding: var(--spacing-sm);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  background-color: transparent;
-  transition: all 0.2s;
-}
-
-.compareBtn:hover {
-  background-color: var(--color-bg-hover);
-}
-
-.compareBtn.active {
-  background-color: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
 }

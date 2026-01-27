@@ -2,6 +2,7 @@
 import { ETFSummary } from '../../api'
 import { formatPrice, formatPercent } from '../../utils'
 import { FavoriteButton } from '../favorite'
+import { CompareCheckbox } from '../actions'
 import { TagBadge } from './TagBadge'
 import styles from './ETFCard.module.css'
 
@@ -33,14 +34,21 @@ export function ETFCard({
       onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
     >
       <div className={styles.header}>
-        <span className={styles.code}>{etf.code}</span>
-        {etf.category && (
-          <span className={styles.category}>{etf.category}</span>
-        )}
         {onFavoriteToggle && (
           <FavoriteButton
             isFavorite={isFavorite ?? false}
             onClick={onFavoriteToggle}
+            size="sm"
+          />
+        )}
+        <span className={styles.code}>{etf.code}</span>
+        {etf.category && (
+          <span className={styles.category}>{etf.category}</span>
+        )}
+        {showCompareButton && onCompareToggle && (
+          <CompareCheckbox
+            isInCompare={isSelected ?? false}
+            onToggle={onCompareToggle}
             size="sm"
           />
         )}
@@ -70,17 +78,6 @@ export function ETFCard({
             <TagBadge key={tag.id} tag={tag} size="sm" />
           ))}
         </div>
-      )}
-      {showCompareButton && (
-        <button
-          className={`${styles.compareBtn} ${isSelected ? styles.active : ''}`}
-          onClick={(e) => {
-            e.stopPropagation()
-            onCompareToggle?.()
-          }}
-        >
-          {isSelected ? '比較から外す' : '比較に追加'}
-        </button>
       )}
     </div>
   )

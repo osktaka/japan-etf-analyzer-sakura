@@ -9,6 +9,7 @@ import {
 import { Loading, ErrorMessage } from '../common'
 import { TagBadge } from '../etf'
 import { FavoriteButton } from '../favorite'
+import { CompareCheckbox } from '../actions'
 import { ChartContainer } from '../chart'
 import styles from './ETFDetailModal.module.css'
 
@@ -52,7 +53,14 @@ export function ETFDetailModal({
           <>
             <div className={styles.header}>
               <div className={styles.headerTop}>
-                <div>
+                <div className={styles.headerLeft}>
+                  {onFavoriteToggle && (
+                    <FavoriteButton
+                      isFavorite={isFavorite ?? false}
+                      onClick={onFavoriteToggle}
+                      size="lg"
+                    />
+                  )}
                   <span className={styles.code}>{data.code}</span>
                   {data.category && (
                     <span className={styles.category}>
@@ -60,10 +68,10 @@ export function ETFDetailModal({
                     </span>
                   )}
                 </div>
-                {onFavoriteToggle && (
-                  <FavoriteButton
-                    isFavorite={isFavorite ?? false}
-                    onClick={onFavoriteToggle}
+                {onCompareToggle && (
+                  <CompareCheckbox
+                    isInCompare={isInCompare ?? false}
+                    onToggle={onCompareToggle}
                     size="lg"
                   />
                 )}
@@ -127,14 +135,6 @@ export function ETFDetailModal({
               <span className={styles.listingDate}>
                 上場日: {formatDate(data.listing_date)}
               </span>
-              {onCompareToggle && (
-                <button
-                  className={`btn ${isInCompare ? 'btn-secondary' : 'btn-primary'}`}
-                  onClick={onCompareToggle}
-                >
-                  {isInCompare ? '比較から外す' : '比較に追加'}
-                </button>
-              )}
             </div>
           </>
         )}

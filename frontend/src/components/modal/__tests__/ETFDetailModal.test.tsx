@@ -129,7 +129,7 @@ describe('ETFDetailModal', () => {
     expect(screen.getByText('データの取得に失敗しました')).toBeInTheDocument()
   })
 
-  it('比較ボタンが表示される', () => {
+  it('比較チェックボックスが表示される', () => {
     render(
       <ETFDetailModal
         code="1306"
@@ -138,10 +138,10 @@ describe('ETFDetailModal', () => {
         onCompareToggle={vi.fn()}
       />
     )
-    expect(screen.getByText('比較に追加')).toBeInTheDocument()
+    expect(screen.getByLabelText('比較に追加')).toBeInTheDocument()
   })
 
-  it('比較ボタンクリックでonCompareToggleが呼ばれる', () => {
+  it('比較チェックボックスクリックでonCompareToggleが呼ばれる', () => {
     const handleToggle = vi.fn()
     render(
       <ETFDetailModal
@@ -152,7 +152,7 @@ describe('ETFDetailModal', () => {
       />
     )
 
-    fireEvent.click(screen.getByText('比較に追加'))
+    fireEvent.click(screen.getByLabelText('比較に追加'))
     expect(handleToggle).toHaveBeenCalled()
   })
 

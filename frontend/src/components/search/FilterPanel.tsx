@@ -131,14 +131,6 @@ export function FilterPanel({
         </button>
       </div>
 
-      <div className={styles.searchSection}>
-        <SearchBar
-          onSearch={onSearch}
-          placeholder="銘柄コードまたは名前で検索..."
-          initialKeyword={initialKeyword}
-        />
-      </div>
-
       <div className={styles.section}>
         <div className={styles.sectionTitle}>カテゴリ</div>
         <div className={styles.categories}>
@@ -173,8 +165,15 @@ export function FilterPanel({
         </div>
       </div>
 
+      <div className={styles.searchSection}>
+        <SearchBar
+          onSearch={onSearch}
+          placeholder="銘柄コードまたは名前で検索..."
+          initialKeyword={initialKeyword}
+        />
+      </div>
+
       <div className={styles.section}>
-        <div className={styles.sectionTitle}>配当利回り・信託報酬</div>
         <div className={styles.rangeInputs}>
           <div className={styles.rangeGroup}>
             <label>配当利回り（%以上）</label>

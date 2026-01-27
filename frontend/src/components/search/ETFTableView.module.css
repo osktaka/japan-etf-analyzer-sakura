@@ -141,34 +141,16 @@
   color: var(--color-error);
 }
 
-.actions {
+.favoriteCol {
   text-align: center;
+  width: 40px;
+  padding: var(--spacing-xs) !important;
 }
 
-.actionBtn {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-card);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
-  cursor: pointer;
-  margin-left: var(--spacing-xs);
-  transition: all 0.15s ease;
-}
-
-.actionBtn:first-child {
-  margin-left: 0;
-}
-
-.actionBtn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
-.actionBtn.active {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: white;
+.compareCol {
+  text-align: center;
+  width: 50px;
+  padding: var(--spacing-xs) !important;
 }
 
 /* Responsive */
