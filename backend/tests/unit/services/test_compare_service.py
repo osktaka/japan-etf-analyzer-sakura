@@ -13,9 +13,13 @@ class TestCompareServiceBatchPerformance:
         # Setup cache data
         entries = [
             PerformanceCache(etf_code="1306", period="1m", return_rate=4.78),
-            PerformanceCache(etf_code="1306", period="1y", return_rate=35.92),
+            PerformanceCache(
+                etf_code="1306", period="1y", return_rate=35.92, volatility=15.2
+            ),
             PerformanceCache(etf_code="1348", period="1m", return_rate=5.12),
-            PerformanceCache(etf_code="1348", period="1y", return_rate=35.96),
+            PerformanceCache(
+                etf_code="1348", period="1y", return_rate=35.96, volatility=16.5
+            ),
         ]
         for entry in entries:
             entry.calculated_at = datetime.utcnow()
@@ -28,9 +32,12 @@ class TestCompareServiceBatchPerformance:
 
         assert "1306" in result
         assert "1348" in result
-        assert result["1306"]["1m"] == 4.78
-        assert result["1306"]["1y"] == 35.92
-        assert result["1348"]["1m"] == 5.12
+        # New structure: {"returns": {...}, "volatility": ...}
+        assert result["1306"]["returns"]["1m"] == 4.78
+        assert result["1306"]["returns"]["1y"] == 35.92
+        assert result["1306"]["volatility"] == 15.2
+        assert result["1348"]["returns"]["1m"] == 5.12
+        assert result["1348"]["volatility"] == 16.5
 
     def test_get_batch_performance_missing_code(self, db_session):
         """Test getting batch performance for code not in cache."""
@@ -48,7 +55,9 @@ class TestCompareServiceBatchPerformance:
         service = CompareService()
         result = service.get_batch_performance(["1306", "9999"])
 
-        assert result["1306"] == {"1m": 4.78}
+        # New structure: {"returns": {...}, "volatility": ...}
+        assert result["1306"]["returns"] == {"1m": 4.78}
+        assert result["1306"]["volatility"] is None
         assert result["9999"] == {}  # Empty dict for missing code
 
     def test_get_batch_performance_limit_50(self, db_session):
@@ -75,4 +84,6 @@ class TestCompareServiceBatchPerformance:
         service = CompareService()
         result = service.get_batch_performance(["1306"])
 
-        assert result["1306"]["20y"] is None
+        # New structure: {"returns": {...}, "volatility": ...}
+        assert result["1306"]["returns"]["20y"] is None
+        assert result["1306"]["volatility"] is None

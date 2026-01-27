@@ -209,6 +209,53 @@ def calculate_return_from_df(df, days: int) -> Optional[float]:
     return round(((last_close - first_close) / first_close) * 100, 2)
 
 
+def calculate_volatility_from_df(df, days: int = 365) -> Optional[float]:
+    """Calculate annualized volatility from a DataFrame.
+
+    Args:
+        df: DataFrame with price data (requires 'Close' column)
+        days: Number of days to analyze (default: 365 for 1 year)
+
+    Returns:
+        Annualized volatility percentage or None if insufficient data
+    """
+    if df.empty or len(df) < 10:
+        return None
+
+    # 指定日数分の範囲を取得（最新から遡って）
+    df_period = df.tail(min(days, len(df)))
+    if len(df_period) < 10:
+        return None
+
+    # 日次リターンを計算
+    closes = df_period["Close"].dropna()
+    if len(closes) < 10:
+        return None
+
+    daily_returns = []
+    for i in range(1, len(closes)):
+        prev_close = closes.iloc[i - 1]
+        curr_close = closes.iloc[i]
+
+        if prev_close and curr_close and prev_close > 0:
+            if not math.isnan(prev_close) and not math.isnan(curr_close):
+                daily_return = (curr_close - prev_close) / prev_close
+                daily_returns.append(daily_return)
+
+    if len(daily_returns) < 5:
+        return None
+
+    # 標準偏差を計算
+    mean = sum(daily_returns) / len(daily_returns)
+    variance = sum((r - mean) ** 2 for r in daily_returns) / len(daily_returns)
+    std_dev = math.sqrt(variance)
+
+    # 年率化（営業日数の平方根を掛ける）
+    annualized = std_dev * math.sqrt(252) * 100
+
+    return round(annualized, 2)
+
+
 def update_performance_cache(codes: list) -> tuple:
     """Update performance cache for given ETF codes.
 
@@ -239,6 +286,9 @@ def update_performance_cache(codes: list) -> tuple:
                 fail += 1
                 continue
 
+            # ボラティリティを計算（1年データから）
+            volatility = calculate_volatility_from_df(df, 365)
+
             # 各期間の上昇率を計算
             for period_id, days in PERIODS.items():
                 return_rate = calculate_return_from_df(df, days)
@@ -248,21 +298,29 @@ def update_performance_cache(codes: list) -> tuple:
                     etf_code=code, period=period_id
                 ).first()
 
+                # ボラティリティは1y期間のレコードにのみ保存
+                vol_value = volatility if period_id == "1y" else None
+
                 if existing:
                     existing.return_rate = return_rate
+                    existing.volatility = vol_value
                     existing.calculated_at = datetime.utcnow()
                 else:
                     cache = PerformanceCache(
                         etf_code=code,
                         period=period_id,
                         return_rate=return_rate,
+                        volatility=vol_value,
                         calculated_at=datetime.utcnow(),
                     )
                     db.session.add(cache)
 
             db.session.commit()
             success += 1
-            logger.info(f"[{i}/{len(codes)}] {code}: Performance cache updated")
+            vol_str = f"{volatility}%" if volatility else "N/A"
+            logger.info(
+                f"[{i}/{len(codes)}] {code}: Performance cache updated (vol={vol_str})"
+            )
 
             # レート制限対策
             if i < len(codes):

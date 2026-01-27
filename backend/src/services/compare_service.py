@@ -53,9 +53,40 @@ class CompareService:
         Returns:
             Dictionary with comparison data
         """
+        # キャッシュから一括取得（1回のDBクエリ）
+        cached = self.get_batch_performance(codes)
+
+        # キャッシュにない銘柄を特定（returnsが空 = キャッシュミス）
+        missing_codes = [
+            code for code in codes if not cached.get(code, {}).get("returns")
+        ]
+
+        # キャッシュミス時はフォールバック（従来の計算処理）
+        fallback_data = {}
+        for code in missing_codes:
+            perf = self.get_performance(code)
+            fallback_data[code] = {
+                "returns": perf.get("returns", {}),
+                "volatility": perf.get("volatility"),
+            }
+
         performances = []
         for code in codes:
-            perf = self.get_performance(code)
+            if code in fallback_data:
+                # フォールバックデータを使用
+                perf = {
+                    "code": code,
+                    "returns": fallback_data[code]["returns"],
+                    "volatility": fallback_data[code]["volatility"],
+                }
+            else:
+                # キャッシュデータを使用
+                cached_returns = cached.get(code, {})
+                perf = {
+                    "code": code,
+                    "returns": cached_returns.get("returns", cached_returns),
+                    "volatility": cached_returns.get("volatility"),
+                }
             performances.append(perf)
 
         return {
@@ -170,6 +201,7 @@ class CompareService:
 
         Returns:
             Dictionary mapping ETF code to its performance metrics
+            Example: {"1306": {"returns": {"1m": 2.5, ...}, "volatility": 15.2}}
         """
         from src.models import PerformanceCache
 
@@ -181,12 +213,15 @@ class CompareService:
             PerformanceCache.etf_code.in_(codes_limited)
         ).all()
 
-        # Build lookup dict: {etf_code: {period: return_rate}}
+        # Build lookup dict: {etf_code: {"returns": {period: rate}, "volatility": val}}
         cache_lookup = {}
         for entry in cache_entries:
             if entry.etf_code not in cache_lookup:
-                cache_lookup[entry.etf_code] = {}
-            cache_lookup[entry.etf_code][entry.period] = entry.return_rate
+                cache_lookup[entry.etf_code] = {"returns": {}, "volatility": None}
+            cache_lookup[entry.etf_code]["returns"][entry.period] = entry.return_rate
+            # ボラティリティは1y期間のレコードから取得
+            if entry.period == "1y" and entry.volatility is not None:
+                cache_lookup[entry.etf_code]["volatility"] = entry.volatility
 
         # Build result for each code (empty dict if no cache)
         for code in codes_limited:

@@ -15,6 +15,7 @@ class PerformanceCache(db.Model):
         db.String(5), nullable=False
     )  # '1m','3m','6m','1y','3y','5y','10y','20y'
     return_rate = db.Column(db.Float, nullable=True)
+    volatility = db.Column(db.Float, nullable=True)  # 年率ボラティリティ（1y期間のみ）
     calculated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     __table_args__ = (
@@ -27,6 +28,7 @@ class PerformanceCache(db.Model):
             "etf_code": self.etf_code,
             "period": self.period,
             "return_rate": self.return_rate,
+            "volatility": self.volatility,
             "calculated_at": self.calculated_at.isoformat()
             if self.calculated_at
             else None,
