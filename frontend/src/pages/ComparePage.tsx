@@ -33,7 +33,7 @@ export function ComparePage() {
     null
   )
   const [isLoading, setIsLoading] = useState(true)
-  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('1m')
+  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('1y')
   const [chartMode, setChartMode] = useState<ChartMode>('overlay')
   const [chartDatasets, setChartDatasets] = useState<
     Array<{ code: string; name: string; data: ChartData }>
@@ -175,6 +175,55 @@ export function ComparePage() {
 
       {!isLoading && etfs.length > 0 && (
         <>
+          <div className={styles.chartSection}>
+            <div className={styles.chartHeader}>
+              <h2>価格チャート比較</h2>
+              <div className={styles.chartControls}>
+                <div className={styles.modeToggle}>
+                  <button
+                    className={`${styles.modeBtn} ${chartMode === 'overlay' ? styles.active : ''}`}
+                    onClick={() => setChartMode('overlay')}
+                  >
+                    重ね描き
+                  </button>
+                  <button
+                    className={`${styles.modeBtn} ${chartMode === 'individual' ? styles.active : ''}`}
+                    onClick={() => setChartMode('individual')}
+                  >
+                    個別
+                  </button>
+                </div>
+                <div className={styles.periods}>
+                  {CHART_PERIODS.map((p) => (
+                    <button
+                      key={p.id}
+                      className={`${styles.periodBtn} ${chartPeriod === p.id ? styles.active : ''}`}
+                      onClick={() => setChartPeriod(p.id as ChartPeriod)}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            {isChartLoading && <Loading />}
+            {!isChartLoading && chartMode === 'overlay' && (
+              <OverlayChart datasets={chartDatasets} height={400} />
+            )}
+            {!isChartLoading && chartMode === 'individual' && (
+              <div className={styles.charts}>
+                {etfs.map((etf) => (
+                  <CompareChart
+                    key={etf.code}
+                    code={etf.code}
+                    name={etf.name}
+                    period={chartPeriod}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className={styles.tableWrapper}>
             <table className={styles.table}>
               <thead>
@@ -315,55 +364,6 @@ export function ComparePage() {
                 )}
               </tbody>
             </table>
-          </div>
-
-          <div className={styles.chartSection}>
-            <div className={styles.chartHeader}>
-              <h2>価格チャート比較</h2>
-              <div className={styles.chartControls}>
-                <div className={styles.modeToggle}>
-                  <button
-                    className={`${styles.modeBtn} ${chartMode === 'overlay' ? styles.active : ''}`}
-                    onClick={() => setChartMode('overlay')}
-                  >
-                    重ね描き
-                  </button>
-                  <button
-                    className={`${styles.modeBtn} ${chartMode === 'individual' ? styles.active : ''}`}
-                    onClick={() => setChartMode('individual')}
-                  >
-                    個別
-                  </button>
-                </div>
-                <div className={styles.periods}>
-                  {CHART_PERIODS.map((p) => (
-                    <button
-                      key={p.id}
-                      className={`${styles.periodBtn} ${chartPeriod === p.id ? styles.active : ''}`}
-                      onClick={() => setChartPeriod(p.id as ChartPeriod)}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            {isChartLoading && <Loading />}
-            {!isChartLoading && chartMode === 'overlay' && (
-              <OverlayChart datasets={chartDatasets} height={400} />
-            )}
-            {!isChartLoading && chartMode === 'individual' && (
-              <div className={styles.charts}>
-                {etfs.map((etf) => (
-                  <CompareChart
-                    key={etf.code}
-                    code={etf.code}
-                    name={etf.name}
-                    period={chartPeriod}
-                  />
-                ))}
-              </div>
-            )}
           </div>
         </>
       )}
