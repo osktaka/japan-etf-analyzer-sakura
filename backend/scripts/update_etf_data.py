@@ -137,7 +137,10 @@ def update_single_etf(
                     total_assets = info.get("totalAssets")
                     if dividend_yield is not None:
                         dividend_yield = round(dividend_yield, 2)
-                    update_etf_info(code, dividend_yield, total_assets)
+                    market_price = info.get("regularMarketPrice")
+                    if market_price is not None:
+                        market_price = round(float(market_price), 2)
+                    update_etf_info(code, dividend_yield, total_assets, market_price)
                     return True
             else:
                 # Fallback to full if status check failed
@@ -162,7 +165,8 @@ def update_single_etf(
 
         # DBに保存（Flask app contextが必要）
         save_to_db(code, df)
-        update_etf_info(code, dividend_yield, total_assets)
+        market_price = round(float(df['Close'].iloc[-1]), 2) if not df.empty else None
+        update_etf_info(code, dividend_yield, total_assets, market_price)
         yield_str = f"{dividend_yield}%" if dividend_yield else "N/A"
         assets_str = f"{total_assets:,}" if total_assets else "N/A"
         mode_str = "[FULL]" if full else ("[INCR]" if smart else "")
@@ -184,9 +188,12 @@ def update_single_etf(
 
 
 def update_etf_info(
-    code: str, dividend_yield: Optional[float], total_assets: Optional[int]
+    code: str,
+    dividend_yield: Optional[float],
+    total_assets: Optional[int],
+    market_price: Optional[float] = None,
 ) -> None:
-    """Update ETF info (dividend yield, total assets)."""
+    """Update ETF info (dividend yield, total assets, market price)."""
     from src.models import ETF, db
 
     etf = ETF.query.filter_by(code=code).first()
@@ -195,6 +202,8 @@ def update_etf_info(
             etf.dividend_yield = dividend_yield
         if total_assets is not None:
             etf.total_assets = total_assets
+        if market_price is not None:
+            etf.market_price = market_price
         db.session.commit()
 
 
