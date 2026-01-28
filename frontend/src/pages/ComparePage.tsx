@@ -80,7 +80,6 @@ export function ComparePage() {
   const handleAddFromFavorite = useCallback(
     async (code: string) => {
       addCode(code)
-      setIsFavoriteModalOpen(false)
 
       // 新規銘柄のみAPI取得
       const newEtf = await getETFDetail(code)
@@ -160,7 +159,7 @@ export function ComparePage() {
             className="btn btn-primary"
             onClick={() => setIsFavoriteModalOpen(true)}
           >
-            お気に入りから追加
+            お気に入り
           </button>
           <button className="btn btn-secondary" onClick={handleClearAll}>
             リストをクリア
@@ -172,6 +171,7 @@ export function ComparePage() {
         isOpen={isFavoriteModalOpen}
         onClose={() => setIsFavoriteModalOpen(false)}
         onSelect={handleAddFromFavorite}
+        onRemove={handleRemove}
         existingCodes={codes}
       />
 

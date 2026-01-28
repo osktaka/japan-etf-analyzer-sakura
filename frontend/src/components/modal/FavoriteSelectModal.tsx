@@ -3,15 +3,19 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks'
 import { favoritesApi } from '../../api/favorites'
-import { Favorite } from '../../api/types'
+import { getBatchPerformance } from '../../api/etf'
+import { Favorite, BatchPerformanceData } from '../../api/types'
 import { ROUTES } from '../../utils'
 import { Loading } from '../common'
+import { FavoriteButton } from '../favorite/FavoriteButton'
+import { CompareCheckbox } from '../actions'
 import styles from './FavoriteSelectModal.module.css'
 
 interface FavoriteSelectModalProps {
   isOpen: boolean
   onClose: () => void
   onSelect: (code: string) => void
+  onRemove?: (code: string) => void
   existingCodes: string[]
 }
 
@@ -19,13 +23,16 @@ export function FavoriteSelectModal({
   isOpen,
   onClose,
   onSelect,
+  onRemove,
   existingCodes,
 }: FavoriteSelectModalProps) {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const [favorites, setFavorites] = useState<Favorite[]>([])
+  const [removedCodes, setRemovedCodes] = useState<Set<string>>(new Set())
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [performance, setPerformance] = useState<BatchPerformanceData>({})
 
   const fetchFavorites = useCallback(async () => {
     setIsLoading(true)
@@ -33,6 +40,13 @@ export function FavoriteSelectModal({
     try {
       const data = await favoritesApi.getAll()
       setFavorites(data)
+      setRemovedCodes(new Set())
+      // パフォーマンスデータを取得
+      if (data.length > 0) {
+        const codes = data.map((f) => f.etf_code)
+        const perfData = await getBatchPerformance(codes)
+        setPerformance(perfData)
+      }
     } catch {
       setError('お気に入りの取得に失敗しました')
     } finally {
@@ -58,8 +72,48 @@ export function FavoriteSelectModal({
     navigate(ROUTES.REGISTER)
   }
 
-  const handleSelect = (code: string) => {
-    onSelect(code)
+  const handleFavoriteToggle = async (code: string) => {
+    const isCurrentlyRemoved = removedCodes.has(code)
+    if (isCurrentlyRemoved) {
+      // 再度お気に入りに追加
+      try {
+        await favoritesApi.add(code)
+        setRemovedCodes((prev) => {
+          const next = new Set(prev)
+          next.delete(code)
+          return next
+        })
+      } catch {
+        // エラー時は何もしない
+      }
+    } else {
+      // お気に入りから削除
+      try {
+        await favoritesApi.remove(code)
+        setRemovedCodes((prev) => new Set(prev).add(code))
+      } catch {
+        // エラー時は何もしない
+      }
+    }
+  }
+
+  const handleCheckboxChange = (code: string) => {
+    if (existingCodes.includes(code)) {
+      onRemove?.(code)
+    } else {
+      onSelect(code)
+    }
+  }
+
+  const formatPerformance = (value: number | null | undefined) => {
+    if (value === null || value === undefined) return '-'
+    const formatted = value.toFixed(1)
+    return value >= 0 ? `+${formatted}%` : `${formatted}%`
+  }
+
+  const getPerformanceClass = (value: number | null | undefined) => {
+    if (value === null || value === undefined) return ''
+    return value >= 0 ? styles.positive : styles.negative
   }
 
   // 未ログイン時はログイン促進表示
@@ -72,7 +126,7 @@ export function FavoriteSelectModal({
           </button>
           <div className={styles.content}>
             <div className={styles.icon}>★</div>
-            <h2 className={styles.title}>お気に入りから追加</h2>
+            <h2 className={styles.title}>お気に入り銘柄</h2>
             <p className={styles.description}>
               お気に入り機能はログイン後にご利用いただけます。
             </p>
@@ -100,10 +154,7 @@ export function FavoriteSelectModal({
           &times;
         </button>
         <div className={styles.content}>
-          <h2 className={styles.title}>お気に入りから追加</h2>
-          <p className={styles.description}>
-            比較リストに追加する銘柄を選択してください
-          </p>
+          <h2 className={styles.title}>お気に入り銘柄</h2>
 
           {isLoading && <Loading />}
 
@@ -114,28 +165,60 @@ export function FavoriteSelectModal({
           )}
 
           {!isLoading && !error && favorites.length > 0 && (
-            <div className={styles.list}>
-              {favorites.map((fav) => {
-                const isInList = existingCodes.includes(fav.etf_code)
-                return (
-                  <button
-                    key={fav.id}
-                    className={`${styles.item} ${isInList ? styles.disabled : ''}`}
-                    onClick={() => !isInList && handleSelect(fav.etf_code)}
-                    disabled={isInList}
-                  >
-                    <span className={styles.code}>{fav.etf_code}</span>
-                    <span className={styles.name}>{fav.etf.name}</span>
-                    {isInList && <span className={styles.badge}>追加済み</span>}
-                  </button>
-                )
-              })}
+            <div className={styles.tableWrapper}>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th className={styles.favoriteCol}></th>
+                    <th>コード</th>
+                    <th>銘柄名</th>
+                    <th>カテゴリ</th>
+                    <th className={styles.performanceCol}>1Y</th>
+                    <th className={styles.compareCol}>比較</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {favorites.map((fav) => {
+                    const isInList = existingCodes.includes(fav.etf_code)
+                    const isRemoved = removedCodes.has(fav.etf_code)
+                    const perf = performance[fav.etf_code]?.returns || {}
+                    return (
+                      <tr
+                        key={fav.id}
+                        className={isRemoved ? styles.removed : ''}
+                      >
+                        <td className={styles.favoriteCol}>
+                          <FavoriteButton
+                            isFavorite={!isRemoved}
+                            onClick={() => handleFavoriteToggle(fav.etf_code)}
+                            size="sm"
+                          />
+                        </td>
+                        <td className={styles.code}>{fav.etf_code}</td>
+                        <td className={styles.name}>{fav.etf.name}</td>
+                        <td className={styles.category}>
+                          {fav.etf.category || '-'}
+                        </td>
+                        <td
+                          className={`${styles.performanceCol} ${getPerformanceClass(perf['1y'])}`}
+                        >
+                          {formatPerformance(perf['1y'])}
+                        </td>
+                        <td className={styles.compareCol}>
+                          <CompareCheckbox
+                            isInCompare={isInList}
+                            onToggle={() => handleCheckboxChange(fav.etf_code)}
+                            disabled={isRemoved}
+                            size="sm"
+                          />
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
-
-          <button className={styles.closeLink} onClick={onClose}>
-            閉じる
-          </button>
         </div>
       </div>
     </div>

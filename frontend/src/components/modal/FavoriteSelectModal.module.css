@@ -12,7 +12,7 @@
 .modal {
   background-color: var(--color-bg-card);
   border-radius: var(--radius-lg);
-  max-width: 480px;
+  max-width: 800px;
   width: 100%;
   max-height: 80vh;
   padding: var(--spacing-xl);
@@ -58,11 +58,6 @@
   color: var(--color-text);
 }
 
-.description {
-  color: var(--color-text-secondary);
-  text-align: center;
-}
-
 .buttons {
   display: flex;
   gap: var(--spacing-md);
@@ -74,60 +69,57 @@
   min-width: 120px;
 }
 
-.closeLink {
-  background: none;
-  border: none;
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  cursor: pointer;
-  margin-top: var(--spacing-sm);
-}
-
-.closeLink:hover {
-  text-decoration: underline;
-}
-
-.list {
+.tableWrapper {
   width: 100%;
-  max-height: 300px;
+  max-height: 400px;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-sm);
 }
 
-.item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md);
-  background-color: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  text-align: left;
-  cursor: pointer;
-  transition: all 0.2s;
+.table {
   width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
 }
 
-.item:hover:not(.disabled) {
+.table th,
+.table td {
+  padding: var(--spacing-sm) var(--spacing-xs);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table th {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.table tbody tr:hover:not(.removed) {
   background-color: var(--color-bg-hover);
-  border-color: var(--color-primary);
 }
 
-.item.disabled {
+.removed {
   opacity: 0.5;
-  cursor: not-allowed;
+  background-color: var(--color-bg-hover);
+}
+
+.favoriteCol {
+  text-align: center;
+  width: 40px;
+  padding: var(--spacing-xs) !important;
 }
 
 .code {
   font-weight: 700;
   color: var(--color-primary);
-  min-width: 60px;
+  width: 50px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .name {
-  flex: 1;
+  max-width: 180px;
   font-size: var(--text-sm);
   color: var(--color-text);
   overflow: hidden;
@@ -135,12 +127,37 @@
   white-space: nowrap;
 }
 
-.badge {
+.category {
+  width: 80px;
+  flex-shrink: 0;
   font-size: var(--text-xs);
-  padding: 2px 8px;
-  background-color: var(--color-bg-hover);
   color: var(--color-text-secondary);
-  border-radius: var(--radius-full);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.performanceCol {
+  width: 70px;
+  font-size: var(--text-sm);
+  text-align: right;
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.positive {
+  color: var(--color-success);
+}
+
+.negative {
+  color: var(--color-error);
+}
+
+.compareCol {
+  text-align: center;
+  width: 60px;
+  padding: var(--spacing-xs) !important;
 }
 
 .error {
