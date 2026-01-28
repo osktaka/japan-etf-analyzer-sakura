@@ -1,5 +1,5 @@
 /** Chart utility functions */
-import { ChartDataPoint } from '../api'
+import { ChartDataPoint, ChartPeriod } from '../api'
 
 export interface NormalizedDataPoint {
   date: string
@@ -41,4 +41,43 @@ export const CHART_COLORS = [
  */
 export function getChartColor(index: number): string {
   return CHART_COLORS[index % CHART_COLORS.length]
+}
+
+/** Moving average periods based on chart period */
+export function getMovingAveragePeriods(chartPeriod: ChartPeriod): number[] {
+  switch (chartPeriod) {
+    case '1m':
+      return [5]
+    case '3m':
+      return [5, 25]
+    case '6m':
+      return [25, 75]
+    default:
+      // 1y, 3y, 5y, 10y, 20y
+      return [25, 75, 200]
+  }
+}
+
+/** Moving average line colors */
+export const MA_COLORS: Record<number, string> = {
+  5: '#8B5CF6', // violet
+  25: '#F59E0B', // amber
+  75: '#10B981', // green
+  200: '#EF4444', // red
+}
+
+/**
+ * Calculate simple moving average for price data
+ * Returns null for data points where there isn't enough history
+ */
+export function calculateMovingAverage(
+  data: ChartDataPoint[],
+  period: number
+): (number | null)[] {
+  return data.map((_, index) => {
+    if (index < period - 1) return null
+    const slice = data.slice(index - period + 1, index + 1)
+    const sum = slice.reduce((acc, point) => acc + point.close, 0)
+    return sum / period
+  })
 }

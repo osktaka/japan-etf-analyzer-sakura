@@ -38,7 +38,7 @@ export function ChartContainer({ code }: ChartContainerProps) {
           onRetry={refetch}
         />
       )}
-      {data && <PriceChart data={data.data} />}
+      {data && <PriceChart data={data.data} period={period} />}
     </div>
   )
 }

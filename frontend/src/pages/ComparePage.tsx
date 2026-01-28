@@ -389,7 +389,7 @@ function CompareChart({
       </h3>
       {isLoading && <Loading />}
       {error && <ErrorMessage message="チャートの取得に失敗しました" />}
-      {data && <PriceChart data={data.data} height={200} />}
+      {data && <PriceChart data={data.data} height={200} period={period} />}
     </div>
   )
 }
