@@ -21,6 +21,7 @@ export function TradeHistoryModal({ isOpen, onClose }: TradeHistoryModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null)
+  const [isAddFormOpen, setIsAddFormOpen] = useState(false)
 
   // Filter states
   const [search, setSearch] = useState('')
@@ -65,6 +66,7 @@ export function TradeHistoryModal({ isOpen, onClose }: TradeHistoryModalProps) {
       setTrades([])
       setError(null)
       setEditingTrade(null)
+      setIsAddFormOpen(false)
     }
   }, [isOpen])
 
@@ -72,9 +74,10 @@ export function TradeHistoryModal({ isOpen, onClose }: TradeHistoryModalProps) {
     setEditingTrade(trade)
   }
 
-  const handleEditSuccess = () => {
+  const handleFormSuccess = () => {
     fetchTrades()
     setEditingTrade(null)
+    setIsAddFormOpen(false)
   }
 
   const handleDelete = async (id: number): Promise<boolean> => {
@@ -171,6 +174,15 @@ export function TradeHistoryModal({ isOpen, onClose }: TradeHistoryModalProps) {
               </div>
             </div>
 
+            <div className={styles.actionBar}>
+              <button
+                className="btn btn-primary"
+                onClick={() => setIsAddFormOpen(true)}
+              >
+                取引を追加
+              </button>
+            </div>
+
             <div className={styles.listContainer}>
               <TradeList
                 trades={trades}
@@ -186,11 +198,14 @@ export function TradeHistoryModal({ isOpen, onClose }: TradeHistoryModalProps) {
       </div>
 
       <TradeFormModal
-        isOpen={editingTrade !== null}
-        onClose={() => setEditingTrade(null)}
-        onSuccess={handleEditSuccess}
+        isOpen={isAddFormOpen || editingTrade !== null}
+        onClose={() => {
+          setIsAddFormOpen(false)
+          setEditingTrade(null)
+        }}
+        onSuccess={handleFormSuccess}
         trade={editingTrade ?? undefined}
-        isEdit={true}
+        isEdit={editingTrade !== null}
       />
     </>
   )

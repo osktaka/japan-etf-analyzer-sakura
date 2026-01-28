@@ -119,6 +119,11 @@
   color: var(--color-text-muted);
 }
 
+.actionBar {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .listContainer {
   flex: 1;
   overflow-y: auto;
