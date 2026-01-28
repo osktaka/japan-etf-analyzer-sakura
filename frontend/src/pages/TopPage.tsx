@@ -96,6 +96,7 @@ export function TopPage() {
   )
 
   const etfListRef = useRef<HTMLElement>(null)
+  const isInitialMount = useRef(true)
   const { items, total, isLoading, error, search } = useETFSearch()
   const { count, isInList, toggleCode, canAdd } = useCompareList()
   const { isAuthenticated } = useAuth()
@@ -318,9 +319,15 @@ export function TopPage() {
 
   // お気に入りフィルター状態が変わったときに検索を実行
   useEffect(() => {
+    // 初回マウント時はスキップ（初回検索は別のuseEffectで実行済み）
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
+
     setCurrentPage(1)
 
-    const searchParams: SearchParams = {
+    const params: SearchParams = {
       ...currentFilters,
       keyword: currentKeyword || undefined,
       sort: currentSort,
@@ -330,24 +337,15 @@ export function TopPage() {
     }
 
     if (favoritesOnly && favoriteCodes.size > 0) {
-      searchParams.favorite_codes = Array.from(favoriteCodes)
+      params.favorite_codes = Array.from(favoriteCodes)
     }
 
-    search(searchParams)
-  }, [
-    favoritesOnly,
-    favoriteCodes,
-    currentFilters,
-    currentKeyword,
-    currentSort,
-    currentOrder,
-    search,
-  ])
+    search(params)
+    // favoritesOnly変更時のみ発動
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [favoritesOnly])
 
-  // displayTotal と totalPages を計算（ページングはバックエンドで処理）
-  const displayTotal = total
-  const totalPages = Math.ceil(displayTotal / PAGE_SIZE)
-  const filteredItems = items
+  const totalPages = Math.ceil(total / PAGE_SIZE)
 
   const handleCompareToggle = (code: string) => {
     if (!isInList(code) && !canAdd) {
@@ -424,11 +422,11 @@ export function TopPage() {
           </div>
         </div>
         <div className={styles.resultCount}>
-          <span>{displayTotal}件</span>
+          <span>{total}件</span>
         </div>
         {viewMode === 'card' ? (
           <SearchResults
-            items={filteredItems}
+            items={items}
             isLoading={isLoading}
             error={error}
             onETFClick={setSelectedCode}
@@ -439,7 +437,7 @@ export function TopPage() {
           />
         ) : (
           <ETFTableView
-            items={filteredItems}
+            items={items}
             performance={performance}
             selectedPeriods={selectedPeriods}
             onETFClick={setSelectedCode}
