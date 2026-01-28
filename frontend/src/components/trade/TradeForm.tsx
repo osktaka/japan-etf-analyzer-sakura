@@ -91,6 +91,7 @@ export function TradeForm({
           type="text"
           value={etfCode}
           onChange={(e) => setEtfCode(e.target.value)}
+          onFocus={(e) => e.target.select()}
           placeholder="例: 1306"
           disabled={isEdit || !!defaultEtfCode}
           required

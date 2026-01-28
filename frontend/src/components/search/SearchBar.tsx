@@ -30,6 +30,7 @@ export function SearchBar({
         className={styles.input}
         value={value}
         onChange={(e) => setValue(e.target.value)}
+        onFocus={(e) => e.target.select()}
         placeholder={placeholder}
       />
       <button type="submit" className={styles.button}>
