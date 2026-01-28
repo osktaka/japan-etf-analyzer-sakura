@@ -154,7 +154,7 @@ export function ComparePage() {
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className={styles.title}>ETF比較</h1>
+        <h1 className={styles.title}>銘柄比較</h1>
         <div className={styles.headerButtons}>
           <button
             className="btn btn-primary"

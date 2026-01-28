@@ -6,7 +6,7 @@ import { SearchBar } from '../SearchBar'
 describe('SearchBar', () => {
   it('検索ボックスが表示される', () => {
     render(<SearchBar onSearch={vi.fn()} />)
-    expect(screen.getByPlaceholderText('ETFを検索...')).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('銘柄を検索...')).toBeInTheDocument()
   })
 
   it('カスタムプレースホルダーが表示される', () => {
@@ -21,7 +21,7 @@ describe('SearchBar', () => {
 
   it('入力値が変更される', () => {
     render(<SearchBar onSearch={vi.fn()} />)
-    const input = screen.getByPlaceholderText('ETFを検索...')
+    const input = screen.getByPlaceholderText('銘柄を検索...')
 
     fireEvent.change(input, { target: { value: 'TOPIX' } })
     expect(input).toHaveValue('TOPIX')
@@ -31,7 +31,7 @@ describe('SearchBar', () => {
     const handleSearch = vi.fn()
     render(<SearchBar onSearch={handleSearch} />)
 
-    const input = screen.getByPlaceholderText('ETFを検索...')
+    const input = screen.getByPlaceholderText('銘柄を検索...')
     fireEvent.change(input, { target: { value: 'TOPIX' } })
     fireEvent.submit(
       screen.getByRole('button', { name: '検索' }).closest('form')!

@@ -388,9 +388,9 @@ export function TopPage() {
   return (
     <div className={styles.page}>
       <section className={styles.hero}>
-        <h1 className={styles.title}>日本ETF分析</h1>
+        <h1 className={styles.title}>日本株式銘柄分析</h1>
         <p className={styles.subtitle}>
-          ETFを検索・比較して、あなたに最適な投資先を見つけましょう
+          銘柄を検索・比較して、あなたに最適な投資先を見つけましょう
         </p>
       </section>
 

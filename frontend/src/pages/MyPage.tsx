@@ -95,7 +95,7 @@ export function MyPage() {
           <div className={styles.error}>{error}</div>
         ) : favorites.length === 0 ? (
           <div className={styles.empty}>
-            <p>お気に入りに登録されたETFはありません。</p>
+            <p>お気に入りに登録された銘柄はありません。</p>
             <p className={styles.hint}>
               検索結果やおすすめ一覧からお気に入りに追加できます。
             </p>

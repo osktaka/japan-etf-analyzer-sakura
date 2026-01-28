@@ -9,7 +9,7 @@ interface SearchBarProps {
 
 export function SearchBar({
   onSearch,
-  placeholder = 'ETFを検索...',
+  placeholder = '銘柄を検索...',
   initialKeyword = '',
 }: SearchBarProps) {
   const [value, setValue] = useState(initialKeyword)

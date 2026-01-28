@@ -49,7 +49,7 @@ export function RecommendSection({
 
   return (
     <section className={styles.section}>
-      <h2 className={styles.title}>おすすめETF</h2>
+      <h2 className={styles.title}>おすすめ銘柄</h2>
       {perspectives.length > 0 && (
         <PerspectiveTabs
           perspectives={perspectives}

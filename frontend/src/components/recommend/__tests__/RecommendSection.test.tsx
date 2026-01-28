@@ -49,7 +49,7 @@ describe('RecommendSection', () => {
     render(<RecommendSection onETFClick={vi.fn()} />)
 
     await waitFor(() => {
-      expect(screen.getByText('おすすめETF')).toBeInTheDocument()
+      expect(screen.getByText('おすすめ銘柄')).toBeInTheDocument()
     })
   })
 
