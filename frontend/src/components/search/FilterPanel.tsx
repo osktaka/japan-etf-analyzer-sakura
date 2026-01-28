@@ -33,12 +33,6 @@ export function FilterPanel({
   const [selectedTags, setSelectedTags] = useState<number[]>(
     initialParams.tag_ids || []
   )
-  const [minDividend, setMinDividend] = useState<string>(
-    initialParams.min_dividend_yield?.toString() || ''
-  )
-  const [maxExpense, setMaxExpense] = useState<string>(
-    initialParams.max_expense_ratio?.toString() || ''
-  )
 
   useEffect(() => {
     const loadFilters = async () => {
@@ -62,27 +56,13 @@ export function FilterPanel({
   useEffect(() => {
     setSelectedCategory(initialParams.category_id || null)
     setSelectedTags(initialParams.tag_ids || [])
-    setMinDividend(initialParams.min_dividend_yield?.toString() || '')
-    setMaxExpense(initialParams.max_expense_ratio?.toString() || '')
-  }, [
-    initialParams.category_id,
-    initialParams.tag_ids,
-    initialParams.min_dividend_yield,
-    initialParams.max_expense_ratio,
-  ])
+  }, [initialParams.category_id, initialParams.tag_ids])
 
   // フィルタ適用ロジック
-  const applyFilters = (
-    cat: number | null,
-    tgs: number[],
-    minD: string,
-    maxE: string
-  ) => {
+  const applyFilters = (cat: number | null, tgs: number[]) => {
     const params: SearchParams = {}
     if (cat) params.category_id = cat
     if (tgs.length > 0) params.tag_ids = tgs
-    if (minD) params.min_dividend_yield = parseFloat(minD)
-    if (maxE) params.max_expense_ratio = parseFloat(maxE)
     onFilter(params)
   }
 
@@ -90,7 +70,7 @@ export function FilterPanel({
   const handleCategoryClick = (id: number) => {
     const newCat = selectedCategory === id ? null : id
     setSelectedCategory(newCat)
-    applyFilters(newCat, selectedTags, minDividend, maxExpense)
+    applyFilters(newCat, selectedTags)
   }
 
   const handleTagClick = (id: number) => {
@@ -98,25 +78,12 @@ export function FilterPanel({
       ? selectedTags.filter((t) => t !== id)
       : [...selectedTags, id]
     setSelectedTags(newTags)
-    applyFilters(selectedCategory, newTags, minDividend, maxExpense)
+    applyFilters(selectedCategory, newTags)
   }
-
-  // 数値入力の変更検知（デバウンス）
-  // 意図的にminDividend, maxExpenseのみをトリガーとする
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      applyFilters(selectedCategory, selectedTags, minDividend, maxExpense)
-    }, 500)
-
-    return () => clearTimeout(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [minDividend, maxExpense])
 
   const handleClear = () => {
     setSelectedCategory(null)
     setSelectedTags([])
-    setMinDividend('')
-    setMaxExpense('')
     onFilter({})
     // お気に入りフィルターもクリア
     if (favoritesOnly && onFavoritesOnlyChange) {
@@ -148,19 +115,16 @@ export function FilterPanel({
       </div>
 
       <div className={styles.section}>
-        <div className={styles.sectionTitle}>お気に入り</div>
-        <div className={styles.tags}>
-          <button
-            className={`${styles.categoryBtn} ${favoritesOnly ? styles.active : ''}`}
-            onClick={handleFavoritesToggle}
-          >
-            お気に入り({favoritesCount})
-          </button>
-        </div>
+        <button
+          className={`${styles.categoryBtn} ${favoritesOnly ? styles.active : ''}`}
+          onClick={handleFavoritesToggle}
+        >
+          お気に入り({favoritesCount})
+        </button>
       </div>
 
-      <div className={styles.section}>
-        <div className={styles.sectionTitle}>カテゴリ</div>
+      <div className={styles.inlineSection}>
+        <span className={styles.inlineLabel}>カテゴリ:</span>
         <div className={styles.categories}>
           {categories.map((cat) => (
             <button
@@ -176,8 +140,8 @@ export function FilterPanel({
         </div>
       </div>
 
-      <div className={styles.section}>
-        <div className={styles.sectionTitle}>タグ</div>
+      <div className={styles.inlineSection}>
+        <span className={styles.inlineLabel}>タグ:</span>
         <div className={styles.tags}>
           {tags.map((tag) => (
             <button
@@ -199,33 +163,6 @@ export function FilterPanel({
           placeholder="銘柄コードまたは名前で検索..."
           initialKeyword={initialKeyword}
         />
-      </div>
-
-      <div className={styles.section}>
-        <div className={styles.rangeInputs}>
-          <div className={styles.rangeGroup}>
-            <label>配当利回り（%以上）</label>
-            <input
-              type="number"
-              step="0.1"
-              min="0"
-              value={minDividend}
-              onChange={(e) => setMinDividend(e.target.value)}
-              placeholder="例: 3.0"
-            />
-          </div>
-          <div className={styles.rangeGroup}>
-            <label>信託報酬（%以下）</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              value={maxExpense}
-              onChange={(e) => setMaxExpense(e.target.value)}
-              placeholder="例: 0.5"
-            />
-          </div>
-        </div>
       </div>
     </div>
   )
