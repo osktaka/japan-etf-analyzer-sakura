@@ -5,6 +5,7 @@
       "name": "上場インデックスファンドTOPIX",
       "index": "TOPIX",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.048
     },
     {
@@ -12,6 +13,7 @@
       "name": "ＭＡＸＩＳ トピックス上場投信",
       "index": "TOPIX",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.06
     },
     {
@@ -19,6 +21,7 @@
       "name": "Ｏｎｅ ＥＴＦ トピックス",
       "index": "TOPIX",
       "manager": "アセットマネジメントOne",
+      "type": "ETF",
       "expense_ratio": 0.045
     },
     {
@@ -26,6 +29,7 @@
       "name": "ＳＭＤＡＭ トピックス上場投信",
       "index": "TOPIX",
       "manager": "三井住友DSアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.074
     },
     {
@@ -33,6 +37,7 @@
       "name": "iFreeETF TOPIX（年1回決算型）",
       "index": "ＴＯＰＩＸ（配当込み）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.06
     },
     {
@@ -40,6 +45,7 @@
       "name": "iシェアーズ・コア TOPIX ETF",
       "index": "ＴＯＰＩＸ（配当込み）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.045
     },
     {
@@ -47,6 +53,7 @@
       "name": "iFreeETF TOPIX（年4回決算型）",
       "index": "ＴＯＰＩＸ（配当込み）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.06
     },
     {
@@ -54,6 +61,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ＴＯＰＩＸ連動型上場投信",
       "index": "TOPIX (配当込み)",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.051
     },
     {
@@ -61,6 +69,7 @@
       "name": "NZAM 上場投信 TOPIX",
       "index": "配当込み TOPIX",
       "manager": "農林中金全共連アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.075
     },
     {
@@ -68,6 +77,7 @@
       "name": "上場インデックスファンド225",
       "index": "日経平均株価",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.085
     },
     {
@@ -75,6 +85,7 @@
       "name": "ＭＡＸＩＳ 日経２２５上場投信",
       "index": "日経平均株価",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.12
     },
     {
@@ -82,6 +93,7 @@
       "name": "上場インデックスファンド日経225（ミニ）",
       "index": "日経平均株価",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.225
     },
     {
@@ -89,6 +101,7 @@
       "name": "Ｏｎｅ ＥＴＦ 日経２２５",
       "index": "日経平均株価",
       "manager": "アセットマネジメントOne",
+      "type": "ETF",
       "expense_ratio": 0.045
     },
     {
@@ -96,6 +109,7 @@
       "name": "ＳＭＤＡＭ 日経２２５上場投信",
       "index": "日経平均株価",
       "manager": "三井住友DSアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.14
     },
     {
@@ -103,6 +117,7 @@
       "name": "iFreeETF 日経225（年1回決算型）",
       "index": "日経平均トータルリターン・インデックス",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.12
     },
     {
@@ -110,6 +125,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 日経225連動型上場投信",
       "index": "日経平均トータルリターン・インデックス",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.0944
     },
     {
@@ -117,6 +133,7 @@
       "name": "iシェアーズ・コア 日経225 ETF",
       "index": "日経平均トータルリターン・インデックス",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.045
     },
     {
@@ -124,6 +141,7 @@
       "name": "NZAM 上場投信 日経225",
       "index": "日経平均トータルリターン・インデックス",
       "manager": "農林中金全共連アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.135
     },
     {
@@ -131,6 +149,7 @@
       "name": "iFreeETF 日経225（年4回決算型）",
       "index": "日経平均トータルリターン・インデックス",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.12
     },
     {
@@ -138,6 +157,7 @@
       "name": "ニッセイＥＴＦ 日経２２５インデックス",
       "index": "日経平均トータルリターン・インデックス",
       "manager": "ニッセイアセットマネジメント(426A4)",
+      "type": "ETF",
       "expense_ratio": 0.12
     },
     {
@@ -145,6 +165,7 @@
       "name": "上場インデックスファンドJPX日経インデックス400",
       "index": "JPX日経インデックス400",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.1
     },
     {
@@ -152,6 +173,7 @@
       "name": "ＭＡＸＩＳ ＪＰＸ日経インデックス４００上場投信",
       "index": "JPX日経インデックス400",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.078
     },
     {
@@ -159,6 +181,7 @@
       "name": "Ｏｎｅ ＥＴＦ ＪＰＸ日経４００",
       "index": "JPX日経インデックス400",
       "manager": "アセットマネジメントOne",
+      "type": "ETF",
       "expense_ratio": 0.17
     },
     {
@@ -166,6 +189,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ＪＰＸ日経インデックス４００連動型上場投信",
       "index": "JPX日経400（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.1
     },
     {
@@ -173,6 +197,7 @@
       "name": "iシェアーズ JPX日経400 ETF",
       "index": "JPX日経400（配当込み）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.045
     },
     {
@@ -180,6 +205,7 @@
       "name": "NZAM 上場投信 JPX日経400",
       "index": "配当込 JPX 日経インデックス 400",
       "manager": "農林中金全共連アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.115
     },
     {
@@ -187,6 +213,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 日経300株価指数連動型上場投信",
       "index": "日経300",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.505
     },
     {
@@ -194,6 +221,7 @@
       "name": "東証グロース２５０ETF",
       "index": "東証グロース市場 250 指数",
       "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
       "expense_ratio": 0.5
     },
     {
@@ -201,6 +229,7 @@
       "name": "東証グロース・コアＥＴＦ",
       "index": "東証グロース市場Core指数",
       "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
       "expense_ratio": 0.5
     },
     {
@@ -208,6 +237,7 @@
       "name": "東証スタンダードＴＯＰ２０ＥＴＦ",
       "index": "東証スタンダード市場ＴＯＰ２０",
       "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
       "expense_ratio": 0.5
     },
     {
@@ -215,6 +245,7 @@
       "name": "iFreeETF JPXプライム150",
       "index": "配当込みJPXプライム150指数",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.15
     },
     {
@@ -222,6 +253,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ＪＰＸプライム１５０指数連動型上場投信",
       "index": "JPXプライム150指数（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.15
     },
     {
@@ -229,6 +261,7 @@
       "name": "ＭＡＸＩＳ読売３３３日本株上場投信",
       "index": "読売株価指数（読売３３３）",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.12
     },
     {
@@ -236,6 +269,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ＴＯＰＩＸ Ｃｏｒｅ 30連動型上場投信",
       "index": "TOPIX Core30 (配当込み)",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.19
     },
     {
@@ -243,6 +277,7 @@
       "name": "Ｏｎｅ ＥＴＦ ＪＰＸ日経中小型",
       "index": "ＪＰＸ日経中小型株指数",
       "manager": "アセットマネジメントOne",
+      "type": "ETF",
       "expense_ratio": 0.5
     },
     {
@@ -250,6 +285,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 食品(ＴＯＰＩＸ－１７)上場投信",
       "index": "TOPIX-17 食品（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -257,6 +293,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ エネルギー資源(ＴＯＰＩＸ－１７)上場投信",
       "index": "TOPIX-17 エネルギー資源（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -264,6 +301,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 建設・資材(ＴＯＰＩＸ－１７)上場投信",
       "index": "TOPIX-17 建設・資材（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -271,6 +309,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 素材・化学(ＴＯＰＩＸ－１７)上場投信",
       "index": "TOPIX-17 素材・化学（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -278,6 +317,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 医薬品(ＴＯＰＩＸ－１７)上場投信",
       "index": "TOPIX-17 医薬品（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -285,6 +325,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 自動車・輸送機(ＴＯＰＩＸ－１７)上場投信",
       "index": "TOPIX-17 自動車・輸送機（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -292,6 +333,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 鉄鋼・非鉄(ＴＯＰＩＸ－１７)上場投信",
       "index": "TOPIX-17 鉄鋼・非鉄（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -299,6 +341,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 機械(ＴＯＰＩＸ－１７)上場投信",
       "index": "TOPIX-17 機械（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -306,6 +349,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 電機・精密(ＴＯＰＩＸ－１７)上場投信",
       "index": "TOPIX-17 電機・精密（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -313,6 +357,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 情報通信・サービスその他(ＴＯＰＩＸ－１７)上場投信",
       "index": "TOPIX-17 情報通信・サービスその他（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -320,6 +365,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 電力・ガス(ＴＯＰＩＸ－１７)上場投信",
       "index": "TOPIX-17 電力・ガス（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -327,6 +373,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 運輸・物流(ＴＯＰＩＸ－１７)上場投信",
       "index": "TOPIX-17 運輸・物流（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -334,6 +381,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 商社・卸売(ＴＯＰＩＸ－１７)上場投信",
       "index": "TOPIX-17 商社・卸売（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -341,6 +389,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 小売(ＴＯＰＩＸ－１７)上場投信",
       "index": "TOPIX-17 小売（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -348,6 +397,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 銀行(ＴＯＰＩＸ－１７)上場投信",
       "index": "TOPIX-17 銀行（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -355,6 +405,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 金融(除く銀行)(ＴＯＰＩＸ－１７)上場投信",
       "index": "TOPIX-17 金融（除く銀行）（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -362,6 +413,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 不動産(ＴＯＰＩＸ－１７)上場投信",
       "index": "TOPIX-17 不動産（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -369,6 +421,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 東証銀行業株価指数連動型上場投信",
       "index": "東証銀行業株価指数（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.19
     },
     {
@@ -376,6 +429,7 @@
       "name": "上場インデックスファンド日本高配当（東証配当フォーカス100）",
       "index": "東証配当フォーカス100指数",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.28
     },
     {
@@ -383,6 +437,7 @@
       "name": "NEXT FUNDS 野村日本株高配当70連動型上場投信",
       "index": "野村日本株高配当70（配当含む）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -390,6 +445,7 @@
       "name": "上場インデックスファンドTOPIX Ex-Financials",
       "index": "TOPIX Ex-Financials",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.088
     },
     {
@@ -397,6 +453,7 @@
       "name": "ＭＡＸＩＳトピックス（除く金融）上場投信",
       "index": "TOPIX Ex-Financials",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.108
     },
     {
@@ -404,6 +461,7 @@
       "name": "iFreeETF TOPIX Ex-Financials",
       "index": "TOPIX Ex-Financials（配当込み）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.18
     },
     {
@@ -411,6 +469,7 @@
       "name": "NZAM 上場投信 TOPIX Ex-Financials",
       "index": "配当込みＴＯＰＩＸ Ｅｘ-Ｆｉｎａｎｃｉａｌｓ",
       "manager": "農林中金全共連アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.11
     },
     {
@@ -418,6 +477,7 @@
       "name": "iシェアーズ MSCI 日本株最小分散 ETF",
       "index": "MSCI 日本株最小分散指数（配当込み）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.19
     },
     {
@@ -425,6 +485,7 @@
       "name": "iシェアーズ MSCI ジャパン高配当利回り ETF",
       "index": "MSCI ジャパン高配当利回り指数（配当込み）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.19
     },
     {
@@ -432,6 +493,7 @@
       "name": "上場インデックスファンドMSCI日本株高配当低ボラティリティ",
       "index": "MSCIジャパンIMIカスタム高流動性高利回り低ボラティリティ指数",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.35
     },
     {
@@ -439,6 +501,7 @@
       "name": "iFreeETF MSCI日本株人材設備投資指数",
       "index": "MSCI日本株人材設備投資指数（配当込み）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.15
     },
     {
@@ -446,6 +509,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 野村企業価値分配指数連動型上場投信",
       "index": "野村企業価値分配指数（配当含む）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.23
     },
     {
@@ -453,6 +517,7 @@
       "name": "上場インデックスファンド日本経済貢献株",
       "index": "JPX/S&P 設備・人材投資指数",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.15
     },
     {
@@ -460,6 +525,7 @@
       "name": "Ｏｎｅ ＥＴＦ ＪＰＸ／Ｓ＆Ｐ 設備・人材投資指数",
       "index": "JPX/S&P 設備・人材投資指数",
       "manager": "アセットマネジメントOne",
+      "type": "ETF",
       "expense_ratio": 0.165
     },
     {
@@ -467,6 +533,7 @@
       "name": "iシェアーズ JPX/S&P 設備・人材投資 ETF",
       "index": "JPX/S&P 設備・人材投資指数(トータ ルリターン)",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.19
     },
     {
@@ -474,6 +541,7 @@
       "name": "ＭＡＸＩＳ ＪＡＰＡＮ 設備・人材積極投資企業２００上場投信",
       "index": "ｉＳＴＯＸＸ ＭＵＴＢ Ｊａｐａｎ 積極投資企業２００インデックス",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.22
     },
     {
@@ -481,6 +549,7 @@
       "name": "上場インデックスファンド日経平均高配当株50",
       "index": "日経平均高配当株50指数",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.15
     },
     {
@@ -488,6 +557,7 @@
       "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信",
       "index": "日経平均高配当株 50 指数（トータルリターン）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.28
     },
     {
@@ -495,6 +565,7 @@
       "name": "Ｏｎｅ ＥＴＦ 高配当日本株",
       "index": "Ｓ＆Ｐ／ＪＰＸ　配当貴族指数",
       "manager": "アセットマネジメントOne",
+      "type": "ETF",
       "expense_ratio": 0.28
     },
     {
@@ -502,6 +573,7 @@
       "name": "iFreeETF TOPIX高配当40指数",
       "index": "TOPIX高配当40指数（配当込み）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.19
     },
     {
@@ -509,6 +581,7 @@
       "name": "iFreeETF MSCI日本株女性活躍指数（WIN）",
       "index": "MSCI日本株女性活躍指数 （配当込み）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.15
     },
     {
@@ -516,6 +589,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ＭＳＣＩ日本株女性活躍指数（セレクト）連動型上場投信",
       "index": "MSCI 日本株女性活躍指数（セレクト）（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.15
     },
     {
@@ -523,6 +597,7 @@
       "name": "iFreeETF MSCIジャパンESGセレクト・リーダーズ指数",
       "index": "MSCIジャパンESGセレクト・リーダーズ指数（配当込み）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.15
     },
     {
@@ -530,6 +605,7 @@
       "name": "iFreeETF FTSE JPX Blossom Japan Index",
       "index": "FTSE JPX Blossom Japan Index（配当込み）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.15
     },
     {
@@ -537,6 +613,7 @@
       "name": "Ｏｎｅ ＥＴＦ ＥＳＧ",
       "index": "FTSE JPX Blossom Japan index",
       "manager": "アセットマネジメントOne",
+      "type": "ETF",
       "expense_ratio": 0.13
     },
     {
@@ -544,6 +621,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 野村株主還元70連動型上場投信",
       "index": "野村株主還元70（配当含む）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.28
     },
     {
@@ -551,6 +629,7 @@
       "name": "ＭＡＸＩＳカーボン・エフィシェント日本株上場投信",
       "index": "S&P/JPX カーボン・エフィシェント指数",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.125
     },
     {
@@ -558,6 +637,7 @@
       "name": "SMT ETF カーボン・エフィシェント日本株",
       "index": "S&P/JPXカーボン・エフィシェント指数（配当込み）",
       "manager": "三井住友トラスト・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.115
     },
     {
@@ -565,6 +645,7 @@
       "name": "NZAM 上場投信 S＆P／JPXカーボン・エフィシェント指数",
       "index": "S＆P／JPX カーボン・エフィシェント指数（トータル・リターン）",
       "manager": "農林中金全共連アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.12
     },
     {
@@ -572,6 +653,7 @@
       "name": "グローバルＸ MSCIスーパーディビィデンド-日本株式 ETF",
       "index": "MSCIジャパン・高配当セレクト25指数（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.39
     },
     {
@@ -579,6 +661,7 @@
       "name": "グローバルＸ デジタル・イノベーション-日本株式 ETF",
       "index": "Solactive Digital Innovation Japan Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.59
     },
     {
@@ -586,6 +669,7 @@
       "name": "グローバルＸ eコマース-日本株式 ETF",
       "index": "Indxx Japan E-Commerce Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.59
     },
     {
@@ -593,6 +677,7 @@
       "name": "グローバルＸ MSCI ガバナンス・クオリティ-日本株式 ETF",
       "index": "MSCI Japan Governance-Quality Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.275
     },
     {
@@ -600,6 +685,7 @@
       "name": "グローバルＸ クリーンテック-日本株式 ETF",
       "index": "FactSet Japan CleanTech & Energy Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.59
     },
     {
@@ -607,6 +693,7 @@
       "name": "グローバルＸ ロボティクス＆AI-日本株式 ETF",
       "index": "Indxx Japan Robotics & AI Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.59
     },
     {
@@ -614,6 +701,7 @@
       "name": "グローバルＸ バイオ＆メドテック-日本株式 ETF",
       "index": "FactSet Japan Bio & Med Technologies Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.59
     },
     {
@@ -621,6 +709,7 @@
       "name": "グローバルＸ ゲーム＆アニメ-日本株式 ETF",
       "index": "Solactive Japan Games & Animation Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.59
     },
     {
@@ -628,6 +717,7 @@
       "name": "グローバルＸ グローバルリーダーズ-日本株式 ETF",
       "index": "FactSet Japan Global Leaders Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.275
     },
     {
@@ -635,6 +725,7 @@
       "name": "NEXT FUNDS MSCIジャパンカントリー指数（セレクト）連動型上場投信",
       "index": "MSCI ジャパンカントリー指数（セレクト）（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.12
     },
     {
@@ -642,6 +733,7 @@
       "name": "グローバルＸ 半導体関連-日本株式 ETF",
       "index": "FactSet Japan Semiconductor Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.59
     },
     {
@@ -649,6 +741,7 @@
       "name": "グローバルＸ レジャー＆エンターテインメント-日本株式 ETF",
       "index": "Solactive Japan Leisure & Entertainment Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.59
     },
     {
@@ -656,6 +749,7 @@
       "name": "グローバルＸ メタルビジネス-日本株式 ETF",
       "index": "FactSet Japan Metal Business Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.59
     },
     {
@@ -663,6 +757,7 @@
       "name": "グローバルＸ フィンテック-日本株式 ETF",
       "index": "Indxx Japan Fintech Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.59
     },
     {
@@ -670,6 +765,7 @@
       "name": "グローバルＸ 中小型リーダーズ-日本株式 ETF",
       "index": "FactSet Japan Mid & Small Cap Leaders Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.275
     },
     {
@@ -677,6 +773,7 @@
       "name": "グローバルＸ 新成長インフラ-日本株式 ETF",
       "index": "FactSet Japan New Growth Infrastructure Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.59
     },
     {
@@ -684,6 +781,7 @@
       "name": "グローバルＸ MSCI 気候変動対応-日本株式 ETF",
       "index": "MSCI Japan Climate Change Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.08
     },
     {
@@ -691,6 +789,7 @@
       "name": "グローバルＸ Morningstar 高配当 ESG-日本株式 ETF",
       "index": "Morningstar®日本株式サステナビリティ配当利回りフォーカス指数℠（税引前配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.275
     },
     {
@@ -698,6 +797,7 @@
       "name": "iシェアーズ MSCI ジャパンSRI ETF",
       "index": "MSCIジャパン700 SRIセレクト指数（配当込み）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.11
     },
     {
@@ -705,6 +805,7 @@
       "name": "グローバルＸ テック・トップ20-日本株式 ETF",
       "index": "FactSet Japan Tech Top 20 Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.275
     },
     {
@@ -712,6 +813,7 @@
       "name": "iシェアーズ MSCI ジャパン気候変動アクション ETF",
       "index": "MSCIジャパン気候変動アクション指数（配当込み）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.08
     },
     {
@@ -719,6 +821,7 @@
       "name": "上場インデックスファンド日経半導体株",
       "index": "日経半導体株指数",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.15
     },
     {
@@ -726,6 +829,7 @@
       "name": "ＭＡＸＩＳ日経半導体株上場投信",
       "index": "日経半導体株指数",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.14
     },
     {
@@ -733,6 +837,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 日経半導体株指数連動型上場投信",
       "index": "日経半導体株指数（トータルリターン）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.15
     },
     {
@@ -740,6 +845,7 @@
       "name": "グローバルＸ MSCI キャッシュフローキング-日本株式 ETF",
       "index": "MSCI Japan IMI High Free Cash Flow Yield 50 Select Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.275
     },
     {
@@ -747,6 +853,7 @@
       "name": "グローバルＸ 高配当30-日本株式 ETF",
       "index": "Mirae Asset Japan High Dividend 30 Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.275
     },
     {
@@ -754,6 +861,7 @@
       "name": "グローバルＸ 半導体・トップ10-日本株式 ETF",
       "index": "Mirae Asset Japan Semiconductor Top 10 Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.1
     },
     {
@@ -761,6 +869,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ＭＳＣＩジャパン気候変動指数（セレクト）連動型上場投信",
       "index": "MSCIジャパン気候変動指数（セレクト）（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.12
     },
     {
@@ -768,6 +877,7 @@
       "name": "グローバルＸ 銀行 高配当-日本株式 ETF",
       "index": "配当込みTOPIX銀行業高配当指数",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.185
     },
     {
@@ -775,6 +885,7 @@
       "name": "グローバルＸ プライシングパワー・リーダーズ-日本株式 ETF",
       "index": "ブルームバーグ日本株プライシングパワー・セレクト・リーダーズ指数（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.275
     },
     {
@@ -782,6 +893,7 @@
       "name": "iFreeETF ブルームバーグ日本株高配当50指数",
       "index": "ブルームバーグ日本株高配当50指数（配当込み）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.25
     },
     {
@@ -789,6 +901,7 @@
       "name": "ＭＡＸＩＳ日本株高配当ＳＭＡＲＴ５０上場投信",
       "index": "野村日本株高配当SMART50",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.28
     },
     {
@@ -796,6 +909,7 @@
       "name": "グローバルＸ 日経平均株主還元40-日本株式 ETF",
       "index": "日経平均株主還元株40指数（トータルリターン）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.275
     },
     {
@@ -803,6 +917,7 @@
       "name": "上場インデックスファンドMSCI日本株高配当低ボラティリティ（βヘッジ）",
       "index": "MSCIジャパンIMIカスタムロングショート戦略85%＋円キャッシュ15%指数",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.45
     },
     {
@@ -810,6 +925,7 @@
       "name": "ＭＡＸＩＳ日本株高配当70マーケットニュートラル上場投信",
       "index": "野村日本株高配当70マーケットニュートラル指数",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.4
     },
     {
@@ -817,6 +933,7 @@
       "name": "グローバルＸ 日経225 カバード・コール ETF（プレミアム再投資型）",
       "index": "日経平均カバードコールATMインデックス（トータルリターン）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.275
     },
     {
@@ -824,6 +941,7 @@
       "name": "グローバルＸ NASDAQ100・カバード・コール ETF",
       "index": "Cboe NASDAQ-100 BuyWrite V2 Index（円換算）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.625
     },
     {
@@ -831,6 +949,7 @@
       "name": "グローバルＸ S&P500・カバード・コール ETF",
       "index": "Cboe S&P 500 BuyWrite Index（円換算）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.635
     },
     {
@@ -838,6 +957,7 @@
       "name": "グローバルＸ S&P500 ETF（ダイナミック・プロテクション）",
       "index": "S&P 500 Dynamic Covered Call Index（配当込み、円換算ベース）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.1
     },
     {
@@ -845,6 +965,7 @@
       "name": "iシェアーズ S&P 500 プレミアムインカム ETF",
       "index": "Cboe S&P 500 エンハンスト 1% OTM バイライト NTR 指数（円建て）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.45
     },
     {
@@ -852,6 +973,7 @@
       "name": "iシェアーズ 米国債20年超 プレミアムインカム ETF",
       "index": "Cboe TLT・2% OTM・バイライト・インデックス（国内投信用、円建て）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.55
     },
     {
@@ -859,6 +981,7 @@
       "name": "上場インデックスファンドＪリート(東証ＲＥＩＴ指数)隔月分配型",
       "index": "東証REIT指数",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.3
     },
     {
@@ -866,6 +989,7 @@
       "name": "ＭＡＸＩＳ Ｊリート上場投信",
       "index": "東証REIT指数",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.145
     },
     {
@@ -873,6 +997,7 @@
       "name": "ＳＭＤＡＭ 東証ＲＥＩＴ指数上場投信",
       "index": "東証REIT指数",
       "manager": "三井住友DSアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.22
     },
     {
@@ -880,6 +1005,7 @@
       "name": "上場インデックスファンドＪリート（東証ＲＥＩＴ指数）隔月分配型（ミニ）",
       "index": "東証REIT指数",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.245
     },
     {
@@ -887,6 +1013,7 @@
       "name": "東証ＲＥＩＴ ＥＴＦ",
       "index": "東証REIT指数",
       "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
       "expense_ratio": 0.245
     },
     {
@@ -894,6 +1021,7 @@
       "name": "Ｏｎｅ ＥＴＦ 東証ＲＥＩＴ指数",
       "index": "東証REIT指数",
       "manager": "アセットマネジメントOne",
+      "type": "ETF",
       "expense_ratio": 0.155
     },
     {
@@ -901,6 +1029,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 東証REIT指数連動型上場投信",
       "index": "東証REIT指数（配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.155
     },
     {
@@ -908,6 +1037,7 @@
       "name": "iシェアーズ・コア Ｊリート ETF",
       "index": "東証REIT指数（配当込み）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.15
     },
     {
@@ -915,6 +1045,7 @@
       "name": "iFreeETF 東証REIT指数",
       "index": "東証REIT指数（配当込み）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.155
     },
     {
@@ -922,6 +1053,7 @@
       "name": "iFreeETF 東証REIT指数（2・5・8・11月決算型）",
       "index": "東証REIT指数（配当込み）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.155
     },
     {
@@ -929,6 +1061,7 @@
       "name": "NZAM 上場投信 東証REIT指数",
       "index": "配当込み東証ＲＥＩＴ指数",
       "manager": "農林中金全共連アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.248
     },
     {
@@ -936,6 +1069,7 @@
       "name": "ＭＡＸＩＳ Ｊリート・コア上場投信",
       "index": "東証REIT Core指数",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.145
     },
     {
@@ -943,6 +1077,7 @@
       "name": "東証ＲＥＩＴ Ｃｏｒｅ ＥＴＦ",
       "index": "東証REIT Core指数",
       "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
       "expense_ratio": 0.2
     },
     {
@@ -950,6 +1085,7 @@
       "name": "iFreeETF 東証REIT Core指数",
       "index": "東証REIT Core指数（配当込み）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.2
     },
     {
@@ -957,6 +1093,7 @@
       "name": "NZAM 上場投信 東証REIT Core指数",
       "index": "配当込み東証 REIT Core 指数",
       "manager": "農林中金全共連アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.24
     },
     {
@@ -964,6 +1101,7 @@
       "name": "グローバルＸ ロジスティクス・J-REIT ETF",
       "index": "配当込み東証REIT物流フォーカス指数",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.275
     },
     {
@@ -971,6 +1109,7 @@
       "name": "東証ＲＥＩＴ物流フォーカスＥＴＦ",
       "index": "東証REIT物流フォーカス指数",
       "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
       "expense_ratio": 0.2
     },
     {
@@ -978,6 +1117,7 @@
       "name": "上場インデックスファンド豪州リート（S&P/ASX200 A-REIT）",
       "index": "S&P/ASX200 A-REIT指数",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.45
     },
     {
@@ -985,6 +1125,7 @@
       "name": "上場インデックスファンドアジアリート",
       "index": "FTSE EPRA/Nareitアジア（除く日本）リート10％キャップ指数",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.65
     },
     {
@@ -992,6 +1133,7 @@
       "name": "iシェアーズ 米国リート ETF",
       "index": "FTSE Nareit Equity REITs インデックス（配当込み、TTM、 円建て）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.2
     },
     {
@@ -999,6 +1141,7 @@
       "name": "ＭＡＸＩＳ高利回りＪリート上場投信",
       "index": "野村高利回りJリート指数",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.145
     },
     {
@@ -1006,6 +1149,7 @@
       "name": "野村高利回りＪリート指数ＥＴＦ",
       "index": "野村高利回りＪリート指数",
       "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
       "expense_ratio": 0.2
     },
     {
@@ -1013,6 +1157,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 外国ＲＥＩＴ・Ｓ＆Ｐ先進国ＲＥＩＴ指数（除く日本・為替ヘッジなし）連動型上場投信",
       "index": "S&P先進国REIT指数（除く日本、配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.17
     },
     {
@@ -1020,6 +1165,7 @@
       "name": "上場インデックスファンド日経ESGリート",
       "index": "日経ESG-REIT指数",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.15
     },
     {
@@ -1027,6 +1173,7 @@
       "name": "iシェアーズ グリーンＪリート ETF",
       "index": "FTSE EPRA Nareitグリーン・フォーカスJ-REITセレクト・インデックス（配当込み）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.15
     },
     {
@@ -1034,6 +1181,7 @@
       "name": "グローバルＸ グリーン・J-REIT ETF",
       "index": "Solactive Japan Green J-REIT Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.19
     },
     {
@@ -1041,6 +1189,7 @@
       "name": "グローバルＸ ロジスティクス・REIT ETF",
       "index": "Solactive Logistics REIT Index（配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.375
     },
     {
@@ -1048,6 +1197,7 @@
       "name": "グローバルＸ オフィス・J-REIT ETF",
       "index": "配当込み東証REITオフィスフォーカス指数",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.275
     },
     {
@@ -1055,6 +1205,7 @@
       "name": "グローバルＸ レジデンシャル・J-REIT ETF",
       "index": "配当込み東証REIT住宅フォーカス指数",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.275
     },
     {
@@ -1062,6 +1213,7 @@
       "name": "グローバルＸ ホテル＆リテール・J-REIT ETF",
       "index": "配当込み東証REITホテル&リテールフォーカス指数",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.275
     },
     {
@@ -1069,6 +1221,7 @@
       "name": "グローバルＸ US REIT・トップ20 ETF",
       "index": "Solactive GPR US REITs Top 20 Index（配当込み、円換算）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.375
     },
     {
@@ -1076,6 +1229,7 @@
       "name": "iFreeETF 日経高利回りREIT指数",
       "index": "日経高利回りREIT指数（トータルリターン）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.145
     },
     {
@@ -1083,6 +1237,7 @@
       "name": "上場インデックスファンド中国Ａ株（パンダ）E Fund CSI300",
       "index": "CSI300",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.5
     },
     {
@@ -1090,6 +1245,7 @@
       "name": "Ｏｎｅ ＥＴＦ 南方 中国Ａ株 ＣＳＩ５００",
       "index": "ＣＳＩ スモールキャップ ５００指数",
       "manager": "アセットマネジメントOne",
+      "type": "ETF",
       "expense_ratio": 0.44
     },
     {
@@ -1097,6 +1253,7 @@
       "name": "NEXT FUNDS ChinaAMC・中国株式・上証50連動型上場投信",
       "index": "上証50指数（税引後配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.53
     },
     {
@@ -1104,6 +1261,7 @@
       "name": "ＭＡＸＩＳ ＨｕａＡｎ中国株式（上海１８０Ａ株）上場投信",
       "index": "SSE 180 インデックス",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.38
     },
     {
@@ -1111,6 +1269,7 @@
       "name": "iFreeETF 中国科創板50（STAR50）",
       "index": "STAR50インデックス（配当込み）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.743
     },
     {
@@ -1118,6 +1277,7 @@
       "name": "iFreeETF 中国グレーターベイエリア・イノベーション100（GBA100）",
       "index": "GBAイノベーション100インデックス（配当込み）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.71
     },
     {
@@ -1125,6 +1285,7 @@
       "name": "NEXT FUNDS インド株式指数・Nifty 50連動型上場投信先物型",
       "index": "Nifty 50 指数（税引後配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.95
     },
     {
@@ -1132,6 +1293,7 @@
       "name": "iシェアーズ Nifty 50 インド株 ETF先物型",
       "index": "Nifty 50 指数（税引後配当込み、国内投信用、円建て）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.35
     },
     {
@@ -1139,6 +1301,7 @@
       "name": "iFreeETF インドNifty50",
       "index": "Nifty50指数（配当込み、円ベース）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.35
     },
     {
@@ -1146,6 +1309,7 @@
       "name": "グローバルＸ インド・トップ10+ ETF",
       "index": "Mirae Asset India Select Top 10+ Index（配当込み、円換算）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.375
     },
     {
@@ -1153,6 +1317,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ タイ株式ＳＥＴ５０指数連動型上場投信",
       "index": "タイ株式SET50指数（税引後配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.55
     },
     {
@@ -1160,6 +1325,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ＦＴＳＥブルサ・マレーシアＫＬＣＩ連動型上場投信",
       "index": "FTSEブルサ・マレーシアKLCI指数（税引前配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.55
     },
     {
@@ -1167,6 +1333,7 @@
       "name": "Simple-X NYダウ・ジョーンズ・インデックス上場投信",
       "index": "ダウ・ジョーンズ工業株30種平均",
       "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
       "expense_ratio": 0.5
     },
     {
@@ -1174,6 +1341,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ダウ・ジョーンズ工業株３０種平均株価（為替ヘッジなし）連動型上場投信",
       "index": "ダウ・ジョーンズ工業株３０種平均株価（税引前配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.3
     },
     {
@@ -1181,6 +1349,7 @@
       "name": "上場インデックスファンド米国株式（ダウ平均）為替ヘッジあり",
       "index": "ダウ・ジョーンズ工業株価平均（TTM、円建て、円ヘッジ）",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.25
     },
     {
@@ -1188,6 +1357,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ダウ・ジョーンズ工業株３０種平均株価（為替ヘッジあり）連動型上場投信",
       "index": "ダウ・ジョーンズ工業株３０種平均株価（TTM、円建て、円ヘッジ、税引前配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.3
     },
     {
@@ -1195,6 +1365,7 @@
       "name": "上場インデックスファンド米国株式（ダウ平均）為替ヘッジなし",
       "index": "ダウ・ジョーンズ工業株価平均（TTM、円建て）",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.25
     },
     {
@@ -1202,6 +1373,7 @@
       "name": "ＭＡＸＩＳ ＮＹダウ上場投信",
       "index": "ダウ・ジョーンズ工業株価平均（円換算ベース）",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.2
     },
     {
@@ -1209,6 +1381,7 @@
       "name": "ＭＡＸＩＳ ＮＹダウ上場投信（為替ヘッジあり）",
       "index": "ダウ・ジョーンズ工業株価平均（ＴＴＭ、円建て、円ヘッジ）",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.2
     },
     {
@@ -1216,6 +1389,7 @@
       "name": "NZAM 上場投信 NYダウ30（為替ヘッジあり）",
       "index": "ダウ・ジョーンズ工業株価平均（配当込み、TTM、円建て、円ヘッジ）",
       "manager": "農林中金全共連アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.25
     },
     {
@@ -1223,13 +1397,15 @@
       "name": "上場インデックスファンド米国株式（S&P500）",
       "index": "S&P500指数",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.15
     },
     {
       "code": "1557",
-      "name": "SPDR® S&P500® ETF(注2)",
+      "name": "State Street® SPDR® S&P 500® ETF(注2)",
       "index": "S&P500指数",
       "manager": "ステート・ストリート・グローバル・アドバイザーズ・トラスト・カンパニー",
+      "type": "ETF",
       "expense_ratio": 0.0945
     },
     {
@@ -1237,6 +1413,7 @@
       "name": "ＭＡＸＩＳ米国株式（Ｓ＆Ｐ５００）上場投信",
       "index": "S&P500指数",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.06
     },
     {
@@ -1244,6 +1421,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ Ｓ＆Ｐ 500 指数（為替ヘッジなし）連動型上場投信",
       "index": "S&P 500（税引前配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.06
     },
     {
@@ -1251,6 +1429,7 @@
       "name": "iシェアーズ S&P 500 米国株 ETF",
       "index": "S&P500®（税引後配当込み、TTM、円建て）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.06
     },
     {
@@ -1258,6 +1437,7 @@
       "name": "上場インデックスファンド米国株式（S&P500）為替ヘッジあり",
       "index": "S&P500指数（円ヘッジ）",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.15
     },
     {
@@ -1265,6 +1445,7 @@
       "name": "iシェアーズ S&P 500 米国株 ETF（為替ヘッジあり）",
       "index": "S&P500®（税引後配当込み、TTM、円建て、円ヘッジ）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.07
     },
     {
@@ -1272,6 +1453,7 @@
       "name": "ＭＡＸＩＳ米国株式（Ｓ＆Ｐ５００）上場投信（為替ヘッジあり）",
       "index": "Ｓ＆Ｐ５００指数（円ヘッジ・円換算ベース）",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.07
     },
     {
@@ -1279,6 +1461,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ Ｓ＆Ｐ 500 指数（為替ヘッジあり）連動型上場投信",
       "index": "S&P 500（TTM、円建て、円ヘッジ、税引前配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.07
     },
     {
@@ -1286,6 +1469,7 @@
       "name": "iFreeETF S&P500（為替ヘッジなし）",
       "index": "S&P500指数（配当込み、円ベース）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.07
     },
     {
@@ -1293,6 +1477,7 @@
       "name": "iFreeETF S&P500（為替ヘッジあり）",
       "index": "S&P500（配当込み、TTM、円建て、円ヘッジ）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.07
     },
     {
@@ -1300,6 +1485,7 @@
       "name": "NZAM 上場投信 S＆P500（為替ヘッジあり）",
       "index": "S＆P500指数（配当込み、TTM、円建て、円ヘッジ）",
       "manager": "農林中金全共連アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.07
     },
     {
@@ -1307,6 +1493,7 @@
       "name": "グローバルＸ S&P500配当貴族ETF",
       "index": "S&P 500配当貴族指数（配当込み、円換算ベース）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.275
     },
     {
@@ -1314,6 +1501,7 @@
       "name": "グローバルＸ S&P500配当貴族 ETF（為替ヘッジあり）",
       "index": "S&P 500配当貴族指数（円建て、円ヘッジ、配当込み）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.275
     },
     {
@@ -1321,6 +1509,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ Ｓ＆Ｐ 500 配当貴族指数連動型上場投信",
       "index": "S&P 500 配当貴族指数（税引前配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.105
     },
     {
@@ -1328,6 +1517,7 @@
       "name": "ＶＩＸ短期先物指数ＥＴＦ先物型",
       "index": "S&P 500 VIX短期先物指数超過リターン",
       "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
       "expense_ratio": 0.89
     },
     {
@@ -1335,6 +1525,7 @@
       "name": "iシェアーズ S&P 500 トップ 20 ETF",
       "index": "S&P 500 トップ20セレクト指数（税引後配当込み、TTM、円建て）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.4
     },
     {
@@ -1342,6 +1533,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ Ｓ＆Ｐ 500 半導体・半導体製造装置35％キャップ指数連動型上場投信",
       "index": "S&P 500 半導体・半導体製造装置35％キャップ指数（税引前配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.32
     },
     {
@@ -1349,6 +1541,7 @@
       "name": "グローバルＸ S&P500 キャッシュフロー・トップ100 ETF",
       "index": "S&P 500 Quality FCF Aristocrats Index（配当込み、円換算ベース）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.18
     },
     {
@@ -1356,6 +1549,7 @@
       "name": "ＭＡＸＩＳ Ｓ＆Ｐ５００均等ウェイト上場投信",
       "index": "Ｓ＆Ｐ５００均等ウェイト指数（円換算ベース）",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.2
     },
     {
@@ -1363,6 +1557,7 @@
       "name": "ニッセイＥＴＦ Ｓ＆Ｐ５００イコール・ウェイト（為替ヘッジなし）",
       "index": "Ｓ&Ｐ５００イコール・ウェイト指数（配当込み、円換算ベース）",
       "manager": "ニッセイアセットマネジメント(426A4)",
+      "type": "ETF",
       "expense_ratio": 0.186
     },
     {
@@ -1370,6 +1565,7 @@
       "name": "ステート・ストリート・スパイダー S&P500® ETF（為替ヘッジなし）",
       "index": "S&P500®（配当込み、円ベース）",
       "manager": "ステート・ストリート・グローバル・アドバイザーズ(447A4)",
+      "type": "ETF",
       "expense_ratio": 0.0275
     },
     {
@@ -1377,6 +1573,7 @@
       "name": "ステート・ストリート・スパイダー S&P500® ETF（為替ヘッジあり）",
       "index": "S&P500®（配当込み、円ヘッジベース）",
       "manager": "ステート・ストリート・グローバル・アドバイザーズ(447A4)",
+      "type": "ETF",
       "expense_ratio": 0.0275
     },
     {
@@ -1384,6 +1581,7 @@
       "name": "ステート・ストリート・スパイダー S&P500®高配当株 ETF",
       "index": "S&P500®高配当指数（配当込み、円ベース）",
       "manager": "ステート・ストリート・グローバル・アドバイザーズ(447A4)",
+      "type": "ETF",
       "expense_ratio": 0.106
     },
     {
@@ -1391,6 +1589,7 @@
       "name": "iシェアーズ S&P 500 除く金融 ETF（為替ヘッジあり）",
       "index": "S&P 500 除く金融 指数（税引後配当込み、TTM、円建て、円ヘッジ）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.09
     },
     {
@@ -1398,6 +1597,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ＮＡＳＤＡＱ－１００®（為替ヘッジなし）連動型上場投信",
       "index": "NASDAQ－１００指数（税引前配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.2
     },
     {
@@ -1405,6 +1605,7 @@
       "name": "上場インデックスファンド米国株式（NASDAQ100）為替ヘッジなし",
       "index": "NASDAQ100指数（円換算ベース）",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.25
     },
     {
@@ -1412,6 +1613,7 @@
       "name": "上場インデックスファンド米国株式（NASDAQ100）為替ヘッジあり",
       "index": "NASDAQ100指数（円建て、円ヘッジ）",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.25
     },
     {
@@ -1419,6 +1621,7 @@
       "name": "ＭＡＸＩＳナスダック１００上場投信",
       "index": "ＮＡＳＤＡＱ１００指数（円換算ベース）",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.2
     },
     {
@@ -1426,6 +1629,7 @@
       "name": "ＭＡＸＩＳナスダック１００上場投信（為替ヘッジあり）",
       "index": "ＮＡＳＤＡＱ１００指数（円ヘッジ・円換算ベース）",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.2
     },
     {
@@ -1433,6 +1637,7 @@
       "name": "iFreeETF NASDAQ100（為替ヘッジなし）",
       "index": "NASDAQ100指数（配当込み、円ベース）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.1
     },
     {
@@ -1440,6 +1645,7 @@
       "name": "iFreeETF NASDAQ100（為替ヘッジあり）",
       "index": "NASDAQ100指数（配当込み、円建て、円ヘッジ）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.1
     },
     {
@@ -1447,6 +1653,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ＮＡＳＤＡＱ－１００®（為替ヘッジあり）連動型上場投信",
       "index": "NASDAQ－１００指数（円建て・円ヘッジ・税引前配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.2
     },
     {
@@ -1454,6 +1661,7 @@
       "name": "NZAM 上場投信 NASDAQ100（為替ヘッジあり）",
       "index": "NASDAQ100指数（配当込み、円ヘッジベース）",
       "manager": "農林中金全共連アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.2
     },
     {
@@ -1461,6 +1669,7 @@
       "name": "iシェアーズ NASDAQ トップ 30 ETF",
       "index": "NASDAQ 100 トップ 30 指数（税引後配当込み、国内投信用、円建て）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.4
     },
     {
@@ -1468,6 +1677,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ブラジル株式指数・ボベスパ連動型上場投信",
       "index": "ボベスパ指数",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.95
     },
     {
@@ -1475,6 +1685,7 @@
       "name": "上場インデックスファンド海外先進国株式（MSCI-KOKUSAI）",
       "index": "MSCI-KOKUSAIインデックス",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.24
     },
     {
@@ -1482,6 +1693,7 @@
       "name": "MAXIS 海外株式（MSCIコクサイ）上場投信",
       "index": "MSCI-KOKUSAIインデックス",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.15
     },
     {
@@ -1489,6 +1701,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 外国株式・ＭＳＣＩ‐ＫＯＫＵＳＡＩ指数（為替ヘッジなし）連動型上場投信",
       "index": "MSCI-KOKUSAIインデックス",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.17
     },
     {
@@ -1496,6 +1709,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 外国株式・ＭＳＣＩ‐ＫＯＫＵＳＡＩ指数（為替ヘッジあり）連動型上場投信",
       "index": "MSCI-KOKUSAI指数（円ベース・為替ヘッジあり）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.17
     },
     {
@@ -1503,6 +1717,7 @@
       "name": "上場インデックスファンド海外新興国株式（MSCIエマージング）",
       "index": "MSCI エマージング・マーケット・インデックス",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.24
     },
     {
@@ -1510,6 +1725,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ新興国株式・MSCIエマージング・マーケット・インデックス（為替ヘッジなし）連動型上場投信",
       "index": "MSCI エマージング・マーケット・インデックス",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.19
     },
     {
@@ -1517,6 +1733,7 @@
       "name": "上場インデックスファンド世界株式（MSCI ACWI）除く日本",
       "index": "MSCI ACWI ex Japanインデックス",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.24
     },
     {
@@ -1524,6 +1741,7 @@
       "name": "ＭＡＸＩＳ全世界株式（オール・カントリー）上場投信",
       "index": "MSCI ACWIインデックス",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.078
     },
     {
@@ -1531,6 +1749,7 @@
       "name": "iシェアーズ・コア MSCI 先進国株（除く日本）ETF",
       "index": "MSCI コクサイ指数（税引後配当込み、国内投信用、円建て）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.19
     },
     {
@@ -1538,6 +1757,7 @@
       "name": "iシェアーズ・コア MSCI 新興国株 ETF",
       "index": "MSCI エマージング・マーケッツ IMI 指数（税引後配当込み、国内投信用、円建て）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.23
     },
     {
@@ -1545,6 +1765,7 @@
       "name": "iシェアーズ オートメーション ＆ ロボット ETF",
       "index": "ＳＴＯＸＸ グローバルオートメーション アンド ロボティクス インデックス（TTM、円換算、ネットリターン）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.48
     },
     {
@@ -1552,6 +1773,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ユーロ・ストックス 50 指数（為替ヘッジあり）連動型上場投信",
       "index": "ユーロ・ストックス50® 指数（TTM、円建て、円ヘッジ、税引後配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.18
     },
     {
@@ -1559,6 +1781,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ユーロ・ストックス50指数（為替ヘッジなし）連動型上場投信",
       "index": "ユーロ・ストックス50® 指数（TTM、円建て、税引後配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.198
     },
     {
@@ -1566,6 +1789,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ドイツ株式・ＤＡＸ（為替ヘッジあり）連動型上場投信",
       "index": "DAX®（ドイツ株価指数）（TTM、円建て、円ヘッジ、税引後配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.18
     },
     {
@@ -1573,6 +1797,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ドイツ株式・ＤＡＸ（為替ヘッジなし）連動型上場投信",
       "index": "DAX®（ドイツ株価指数）（TTM、円建て、税引後配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.198
     },
     {
@@ -1580,6 +1805,7 @@
       "name": "NZAM 上場投信 DAX（為替ヘッジあり）",
       "index": "DAX指数（配当込み、円ヘッジベース）",
       "manager": "農林中金全共連アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.18
     },
     {
@@ -1587,6 +1813,7 @@
       "name": "グローバルＸ 自動運転＆EV ETF",
       "index": "Solactive Autonomous & Electric Vehicles Index（円換算）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.64
     },
     {
@@ -1594,6 +1821,7 @@
       "name": "グローバルＸ 半導体 ETF",
       "index": "フィラデルフィア半導体株指数（配当込み、円換算ベース）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.375
     },
     {
@@ -1601,6 +1829,7 @@
       "name": "グローバルＸ US テック・トップ20 ETF",
       "index": "FactSet US Tech Top 20 Index（配当込み、円換算ベース）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.375
     },
     {
@@ -1608,6 +1837,7 @@
       "name": "グローバルＸ Morningstar 米国中小型 Moat ETF",
       "index": "Morningstar®米国中小型モート・フォーカス株式指数℠（税引前配当込み、円換算ベース）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.375
     },
     {
@@ -1615,6 +1845,7 @@
       "name": "グローバルＸ スーパーディビィデンド-US ETF",
       "index": "Indxx SuperDividend® U.S. Low Volatility Index（円換算）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.475
     },
     {
@@ -1622,6 +1853,7 @@
       "name": "グローバルＸ チャイナEV＆バッテリー ETF",
       "index": "Solactive China Electric Vehicle and Battery Index（円換算）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.705
     },
     {
@@ -1629,6 +1861,7 @@
       "name": "iシェアーズ 米国高配当株 ETF",
       "index": "Morningstar配当利回りフォーカス指数（税引後配当込み、国内投信用、円建て）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.11
     },
     {
@@ -1636,6 +1869,7 @@
       "name": "iシェアーズ 米国連続増配株 ETF",
       "index": "Morningstar米国配当成長株式指数（税引後配当込み、国内投信用、円建て）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.11
     },
     {
@@ -1643,6 +1877,7 @@
       "name": "グローバルＸ 革新的優良企業 ETF",
       "index": "Mirae Asset Global Innovative Bluechip Top 10+ Index（配当込み、円換算）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.375
     },
     {
@@ -1650,6 +1885,7 @@
       "name": "グローバルＸ AI＆ビッグデータ ETF",
       "index": "Indxx Artificial Intelligence & Big Data Index（円換算）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.705
     },
     {
@@ -1657,6 +1893,7 @@
       "name": "グローバルＸ ウラニウムビジネス ETF",
       "index": "Solactive Global Uranium & Nuclear Components Total Return Index（円換算）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.715
     },
     {
@@ -1664,6 +1901,7 @@
       "name": "ＳＢＩ サウジアラビア株式上場投信",
       "index": "ＭＳＣＩ　サウジアラビア・インデックス（円換算ベース）",
       "manager": "ＳＢＩアセットマネジメント(273A4)",
+      "type": "ETF",
       "expense_ratio": 0.175
     },
     {
@@ -1671,6 +1909,7 @@
       "name": "グローバルＸ US テック・配当貴族 ETF",
       "index": "S&Pテクノロジー配当貴族指数 (TTM 円建て、トータルリターン)",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.275
     },
     {
@@ -1678,6 +1917,7 @@
       "name": "Ｏｎｅ ＥＴＦ ＦＴＳＥ・サウジアラビア・インデックス",
       "index": "FTSE Saudi Arabia Index（円換算ベース）",
       "manager": "アセットマネジメントOne",
+      "type": "ETF",
       "expense_ratio": 0.29
     },
     {
@@ -1685,6 +1925,7 @@
       "name": "iFreeETF FANG+",
       "index": "NYSE FANG+指数（配当込み、円ベース）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.55
     },
     {
@@ -1692,6 +1933,7 @@
       "name": "iFreeETF 英国FTSE100",
       "index": "FTSE 100指数（配当込み、円ベース）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.18
     },
     {
@@ -1699,6 +1941,7 @@
       "name": "グローバルＸ チャイナテック ETF",
       "index": "Hang Seng TECH Index（配当込み、円換算ベース）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.375
     },
     {
@@ -1706,6 +1949,7 @@
       "name": "グローバルＸ チャイナテック・トップ10 ETF",
       "index": "Mirae Asset China Tech Top 10 Index（配当込み、円換算ベース）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.375
     },
     {
@@ -1713,6 +1957,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ＴＩＰ ＦａｃｔＳｅｔ 台湾イノベイティブ・テクノロジー50 指数連動型上場投信",
       "index": "TIP FactSet 台湾イノベイティブ・テクノロジー50 指数（税引前配当込み）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.743
     },
     {
@@ -1720,6 +1965,7 @@
       "name": "iFreeETF キャセイ台湾テックリーダー指数",
       "index": "TIP FactSet Taiwan Technology Leader & Communications指数（配当込み、円ベース）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.721
     },
     {
@@ -1727,6 +1973,7 @@
       "name": "グローバルＸ 防衛テック ETF",
       "index": "Global X Defense Tech Index（円換算ベース）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.525
     },
     {
@@ -1734,6 +1981,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 国内債券・ＮＯＭＵＲＡ‐ＢＰＩ総合連動型上場投信",
       "index": "NOMURA-BPI総合",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.07
     },
     {
@@ -1741,6 +1989,7 @@
       "name": "iシェアーズ・コア 日本国債 ETF",
       "index": "ＦＴＳＥ日本国債インデックス",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.06
     },
     {
@@ -1748,6 +1997,7 @@
       "name": "iシェアーズ 日本国債7-10年 ETF",
       "index": "ＦＴＳＥ日本国債7-10年インデックス",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.06
     },
     {
@@ -1755,6 +2005,7 @@
       "name": "iシェアーズ 円高フォーカス ETF",
       "index": "FTSE円ドルロング日本国債0-1年(含短国)インデックス",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.3
     },
     {
@@ -1762,6 +2013,7 @@
       "name": "ABF汎アジア債券インデックス・ファンド(アジア国債・公債ETF)(注2)",
       "index": "Markit iBoxx　ABF 汎アジア指数",
       "manager": "ステート・ストリート・グローバル・アドバイザーズ・シンガポール・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.18
     },
     {
@@ -1769,6 +2021,7 @@
       "name": "上場インデックスファンド海外債券（FTSE WGBI）毎月分配型",
       "index": "FTSE世界国債インデックス（除く日本、ヘッジなし・円ベース）",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.25
     },
     {
@@ -1776,6 +2029,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 外国債券・FTSE世界国債インデックス（除く日本・為替ヘッジなし）連動型上場投信",
       "index": "FTSE世界国債インデックス（除く日本、ヘッジなし・円ベース）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.12
     },
     {
@@ -1783,6 +2037,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 外国債券・FTSE世界国債インデックス（除く日本・為替ヘッジあり）連動型上場投信",
       "index": "FTSE世界国債インデックス（除く日本、円ヘッジ・円ベース）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.12
     },
     {
@@ -1790,6 +2045,7 @@
       "name": "上場インデックスファンド新興国債券",
       "index": "ブルームバーグ自国通貨建て新興市場国債・10％国キャップ・インデックス",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.45
     },
     {
@@ -1797,6 +2053,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ新興国債券・J.P.モルガン・エマージング・マーケット・ボンド・インデックス・プラス（為替ヘッジなし）連動型上場投信",
       "index": "J.P.モルガン・エマージング・マーケット・ボンド・インデックス・プラス",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.19
     },
     {
@@ -1804,6 +2061,7 @@
       "name": "iシェアーズ・コア 米国債7-10年 ETF（為替ヘッジあり）",
       "index": "FTSE米国債7-10年セレクト・インデックス（国内投信用 円ヘッジ円ベース）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.14
     },
     {
@@ -1811,6 +2069,7 @@
       "name": "上場インデックスファンド米国債券（為替ヘッジなし）",
       "index": "S&P 米国債7-10年指数（TTM、円建て）",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.16
     },
     {
@@ -1818,6 +2077,7 @@
       "name": "上場インデックスファンド米国債券（為替ヘッジあり）",
       "index": "S&P 米国債7-10年指数（TTM、円建て、円ヘッジ）",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.16
     },
     {
@@ -1825,6 +2085,7 @@
       "name": "iシェアーズ 米ドル建て投資適格社債 ETF（為替ヘッジあり）",
       "index": "Markit iBoxx 米ドル建てリキッド投資適格指数（TTM円ヘッジ付き）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.28
     },
     {
@@ -1832,6 +2093,7 @@
       "name": "iシェアーズ 米ドル建てハイイールド社債 ETF（為替ヘッジあり）",
       "index": "Markit iBoxx 米ドル建てリキッド･ハイイールド指数（TTM円ヘッジ付き）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.58
     },
     {
@@ -1839,6 +2101,7 @@
       "name": "iシェアーズ・コア 米国債7-10年 ETF",
       "index": "FTSE米国債7-10年セレクト・インデックス（国内投信用 円ベース）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.14
     },
     {
@@ -1846,6 +2109,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ブルームバーグ米国投資適格社債（1-10年）インデックス（為替ヘッジあり）連動型上場投信",
       "index": "ブルームバーグ米国投資適格社債（1-10年）インデックス（円ヘッジ・円ベース）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.27
     },
     {
@@ -1853,6 +2117,7 @@
       "name": "iシェアーズ 米国債1-3年 ETF",
       "index": "ＦＴＳＥ米国債1-3年セレクト・インデックス（国内投信用 円ベース）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.14
     },
     {
@@ -1860,6 +2125,7 @@
       "name": "iシェアーズ 米国債20年超 ETF（為替ヘッジあり）",
       "index": "ＦＴＳＥ米国債20年超セレクト・インデックス（国内投信用 円ヘッジ円ベース）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.14
     },
     {
@@ -1867,6 +2133,7 @@
       "name": "iシェアーズ 米ドル建て新興国債券 ETF（為替ヘッジあり）",
       "index": "J.P.モルガン・エマージング・マーケッツ・ボンド・インデックス・グローバル・コア・インデックス 国内投信用（円建て、円ヘッジ）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.45
     },
     {
@@ -1874,6 +2141,7 @@
       "name": "iシェアーズ ユーロ建て投資適格社債 ETF（為替ヘッジあり）",
       "index": "ブルームバーグ・ユーロ社債インデックス TTM（為替ヘッジ有り、円ベース）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.28
     },
     {
@@ -1881,6 +2149,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ブルームバーグ米国国債（7-10年）インデックス（為替ヘッジなし）連動型上場投信",
       "index": "ブルームバーグ米国国債（7-10年）インデックスTTM（為替ヘッジなし、円ベース）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.13
     },
     {
@@ -1888,6 +2157,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ブルームバーグ米国国債（7-10年）インデックス（為替ヘッジあり）連動型上場投信",
       "index": "ブルームバーグ米国国債（7-10年）インデックスTTM（為替ヘッジあり、円ベース）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.13
     },
     {
@@ -1895,6 +2165,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ブルームバーグ米国国債（7-10年）インデックス（75％為替ヘッジあり）連動型上場投信",
       "index": "ブルームバーグ米国国債（7-10年）インデックスTTM（75％為替ヘッジあり、円ベース）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.13
     },
     {
@@ -1902,6 +2173,7 @@
       "name": "NZAM 上場投信 米国国債7-10年（為替ヘッジあり）",
       "index": "Bloomberg米国国債7-10年指数（為替ヘッジあり・円ベース）",
       "manager": "農林中金全共連アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.13
     },
     {
@@ -1909,6 +2181,7 @@
       "name": "ＭＡＸＩＳ米国国債７-１０年上場投信（為替ヘッジなし）",
       "index": "S&P 米国債７-１０年指数（円換算ベース）",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.12
     },
     {
@@ -1916,6 +2189,7 @@
       "name": "ＭＡＸＩＳ米国国債７-１０年上場投信（為替ヘッジあり）",
       "index": "S&P 米国債７-１０年指数（円ヘッジ・円換算ベース）",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.12
     },
     {
@@ -1923,6 +2197,7 @@
       "name": "iシェアーズ 米国政府系機関ジニーメイMBS ETF（為替ヘッジあり）",
       "index": "ブルームバーグ米国GNMAインデックス TTM（為替ヘッジ有り、円ベース）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.125
     },
     {
@@ -1930,6 +2205,7 @@
       "name": "iシェアーズ 米国債3-7年 ETF（為替ヘッジあり）",
       "index": "ＦＴＳＥ米国債3-7年セレクト・インデックス（国内投信用、円ヘッジ・円ベース）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.14
     },
     {
@@ -1937,6 +2213,7 @@
       "name": "iシェアーズ 米国債20年超 ETF",
       "index": "ＦＴＳＥ米国債20年超セレクト・インデックス（国内投信用、円ベース）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.14
     },
     {
@@ -1944,6 +2221,7 @@
       "name": "iシェアーズ 米国総合債券 ETF",
       "index": "ブルームバーグ米国総合インデックスTTM（為替ヘッジなし、円ベース）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.08
     },
     {
@@ -1951,6 +2229,7 @@
       "name": "iシェアーズ 米ドル建て投資適格社債 ETF",
       "index": "ICE BofA USコーポレート・インデックス（国内投信用、円ベース）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.09
     },
     {
@@ -1958,6 +2237,7 @@
       "name": "iシェアーズ 米ドル建てハイイールド社債 ETF",
       "index": "ICE BofA USハイ・イールド・コンストレインド・インデックス（国内投信用、円ベース）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.19
     },
     {
@@ -1965,6 +2245,7 @@
       "name": "iシェアーズ 米国債0-3ヶ月 ETF",
       "index": "ＦＴＳＥ米国債0-3ヶ月インデックス（国内投信用、円ベース）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.14
     },
     {
@@ -1972,6 +2253,7 @@
       "name": "グローバルＸ 超短期米国債 ETF",
       "index": "Solactive 1-3 month US T-Bill Index（円換算）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.0975
     },
     {
@@ -1979,6 +2261,7 @@
       "name": "グローバルＸ 超長期米国債 ETF（為替ヘッジあり）",
       "index": "ICE US Treasury 25+ Year Bond Index （円建て、円ヘッジ）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.095
     },
     {
@@ -1986,6 +2269,7 @@
       "name": "グローバルＸ 超長期米国債 ETF",
       "index": "ICE U.S. Treasury 25+ Year Bond Index （円換算）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.095
     },
     {
@@ -1993,6 +2277,7 @@
       "name": "ＭＡＸＩＳ米国国債１-３年上場投信（為替ヘッジなし）",
       "index": "ＩＣＥ米国債１-３年指数（円ベース）",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.12
     },
     {
@@ -2000,6 +2285,7 @@
       "name": "ＭＡＸＩＳ米国国債２０年超上場投信（為替ヘッジなし）",
       "index": "ＩＣＥ米国債２０年超指数（円ベース）",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.12
     },
     {
@@ -2007,6 +2293,7 @@
       "name": "ＭＡＸＩＳ米国国債２０年超上場投信（為替ヘッジあり）",
       "index": "ＩＣＥ米国債２０年超指数（円ヘッジ・円ベース）",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.12
     },
     {
@@ -2014,6 +2301,7 @@
       "name": "iシェアーズ 米国債25年超 ロングデュレーション ETF",
       "index": "ＦＴＳＥ米国債STRIPS元本25年超インデックス（国内投信用、円ベース）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.14
     },
     {
@@ -2021,6 +2309,7 @@
       "name": "iシェアーズ 米国債25年超 ロングデュレーション ETF（為替ヘッジあり）",
       "index": "ＦＴＳＥ米国債STRIPS元本25年超インデックス（国内投信用、円ヘッジ・円ベース）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.14
     },
     {
@@ -2028,6 +2317,7 @@
       "name": "上場インデックスファンド豪州国債（為替ヘッジあり）",
       "index": "ブルームバーグ豪州国債（7-10年）インデックス（為替ヘッジあり、円ベース）",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.11
     },
     {
@@ -2035,6 +2325,7 @@
       "name": "上場インデックスファンド豪州国債（為替ヘッジなし）",
       "index": "ブルームバーグ豪州国債（7-10年）インデックスTTM（為替ヘッジなし、円ベース）",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.11
     },
     {
@@ -2042,6 +2333,7 @@
       "name": "iシェアーズ 気候リスク調整世界国債 ETF（除く日本・為替ヘッジあり）",
       "index": "ＦＴＳＥアドバンスト気候リスク調整世界国債インデックス（除く日本、国内投信用、円ヘッジ・円ベース）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.12
     },
     {
@@ -2049,6 +2341,7 @@
       "name": "i シェアーズ ドイツ国債 ETF（為替ヘッジあり）",
       "index": "ＦＴＳＥドイツ国債インデックス（国内投信用、円ヘッジ・円ベース）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.12
     },
     {
@@ -2056,6 +2349,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ブルームバーグ・ドイツ国債（7-10年）インデックス（為替ヘッジあり）連動型上場投信",
       "index": "ブルームバーグ・ドイツ国債（7-10年）インデックスTTM（為替 ヘッジあり、円ベース）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.1
     },
     {
@@ -2063,6 +2357,7 @@
       "name": "NZAM 上場投信 ドイツ国債7-10年（為替ヘッジあり）",
       "index": "Bloombergドイツ国債7-10年指数（為替ヘッジあり・円ベース）",
       "manager": "農林中金全共連アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.11
     },
     {
@@ -2070,6 +2365,7 @@
       "name": "上場インデックスファンドフランス国債（為替ヘッジなし）",
       "index": "ブルームバーグ・フランス国債（7-10年）インデックスTTM（為替ヘッジなし、円ベース）",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.11
     },
     {
@@ -2077,6 +2373,7 @@
       "name": "上場インデックスファンドフランス国債（為替ヘッジあり）",
       "index": "ブルームバーグ・フランス国債（7-10年）インデックスTTM（為替ヘッジあり、円ベース）",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.11
     },
     {
@@ -2084,6 +2381,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ ブルームバーグ・フランス国債（7-10年）インデックス（為替ヘッジあり）連動型上場投信",
       "index": "ブルームバーグ・フランス国債（7-10年）インデックスTTM（為替ヘッジあり、円ベース）",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.1
     },
     {
@@ -2091,6 +2389,7 @@
       "name": "NZAM 上場投信 フランス国債7-10年（為替ヘッジあり）",
       "index": "Bloombergフランス国債7-10年指数（為替ヘッジあり・円ベース）",
       "manager": "農林中金全共連アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.11
     },
     {
@@ -2098,6 +2397,7 @@
       "name": "iシェアーズ フランス国債7-10年 ETF（為替ヘッジあり）",
       "index": "ＦＴＳＥフランス国債7-10年インデックス（国内投信用、円ヘッジ・円ベース）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.1
     },
     {
@@ -2105,6 +2405,7 @@
       "name": "グローバルＸ 米国優先証券 ETF",
       "index": "ICE BofA Diversified Core U.S. Preferred Securities Index（円換算）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.255
     },
     {
@@ -2112,6 +2413,7 @@
       "name": "グローバルＸ 米国優先証券 ETF（隔月分配型）",
       "index": "ICE BofA Diversified Core U.S. Preferred Securities Index（円換算）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.255
     },
     {
@@ -2119,6 +2421,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 金価格連動型上場投信先物型",
       "index": "金",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.16
     },
     {
@@ -2126,6 +2429,7 @@
       "name": "SPDR®ゴールド・シェア 受益証券(注2)",
       "index": "金",
       "manager": "ワールド・ゴールド・トラスト・サービシズ・エルエルシー",
+      "type": "ETF",
       "expense_ratio": 0.4
     },
     {
@@ -2133,6 +2437,7 @@
       "name": "WisdomTree 金上場投資信託(注2)(注5)",
       "index": "金",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.39
     },
     {
@@ -2140,6 +2445,7 @@
       "name": "純金上場信託（現物国内保管型）",
       "index": "金",
       "manager": "三菱UFJ信託銀行",
+      "type": "ETF",
       "expense_ratio": 0.4
     },
     {
@@ -2147,6 +2453,7 @@
       "name": "iシェアーズ ゴールド ETF",
       "index": "ＬＢＭＡ金価格（円換算ベース）",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.2
     },
     {
@@ -2154,6 +2461,7 @@
       "name": "ステート・ストリート・スパイダー ゴールド ETF（為替ヘッジなし）",
       "index": "LBMA金価格（円換算ベース）",
       "manager": "ステート・ストリート・グローバル・アドバイザーズ(447A4)",
+      "type": "ETF",
       "expense_ratio": 0.17
     },
     {
@@ -2161,6 +2469,7 @@
       "name": "ステート・ストリート・スパイダー ゴールド ETF（為替ヘッジあり）",
       "index": "LBMA金価格（円ヘッジベース）",
       "manager": "ステート・ストリート・グローバル・アドバイザーズ(447A4)",
+      "type": "ETF",
       "expense_ratio": 0.17
     },
     {
@@ -2168,6 +2477,7 @@
       "name": "グローバルＸ ゴールド ETF（為替ヘッジあり）",
       "index": "Mirae Asset Gold Bullion ETF Hedged Index",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.1775
     },
     {
@@ -2175,6 +2485,7 @@
       "name": "グローバルＸ ゴールド ETF",
       "index": "Mirae Asset Gold Bullion ETF Index（円換算ベース）",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.1775
     },
     {
@@ -2182,6 +2493,7 @@
       "name": "WisdomTree 白金上場投資信託(注2)(注5)",
       "index": "白金",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.49
     },
     {
@@ -2189,6 +2501,7 @@
       "name": "純プラチナ上場信託（現物国内保管型）",
       "index": "白金",
       "manager": "三菱UFJ信託銀行",
+      "type": "ETF",
       "expense_ratio": 0.5
     },
     {
@@ -2196,6 +2509,7 @@
       "name": "WisdomTree 銀上場投資信託(注2)(注5)",
       "index": "銀",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.49
     },
     {
@@ -2203,6 +2517,7 @@
       "name": "純銀上場信託（現物国内保管型）",
       "index": "銀",
       "manager": "三菱UFJ信託銀行",
+      "type": "ETF",
       "expense_ratio": 0.5
     },
     {
@@ -2210,6 +2525,7 @@
       "name": "WisdomTree パラジウム上場投資信託(注2)(注5)",
       "index": "パラジウム",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.49
     },
     {
@@ -2217,6 +2533,7 @@
       "name": "純パラジウム上場信託（現物国内保管型）",
       "index": "パラジウム",
       "manager": "三菱UFJ信託銀行",
+      "type": "ETF",
       "expense_ratio": 0.5
     },
     {
@@ -2224,6 +2541,7 @@
       "name": "WTI原油価格連動型上場投信先物型",
       "index": "WTI原油先物価格",
       "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
       "expense_ratio": 0.85
     },
     {
@@ -2231,6 +2549,7 @@
       "name": "NEXT FUNDS NOMURA原油インデックス連動型上場投信先物型",
       "index": "NOMURA原油ロングインデックス",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.5
     },
     {
@@ -2238,6 +2557,7 @@
       "name": "WisdomTree 貴金属バスケット上場投資信託(注2)(注5)",
       "index": "貴金属バスケット(金、銀、白金、パラジウム)",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.44
     },
     {
@@ -2245,6 +2565,7 @@
       "name": "WisdomTree ブロード上場投資信託(注2)(注5)OTCスワップ型先物型",
       "index": "Bloomberg Commodity Index",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.49
     },
     {
@@ -2252,6 +2573,7 @@
       "name": "WisdomTree エネルギー上場投資信託(注2)(注5)OTCスワップ型先物型",
       "index": "Bloomberg Energy Subindex",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.49
     },
     {
@@ -2259,6 +2581,7 @@
       "name": "WisdomTree 産業用金属上場投資信託(注2)(注5)OTCスワップ型先物型",
       "index": "Bloomberg Industrial Metals Subindex",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.49
     },
     {
@@ -2266,6 +2589,7 @@
       "name": "WisdomTree 農産物上場投資信託(注2)(注5)OTCスワップ型先物型",
       "index": "Bloomberg Agriculture Subindex",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.49
     },
     {
@@ -2273,6 +2597,7 @@
       "name": "WisdomTree 穀物上場投資信託(注2)(注5)OTCスワップ型先物型",
       "index": "Bloomberg Grains Subindex",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.49
     },
     {
@@ -2280,6 +2605,7 @@
       "name": "WisdomTree 天然ガス上場投資信託(注2)(注5)OTCスワップ型先物型",
       "index": "Bloomberg Natural Gas Subindex",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.49
     },
     {
@@ -2287,6 +2613,7 @@
       "name": "WisdomTree WTI 原油上場投資信託(注2)(注5)OTCスワップ型先物型",
       "index": "Bloomberg WTI Crude Oil Multi-Tenor Excess Return Index",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.49
     },
     {
@@ -2294,6 +2621,7 @@
       "name": "WisdomTree ガソリン上場投資信託(注2)(注5)OTCスワップ型先物型",
       "index": "Bloomberg Unleaded Gasoline Subindex",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.49
     },
     {
@@ -2301,6 +2629,7 @@
       "name": "WisdomTree アルミニウム上場投資信託(注2)(注5)OTCスワップ型先物型",
       "index": "Bloomberg Aluminum Subindex",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.49
     },
     {
@@ -2308,6 +2637,7 @@
       "name": "WisdomTree 銅上場投資信託(注2)(注5)OTCスワップ型先物型",
       "index": "Bloomberg Copper Subindex",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.49
     },
     {
@@ -2315,6 +2645,7 @@
       "name": "WisdomTree ニッケル上場投資信託(注2)(注5)OTCスワップ型先物型",
       "index": "Bloomberg Nickel Subindex",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.49
     },
     {
@@ -2322,6 +2653,7 @@
       "name": "WisdomTree 小麦上場投資信託(注2)(注5)OTCスワップ型先物型",
       "index": "Bloomberg Wheat Subindex",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.49
     },
     {
@@ -2329,6 +2661,7 @@
       "name": "WisdomTree とうもろこし上場投資信託(注2)(注5)OTCスワップ型先物型",
       "index": "Bloomberg Corn Subindex",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.49
     },
     {
@@ -2336,6 +2669,7 @@
       "name": "WisdomTree 大豆上場投資信託(注2)(注5)OTCスワップ型先物型",
       "index": "Bloomberg Soybeans Subindex",
       "manager": "ウィズダムツリー・マネジメント・ジャージー・リミテッド",
+      "type": "ETF",
       "expense_ratio": 0.49
     },
     {
@@ -2343,6 +2677,7 @@
       "name": "iFreeETF JPX日経400",
       "index": "ＪＰＸ日経インデックス400（配当込み）",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.18
     },
     {
@@ -2350,6 +2685,7 @@
       "name": "ＰＢＲ１倍割れ解消推進ＥＴＦ",
       "index": "-",
       "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
       "expense_ratio": 0.9
     },
     {
@@ -2357,6 +2693,7 @@
       "name": "政策保有解消推進ＥＴＦ",
       "index": "-",
       "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
       "expense_ratio": 0.9
     },
     {
@@ -2364,6 +2701,7 @@
       "name": "投資家経営者一心同体ＥＴＦ",
       "index": "-",
       "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
       "expense_ratio": 0.9
     },
     {
@@ -2371,6 +2709,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 日本成長株アクティブ上場投信",
       "index": "-",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.625
     },
     {
@@ -2378,6 +2717,7 @@
       "name": "ＮＥＸＴ ＦＵＮＤＳ 日本高配当株アクティブ上場投信",
       "index": "-",
       "manager": "野村アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.475
     },
     {
@@ -2385,6 +2725,7 @@
       "name": "ＭＡＸＩＳ高配当日本株アクティブ上場投信",
       "index": "-",
       "manager": "三菱UFJアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.375
     },
     {
@@ -2392,6 +2733,7 @@
       "name": "上場Tracers 米国債0-2年ラダー（為替ヘッジなし）",
       "index": "-",
       "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.06
     },
     {
@@ -2399,6 +2741,7 @@
       "name": "ＳＭＤＡＭ Ａｃｔｉｖｅ ＥＴＦ 日本高配当株式",
       "index": "-",
       "manager": "三井住友ＤＳアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.53
     },
     {
@@ -2406,6 +2749,7 @@
       "name": "iFreeETF 米国国債7-10年（為替ヘッジなし）",
       "index": "-",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.1
     },
     {
@@ -2413,6 +2757,7 @@
       "name": "iFreeETF 米国国債7-10年（為替ヘッジあり）",
       "index": "-",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.1
     },
     {
@@ -2420,6 +2765,7 @@
       "name": "ＳＭＴ ＥＴＦ日本好配当株アクティブ",
       "index": "-",
       "manager": "三井住友トラスト・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.45
     },
     {
@@ -2427,6 +2773,7 @@
       "name": "ＳＭＴ ＥＴＦ日本株厳選投資アクティブ",
       "index": "-",
       "manager": "三井住友トラスト・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.7
     },
     {
@@ -2434,6 +2781,7 @@
       "name": "ＳＭＴ ＥＴＦ国内リート厳選投資アクティブ",
       "index": "-",
       "manager": "三井住友トラスト・アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.55
     },
     {
@@ -2441,6 +2789,7 @@
       "name": "ＳＭＤＡＭ Ａｃｔｉｖｅ ＥＴＦ 日本グロース株式",
       "index": "-",
       "manager": "三井住友ＤＳアセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.53
     },
     {
@@ -2448,6 +2797,7 @@
       "name": "iFreeETF 米国国債3-5年（為替ヘッジなし）",
       "index": "-",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.1
     },
     {
@@ -2455,6 +2805,7 @@
       "name": "iFreeETF 米国国債3-5年（為替ヘッジあり）",
       "index": "-",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.1
     },
     {
@@ -2462,6 +2813,7 @@
       "name": "業界改革厳選ＥＴＦテレビ業界",
       "index": "-",
       "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
       "expense_ratio": 0.9
     },
     {
@@ -2469,6 +2821,7 @@
       "name": "業界改革厳選ＥＴＦ地銀",
       "index": "-",
       "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
       "expense_ratio": 0.9
     },
     {
@@ -2476,6 +2829,7 @@
       "name": "業界改革厳選ＥＴＦ ＲＥＩＴイベント・ドリブン",
       "index": "-",
       "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
       "expense_ratio": 0.9
     },
     {
@@ -2483,6 +2837,7 @@
       "name": "iシェアーズ AI グローバル・イノベーション アクティブ ETF",
       "index": "-",
       "manager": "ブラックロック・ジャパン",
+      "type": "ETF",
       "expense_ratio": 0.77
     },
     {
@@ -2490,6 +2845,7 @@
       "name": "iFreeETF 日本株配当ローテーション戦略",
       "index": "-",
       "manager": "大和アセットマネジメント",
+      "type": "ETF",
       "expense_ratio": 0.375
     },
     {
@@ -2497,6 +2853,7 @@
       "name": "グローバルＸ 米ドル建て投資適格社債 ETF（為替ヘッジあり）アクティブ運用型(特化型)",
       "index": "-",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.165
     },
     {
@@ -2504,6 +2861,7 @@
       "name": "グローバルＸ 米ドル建て投資適格社債 ETFアクティブ運用型(特化型)",
       "index": "-",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.165
     },
     {
@@ -2511,6 +2869,7 @@
       "name": "Ｏｎｅ ＥＴＦ 日本国債 高クーポン（平均残存１０年未満）",
       "index": "-",
       "manager": "アセットマネジメントOne",
+      "type": "ETF",
       "expense_ratio": 0.095
     },
     {
@@ -2518,6 +2877,7 @@
       "name": "Ｏｎｅ ＥＴＦ 日本国債 １－３年",
       "index": "-",
       "manager": "アセットマネジメントOne",
+      "type": "ETF",
       "expense_ratio": 0.075
     },
     {
@@ -2525,6 +2885,7 @@
       "name": "Ｏｎｅ ＥＴＦ 日本国債 ３－７年",
       "index": "-",
       "manager": "アセットマネジメントOne",
+      "type": "ETF",
       "expense_ratio": 0.075
     },
     {
@@ -2532,6 +2893,7 @@
       "name": "Ｏｎｅ ＥＴＦ 日本国債 ７－１０年",
       "index": "-",
       "manager": "アセットマネジメントOne",
+      "type": "ETF",
       "expense_ratio": 0.075
     },
     {
@@ -2539,6 +2901,7 @@
       "name": "Ｏｎｅ ＥＴＦ 日本国債 １７－２０年",
       "index": "-",
       "manager": "アセットマネジメントOne",
+      "type": "ETF",
       "expense_ratio": 0.075
     },
     {
@@ -2546,10 +2909,184 @@
       "name": "グローバルＸ 超短期円建て債券 ETFアクティブ運用型",
       "index": "-",
       "manager": "Global X Japan",
+      "type": "ETF",
       "expense_ratio": 0.09
+    },
+    {
+      "code": "162A",
+      "name": "AIセレクトメガトレンド 日本株（ネットリターン）ETN",
+      "index": "MSCI Japanセレクトテーマティックセンチメントローテーション指数（ネットリターン）",
+      "manager": "三菱ＵＦＪ証券ホールディングス",
+      "type": "ETN",
+      "expense_ratio": 0.95
+    },
+    {
+      "code": "163A",
+      "name": "半導体フォーカス 日本株（ネットリターン）ETN",
+      "index": "iSTOXX MUTB ジャパン半導体インデックス（ネットリターン）",
+      "manager": "三菱ＵＦＪ証券ホールディングス",
+      "type": "ETN",
+      "expense_ratio": 0.8
+    },
+    {
+      "code": "2042",
+      "name": "NEXT NOTES 東証グロース市場 250 ETN",
+      "index": "東証グロース市場 250 指数",
+      "manager": "ノムラ・ヨーロッパ・ファイナンス・エヌ・ブイ",
+      "type": "ETN",
+      "expense_ratio": 0.5
+    },
+    {
+      "code": "2043",
+      "name": "NEXT NOTES STOXX アセアン好配当50（円、ネットリターン）ETN",
+      "index": "STOXX アセアン好配当50（円、ネットリターン）",
+      "manager": "ノムラ・ヨーロッパ・ファイナンス・エヌ・ブイ",
+      "type": "ETN",
+      "expense_ratio": 0.8
+    },
+    {
+      "code": "2044",
+      "name": "NEXT NOTES S&P500 配当貴族（ネットリターン）ETN",
+      "index": "S&P500 配当貴族指数（課税後配当込み）",
+      "manager": "ノムラ・ヨーロッパ・ファイナンス・エヌ・ブイ",
+      "type": "ETN",
+      "expense_ratio": 0.85
+    },
+    {
+      "code": "2045",
+      "name": "NEXT NOTES S&P シンガポール リート（ネットリターン）ETN",
+      "index": "S&P シンガポールREIT指数（課税後配当込み）",
+      "manager": "ノムラ・ヨーロッパ・ファイナンス・エヌ・ブイ",
+      "type": "ETN",
+      "expense_ratio": 0.95
+    },
+    {
+      "code": "2048",
+      "name": "NEXT NOTES 野村日本株高配当70（ドルヘッジ、ネットリターン）ETN",
+      "index": "野村日本株高配当70・米ドルヘッジ指数（ネットトータルリターン）",
+      "manager": "ノムラ・ヨーロッパ・ファイナンス・エヌ・ブイ",
+      "type": "ETN",
+      "expense_ratio": 0.85
+    },
+    {
+      "code": "2050",
+      "name": "NEXT NOTES ニッチトップ 中小型日本株（ネットリターン）ETN",
+      "index": "ファクトセット・グローバル・ニッチトップ・ジャパンエンタープライズ指数(課税後配当込み)",
+      "manager": "ノムラ・ヨーロッパ・ファイナンス・エヌ・ブイ",
+      "type": "ETN",
+      "expense_ratio": 0.85
+    },
+    {
+      "code": "2065",
+      "name": "NEXT NOTES 日本株配当貴族（ドルヘッジ、ネットリターン）ETN",
+      "index": "S&P/JPX 配当貴族指数（米ドルヘッジ、課税後配当込み）",
+      "manager": "ノムラ・ヨーロッパ・ファイナンス・エヌ・ブイ",
+      "type": "ETN",
+      "expense_ratio": 0.85
+    },
+    {
+      "code": "2066",
+      "name": "NEXT NOTES 東証REIT（ドルヘッジ、ネットリターン）ETN",
+      "index": "税引後配当込東証REIT米ドルヘッジ指数",
+      "manager": "ノムラ・ヨーロッパ・ファイナンス・エヌ・ブイ",
+      "type": "ETN",
+      "expense_ratio": 0.85
+    },
+    {
+      "code": "2067",
+      "name": "NEXT NOTES 野村AI ビジネス70（ネットリターン）ETN",
+      "index": "野村AI ビジネス70（配当課税考慮済指数）",
+      "manager": "ノムラ・ヨーロッパ・ファイナンス・エヌ・ブイ",
+      "type": "ETN",
+      "expense_ratio": 0.85
+    },
+    {
+      "code": "2068",
+      "name": "NEXT NOTES 高ベータ30（ネットリターン）ETN",
+      "index": "野村日本株高ベータ・セレクト30（配当課税考慮済指数）",
+      "manager": "ノムラ・ヨーロッパ・ファイナンス・エヌ・ブイ",
+      "type": "ETN",
+      "expense_ratio": 0.85
+    },
+    {
+      "code": "2069",
+      "name": "NEXT NOTES 低ベータ50（ネットリターン）ETN",
+      "index": "野村日本株低ベータ・セレクト50（配当課税考慮済指数）",
+      "manager": "ノムラ・ヨーロッパ・ファイナンス・エヌ・ブイ",
+      "type": "ETN",
+      "expense_ratio": 0.85
+    },
+    {
+      "code": "2070",
+      "name": "スマートESG30女性活躍（ネットリターン）ETN",
+      "index": "iSTOXX MUTB ジャパン女性活躍 30インデックス（ネットリターン）",
+      "manager": "三菱ＵＦＪ証券ホールディングス",
+      "type": "ETN",
+      "expense_ratio": 0.85
+    },
+    {
+      "code": "2071",
+      "name": "スマートESG30総合（ネットリターン）ETN",
+      "index": "iSTOXX MUTB ジャパンESG 30インデックス（ネットリターン）",
+      "manager": "三菱ＵＦＪ証券ホールディングス",
+      "type": "ETN",
+      "expense_ratio": 0.85
+    },
+    {
+      "code": "2072",
+      "name": "トップシェアインデックス（ネットリターン）ETN",
+      "index": "iSTOXX MUTB ジャパントップシェアインデックス（ネットリターン）",
+      "manager": "三菱ＵＦＪ証券ホールディングス",
+      "type": "ETN",
+      "expense_ratio": 0.85
+    },
+    {
+      "code": "2073",
+      "name": "スマートESG30低カーボンリスク（ネットリターン）ETN",
+      "index": "iSTOXX MUTB ジャパン低カーボンリスク 30インデックス（ネットリターン）",
+      "manager": "三菱ＵＦＪ証券ホールディングス",
+      "type": "ETN",
+      "expense_ratio": 0.85
+    },
+    {
+      "code": "345A",
+      "name": "高配当成長 日本株（ネットリターン）ETN",
+      "index": "iSTOXX MUTB ジャパン配当成長 70 インデックス（ネットリターン）",
+      "manager": "三菱ＵＦＪ証券ホールディングス",
+      "type": "ETN",
+      "expense_ratio": 0.5
+    },
+    {
+      "code": "497A",
+      "name": "インバウンド消費関連 日本株（ネットリターン）ETN",
+      "index": "iSTOXX MUTB ジャパンインバウンド インデックス（ネットリターン）",
+      "manager": "三菱ＵＦＪ証券ホールディングス",
+      "type": "ETN",
+      "expense_ratio": 0.85
+    },
+    {
+      "code": "498A",
+      "name": "防衛・航空宇宙 欧州株（ネットリターン）ETN",
+      "index": "iSTOXX MUTB ヨーロッパ航空宇宙防衛 インデックス（ネットリターン、円換算）",
+      "manager": "三菱ＵＦＪ証券ホールディングス",
+      "type": "ETN",
+      "expense_ratio": 1.4
+    },
+    {
+      "code": "499A",
+      "name": "ラグジュアリー厳選10 欧州株（ネットリターン）ETN",
+      "index": "iSTOXX MUTB ヨーロッパラグジュアリー 10 インデックス（ネットリターン、円換算）",
+      "manager": "三菱ＵＦＪ証券ホールディングス",
+      "type": "ETN",
+      "expense_ratio": 1.25
     }
   ],
-  "count": 364,
+  "count": 385,
+  "etf_count": 364,
+  "etn_count": 21,
   "source": "JPX",
-  "source_url": "https://www.jpx.co.jp/equities/products/etfs/issues/01.html"
+  "source_urls": [
+    "https://www.jpx.co.jp/equities/products/etfs/issues/01.html",
+    "https://www.jpx.co.jp/equities/products/etns/issues/01.html"
+  ]
 }

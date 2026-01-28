@@ -23,6 +23,7 @@ class ETF(TimestampMixin, db.Model):
     listing_date = db.Column(db.Date, nullable=True)
     index_name = db.Column(db.String(100), nullable=True)
     manager = db.Column(db.String(100), nullable=True)
+    type = db.Column(db.String(10), nullable=False, default="ETF")
 
     # Relationships
     category = db.relationship("Category", back_populates="etfs")
@@ -67,6 +68,7 @@ class ETF(TimestampMixin, db.Model):
             ),
             "index_name": self.index_name,
             "manager": self.manager,
+            "type": self.type,
         }
         if include_tags:
             data["tags"] = [tag.to_dict() for tag in self.tags]

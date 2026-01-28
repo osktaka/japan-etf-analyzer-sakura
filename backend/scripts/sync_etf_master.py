@@ -31,6 +31,15 @@ def ensure_columns():
         conn.commit()
         print("  -> Added column: manager")
 
+    try:
+        conn.execute(text("SELECT type FROM etfs LIMIT 1"))
+    except Exception:
+        conn.execute(
+            text("ALTER TABLE etfs ADD COLUMN type VARCHAR(10) DEFAULT 'ETF' NOT NULL")
+        )
+        conn.commit()
+        print("  -> Added column: type")
+
     conn.close()
 
 # カテゴリ推定ルール
@@ -98,6 +107,7 @@ def sync_etf_master():
         index_name = etf_data.get("index", "")
         manager = etf_data.get("manager", "")
         expense_ratio = etf_data.get("expense_ratio")
+        etf_type = etf_data.get("type", "ETF")  # デフォルトは'ETF'
 
         # カテゴリを推定
         category_name = estimate_category(index_name, name)
@@ -113,6 +123,7 @@ def sync_etf_master():
             "index_name": index_name,
             "manager": manager,
             "category_id": category_id,
+            "type": etf_type,
         }
 
         # 信託報酬がある場合は追加

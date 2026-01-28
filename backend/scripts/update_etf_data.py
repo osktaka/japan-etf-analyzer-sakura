@@ -3,11 +3,14 @@
 
 Usage:
     python scripts/update_etf_data.py [--limit N] [--dry-run] [--skip-performance]
+    python scripts/update_etf_data.py --smart [--limit N] [--dry-run]
 
 Options:
     --limit N           Only update first N ETFs (for testing)
     --dry-run           Show what would be updated without actually fetching
     --skip-performance  Skip performance cache calculation
+    --full              Fetch full history (period='max') instead of 1 year
+    --smart             Smart update: full history for new ETFs, incremental for existing
 
 This script should be run via cron:
     0 19 * * 1-5 cd ~/app/backend && python3 scripts/update_etf_data.py >> ~/logs/etf_update.log 2>&1
@@ -19,9 +22,9 @@ import math
 import os
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -37,6 +40,30 @@ ETF_MASTER_PATH = Path(__file__).parent.parent / "src" / "data" / "etf_master.js
 RATE_LIMIT_SECONDS = 1.0  # Yahoo Finance API rate limit対策
 
 
+def get_etf_price_status(code: str) -> Tuple[bool, Optional[datetime]]:
+    """Check if ETF has existing price data and get the latest date.
+
+    Args:
+        code: ETF code (e.g., "1306")
+
+    Returns:
+        Tuple of (has_data, latest_date)
+        - has_data: True if ETF has any price history
+        - latest_date: The most recent date in price history, or None if no data
+    """
+    from sqlalchemy import func
+
+    from src.models import PriceHistory
+
+    result = (
+        PriceHistory.query.filter_by(etf_code=code)
+        .with_entities(func.max(PriceHistory.date))
+        .first()
+    )
+    latest_date = result[0] if result else None
+    return (latest_date is not None, latest_date)
+
+
 def load_etf_list() -> list:
     """Load ETF list from master JSON."""
     if not ETF_MASTER_PATH.exists():
@@ -49,19 +76,43 @@ def load_etf_list() -> list:
     return data.get("etfs", [])
 
 
-def update_single_etf(code: str, dry_run: bool = False, full: bool = False) -> bool:
+def update_single_etf(
+    code: str,
+    dry_run: bool = False,
+    full: bool = False,
+    smart: bool = False,
+) -> bool:
     """Update price data for a single ETF.
 
     Args:
         code: ETF code (e.g., "1306")
         dry_run: If True, don't actually fetch data
         full: If True, fetch full history (period='max') instead of 1 year
+        smart: If True, use smart update (full for new, incremental for existing)
 
     Returns:
         True if successful, False otherwise
     """
+    # Smart mode: check existing data status (store result for later use)
+    smart_status = None
+    if smart and not dry_run:
+        smart_status = get_etf_price_status(code)
+        has_data, latest_date = smart_status
+        if not has_data:
+            logger.info(f"[SMART] {code}: New ETF - fetching full history")
+            full = True
+        else:
+            logger.info(
+                f"[SMART] {code}: Existing ETF - incremental from {latest_date}"
+            )
+    elif smart and dry_run:
+        # In dry-run mode, we can still check status for logging
+        logger.info(f"[DRY-RUN][SMART] Would check status and update ETF {code}")
+        return True
+
     if dry_run:
-        logger.info(f"[DRY-RUN] Would update ETF {code}")
+        mode = "full history" if full else "1 year"
+        logger.info(f"[DRY-RUN] Would update ETF {code} ({mode})")
         return True
 
     try:
@@ -70,12 +121,34 @@ def update_single_etf(code: str, dry_run: bool = False, full: bool = False) -> b
         ticker = f"{code}.T"
         stock = yf.Ticker(ticker)
 
-        # 過去データを取得（full=Trueなら全履歴、そうでなければ1年分）
-        period = "max" if full else "1y"
-        df = stock.history(period=period)
-        if df.empty:
-            logger.warning(f"No data returned for {ticker}")
-            return False
+        # Smart mode with existing data: use start date for incremental fetch
+        if smart and not full and smart_status:
+            has_data, latest_date = smart_status
+            if has_data and latest_date:
+                # Fetch from the day after the latest date
+                start_date = latest_date + timedelta(days=1)
+                df = stock.history(start=start_date.strftime("%Y-%m-%d"))
+                if df.empty:
+                    logger.info(f"{code}: No new data since {latest_date}")
+                    # Still update ETF info even if no new price data
+                    info = stock.info
+                    dividend_yield = info.get("dividendYield")
+                    total_assets = info.get("totalAssets")
+                    if dividend_yield is not None:
+                        dividend_yield = round(dividend_yield, 2)
+                    update_etf_info(code, dividend_yield, total_assets)
+                    return True
+            else:
+                # Fallback to full if status check failed
+                full = True
+
+        # Regular fetch (full or 1y period)
+        if not smart or full:
+            period = "max" if full else "1y"
+            df = stock.history(period=period)
+            if df.empty:
+                logger.warning(f"No data returned for {ticker}")
+                return False
 
         # ticker.info から配当利回りと総資産を取得
         info = stock.info
@@ -91,8 +164,9 @@ def update_single_etf(code: str, dry_run: bool = False, full: bool = False) -> b
         update_etf_info(code, dividend_yield, total_assets)
         yield_str = f"{dividend_yield}%" if dividend_yield else "N/A"
         assets_str = f"{total_assets:,}" if total_assets else "N/A"
+        mode_str = "[FULL]" if full else ("[INCR]" if smart else "")
         logger.info(
-            f"Updated {code}: {len(df)} records, yield={yield_str}, assets={assets_str}"
+            f"Updated {code} {mode_str}: {len(df)} records, yield={yield_str}, assets={assets_str}"
         )
         return True
 
@@ -419,10 +493,33 @@ def main() -> int:
         action="store_true",
         help="Fetch full history (period='max') instead of 1 year",
     )
+    parser.add_argument(
+        "--smart",
+        action="store_true",
+        help="Smart update: full history for new ETFs, incremental for existing",
+    )
     args = parser.parse_args()
+
+    # Validate mutually exclusive options
+    if args.full and args.smart:
+        logger.warning(
+            "--full and --smart are mutually exclusive. --smart takes precedence."
+        )
+        args.full = False
 
     logger.info("=" * 60)
     logger.info(f"ETF Data Update Started at {datetime.now()}")
+    mode_info = []
+    if args.smart:
+        mode_info.append("smart")
+    elif args.full:
+        mode_info.append("full")
+    if args.dry_run:
+        mode_info.append("dry-run")
+    if args.skip_performance:
+        mode_info.append("skip-performance")
+    if mode_info:
+        logger.info(f"Mode: {', '.join(mode_info)}")
     logger.info("=" * 60)
 
     etfs = load_etf_list()
@@ -453,7 +550,9 @@ def main() -> int:
             code = etf["code"]
             logger.info(f"[{i}/{len(etfs)}] Processing {code} ({etf.get('name', '')})")
 
-            if update_single_etf(code, dry_run=args.dry_run, full=args.full):
+            if update_single_etf(
+                code, dry_run=args.dry_run, full=args.full, smart=args.smart
+            ):
                 success_count += 1
             else:
                 fail_count += 1
