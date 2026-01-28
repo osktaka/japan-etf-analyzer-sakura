@@ -45,6 +45,9 @@ coverage/
 *.sql
 !scripts/*.sql
 
+# SQLite
+*.db
+
 # Temporary
 tmp/
 temp/
