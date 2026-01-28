@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 # JPX ETF/ETN一覧ページURL
 JPX_ETF_URL = "https://www.jpx.co.jp/equities/products/etfs/issues/01.html"
 JPX_ETN_URL = "https://www.jpx.co.jp/equities/products/etns/issues/01.html"
+JPX_LEVERAGED_URL = "https://www.jpx.co.jp/equities/products/etfs/leveraged-inverse/01.html"
 
 OUTPUT_PATH = Path(__file__).parent.parent / "src" / "data" / "etf_master.json"
 
@@ -175,7 +176,12 @@ def fetch_jpx_etn_list() -> list:
     return fetch_jpx_etn_page(JPX_ETN_URL)
 
 
-def save_json(items: list) -> None:
+def fetch_jpx_leveraged_list() -> list:
+    """Fetch leveraged/inverse ETF list from JPX website."""
+    return fetch_jpx_etf_page(JPX_LEVERAGED_URL)
+
+
+def save_json(items: list, leveraged_count: int = 0) -> None:
     """Save ETF/ETN list to JSON file."""
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
@@ -189,15 +195,19 @@ def save_json(items: list) -> None:
                 "count": len(items),
                 "etf_count": etf_count,
                 "etn_count": etn_count,
+                "leveraged_count": leveraged_count,
                 "source": "JPX",
-                "source_urls": [JPX_ETF_URL, JPX_ETN_URL],
+                "source_urls": [JPX_ETF_URL, JPX_ETN_URL, JPX_LEVERAGED_URL],
             },
             f,
             ensure_ascii=False,
             indent=2,
         )
 
-    logger.info(f"Saved {len(items)} items (ETF: {etf_count}, ETN: {etn_count}) to {OUTPUT_PATH}")
+    logger.info(
+        f"Saved {len(items)} items (ETF: {etf_count}, ETN: {etn_count}, "
+        f"Leveraged: {leveraged_count}) to {OUTPUT_PATH}"
+    )
 
 
 def main() -> int:
@@ -213,14 +223,30 @@ def main() -> int:
         etns = fetch_jpx_etn_list()
         logger.info(f"Fetched {len(etns)} ETNs")
 
-        # Combine ETF and ETN lists
-        all_items = etfs + etns
+        # Fetch Leveraged/Inverse ETFs
+        leveraged = fetch_jpx_leveraged_list()
+        logger.info(f"Fetched {len(leveraged)} Leveraged/Inverse ETFs")
 
-        save_json(all_items)
+        # Combine all lists
+        all_items = etfs + etns + leveraged
+
+        # Remove duplicates by code (keep first occurrence)
+        seen_codes: set[str] = set()
+        unique_items = []
+        for item in all_items:
+            if item["code"] not in seen_codes:
+                seen_codes.add(item["code"])
+                unique_items.append(item)
+
+        duplicates_removed = len(all_items) - len(unique_items)
+        if duplicates_removed > 0:
+            logger.info(f"Removed {duplicates_removed} duplicate entries")
+
+        save_json(unique_items, leveraged_count=len(leveraged))
 
         # Statistics
-        code_4digit = len([e for e in all_items if len(e["code"]) == 4 and e["code"].isdigit()])
-        code_3a = len([e for e in all_items if e["code"].endswith("A")])
+        code_4digit = len([e for e in unique_items if len(e["code"]) == 4 and e["code"].isdigit()])
+        code_3a = len([e for e in unique_items if e["code"].endswith("A")])
         logger.info(f"Statistics: 4-digit codes={code_4digit}, 3-digit+A codes={code_3a}")
 
         return 0

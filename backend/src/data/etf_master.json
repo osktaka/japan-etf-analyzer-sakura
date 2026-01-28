@@ -3079,14 +3079,288 @@
       "manager": "三菱ＵＦＪ証券ホールディングス",
       "type": "ETN",
       "expense_ratio": 1.25
+    },
+    {
+      "code": "1568",
+      "name": "ＴＯＰＩＸブル２倍上場投信",
+      "index": "TOPIX レバレッジ（2倍）指数",
+      "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.75
+    },
+    {
+      "code": "1367",
+      "name": "iFreeETF TOPIXレバレッジ（2倍）指数",
+      "index": "TOPIX レバレッジ（2倍）指数",
+      "manager": "大和アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.75
+    },
+    {
+      "code": "1569",
+      "name": "ＴＯＰＩＸベア上場投信",
+      "index": "TOPIXインバース（-1倍）指数",
+      "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.75
+    },
+    {
+      "code": "1457",
+      "name": "iFreeETF TOPIXインバース（-1倍）指数",
+      "index": "TOPIXインバース（-1倍）指数",
+      "manager": "大和アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.75
+    },
+    {
+      "code": "1356",
+      "name": "ＴＯＰＩＸベア２倍上場投信",
+      "index": "TOPIXダブルインバース（-2倍）指数",
+      "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.75
+    },
+    {
+      "code": "1368",
+      "name": "iFreeETF TOPIXダブルインバース（-2倍）指数",
+      "index": "TOPIXダブルインバース（-2倍）指数",
+      "manager": "大和アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.75
+    },
+    {
+      "code": "1572",
+      "name": "中国Ｈ株ブル２倍上場投信先物型",
+      "index": "ハンセン中国企業株レバレッジ指数",
+      "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.85
+    },
+    {
+      "code": "1573",
+      "name": "中国Ｈ株ベア上場投信先物型",
+      "index": "ハンセン中国企業株ショート指数",
+      "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.85
+    },
+    {
+      "code": "1570",
+      "name": "NEXT FUNDS 日経平均レバレッジ・インデックス連動型上場投信",
+      "index": "日経平均レバレッジ・インデックス",
+      "manager": "野村アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.8
+    },
+    {
+      "code": "1579",
+      "name": "日経平均ブル２倍上場投信",
+      "index": "日経平均レバレッジ・インデックス",
+      "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.75
+    },
+    {
+      "code": "1358",
+      "name": "上場インデックスファンド日経レバレッジ指数",
+      "index": "日経平均レバレッジ・インデックス",
+      "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.7075
+    },
+    {
+      "code": "1365",
+      "name": "iFreeETF 日経平均レバレッジ・インデックス",
+      "index": "日経平均レバレッジ・インデックス",
+      "manager": "大和アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.75
+    },
+    {
+      "code": "1458",
+      "name": "楽天ETF-日経レバレッジ指数連動型",
+      "index": "日経平均レバレッジ・インデックス",
+      "manager": "楽天投信投資顧問",
+      "type": "ETF",
+      "expense_ratio": 0.35
+    },
+    {
+      "code": "1571",
+      "name": "NEXT FUNDS 日経平均インバース・インデックス連動型上場投信",
+      "index": "日経平均インバース・インデックス",
+      "manager": "野村アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.8
+    },
+    {
+      "code": "1580",
+      "name": "日経平均ベア上場投信",
+      "index": "日経平均インバース・インデックス",
+      "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.75
+    },
+    {
+      "code": "1456",
+      "name": "iFreeETF 日経平均インバース・インデックス",
+      "index": "日経平均インバース・インデックス",
+      "manager": "大和アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.75
+    },
+    {
+      "code": "1357",
+      "name": "ＮＥＸＴ ＦＵＮＤＳ 日経平均ダブルインバース・インデックス連動型上場投信",
+      "index": "日経平均ダブルインバース・インデックス",
+      "manager": "野村アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.8
+    },
+    {
+      "code": "1360",
+      "name": "日経平均ベア２倍上場投信",
+      "index": "日経平均ダブルインバース・インデックス",
+      "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.75
+    },
+    {
+      "code": "1366",
+      "name": "iFreeETF 日経平均ダブルインバース・インデックス",
+      "index": "日経平均ダブルインバース・インデックス",
+      "manager": "大和アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.75
+    },
+    {
+      "code": "1459",
+      "name": "楽天ETF-日経ダブルインバース指数連動型",
+      "index": "日経平均ダブルインバース・インデックス",
+      "manager": "楽天投信投資顧問",
+      "type": "ETF",
+      "expense_ratio": 0.35
+    },
+    {
+      "code": "1466",
+      "name": "iFreeETF JPX日経400ダブルインバース・インデックス",
+      "index": "JPX日経400ダブルインバース・インデックス",
+      "manager": "大和アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.75
+    },
+    {
+      "code": "1469",
+      "name": "ＪＰＸ日経４００ベア２倍上場投信（ダブルインバース）",
+      "index": "JPX日経400ダブルインバース・インデックス",
+      "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.75
+    },
+    {
+      "code": "1472",
+      "name": "ＮＥＸＴ ＦＵＮＤＳ ＪＰＸ日経４００ダブルインバース・インデックス連動型上場投信",
+      "index": "JPX日経400ダブルインバース・インデックス",
+      "manager": "野村アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.8
+    },
+    {
+      "code": "2842",
+      "name": "iFreeETF NASDAQ100インバース",
+      "index": "NASDAQ100インバース指数",
+      "manager": "大和アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.75
+    },
+    {
+      "code": "2869",
+      "name": "iFreeETF NASDAQ100レバレッジ",
+      "index": "NASDAQ100レバレッジ指数",
+      "manager": "大和アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.75
+    },
+    {
+      "code": "2870",
+      "name": "iFreeETF NASDAQ100ダブルインバース",
+      "index": "NASDAQ100ダブルインバース指数",
+      "manager": "大和アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.75
+    },
+    {
+      "code": "2237",
+      "name": "iFreeETF S&P500レバレッジ",
+      "index": "S&P 500 先物2倍レバレッジ日次指数",
+      "manager": "大和アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.73
+    },
+    {
+      "code": "2238",
+      "name": "iFreeETF S&P500インバース",
+      "index": "S&P 500 先物インバース日次指数",
+      "manager": "大和アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.73
+    },
+    {
+      "code": "2239",
+      "name": "上場インデックスファンドS＆P500先物レバレッジ２倍",
+      "index": "S&P500先物２倍レバレッジ日次指数（エクセスリターン）",
+      "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.36
+    },
+    {
+      "code": "2240",
+      "name": "上場インデックスファンドS＆P500先物インバース",
+      "index": "S&P500先物インバース日次指数（エクセスリターン）",
+      "manager": "アモーヴァ・アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.36
+    },
+    {
+      "code": "2249",
+      "name": "iFreeETF S&P500ダブルインバース",
+      "index": "S&P 500 先物2倍インバース日次指数",
+      "manager": "大和アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.73
+    },
+    {
+      "code": "2251",
+      "name": "ＮＥＸＴ ＦＵＮＤＳ ＪＰＸ国債先物ダブルインバース指数連動型上場投信",
+      "index": "JPX国債先物ダブルインバース指数",
+      "manager": "野村アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.38
+    },
+    {
+      "code": "140A",
+      "name": "iFreeETF 米国10年国債先物インバース",
+      "index": "S&P10年米国債先物インバース（エクセスリターン）",
+      "manager": "大和アセットマネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.45
+    },
+    {
+      "code": "2094",
+      "name": "東証ＲＥＩＴインバースＥＴＦ",
+      "index": "東証REITインバース（－1倍）指数",
+      "manager": "シンプレクス・アセット・マネジメント",
+      "type": "ETF",
+      "expense_ratio": 0.75
     }
   ],
-  "count": 385,
-  "etf_count": 364,
+  "count": 419,
+  "etf_count": 398,
   "etn_count": 21,
+  "leveraged_count": 34,
   "source": "JPX",
   "source_urls": [
     "https://www.jpx.co.jp/equities/products/etfs/issues/01.html",
-    "https://www.jpx.co.jp/equities/products/etns/issues/01.html"
+    "https://www.jpx.co.jp/equities/products/etns/issues/01.html",
+    "https://www.jpx.co.jp/equities/products/etfs/leveraged-inverse/01.html"
   ]
 }
