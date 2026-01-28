@@ -107,46 +107,73 @@ describe('FilterPanel', () => {
     expect(handleFilter).toHaveBeenCalledWith({})
   })
 
-  it('配当利回りの入力がデバウンス後に反映される', async () => {
-    const handleFilter = vi.fn()
-    render(<FilterPanel onFilter={handleFilter} onSearch={vi.fn()} />)
+  it('保有中ボタンが表示される', async () => {
+    render(
+      <FilterPanel
+        onFilter={vi.fn()}
+        onSearch={vi.fn()}
+        holdingsCount={5}
+      />
+    )
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('例: 3.0')).toBeInTheDocument()
+      expect(screen.getByText('保有中(5)')).toBeInTheDocument()
     })
-
-    fireEvent.change(screen.getByPlaceholderText('例: 3.0'), {
-      target: { value: '3.0' },
-    })
-
-    // デバウンス待ち（500ms）
-    await waitFor(
-      () => {
-        expect(handleFilter).toHaveBeenCalledWith({ min_dividend_yield: 3.0 })
-      },
-      { timeout: 1000 }
-    )
   })
 
-  it('信託報酬の入力がデバウンス後に反映される', async () => {
-    const handleFilter = vi.fn()
-    render(<FilterPanel onFilter={handleFilter} onSearch={vi.fn()} />)
+  it('保有中ボタンのクリックでonHoldingsOnlyChangeが呼ばれる', async () => {
+    const handleHoldingsOnlyChange = vi.fn()
+    render(
+      <FilterPanel
+        onFilter={vi.fn()}
+        onSearch={vi.fn()}
+        holdingsOnly={false}
+        onHoldingsOnlyChange={handleHoldingsOnlyChange}
+        holdingsCount={3}
+      />
+    )
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('例: 0.5')).toBeInTheDocument()
+      expect(screen.getByText('保有中(3)')).toBeInTheDocument()
     })
 
-    fireEvent.change(screen.getByPlaceholderText('例: 0.5'), {
-      target: { value: '0.5' },
-    })
+    fireEvent.click(screen.getByText('保有中(3)'))
+    expect(handleHoldingsOnlyChange).toHaveBeenCalledWith(true)
+  })
 
-    // デバウンス待ち（500ms）
-    await waitFor(
-      () => {
-        expect(handleFilter).toHaveBeenCalledWith({ max_expense_ratio: 0.5 })
-      },
-      { timeout: 1000 }
+  it('保有中ボタンのON/OFFでアクティブ状態が切り替わる', async () => {
+    const { rerender } = render(
+      <FilterPanel
+        onFilter={vi.fn()}
+        onSearch={vi.fn()}
+        holdingsOnly={false}
+        holdingsCount={2}
+      />
     )
+
+    await waitFor(() => {
+      expect(screen.getByText('保有中(2)')).toBeInTheDocument()
+    })
+
+    // OFF状態ではactiveクラスがない
+    expect(
+      screen.getByText('保有中(2)').closest('button')?.className
+    ).not.toContain('active')
+
+    // ON状態に変更
+    rerender(
+      <FilterPanel
+        onFilter={vi.fn()}
+        onSearch={vi.fn()}
+        holdingsOnly={true}
+        holdingsCount={2}
+      />
+    )
+
+    // ON状態ではactiveクラスがある
+    expect(
+      screen.getByText('保有中(2)').closest('button')?.className
+    ).toContain('active')
   })
 
   it('APIエラー時にエラーメッセージ表示', async () => {
@@ -169,7 +196,6 @@ describe('FilterPanel', () => {
         initialParams={{
           category_id: 1,
           tag_ids: [1],
-          min_dividend_yield: 2.0,
         }}
       />
     )
@@ -181,7 +207,26 @@ describe('FilterPanel', () => {
       expect(
         screen.getByText('TOPIX連動').closest('button')?.className
       ).toContain('active')
-      expect(screen.getByPlaceholderText('例: 3.0')).toHaveValue(2.0)
     })
+  })
+
+  it('クリアボタンで保有中フィルターもリセットされる', async () => {
+    const handleHoldingsOnlyChange = vi.fn()
+    render(
+      <FilterPanel
+        onFilter={vi.fn()}
+        onSearch={vi.fn()}
+        holdingsOnly={true}
+        onHoldingsOnlyChange={handleHoldingsOnlyChange}
+        holdingsCount={3}
+      />
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('クリア')).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByText('クリア'))
+    expect(handleHoldingsOnlyChange).toHaveBeenCalledWith(false)
   })
 })

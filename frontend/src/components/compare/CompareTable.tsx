@@ -2,12 +2,16 @@
 import { ETFDetail } from '../../api'
 import { formatPrice, formatPercent, formatAssets } from '../../utils'
 import { TagBadge } from '../etf'
+import { FavoriteButton } from '../favorite'
 import styles from './CompareTable.module.css'
 
 interface CompareTableProps {
   etfs: ETFDetail[]
   onRemove: (code: string) => void
   highlightBest?: boolean
+  favoriteCodes: Set<string>
+  holdingCodes: Set<string>
+  onFavoriteToggle: (code: string) => void
 }
 
 type MetricKey = 'dividend_yield' | 'expense_ratio' | 'total_assets'
@@ -16,6 +20,9 @@ export function CompareTable({
   etfs,
   onRemove,
   highlightBest = true,
+  favoriteCodes,
+  holdingCodes,
+  onFavoriteToggle,
 }: CompareTableProps) {
   const findBest = (key: MetricKey, higher: boolean = true): string | null => {
     if (!highlightBest || etfs.length < 2) return null
@@ -49,7 +56,15 @@ export function CompareTable({
             {etfs.map((etf) => (
               <th key={etf.code}>
                 <div className={styles.etfHeader}>
-                  <span className={styles.code}>{etf.code}</span>
+                  <span className={styles.codeRow}>
+                    <FavoriteButton
+                      isFavorite={favoriteCodes.has(etf.code)}
+                      onClick={() => onFavoriteToggle(etf.code)}
+                      size="sm"
+                      isHolding={holdingCodes.has(etf.code)}
+                    />
+                    <span className={styles.code}>{etf.code}</span>
+                  </span>
                   <span className={styles.name}>{etf.name}</span>
                   <button
                     className={styles.removeBtn}

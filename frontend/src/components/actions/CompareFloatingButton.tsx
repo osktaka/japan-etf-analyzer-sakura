@@ -1,7 +1,7 @@
 /** Floating compare button component */
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useCompareList, useFavorites } from '../../hooks'
+import { useCompareList, useFavorites, usePortfolio } from '../../hooks'
 import { searchETFs } from '../../api'
 import { ROUTES } from '../../utils'
 import styles from './CompareFloatingButton.module.css'
@@ -17,6 +17,12 @@ export function CompareFloatingButton() {
   const navigate = useNavigate()
   const { codes, count, clearAll } = useCompareList()
   const { isFavorite } = useFavorites()
+  const { holdings } = usePortfolio()
+
+  // 保有銘柄コードのSet
+  const holdingCodes = useMemo(() => {
+    return new Set(holdings.map((h) => h.etf_code))
+  }, [holdings])
   const [etfNames, setETFNames] = useState<Map<string, string>>(new Map())
   const [showTooltip, setShowTooltip] = useState(false)
   const tooltipRef = useRef<HTMLDivElement>(null)
@@ -152,7 +158,7 @@ export function CompareFloatingButton() {
               {etfList.map((etf) => (
                 <li key={etf.code} className={styles.tooltipItem}>
                   {/* お気に入りアイコン */}
-                  <span className={styles.favoriteIcon}>
+                  <span className={`${styles.favoriteIcon} ${holdingCodes.has(etf.code) ? styles.holding : ''}`}>
                     {isFavorite(etf.code) ? (
                       <svg
                         viewBox="0 0 24 24"

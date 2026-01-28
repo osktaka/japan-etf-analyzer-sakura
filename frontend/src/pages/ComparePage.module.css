@@ -73,6 +73,12 @@
   padding-right: var(--spacing-lg);
 }
 
+.codeRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .code {
   font-weight: 700;
   color: var(--color-primary);

@@ -13,6 +13,7 @@ interface SearchResultsProps {
   onCompareToggle?: (code: string) => void
   isFavorite?: (code: string) => boolean
   onFavoriteToggle?: (code: string) => void
+  isHolding?: (code: string) => boolean
 }
 
 export function SearchResults({
@@ -24,6 +25,7 @@ export function SearchResults({
   onCompareToggle,
   isFavorite,
   onFavoriteToggle,
+  isHolding,
 }: SearchResultsProps) {
   if (isLoading) {
     return <Loading message="検索中..." />
@@ -56,6 +58,7 @@ export function SearchResults({
             onFavoriteToggle={
               onFavoriteToggle ? () => onFavoriteToggle(etf.code) : undefined
             }
+            isHolding={isHolding?.(etf.code)}
           />
         ))}
       </div>

@@ -11,7 +11,7 @@ import {
   getETFChart,
   getETFsChartBatch,
 } from '../api'
-import { useCompareList, useChartData } from '../hooks'
+import { useCompareList, useChartData, useFavorites, useAuth, usePortfolio } from '../hooks'
 import {
   formatPrice,
   formatPercent,
@@ -20,8 +20,9 @@ import {
   CHART_PERIODS,
 } from '../utils'
 import { Loading, ErrorMessage } from '../components/common'
-import { ETFListModal, ETFDetailModal } from '../components/modal'
+import { ETFListModal, ETFDetailModal, LoginPromptModal } from '../components/modal'
 import { TagBadge } from '../components/etf'
+import { FavoriteButton } from '../components/favorite'
 import { PriceChart, OverlayChart } from '../components/chart'
 import styles from './ComparePage.module.css'
 
@@ -29,6 +30,10 @@ type ChartMode = 'overlay' | 'individual'
 
 export function ComparePage() {
   const { codes, removeCode, addCode, clearAll } = useCompareList()
+  const { isFavorite, toggleFavorite } = useFavorites()
+  const { isAuthenticated } = useAuth()
+  const { holdings } = usePortfolio()
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const [etfs, setEtfs] = useState<ETFDetail[]>([])
   const [performance, setPerformance] = useState<PerformanceComparison | null>(
     null
@@ -106,6 +111,24 @@ export function ComparePage() {
     setChartDatasets([])
     setPerformance(null)
   }, [clearAll])
+
+  // お気に入りトグル
+  const handleFavoriteToggle = useCallback(
+    (code: string) => {
+      if (!isAuthenticated) {
+        setShowLoginPrompt(true)
+        return
+      }
+      toggleFavorite(code)
+    },
+    [isAuthenticated, toggleFavorite]
+  )
+
+  // 保有銘柄のコードセット
+  const holdingCodes = useMemo(
+    () => new Set(holdings.map((h) => h.etf_code)),
+    [holdings]
+  )
 
   // チャートデータ再取得用の依存キー
   const etfCodesKey = useMemo(() => etfs.map((e) => e.code).join(','), [etfs])
@@ -254,12 +277,20 @@ export function ComparePage() {
                   {etfs.map((etf) => (
                     <th key={etf.code}>
                       <div className={styles.etfHeader}>
-                        <span
-                          className={styles.code}
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => setSelectedCode(etf.code)}
-                        >
-                          {etf.code}
+                        <span className={styles.codeRow}>
+                          <FavoriteButton
+                            isFavorite={isFavorite(etf.code)}
+                            onClick={() => handleFavoriteToggle(etf.code)}
+                            size="sm"
+                            isHolding={holdingCodes.has(etf.code)}
+                          />
+                          <span
+                            className={styles.code}
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => setSelectedCode(etf.code)}
+                          >
+                            {etf.code}
+                          </span>
                         </span>
                         <span
                           className={styles.name}
@@ -412,6 +443,15 @@ export function ComparePage() {
             setSelectedCode(null)
           }
         }}
+        isFavorite={selectedCode ? isFavorite(selectedCode) : false}
+        onFavoriteToggle={() =>
+          selectedCode && handleFavoriteToggle(selectedCode)
+        }
+      />
+
+      <LoginPromptModal
+        isOpen={showLoginPrompt}
+        onClose={() => setShowLoginPrompt(false)}
       />
     </div>
   )

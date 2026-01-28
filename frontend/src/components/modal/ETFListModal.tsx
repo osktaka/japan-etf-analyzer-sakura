@@ -1,7 +1,7 @@
 /** ETF list modal component for displaying favorites or compare list */
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../hooks'
+import { useAuth, usePortfolio } from '../../hooks'
 import { favoritesApi } from '../../api/favorites'
 import { getBatchPerformance } from '../../api/etf'
 import { Favorite, BatchPerformanceData, ETFDetail } from '../../api/types'
@@ -35,6 +35,7 @@ export function ETFListModal({
 }: ETFListModalProps) {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
+  const { holdings } = usePortfolio()
   const [favorites, setFavorites] = useState<Favorite[]>([])
   const [compareEtfs, setCompareEtfs] = useState<ETFDetail[]>([]) // compareモード用の表示リスト
   const [removedCodes, setRemovedCodes] = useState<Set<string>>(new Set())
@@ -42,6 +43,11 @@ export function ETFListModal({
   const [error, setError] = useState<string | null>(null)
   const [performance, setPerformance] = useState<BatchPerformanceData>({})
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
+
+  const holdingCodes = useMemo(
+    () => new Set(holdings.map((h) => h.etf_code)),
+    [holdings]
+  )
 
   const fetchFavorites = useCallback(async () => {
     setIsLoading(true)
@@ -275,6 +281,7 @@ export function ETFListModal({
                               isFavorite={isFavorite}
                               onClick={() => handleFavoriteToggle(item.code)}
                               size="sm"
+                              isHolding={holdingCodes.has(item.code)}
                             />
                           </td>
                         )}

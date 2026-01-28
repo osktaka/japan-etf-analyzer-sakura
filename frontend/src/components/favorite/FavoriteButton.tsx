@@ -6,6 +6,7 @@ interface FavoriteButtonProps {
   onClick: () => void
   size?: 'sm' | 'md' | 'lg'
   disabled?: boolean
+  isHolding?: boolean
 }
 
 export function FavoriteButton({
@@ -13,6 +14,7 @@ export function FavoriteButton({
   onClick,
   size = 'md',
   disabled = false,
+  isHolding = false,
 }: FavoriteButtonProps) {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation()
@@ -23,11 +25,11 @@ export function FavoriteButton({
 
   return (
     <button
-      className={`${styles.button} ${styles[size]} ${isFavorite ? styles.active : ''}`}
+      className={`${styles.button} ${styles[size]} ${isFavorite ? styles.active : ''} ${isHolding ? styles.holding : ''}`}
       onClick={handleClick}
       disabled={disabled}
       aria-label={isFavorite ? 'お気に入りから削除' : 'お気に入りに追加'}
-      title={isFavorite ? 'お気に入りから削除' : 'お気に入りに追加'}
+      title={isHolding ? '保有中' : isFavorite ? 'お気に入りから削除' : 'お気に入りに追加'}
     >
       <svg
         className={styles.icon}

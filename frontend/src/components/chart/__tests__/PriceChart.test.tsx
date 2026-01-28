@@ -17,6 +17,7 @@ vi.mock('recharts', () => ({
   YAxis: () => <div data-testid="y-axis" />,
   CartesianGrid: () => <div data-testid="cartesian-grid" />,
   Tooltip: () => <div data-testid="tooltip" />,
+  ReferenceLine: () => <div data-testid="reference-line" />,
 }))
 
 const mockChartData: ChartDataPoint[] = [
@@ -80,7 +81,7 @@ describe('PriceChart', () => {
   it('必要なチャート要素が含まれる', () => {
     render(<PriceChart data={mockChartData} />)
 
-    expect(screen.getByTestId('line')).toBeInTheDocument()
+    expect(screen.getAllByTestId('line').length).toBeGreaterThan(0)
     expect(screen.getByTestId('x-axis')).toBeInTheDocument()
     expect(screen.getByTestId('y-axis')).toBeInTheDocument()
     expect(screen.getByTestId('cartesian-grid')).toBeInTheDocument()

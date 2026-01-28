@@ -20,6 +20,7 @@ vi.mock('recharts', () => ({
   CartesianGrid: () => <div data-testid="cartesian-grid" />,
   Tooltip: () => <div data-testid="tooltip" />,
   Legend: () => <div data-testid="legend" />,
+  ReferenceLine: () => <div data-testid="reference-line" />,
 }))
 
 const mockChartData1: ChartDataPoint[] = [

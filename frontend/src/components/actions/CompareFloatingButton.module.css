@@ -151,11 +151,20 @@
   height: 16px;
   color: var(--color-warning);
   flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .favoriteIcon svg {
   width: 100%;
   height: 100%;
+  position: relative;
+  top: -2px;
+}
+
+.favoriteIcon.holding {
+  outline: 2px solid #10b981;
+  outline-offset: 1px;
+  border-radius: 50%;
 }
 
 /* 比較チェックボックス */

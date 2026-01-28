@@ -72,10 +72,10 @@ class PortfolioService:
 
             # Get ETF info and current price
             etf = self.etf_repository.get_by_code(code)
-            current_price = etf.market_price if etf and etf.market_price else 0
+            current_price = float(etf.market_price) if etf and etf.market_price else 0.0
             current_value = current_price * held_quantity
 
-            unrealized_pnl = current_value - total_cost
+            unrealized_pnl = current_value - float(total_cost)
             pnl_percent = (unrealized_pnl / total_cost * 100) if total_cost > 0 else 0
 
             result.append(

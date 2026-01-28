@@ -19,6 +19,7 @@ class ETFService:
         min_dividend_yield: Optional[float] = None,
         max_expense_ratio: Optional[float] = None,
         favorite_codes: Optional[List[str]] = None,
+        holding_codes: Optional[List[str]] = None,
         sort: Optional[str] = None,
         order: str = "asc",
         limit: int = 50,
@@ -32,6 +33,7 @@ class ETFService:
             min_dividend_yield=min_dividend_yield,
             max_expense_ratio=max_expense_ratio,
             favorite_codes=favorite_codes,
+            holding_codes=holding_codes,
             sort=sort,
             order=order,
             limit=limit,
@@ -44,6 +46,7 @@ class ETFService:
             min_dividend_yield=min_dividend_yield,
             max_expense_ratio=max_expense_ratio,
             favorite_codes=favorite_codes,
+            holding_codes=holding_codes,
         )
 
         return {

@@ -1,7 +1,13 @@
 /** Top page component */
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useETFSearch, useCompareList, useFavorites, useAuth } from '../hooks'
+import {
+  useETFSearch,
+  useCompareList,
+  useFavorites,
+  useAuth,
+  usePortfolio,
+} from '../hooks'
 import {
   SearchResults,
   FilterPanel,
@@ -116,7 +122,18 @@ export function TopPage() {
   const { isInList, toggleCode, canAdd } = useCompareList()
   const { isAuthenticated } = useAuth()
   const { isFavorite, toggleFavorite, favoriteCodes } = useFavorites()
+  const { holdings } = usePortfolio()
   const [favoritesOnly, setFavoritesOnly] = useState(false)
+  const [holdingsOnly, setHoldingsOnly] = useState(false)
+
+  // 保有コードのSetを作成（quantity > 0の銘柄のみ）
+  const holdingCodes = useMemo(
+    () => new Set(holdings.filter((h) => h.quantity > 0).map((h) => h.etf_code)),
+    [holdings]
+  )
+
+  // isHolding関数 - ETFCard/ETFTableViewに渡すために使用
+  const isHolding = (code: string): boolean => holdingCodes.has(code)
 
   // 表形式表示時にパフォーマンスデータを取得
   useEffect(() => {
@@ -233,8 +250,14 @@ export function TopPage() {
       offset: 0,
     }
 
-    if (favoritesOnly && favoriteCodes.size > 0) {
+    if (favoritesOnly) {
+      // 0件でも空配列を渡して「該当なし」を表示
       searchParams.favorite_codes = Array.from(favoriteCodes)
+    }
+
+    if (holdingsOnly) {
+      // 0件でも空配列を渡して「該当なし」を表示
+      searchParams.holding_codes = Array.from(holdingCodes)
     }
 
     search(searchParams)
@@ -271,8 +294,12 @@ export function TopPage() {
         offset: 0,
       }
 
-      if (favoritesOnly && favoriteCodes.size > 0) {
+      if (favoritesOnly) {
         searchParams.favorite_codes = Array.from(favoriteCodes)
+      }
+
+      if (holdingsOnly) {
+        searchParams.holding_codes = Array.from(holdingCodes)
       }
 
       search(searchParams)
@@ -285,6 +312,8 @@ export function TopPage() {
       updateURL,
       favoritesOnly,
       favoriteCodes,
+      holdingsOnly,
+      holdingCodes,
     ]
   )
 
@@ -308,8 +337,12 @@ export function TopPage() {
       offset: 0,
     }
 
-    if (favoritesOnly && favoriteCodes.size > 0) {
+    if (favoritesOnly) {
       searchParams.favorite_codes = Array.from(favoriteCodes)
+    }
+
+    if (holdingsOnly) {
+      searchParams.holding_codes = Array.from(holdingCodes)
     }
 
     search(searchParams)
@@ -331,15 +364,19 @@ export function TopPage() {
       offset: (page - 1) * PAGE_SIZE,
     }
 
-    if (favoritesOnly && favoriteCodes.size > 0) {
+    if (favoritesOnly) {
       searchParams.favorite_codes = Array.from(favoriteCodes)
+    }
+
+    if (holdingsOnly) {
+      searchParams.holding_codes = Array.from(holdingCodes)
     }
 
     search(searchParams)
     etfListRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  // お気に入りフィルター状態が変わったときに検索を実行
+  // お気に入り/保有中フィルター状態が変わったときに検索を実行
   useEffect(() => {
     // 初回マウント時はスキップ（初回検索は別のuseEffectで実行済み）
     if (isInitialMount.current) {
@@ -358,14 +395,18 @@ export function TopPage() {
       offset: 0,
     }
 
-    if (favoritesOnly && favoriteCodes.size > 0) {
+    if (favoritesOnly) {
       params.favorite_codes = Array.from(favoriteCodes)
     }
 
+    if (holdingsOnly) {
+      params.holding_codes = Array.from(holdingCodes)
+    }
+
     search(params)
-    // favoritesOnly変更時のみ発動
+    // favoritesOnly/holdingsOnly変更時のみ発動
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [favoritesOnly])
+  }, [favoritesOnly, holdingsOnly])
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
@@ -383,6 +424,24 @@ export function TopPage() {
       return
     }
     toggleFavorite(code)
+  }
+
+  // お気に入りフィルター変更ハンドラ（未ログイン時はログイン促進）
+  const handleFavoritesOnlyChange = (value: boolean) => {
+    if (!isAuthenticated) {
+      setShowLoginPrompt(true)
+      return
+    }
+    setFavoritesOnly(value)
+  }
+
+  // 保有中フィルター変更ハンドラ（未ログイン時はログイン促進）
+  const handleHoldingsOnlyChange = (value: boolean) => {
+    if (!isAuthenticated) {
+      setShowLoginPrompt(true)
+      return
+    }
+    setHoldingsOnly(value)
   }
 
   return (
@@ -417,8 +476,11 @@ export function TopPage() {
             onSearch={handleSearch}
             initialParams={currentFilters}
             initialKeyword={currentKeyword}
+            holdingsOnly={holdingsOnly}
+            onHoldingsOnlyChange={handleHoldingsOnlyChange}
+            holdingsCount={holdingCodes.size}
             favoritesOnly={favoritesOnly}
-            onFavoritesOnlyChange={setFavoritesOnly}
+            onFavoritesOnlyChange={handleFavoritesOnlyChange}
             favoritesCount={favoriteCodes.size}
           />
         </div>
@@ -462,6 +524,7 @@ export function TopPage() {
             onCompareToggle={handleCompareToggle}
             isFavorite={isFavorite}
             onFavoriteToggle={handleFavoriteToggle}
+            isHolding={isHolding}
           />
         ) : (
           <ETFTableView
@@ -474,6 +537,7 @@ export function TopPage() {
             onCompareToggle={handleCompareToggle}
             isFavorite={isFavorite}
             onFavoriteToggle={handleFavoriteToggle}
+            isHolding={isHolding}
             sortField={currentSort}
             sortOrder={currentOrder}
             onSortChange={handleSortChange}

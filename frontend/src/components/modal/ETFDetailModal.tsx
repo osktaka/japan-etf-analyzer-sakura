@@ -1,5 +1,6 @@
 /** ETF detail modal component */
-import { useETFDetail } from '../../hooks'
+import { useMemo } from 'react'
+import { useETFDetail, usePortfolio } from '../../hooks'
 import {
   formatPrice,
   formatPercent,
@@ -31,6 +32,12 @@ export function ETFDetailModal({
   onFavoriteToggle,
 }: ETFDetailModalProps) {
   const { data, isLoading, error, refetch } = useETFDetail(code)
+  const { holdings } = usePortfolio()
+
+  const holdingCodes = useMemo(
+    () => new Set(holdings.map((h) => h.etf_code)),
+    [holdings]
+  )
 
   if (!code) return null
 
@@ -59,6 +66,7 @@ export function ETFDetailModal({
                       isFavorite={isFavorite ?? false}
                       onClick={onFavoriteToggle}
                       size="lg"
+                      isHolding={code ? holdingCodes.has(code) : false}
                     />
                   )}
                   <span className={styles.code}>{data.code}</span>

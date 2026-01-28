@@ -1,5 +1,5 @@
 /** My page component */
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { ETFCard } from '../components/etf/ETFCard'
 import {
   ETFDetailModal,
@@ -31,6 +31,13 @@ export function MyPage() {
   const [showTradeFormModal, setShowTradeFormModal] = useState(false)
   const [showTradeHistoryModal, setShowTradeHistoryModal] = useState(false)
   const [tradeHistoryCode, setTradeHistoryCode] = useState<string>('')
+
+  // 保有中銘柄のコードSetを作成（お気に入りカードの保有中表示用）
+  const holdingCodes = useMemo(
+    () => new Set(holdings.map((h) => h.etf_code)),
+    [holdings]
+  )
+  const isHolding = (code: string): boolean => holdingCodes.has(code)
 
   const handleCardClick = (etf: ETFSummary) => {
     setSelectedETF(etf)
@@ -126,6 +133,7 @@ export function MyPage() {
                 showCompareButton
                 isSelected={isInCompare(favorite.etf_code)}
                 onCompareToggle={() => toggleCompare(favorite.etf_code)}
+                isHolding={isHolding(favorite.etf_code)}
               />
             ))}
           </div>

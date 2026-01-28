@@ -40,6 +40,7 @@ interface ETFTableViewProps {
   onCompareToggle?: (code: string) => void
   isFavorite?: (code: string) => boolean
   onFavoriteToggle?: (code: string) => void
+  isHolding?: (code: string) => boolean
   sortField?: SortField
   sortOrder?: SortOrder
   onSortChange?: (field: SortField, order: SortOrder) => void
@@ -55,6 +56,7 @@ export function ETFTableView({
   onCompareToggle,
   isFavorite,
   onFavoriteToggle,
+  isHolding,
   sortField,
   sortOrder,
   onSortChange,
@@ -187,6 +189,7 @@ export function ETFTableView({
                       isFavorite={isFavorite?.(etf.code) ?? false}
                       onClick={() => onFavoriteToggle(etf.code)}
                       size="sm"
+                      isHolding={isHolding?.(etf.code)}
                     />
                   </td>
                 )}

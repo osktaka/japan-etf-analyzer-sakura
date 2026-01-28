@@ -27,6 +27,7 @@ def create_etf_bp():
             min_dividend_yield: Minimum dividend yield (%)
             max_expense_ratio: Maximum expense ratio (%)
             favorite_codes: Filter by favorite codes (comma-separated)
+            holding_codes: Filter by holding codes (comma-separated)
             sort: Sort column (code, name, dividend_yield, expense_ratio, total_assets)
             order: Sort order (asc, desc). Default: asc
             limit: Number of results (default: 50, max: 100)
@@ -41,6 +42,7 @@ def create_etf_bp():
         min_dividend_yield = request.args.get("min_dividend_yield", type=float)
         max_expense_ratio = request.args.get("max_expense_ratio", type=float)
         favorite_codes_param = request.args.get("favorite_codes")
+        holding_codes_param = request.args.get("holding_codes")
         sort = request.args.get("sort")
         order = request.args.get("order", "asc")
 
@@ -67,6 +69,12 @@ def create_etf_bp():
                 code.strip() for code in favorite_codes_param.split(",") if code.strip()
             ]
 
+        holding_codes = None
+        if holding_codes_param:
+            holding_codes = [
+                code.strip() for code in holding_codes_param.split(",") if code.strip()
+            ]
+
         service = ETFService()
         result = service.search(
             keyword=keyword,
@@ -75,6 +83,7 @@ def create_etf_bp():
             min_dividend_yield=min_dividend_yield,
             max_expense_ratio=max_expense_ratio,
             favorite_codes=favorite_codes,
+            holding_codes=holding_codes,
             sort=sort,
             order=order,
             limit=limit,

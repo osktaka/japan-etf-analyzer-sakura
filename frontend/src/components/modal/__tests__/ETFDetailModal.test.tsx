@@ -6,10 +6,12 @@ import * as hooks from '../../../hooks'
 
 vi.mock('../../../hooks', () => ({
   useETFDetail: vi.fn(),
+  usePortfolio: vi.fn(() => ({ holdings: [] })),
 }))
 
 vi.mock('../../chart', () => ({
   ChartContainer: () => <div data-testid="chart-container">Chart</div>,
+  MultiPeriodChart: () => <div data-testid="chart-container">Chart</div>,
 }))
 
 const mockETFDetail = {

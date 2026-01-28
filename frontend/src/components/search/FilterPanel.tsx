@@ -9,6 +9,9 @@ interface FilterPanelProps {
   onSearch: (keyword: string) => void
   initialParams?: SearchParams
   initialKeyword?: string
+  holdingsOnly?: boolean
+  onHoldingsOnlyChange?: (value: boolean) => void
+  holdingsCount?: number
   favoritesOnly?: boolean
   onFavoritesOnlyChange?: (value: boolean) => void
   favoritesCount?: number
@@ -19,6 +22,9 @@ export function FilterPanel({
   onSearch,
   initialParams = {},
   initialKeyword = '',
+  holdingsOnly = false,
+  onHoldingsOnlyChange,
+  holdingsCount = 0,
   favoritesOnly = false,
   onFavoritesOnlyChange,
   favoritesCount = 0,
@@ -85,9 +91,19 @@ export function FilterPanel({
     setSelectedCategory(null)
     setSelectedTags([])
     onFilter({})
+    // 保有中フィルターもクリア
+    if (holdingsOnly && onHoldingsOnlyChange) {
+      onHoldingsOnlyChange(false)
+    }
     // お気に入りフィルターもクリア
     if (favoritesOnly && onFavoritesOnlyChange) {
       onFavoritesOnlyChange(false)
+    }
+  }
+
+  const handleHoldingsToggle = () => {
+    if (onHoldingsOnlyChange) {
+      onHoldingsOnlyChange(!holdingsOnly)
     }
   }
 
@@ -115,6 +131,12 @@ export function FilterPanel({
       </div>
 
       <div className={styles.section}>
+        <button
+          className={`${styles.categoryBtn} ${holdingsOnly ? styles.active : ''}`}
+          onClick={handleHoldingsToggle}
+        >
+          保有中({holdingsCount})
+        </button>
         <button
           className={`${styles.categoryBtn} ${favoritesOnly ? styles.active : ''}`}
           onClick={handleFavoritesToggle}

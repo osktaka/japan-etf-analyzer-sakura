@@ -14,6 +14,7 @@ interface ETFCardProps {
   onCompareToggle?: () => void
   isFavorite?: boolean
   onFavoriteToggle?: () => void
+  isHolding?: boolean
 }
 
 export function ETFCard({
@@ -24,6 +25,7 @@ export function ETFCard({
   onCompareToggle,
   isFavorite,
   onFavoriteToggle,
+  isHolding,
 }: ETFCardProps) {
   return (
     <div
@@ -39,6 +41,7 @@ export function ETFCard({
             isFavorite={isFavorite ?? false}
             onClick={onFavoriteToggle}
             size="sm"
+            isHolding={isHolding}
           />
         )}
         <span className={styles.code}>{etf.code}</span>
