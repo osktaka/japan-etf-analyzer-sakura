@@ -1,0 +1,64 @@
+/** Multi-period chart grid styles */
+.container {
+  width: 100%;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-md);
+}
+
+.chartItem {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-sm);
+  background: var(--color-bg-card);
+}
+
+.periodLabel {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-xs);
+  text-align: center;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--color-error);
+}
+
+/* Tablet: 2 columns */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm);
+  }
+
+  .chartItem {
+    padding: var(--spacing-xs);
+  }
+
+  .periodLabel {
+    font-size: var(--text-xs);
+  }
+}
+
+/* Mobile: 1 column */
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-xs);
+  }
+}

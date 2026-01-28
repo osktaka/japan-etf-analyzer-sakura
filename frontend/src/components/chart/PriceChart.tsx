@@ -8,7 +8,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
 } from 'recharts'
 import { ChartDataPoint, ChartPeriod } from '../../api'
 import {
@@ -98,18 +97,6 @@ export function PriceChart({
               return [formatPrice(value), labels[name] || name]
             }}
             labelFormatter={(label) => label}
-          />
-          <Legend
-            formatter={(value: string) => {
-              const labels: Record<string, string> = {
-                close: '終値',
-                ma5: 'MA5',
-                ma25: 'MA25',
-                ma75: 'MA75',
-                ma200: 'MA200',
-              }
-              return labels[value] || value
-            }}
           />
           <Line
             type="monotone"

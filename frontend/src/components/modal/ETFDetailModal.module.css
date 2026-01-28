@@ -12,7 +12,7 @@
 .modal {
   background-color: var(--color-bg-card);
   border-radius: var(--radius-lg);
-  max-width: 800px;
+  max-width: 1200px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;

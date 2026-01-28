@@ -10,7 +10,7 @@ import { Loading, ErrorMessage } from '../common'
 import { TagBadge } from '../etf'
 import { FavoriteButton } from '../favorite'
 import { CompareCheckbox } from '../actions'
-import { ChartContainer } from '../chart'
+import { MultiPeriodChart } from '../chart'
 import styles from './ETFDetailModal.module.css'
 
 interface ETFDetailModalProps {
@@ -128,7 +128,7 @@ export function ETFDetailModal({
             )}
 
             <div className={styles.chart}>
-              <ChartContainer code={data.code} />
+              <MultiPeriodChart code={data.code} />
             </div>
 
             <div className={styles.footer}>
