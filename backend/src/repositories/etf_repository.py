@@ -45,6 +45,7 @@ class ETFRepository(BaseRepository[ETF]):
         tag_ids: List[int] = None,
         min_dividend_yield: float = None,
         max_expense_ratio: float = None,
+        favorite_codes: List[str] = None,
     ):
         """Build filtered query with common conditions."""
         query = db.session.query(ETF)
@@ -81,6 +82,9 @@ class ETFRepository(BaseRepository[ETF]):
         if max_expense_ratio is not None:
             query = query.filter(ETF.expense_ratio <= max_expense_ratio)
 
+        if favorite_codes:
+            query = query.filter(ETF.code.in_(favorite_codes))
+
         return query
 
     def search(
@@ -90,6 +94,7 @@ class ETFRepository(BaseRepository[ETF]):
         tag_ids: List[int] = None,
         min_dividend_yield: float = None,
         max_expense_ratio: float = None,
+        favorite_codes: List[str] = None,
         sort: str = None,
         order: str = "asc",
         limit: int = 50,
@@ -102,6 +107,7 @@ class ETFRepository(BaseRepository[ETF]):
             tag_ids=tag_ids,
             min_dividend_yield=min_dividend_yield,
             max_expense_ratio=max_expense_ratio,
+            favorite_codes=favorite_codes,
         )
 
         if sort and sort in SORT_COLUMNS:
@@ -134,6 +140,7 @@ class ETFRepository(BaseRepository[ETF]):
         tag_ids: List[int] = None,
         min_dividend_yield: float = None,
         max_expense_ratio: float = None,
+        favorite_codes: List[str] = None,
     ) -> int:
         """Count ETFs matching filters."""
         query = self._build_filter_query(
@@ -142,6 +149,7 @@ class ETFRepository(BaseRepository[ETF]):
             tag_ids=tag_ids,
             min_dividend_yield=min_dividend_yield,
             max_expense_ratio=max_expense_ratio,
+            favorite_codes=favorite_codes,
         )
         return query.count()
 

@@ -9,6 +9,9 @@ interface FilterPanelProps {
   onSearch: (keyword: string) => void
   initialParams?: SearchParams
   initialKeyword?: string
+  favoritesOnly?: boolean
+  onFavoritesOnlyChange?: (value: boolean) => void
+  favoritesCount?: number
 }
 
 export function FilterPanel({
@@ -16,6 +19,9 @@ export function FilterPanel({
   onSearch,
   initialParams = {},
   initialKeyword = '',
+  favoritesOnly = false,
+  onFavoritesOnlyChange,
+  favoritesCount = 0,
 }: FilterPanelProps) {
   const [categories, setCategories] = useState<Category[]>([])
   const [tags, setTags] = useState<Tag[]>([])
@@ -112,6 +118,16 @@ export function FilterPanel({
     setMinDividend('')
     setMaxExpense('')
     onFilter({})
+    // お気に入りフィルターもクリア
+    if (favoritesOnly && onFavoritesOnlyChange) {
+      onFavoritesOnlyChange(false)
+    }
+  }
+
+  const handleFavoritesToggle = () => {
+    if (onFavoritesOnlyChange) {
+      onFavoritesOnlyChange(!favoritesOnly)
+    }
   }
 
   if (isLoading) {
@@ -129,6 +145,18 @@ export function FilterPanel({
         <button className={styles.clearBtn} onClick={handleClear}>
           クリア
         </button>
+      </div>
+
+      <div className={styles.section}>
+        <div className={styles.sectionTitle}>お気に入り</div>
+        <div className={styles.tags}>
+          <button
+            className={`${styles.categoryBtn} ${favoritesOnly ? styles.active : ''}`}
+            onClick={handleFavoritesToggle}
+          >
+            お気に入り({favoritesCount})
+          </button>
+        </div>
       </div>
 
       <div className={styles.section}>

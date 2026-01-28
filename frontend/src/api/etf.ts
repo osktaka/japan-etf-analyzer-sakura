@@ -33,6 +33,7 @@ export interface SearchParams {
   tag_ids?: number[]
   min_dividend_yield?: number
   max_expense_ratio?: number
+  favorite_codes?: string[]
   sort?: SortField
   order?: SortOrder
   limit?: number
@@ -64,6 +65,8 @@ export async function searchETFs(params: SearchParams = {}): Promise<{
     queryParams.append('min_dividend_yield', String(params.min_dividend_yield))
   if (params.max_expense_ratio !== undefined)
     queryParams.append('max_expense_ratio', String(params.max_expense_ratio))
+  if (params.favorite_codes?.length)
+    queryParams.append('favorite_codes', params.favorite_codes.join(','))
   if (params.sort) queryParams.append('sort', params.sort)
   if (params.order) queryParams.append('order', params.order)
   if (params.limit) queryParams.append('limit', String(params.limit))

@@ -99,7 +99,8 @@ export function TopPage() {
   const { items, total, isLoading, error, search } = useETFSearch()
   const { count, isInList, toggleCode, canAdd } = useCompareList()
   const { isAuthenticated } = useAuth()
-  const { isFavorite, toggleFavorite } = useFavorites()
+  const { isFavorite, toggleFavorite, favoriteCodes } = useFavorites()
+  const [favoritesOnly, setFavoritesOnly] = useState(false)
 
   // 表形式表示時にパフォーマンスデータを取得
   useEffect(() => {
@@ -200,14 +201,20 @@ export function TopPage() {
       page: '1',
     })
 
-    search({
+    const searchParams: SearchParams = {
       ...currentFilters,
       keyword: trimmed || undefined,
       sort: currentSort,
       order: currentOrder,
       limit: PAGE_SIZE,
       offset: 0,
-    })
+    }
+
+    if (favoritesOnly && favoriteCodes.size > 0) {
+      searchParams.favorite_codes = Array.from(favoriteCodes)
+    }
+
+    search(searchParams)
 
     etfListRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
@@ -232,16 +239,30 @@ export function TopPage() {
         page: '1',
       })
 
-      search({
+      const searchParams: SearchParams = {
         ...filters,
         keyword: currentKeyword || undefined,
         sort: currentSort,
         order: currentOrder,
         limit: PAGE_SIZE,
         offset: 0,
-      })
+      }
+
+      if (favoritesOnly && favoriteCodes.size > 0) {
+        searchParams.favorite_codes = Array.from(favoriteCodes)
+      }
+
+      search(searchParams)
     },
-    [currentKeyword, currentSort, currentOrder, search, updateURL]
+    [
+      currentKeyword,
+      currentSort,
+      currentOrder,
+      search,
+      updateURL,
+      favoritesOnly,
+      favoriteCodes,
+    ]
   )
 
   const handleSortChange = (sort: SortField, order: SortOrder) => {
@@ -255,14 +276,20 @@ export function TopPage() {
       page: '1',
     })
 
-    search({
+    const searchParams: SearchParams = {
       ...currentFilters,
       keyword: currentKeyword || undefined,
       sort,
       order,
       limit: PAGE_SIZE,
       offset: 0,
-    })
+    }
+
+    if (favoritesOnly && favoriteCodes.size > 0) {
+      searchParams.favorite_codes = Array.from(favoriteCodes)
+    }
+
+    search(searchParams)
   }
 
   const handlePageChange = (page: number) => {
@@ -272,18 +299,55 @@ export function TopPage() {
       page: page.toString(),
     })
 
-    search({
+    const searchParams: SearchParams = {
       ...currentFilters,
       keyword: currentKeyword || undefined,
       sort: currentSort,
       order: currentOrder,
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
-    })
+    }
+
+    if (favoritesOnly && favoriteCodes.size > 0) {
+      searchParams.favorite_codes = Array.from(favoriteCodes)
+    }
+
+    search(searchParams)
     etfListRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
 
-  const totalPages = Math.ceil(total / PAGE_SIZE)
+  // お気に入りフィルター状態が変わったときに検索を実行
+  useEffect(() => {
+    setCurrentPage(1)
+
+    const searchParams: SearchParams = {
+      ...currentFilters,
+      keyword: currentKeyword || undefined,
+      sort: currentSort,
+      order: currentOrder,
+      limit: PAGE_SIZE,
+      offset: 0,
+    }
+
+    if (favoritesOnly && favoriteCodes.size > 0) {
+      searchParams.favorite_codes = Array.from(favoriteCodes)
+    }
+
+    search(searchParams)
+  }, [
+    favoritesOnly,
+    favoriteCodes,
+    currentFilters,
+    currentKeyword,
+    currentSort,
+    currentOrder,
+    search,
+  ])
+
+  // displayTotal と totalPages を計算（ページングはバックエンドで処理）
+  const displayTotal = total
+  const totalPages = Math.ceil(displayTotal / PAGE_SIZE)
+  const filteredItems = items
 
   const handleCompareToggle = (code: string) => {
     if (!isInList(code) && !canAdd) {
@@ -333,6 +397,9 @@ export function TopPage() {
             onSearch={handleSearch}
             initialParams={currentFilters}
             initialKeyword={currentKeyword}
+            favoritesOnly={favoritesOnly}
+            onFavoritesOnlyChange={setFavoritesOnly}
+            favoritesCount={favoriteCodes.size}
           />
         </div>
 
@@ -341,7 +408,6 @@ export function TopPage() {
             {hasSearched ? '検索結果' : '全銘柄一覧'}
           </h2>
           <div className={styles.sectionControls}>
-            <ViewModeToggle mode={viewMode} onChange={handleViewModeChange} />
             {viewMode === 'card' ? (
               <SortSelector
                 sort={currentSort}
@@ -354,14 +420,15 @@ export function TopPage() {
                 onChange={setSelectedPeriods}
               />
             )}
+            <ViewModeToggle mode={viewMode} onChange={handleViewModeChange} />
           </div>
         </div>
         <div className={styles.resultCount}>
-          <span>{total}件</span>
+          <span>{displayTotal}件</span>
         </div>
         {viewMode === 'card' ? (
           <SearchResults
-            items={items}
+            items={filteredItems}
             isLoading={isLoading}
             error={error}
             onETFClick={setSelectedCode}
@@ -372,7 +439,7 @@ export function TopPage() {
           />
         ) : (
           <ETFTableView
-            items={items}
+            items={filteredItems}
             performance={performance}
             selectedPeriods={selectedPeriods}
             onETFClick={setSelectedCode}
