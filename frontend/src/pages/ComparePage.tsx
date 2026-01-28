@@ -188,7 +188,7 @@ export function ComparePage() {
                     className={`${styles.modeBtn} ${chartMode === 'overlay' ? styles.active : ''}`}
                     onClick={() => setChartMode('overlay')}
                   >
-                    重ね描き
+                    相対比較
                   </button>
                   <button
                     className={`${styles.modeBtn} ${chartMode === 'individual' ? styles.active : ''}`}
