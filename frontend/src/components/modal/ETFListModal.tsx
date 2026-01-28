@@ -9,6 +9,7 @@ import { ROUTES } from '../../utils'
 import { Loading } from '../common'
 import { FavoriteButton } from '../favorite/FavoriteButton'
 import { CompareCheckbox } from '../actions'
+import { ETFDetailModal } from './ETFDetailModal'
 import styles from './ETFListModal.module.css'
 
 interface ETFListModalProps {
@@ -40,6 +41,7 @@ export function ETFListModal({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [performance, setPerformance] = useState<BatchPerformanceData>({})
+  const [selectedCode, setSelectedCode] = useState<string | null>(null)
 
   const fetchFavorites = useCallback(async () => {
     setIsLoading(true)
@@ -261,9 +263,14 @@ export function ETFListModal({
                         className={
                           mode === 'favorite' && isRemoved ? styles.removed : ''
                         }
+                        onClick={() => setSelectedCode(item.code)}
+                        style={{ cursor: 'pointer' }}
                       >
                         {isAuthenticated && (
-                          <td className={styles.favoriteCol}>
+                          <td
+                            className={styles.favoriteCol}
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <FavoriteButton
                               isFavorite={isFavorite}
                               onClick={() => handleFavoriteToggle(item.code)}
@@ -279,7 +286,10 @@ export function ETFListModal({
                         >
                           {formatPerformance(perf['1y'])}
                         </td>
-                        <td className={styles.compareCol}>
+                        <td
+                          className={styles.compareCol}
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <CompareCheckbox
                             isInCompare={isInList}
                             onToggle={() => handleCheckboxChange(item.code)}
@@ -295,6 +305,17 @@ export function ETFListModal({
             </div>
           )}
         </div>
+
+        <ETFDetailModal
+          code={selectedCode}
+          onClose={() => setSelectedCode(null)}
+          isInCompare={selectedCode ? existingCodes.includes(selectedCode) : false}
+          onCompareToggle={() => {
+            if (selectedCode) {
+              handleCheckboxChange(selectedCode)
+            }
+          }}
+        />
       </div>
     </div>
   )
