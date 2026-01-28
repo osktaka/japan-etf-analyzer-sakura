@@ -1,8 +1,8 @@
 """Trade repository for database operations."""
 from datetime import date
-from typing import List
+from typing import List, Optional
 
-from src.models import Trade, db
+from src.models import ETF, Trade, db
 
 from .base_repository import BaseRepository
 
@@ -54,3 +54,40 @@ class TradeRepository(BaseRepository[Trade]):
             .all()
         )
         return [r[0] for r in result]
+
+    def get_filtered(
+        self,
+        user_id: int,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+        search: Optional[str] = None,
+    ) -> List[Trade]:
+        """Get trades with optional filters.
+
+        Args:
+            user_id: User ID
+            start_date: Filter trades on or after this date
+            end_date: Filter trades on or before this date
+            search: Search ETF code or name (partial match)
+
+        Returns:
+            List of Trade objects
+        """
+        query = db.session.query(Trade).filter(Trade.user_id == user_id)
+
+        if start_date is not None:
+            query = query.filter(Trade.trade_date >= start_date)
+
+        if end_date is not None:
+            query = query.filter(Trade.trade_date <= end_date)
+
+        if search:
+            # JOINしてETFのcodeまたはnameで部分一致検索
+            query = query.join(ETF, Trade.etf_code == ETF.code).filter(
+                db.or_(
+                    ETF.code.ilike(f"%{search}%"),
+                    ETF.name.ilike(f"%{search}%"),
+                )
+            )
+
+        return query.order_by(Trade.trade_date.desc(), Trade.created_at.desc()).all()

@@ -18,16 +18,34 @@ def create_trade_bp():
 
         GET /api/v1/trades
         GET /api/v1/trades?etf_code=1306
+        GET /api/v1/trades?start_date=2025-01-01&end_date=2025-12-31
+        GET /api/v1/trades?search=TOPIX
+
+        Query Parameters:
+            etf_code: Filter by specific ETF code
+            start_date: Filter trades on or after this date (YYYY-MM-DD)
+            end_date: Filter trades on or before this date (YYYY-MM-DD)
+            search: Search ETF code or name (partial match)
 
         Returns:
             List of user's trade records
         """
         etf_code = request.args.get("etf_code")
+        start_date = request.args.get("start_date")
+        end_date = request.args.get("end_date")
+        search = request.args.get("search")
 
         if etf_code:
+            # etf_codeが指定された場合は従来の動作（完全一致）
             trades = trade_service.get_trades_by_etf(current_user.id, etf_code)
         else:
-            trades = trade_service.get_user_trades(current_user.id)
+            # フィルター検索（パラメータがなければ全件取得）
+            trades = trade_service.get_user_trades(
+                user_id=current_user.id,
+                start_date=start_date,
+                end_date=end_date,
+                search=search,
+            )
 
         return api_response(data=trades)
 

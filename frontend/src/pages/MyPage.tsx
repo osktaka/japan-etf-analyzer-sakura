@@ -1,13 +1,17 @@
 /** My page component */
 import { useState } from 'react'
 import { ETFCard } from '../components/etf/ETFCard'
-import { ETFDetailModal } from '../components/modal/ETFDetailModal'
-import { TradeForm, TradeList } from '../components/trade'
+import {
+  ETFDetailModal,
+  TradeFormModal,
+  TradeHistoryModal,
+} from '../components/modal'
+import { PortfolioSummary, HoldingsList } from '../components/portfolio'
 import { useAuth } from '../hooks/useAuth'
 import { useFavorites } from '../hooks/useFavorites'
 import { useCompareList } from '../hooks/useCompareList'
-import { useTrades } from '../hooks/useTrades'
-import { ETFSummary, CreateTradeRequest } from '../api/types'
+import { usePortfolio } from '../hooks/usePortfolio'
+import { ETFSummary } from '../api/types'
 import styles from './MyPage.module.css'
 
 export function MyPage() {
@@ -16,15 +20,16 @@ export function MyPage() {
     useFavorites()
   const { isInList: isInCompare, toggleCode: toggleCompare } = useCompareList()
   const {
-    trades,
-    isLoading: tradesLoading,
-    error: tradesError,
-    createTrade,
-    updateTrade,
-    deleteTrade,
-  } = useTrades()
+    holdings,
+    summary,
+    isLoading: portfolioLoading,
+    error: portfolioError,
+    refresh: refreshPortfolio,
+  } = usePortfolio()
   const [selectedETF, setSelectedETF] = useState<ETFSummary | null>(null)
-  const [showTradeForm, setShowTradeForm] = useState(false)
+  const [selectedETFCode, setSelectedETFCode] = useState<string | null>(null)
+  const [showTradeFormModal, setShowTradeFormModal] = useState(false)
+  const [showTradeHistoryModal, setShowTradeHistoryModal] = useState(false)
 
   const handleCardClick = (etf: ETFSummary) => {
     setSelectedETF(etf)
@@ -32,14 +37,15 @@ export function MyPage() {
 
   const handleCloseModal = () => {
     setSelectedETF(null)
+    setSelectedETFCode(null)
   }
 
-  const handleCreateTrade = async (data: CreateTradeRequest) => {
-    const success = await createTrade(data)
-    if (success) {
-      setShowTradeForm(false)
-    }
-    return success
+  const handleHoldingClick = (code: string) => {
+    setSelectedETFCode(code)
+  }
+
+  const handleTradeSuccess = () => {
+    refreshPortfolio()
   }
 
   return (
@@ -50,6 +56,35 @@ export function MyPage() {
           ようこそ、<strong>{user?.username}</strong> さん
         </p>
       </div>
+
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>ポートフォリオ</h2>
+          <div className={styles.buttonGroup}>
+            <button
+              className={styles.secondaryBtn}
+              onClick={() => setShowTradeHistoryModal(true)}
+            >
+              取引履歴
+            </button>
+            <button
+              className={styles.addBtn}
+              onClick={() => setShowTradeFormModal(true)}
+            >
+              取引を追加
+            </button>
+          </div>
+        </div>
+
+        {summary && <PortfolioSummary summary={summary} />}
+
+        <HoldingsList
+          holdings={holdings}
+          isLoading={portfolioLoading}
+          error={portfolioError}
+          onETFClick={handleHoldingClick}
+        />
+      </section>
 
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>お気に入り一覧</h2>
@@ -83,47 +118,31 @@ export function MyPage() {
         )}
       </section>
 
-      <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>売買履歴</h2>
-          {!showTradeForm && (
-            <button
-              className={styles.addBtn}
-              onClick={() => setShowTradeForm(true)}
-            >
-              取引を追加
-            </button>
-          )}
-        </div>
+      {(() => {
+        const modalCode = selectedETF?.code ?? selectedETFCode
+        if (!modalCode) return null
+        return (
+          <ETFDetailModal
+            code={modalCode}
+            onClose={handleCloseModal}
+            isFavorite={isFavorite(modalCode)}
+            onFavoriteToggle={() => toggleFavorite(modalCode)}
+            isInCompare={isInCompare(modalCode)}
+            onCompareToggle={() => toggleCompare(modalCode)}
+          />
+        )
+      })()}
 
-        {showTradeForm && (
-          <div className={styles.formWrapper}>
-            <TradeForm
-              onSubmit={handleCreateTrade}
-              onCancel={() => setShowTradeForm(false)}
-            />
-          </div>
-        )}
+      <TradeFormModal
+        isOpen={showTradeFormModal}
+        onClose={() => setShowTradeFormModal(false)}
+        onSuccess={handleTradeSuccess}
+      />
 
-        <TradeList
-          trades={trades}
-          isLoading={tradesLoading}
-          error={tradesError}
-          onUpdate={updateTrade}
-          onDelete={deleteTrade}
-        />
-      </section>
-
-      {selectedETF && (
-        <ETFDetailModal
-          code={selectedETF.code}
-          onClose={handleCloseModal}
-          isFavorite={isFavorite(selectedETF.code)}
-          onFavoriteToggle={() => toggleFavorite(selectedETF.code)}
-          isInCompare={isInCompare(selectedETF.code)}
-          onCompareToggle={() => toggleCompare(selectedETF.code)}
-        />
-      )}
+      <TradeHistoryModal
+        isOpen={showTradeHistoryModal}
+        onClose={() => setShowTradeHistoryModal(false)}
+      />
     </div>
   )
 }

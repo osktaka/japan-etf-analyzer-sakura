@@ -155,6 +155,12 @@ export interface UpdateTradeRequest {
   memo?: string
 }
 
+export interface TradeFilterOptions {
+  startDate?: string // YYYY-MM-DD
+  endDate?: string // YYYY-MM-DD
+  search?: string // ETFコードまたは名前で検索
+}
+
 export interface Holding {
   etf_code: string
   etf: ETFSummary | null

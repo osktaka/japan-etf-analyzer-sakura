@@ -5,13 +5,26 @@ import {
   Trade,
   CreateTradeRequest,
   UpdateTradeRequest,
+  TradeFilterOptions,
 } from './types'
 
 export const tradesApi = {
-  async getAll(etfCode?: string): Promise<Trade[]> {
-    const params = etfCode ? { etf_code: etfCode } : undefined
+  async getAll(etfCode?: string, options?: TradeFilterOptions): Promise<Trade[]> {
+    const params: Record<string, string> = {}
+    if (etfCode) {
+      params.etf_code = etfCode
+    }
+    if (options?.startDate) {
+      params.start_date = options.startDate
+    }
+    if (options?.endDate) {
+      params.end_date = options.endDate
+    }
+    if (options?.search) {
+      params.search = options.search
+    }
     const response = await apiClient.get<ApiResponse<Trade[]>>('/trades', {
-      params,
+      params: Object.keys(params).length > 0 ? params : undefined,
     })
     return response.data.data
   },

@@ -74,6 +74,28 @@
   background: var(--color-primary-dark);
 }
 
+.buttonGroup {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.secondaryBtn {
+  padding: 0.5rem 1rem;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.secondaryBtn:hover {
+  background: var(--color-background);
+  border-color: var(--color-text-secondary);
+}
+
 .formWrapper {
   margin-bottom: 1.5rem;
 }

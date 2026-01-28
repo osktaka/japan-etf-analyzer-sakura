@@ -1,6 +1,6 @@
 """Trade service for managing user's ETF transactions."""
 from datetime import date, datetime
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from src.models import Trade
 from src.repositories.etf_repository import ETFRepository
@@ -19,10 +19,51 @@ class TradeService:
         self.trade_repository = trade_repository or TradeRepository()
         self.etf_repository = etf_repository or ETFRepository()
 
-    def get_user_trades(self, user_id: int) -> List[Dict]:
-        """Get all trades for a user with ETF details."""
-        trades = self.trade_repository.get_by_user_id(user_id)
+    def get_user_trades(
+        self,
+        user_id: int,
+        start_date: Optional[Union[date, str]] = None,
+        end_date: Optional[Union[date, str]] = None,
+        search: Optional[str] = None,
+    ) -> List[Dict]:
+        """Get all trades for a user with ETF details.
+
+        Args:
+            user_id: User ID
+            start_date: Filter trades on or after this date (date or YYYY-MM-DD string)
+            end_date: Filter trades on or before this date (date or YYYY-MM-DD string)
+            search: Search ETF code or name (partial match)
+
+        Returns:
+            List of trade dicts with ETF details
+        """
+        # 日付文字列をdateオブジェクトに変換
+        parsed_start = self._parse_date(start_date) if start_date else None
+        parsed_end = self._parse_date(end_date) if end_date else None
+
+        # いずれかのフィルターがあればフィルター検索、なければ全件取得
+        if parsed_start or parsed_end or search:
+            trades = self.trade_repository.get_filtered(
+                user_id=user_id,
+                start_date=parsed_start,
+                end_date=parsed_end,
+                search=search,
+            )
+        else:
+            trades = self.trade_repository.get_by_user_id(user_id)
+
         return self._enrich_trades(trades)
+
+    def _parse_date(self, value: Union[date, str]) -> Optional[date]:
+        """Parse date from string or return date object as-is."""
+        if isinstance(value, date):
+            return value
+        if isinstance(value, str):
+            try:
+                return datetime.strptime(value, "%Y-%m-%d").date()
+            except ValueError:
+                return None
+        return None
 
     def get_trades_by_etf(self, user_id: int, etf_code: str) -> List[Dict]:
         """Get trades for a specific ETF."""
