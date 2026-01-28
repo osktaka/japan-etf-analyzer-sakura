@@ -1,5 +1,6 @@
 """Authentication service."""
 import re
+from datetime import datetime
 from typing import Optional, Tuple
 
 from flask_login import login_user, logout_user
@@ -102,6 +103,10 @@ class AuthService:
 
         if not user.check_password(password):
             return None, "メールアドレスまたはパスワードが正しくありません"
+
+        # Update last login time
+        user.last_login_at = datetime.utcnow()
+        self.user_repository.update(user)
 
         # Create session
         login_user(user, remember=remember)

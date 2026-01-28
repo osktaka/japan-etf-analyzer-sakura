@@ -17,6 +17,8 @@ class User(db.Model, UserMixin, TimestampMixin):
     password_hash = db.Column(db.String(255), nullable=False)
     username = db.Column(db.String(50), nullable=False)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
+    is_admin = db.Column(db.Boolean, nullable=False, default=False)
+    last_login_at = db.Column(db.DateTime, nullable=True)
 
     # Relationship to favorites
     favorites = db.relationship(
@@ -43,7 +45,13 @@ class User(db.Model, UserMixin, TimestampMixin):
             "email": self.email,
             "username": self.username,
             "is_active": self.is_active,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
+            "is_admin": self.is_admin,
+            "created_at": (
+                self.created_at.isoformat() + "Z" if self.created_at else None
+            ),
+            "last_login_at": (
+                self.last_login_at.isoformat() + "Z" if self.last_login_at else None
+            ),
         }
 
     def __repr__(self) -> str:

@@ -14,6 +14,7 @@ export interface AuthContextValue {
   user: User | null
   isLoading: boolean
   isAuthenticated: boolean
+  isAdmin: boolean
   login: (data: LoginRequest) => Promise<void>
   register: (data: RegisterRequest) => Promise<void>
   logout: () => Promise<void>
@@ -66,6 +67,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     isLoading,
     isAuthenticated: !!user,
+    isAdmin: !!user?.is_admin,
     login,
     register,
     logout,

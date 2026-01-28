@@ -65,7 +65,7 @@ export function ETFTableView({
   const getReturnsData = (code: string): PerformanceReturns => {
     const item = performance[code]
     if (!item) return {}
-    return returnType === 'regression' ? item.regression : item.returns
+    return (returnType === 'regression' ? item.regression : item.returns) ?? {}
   }
   // Derive current sort key from sortField prop
   const getCurrentSortKey = (): SortKey => {

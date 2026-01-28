@@ -42,10 +42,14 @@ def ensure_columns():
 
     conn.close()
 
+
 # カテゴリ推定ルール
 CATEGORY_RULES = [
     (["TOPIX", "日経", "東証", "JPX"], "国内株式"),
-    (["S&P", "NASDAQ", "ダウ", "MSCI", "米国", "新興国", "先進国", "全世界"], "外国株式"),
+    (
+        ["S&P", "NASDAQ", "ダウ", "MSCI", "米国", "新興国", "先進国", "全世界"],
+        "外国株式",
+    ),
     (["REIT", "リート", "不動産"], "REIT"),
     (["債券", "国債"], "国内債券"),
     (["米国債", "外国債", "ハイイールド"], "外国債券"),
@@ -142,15 +146,48 @@ def sync_etf_master():
 
 def main():
     """Run sync script."""
+    from datetime import datetime
+
+    from src.repositories import BatchLogRepository
+
     app = create_app()
     with app.app_context():
-        print("Ensuring database columns...")
-        ensure_columns()
+        # バッチログ記録開始
+        batch_log_repo = BatchLogRepository()
+        batch_log = batch_log_repo.create(
+            batch_name="sync_etf_master",
+            status="running",
+            started_at=datetime.utcnow(),
+        )
+        print(f"Batch log created: id={batch_log.id}")
 
-        print("Syncing ETF master data...")
-        created, updated = sync_etf_master()
-        print(f"  -> Created: {created}, Updated: {updated}")
-        print("Sync complete!")
+        try:
+            print("Ensuring database columns...")
+            ensure_columns()
+
+            print("Syncing ETF master data...")
+            created, updated = sync_etf_master()
+            print(f"  -> Created: {created}, Updated: {updated}")
+            print("Sync complete!")
+
+            # バッチログを成功で更新
+            batch_log_repo.update(
+                batch_log.id,
+                status="success",
+                finished_at=datetime.utcnow(),
+            )
+            print(f"Batch log updated: id={batch_log.id}, status=success")
+
+        except Exception as e:
+            # バッチログを失敗で更新
+            batch_log_repo.update(
+                batch_log.id,
+                status="failed",
+                finished_at=datetime.utcnow(),
+                error_message=str(e),
+            )
+            print(f"Batch log updated: id={batch_log.id}, status=failed")
+            raise
 
 
 if __name__ == "__main__":

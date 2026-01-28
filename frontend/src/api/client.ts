@@ -16,6 +16,10 @@ export const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError<ApiError>) => {
+    // 401は未ログイン状態では期待される動作なのでログ出力しない
+    if (error.response?.status === 401) {
+      return Promise.reject(error)
+    }
     if (error.response) {
       const message = error.response.data?.error?.message || 'An error occurred'
       console.error(`API Error: ${message}`)

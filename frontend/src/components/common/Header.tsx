@@ -7,7 +7,7 @@ import styles from './Header.module.css'
 export function Header() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, isAuthenticated, logout, isLoading } = useAuth()
+  const { user, isAuthenticated, isAdmin, logout, isLoading } = useAuth()
 
   const handleLogout = async () => {
     await logout()
@@ -49,6 +49,14 @@ export function Header() {
                   >
                     マイページ
                   </Link>
+                  {isAdmin && (
+                    <Link
+                      to={ROUTES.ADMIN}
+                      className={`${styles.navLink} ${location.pathname === ROUTES.ADMIN ? styles.active : ''}`}
+                    >
+                      管理
+                    </Link>
+                  )}
                   <span className={styles.userInfo}>{user?.username}</span>
                   <button onClick={handleLogout} className={styles.logoutBtn}>
                     ログアウト

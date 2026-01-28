@@ -34,7 +34,7 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
-logging.getLogger('yfinance').setLevel(logging.WARNING)
+logging.getLogger("yfinance").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 ETF_MASTER_PATH = Path(__file__).parent.parent / "src" / "data" / "etf_master.json"
@@ -165,7 +165,7 @@ def update_single_etf(
 
         # DBに保存（Flask app contextが必要）
         save_to_db(code, df)
-        market_price = round(float(df['Close'].iloc[-1]), 2) if not df.empty else None
+        market_price = round(float(df["Close"].iloc[-1]), 2) if not df.empty else None
         update_etf_info(code, dividend_yield, total_assets, market_price)
         yield_str = f"{dividend_yield}%" if dividend_yield else "N/A"
         assets_str = f"{total_assets:,}" if total_assets else "N/A"
@@ -555,6 +555,20 @@ def main() -> int:
     success_count = 0
     fail_count = 0
 
+    # バッチログ記録（dry-run以外）
+    batch_log = None
+    batch_log_repo = None
+    if not args.dry_run:
+        from src.repositories import BatchLogRepository
+
+        batch_log_repo = BatchLogRepository()
+        batch_log = batch_log_repo.create(
+            batch_name="update_etf_data",
+            status="running",
+            started_at=datetime.utcnow(),
+        )
+        logger.info(f"Batch log created: id={batch_log.id}")
+
     try:
         for i, etf in enumerate(etfs, 1):
             code = etf["code"]
@@ -580,6 +594,27 @@ def main() -> int:
             logger.info(
                 f"Performance cache: {perf_success} success, {perf_fail} failed"
             )
+
+        # バッチログを成功で更新
+        if batch_log_repo and batch_log:
+            batch_log_repo.update(
+                batch_log.id,
+                status="success",
+                finished_at=datetime.utcnow(),
+            )
+            logger.info(f"Batch log updated: id={batch_log.id}, status=success")
+
+    except Exception as e:
+        # バッチログを失敗で更新
+        if batch_log_repo and batch_log:
+            batch_log_repo.update(
+                batch_log.id,
+                status="failed",
+                finished_at=datetime.utcnow(),
+                error_message=str(e),
+            )
+            logger.info(f"Batch log updated: id={batch_log.id}, status=failed")
+        raise
 
     finally:
         if not args.dry_run:

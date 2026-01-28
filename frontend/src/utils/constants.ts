@@ -28,6 +28,7 @@ export const ROUTES = {
   REGISTER: '/register',
   MYPAGE: '/mypage',
   PORTFOLIO: '/portfolio',
+  ADMIN: '/admin',
 } as const
 
 /** 各期間の期待営業日数（データ充足判定用） */

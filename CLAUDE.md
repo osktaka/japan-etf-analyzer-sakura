@@ -125,3 +125,27 @@ scp -r dist/* user@server:/home/user/www/
 - 繰り返し発生するパターンや注意点
 - 特殊な命名規則やディレクトリ構造
 - 外部API/サービスの制約事項
+
+## DBスキーマ変更ルール
+
+**重要**: データ消失を防ぐため、以下のルールを厳守すること
+
+### 変更前の必須手順
+1. **バックアップ取得**: `docker compose exec backend cp /app/data/etf.db /app/data/etf.db.backup`
+2. **現状確認**: 変更対象テーブルのレコード数を確認
+
+### カラム追加
+- `ALTER TABLE` を使用し、テーブル再作成を避ける
+- SQLite例: `ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT 0`
+
+### 禁止事項
+- `db.drop_all()` の使用禁止（テスト環境を除く）
+- テーブルの DROP & CREATE による再作成禁止
+- 本番DBファイルの削除・上書き禁止
+
+### データ復旧手順
+マスターデータが消失した場合:
+```bash
+docker compose exec backend python scripts/seed_data.py
+docker compose exec backend python scripts/sync_etf_master.py
+```
