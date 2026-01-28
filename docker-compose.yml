@@ -33,5 +33,20 @@ services:
     depends_on:
       - backend
 
+  scheduler:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.scheduler
+    environment:
+      - DATABASE_URL=sqlite:////app/data/etf.db
+      - FLASK_APP=src/app.py
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/scripts:/app/scripts
+      - backend_data:/app/data
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 volumes:
   backend_data:

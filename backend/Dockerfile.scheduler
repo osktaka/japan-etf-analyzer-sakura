@@ -1,0 +1,28 @@
+FROM python:3.8-slim
+
+WORKDIR /app
+
+# タイムゾーン設定（日本時間）
+ENV TZ=Asia/Tokyo
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# cron インストール
+RUN apt-get update && apt-get install -y cron && rm -rf /var/lib/apt/lists/*
+
+# 依存関係インストール
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+# crontab 設定
+COPY crontab /etc/cron.d/etf-scheduler
+RUN chmod 0644 /etc/cron.d/etf-scheduler && crontab /etc/cron.d/etf-scheduler
+
+# ログファイル作成
+RUN touch /var/log/cron.log
+
+# 環境変数をcronに渡すためのラッパースクリプト
+RUN echo '#!/bin/bash\nenv >> /etc/environment\ncron && tail -f /var/log/cron.log' > /entrypoint.sh && chmod +x /entrypoint.sh
+
+CMD ["/entrypoint.sh"]

@@ -1,0 +1,10 @@
+# ETF Analyzer Scheduled Tasks
+# Timezone: Asia/Tokyo (set in Dockerfile.scheduler)
+
+# 毎日朝6時: ETFマスタ更新（JPXからスクレイピング→DB同期）
+0 6 * * * cd /app && python scripts/fetch_etf_list.py >> /var/log/cron.log 2>&1 && python scripts/sync_etf_master.py >> /var/log/cron.log 2>&1
+
+# 平日16時: 株価データ更新（東証閉場後、スマートモード）
+0 16 * * 1-5 cd /app && python scripts/update_etf_data.py --smart >> /var/log/cron.log 2>&1
+
+# 空行が必要（cronの仕様）
