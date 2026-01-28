@@ -20,7 +20,7 @@ import {
   CHART_PERIODS,
 } from '../utils'
 import { Loading, ErrorMessage } from '../components/common'
-import { FavoriteSelectModal } from '../components/modal'
+import { FavoriteSelectModal, ETFDetailModal } from '../components/modal'
 import { TagBadge } from '../components/etf'
 import { PriceChart, OverlayChart } from '../components/chart'
 import styles from './ComparePage.module.css'
@@ -41,6 +41,7 @@ export function ComparePage() {
   >([])
   const [isChartLoading, setIsChartLoading] = useState(false)
   const [isFavoriteModalOpen, setIsFavoriteModalOpen] = useState(false)
+  const [selectedCode, setSelectedCode] = useState<string | null>(null)
   const initialCodesRef = useRef<string[]>(codes)
 
   // 初回読み込み時のみAPI取得
@@ -235,8 +236,20 @@ export function ComparePage() {
                   {etfs.map((etf) => (
                     <th key={etf.code}>
                       <div className={styles.etfHeader}>
-                        <span className={styles.code}>{etf.code}</span>
-                        <span className={styles.name}>{etf.name}</span>
+                        <span
+                          className={styles.code}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => setSelectedCode(etf.code)}
+                        >
+                          {etf.code}
+                        </span>
+                        <span
+                          className={styles.name}
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => setSelectedCode(etf.code)}
+                        >
+                          {etf.name}
+                        </span>
                         <button
                           className={styles.removeBtn}
                           onClick={() => handleRemove(etf.code)}
@@ -370,6 +383,18 @@ export function ComparePage() {
           </div>
         </>
       )}
+
+      <ETFDetailModal
+        code={selectedCode}
+        onClose={() => setSelectedCode(null)}
+        isInCompare={true}
+        onCompareToggle={() => {
+          if (selectedCode) {
+            handleRemove(selectedCode)
+            setSelectedCode(null)
+          }
+        }}
+      />
     </div>
   )
 }
