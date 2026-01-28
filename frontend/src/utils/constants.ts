@@ -29,3 +29,18 @@ export const ROUTES = {
   MYPAGE: '/mypage',
   PORTFOLIO: '/portfolio',
 } as const
+
+/** 各期間の期待営業日数（データ充足判定用） */
+export const EXPECTED_TRADING_DAYS: Record<string, number> = {
+  '1m': 20,
+  '3m': 60,
+  '6m': 120,
+  '1y': 240,
+  '3y': 720,
+  '5y': 1200,
+  '10y': 2400,
+  '20y': 4800,
+}
+
+/** データ充足率の閾値（この値未満でオーバーレイ表示） */
+export const DATA_SUFFICIENCY_THRESHOLD = 0.8

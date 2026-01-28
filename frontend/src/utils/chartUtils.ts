@@ -1,5 +1,6 @@
 /** Chart utility functions */
 import { ChartDataPoint, ChartPeriod } from '../api'
+import { EXPECTED_TRADING_DAYS, DATA_SUFFICIENCY_THRESHOLD } from './constants'
 
 export interface NormalizedDataPoint {
   date: string
@@ -162,4 +163,57 @@ export function calculateNormalizedRegressionLine(
   const endY = slope * (n - 1) + intercept
 
   return { startY, endY }
+}
+
+export interface DataSufficiencyResult {
+  isSufficient: boolean
+  actualDays: number
+  expectedDays: number
+  ratio: number
+  actualPeriodLabel: string
+}
+
+/**
+ * Check if data is sufficient for the given chart period
+ * Returns detailed information about data sufficiency
+ */
+export function checkDataSufficiency(
+  period: ChartPeriod,
+  dataLength: number,
+  threshold: number = DATA_SUFFICIENCY_THRESHOLD
+): DataSufficiencyResult {
+  const expectedDays = EXPECTED_TRADING_DAYS[period] ?? 240
+  const ratio = dataLength / expectedDays
+  const isSufficient = ratio >= threshold
+
+  return {
+    isSufficient,
+    actualDays: dataLength,
+    expectedDays,
+    ratio,
+    actualPeriodLabel: getActualPeriodLabel(dataLength),
+  }
+}
+
+/**
+ * Convert data length to human-readable period label
+ */
+function getActualPeriodLabel(days: number): string {
+  if (days >= 2400) {
+    const years = Math.floor(days / 240)
+    return `${years}年分`
+  }
+  if (days >= 240) {
+    const years = Math.floor(days / 240)
+    return `${years}年分`
+  }
+  if (days >= 60) {
+    const months = Math.floor(days / 20)
+    return `${months}ヶ月分`
+  }
+  if (days >= 20) {
+    const weeks = Math.floor(days / 5)
+    return `${weeks}週間分`
+  }
+  return `${days}日分`
 }

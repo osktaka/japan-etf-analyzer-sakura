@@ -49,12 +49,13 @@ def load_etf_list() -> list:
     return data.get("etfs", [])
 
 
-def update_single_etf(code: str, dry_run: bool = False) -> bool:
+def update_single_etf(code: str, dry_run: bool = False, full: bool = False) -> bool:
     """Update price data for a single ETF.
 
     Args:
         code: ETF code (e.g., "1306")
         dry_run: If True, don't actually fetch data
+        full: If True, fetch full history (period='max') instead of 1 year
 
     Returns:
         True if successful, False otherwise
@@ -69,8 +70,9 @@ def update_single_etf(code: str, dry_run: bool = False) -> bool:
         ticker = f"{code}.T"
         stock = yf.Ticker(ticker)
 
-        # 過去1年分のデータを取得
-        df = stock.history(period="1y")
+        # 過去データを取得（full=Trueなら全履歴、そうでなければ1年分）
+        period = "max" if full else "1y"
+        df = stock.history(period=period)
         if df.empty:
             logger.warning(f"No data returned for {ticker}")
             return False
@@ -412,6 +414,11 @@ def main() -> int:
         action="store_true",
         help="Skip performance cache calculation",
     )
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help="Fetch full history (period='max') instead of 1 year",
+    )
     args = parser.parse_args()
 
     logger.info("=" * 60)
@@ -446,7 +453,7 @@ def main() -> int:
             code = etf["code"]
             logger.info(f"[{i}/{len(etfs)}] Processing {code} ({etf.get('name', '')})")
 
-            if update_single_etf(code, dry_run=args.dry_run):
+            if update_single_etf(code, dry_run=args.dry_run, full=args.full):
                 success_count += 1
             else:
                 fail_count += 1
