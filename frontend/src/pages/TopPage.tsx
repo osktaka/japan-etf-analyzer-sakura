@@ -1,6 +1,6 @@
 /** Top page component */
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useETFSearch, useCompareList, useFavorites, useAuth } from '../hooks'
 import {
   SearchResults,
@@ -22,7 +22,7 @@ import {
 import { RecommendSection } from '../components/recommend'
 import { ETFDetailModal, LoginPromptModal } from '../components/modal'
 import { Pagination } from '../components/common'
-import { ROUTES, MAX_COMPARE_ITEMS } from '../utils'
+import { MAX_COMPARE_ITEMS } from '../utils'
 import styles from './TopPage.module.css'
 
 const PAGE_SIZE = 50
@@ -45,7 +45,6 @@ const getStoredPeriods = (): PerformancePeriod[] => {
 }
 
 export function TopPage() {
-  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
 
   // URLパラメータから初期状態を復元
@@ -98,7 +97,7 @@ export function TopPage() {
   const etfListRef = useRef<HTMLElement>(null)
   const isInitialMount = useRef(true)
   const { items, total, isLoading, error, search } = useETFSearch()
-  const { count, isInList, toggleCode, canAdd } = useCompareList()
+  const { isInList, toggleCode, canAdd } = useCompareList()
   const { isAuthenticated } = useAuth()
   const { isFavorite, toggleFavorite, favoriteCodes } = useFavorites()
   const [favoritesOnly, setFavoritesOnly] = useState(false)
@@ -456,18 +455,6 @@ export function TopPage() {
           onPageChange={handlePageChange}
         />
       </section>
-
-      {count > 0 && (
-        <div className={styles.compareBar}>
-          <span>{count}件の銘柄を比較リストに追加中</span>
-          <button
-            className="btn btn-primary"
-            onClick={() => navigate(ROUTES.COMPARE)}
-          >
-            比較する
-          </button>
-        </div>
-      )}
 
       <ETFDetailModal
         code={selectedCode}
