@@ -200,8 +200,8 @@ class CompareService:
             codes: List of ETF codes (max 50)
 
         Returns:
-            Dictionary mapping ETF code to its performance metrics
-            Example: {"1306": {"returns": {"1m": 2.5, ...}, "volatility": 15.2}}
+            Dictionary mapping ETF code to its performance returns
+            Example: {"1306": {"1m": 2.5, "3m": 5.0, "6m": 8.2, ...}}
         """
         from src.models import PerformanceCache
 
@@ -213,15 +213,12 @@ class CompareService:
             PerformanceCache.etf_code.in_(codes_limited)
         ).all()
 
-        # Build lookup dict: {etf_code: {"returns": {period: rate}, "volatility": val}}
+        # Build lookup dict: {etf_code: {period: rate}}
         cache_lookup = {}
         for entry in cache_entries:
             if entry.etf_code not in cache_lookup:
-                cache_lookup[entry.etf_code] = {"returns": {}, "volatility": None}
-            cache_lookup[entry.etf_code]["returns"][entry.period] = entry.return_rate
-            # ボラティリティは1y期間のレコードから取得
-            if entry.period == "1y" and entry.volatility is not None:
-                cache_lookup[entry.etf_code]["volatility"] = entry.volatility
+                cache_lookup[entry.etf_code] = {}
+            cache_lookup[entry.etf_code][entry.period] = entry.return_rate
 
         # Build result for each code (empty dict if no cache)
         for code in codes_limited:
