@@ -20,7 +20,7 @@ import {
   CHART_PERIODS,
 } from '../utils'
 import { Loading, ErrorMessage } from '../components/common'
-import { FavoriteSelectModal, ETFDetailModal } from '../components/modal'
+import { ETFListModal, ETFDetailModal } from '../components/modal'
 import { TagBadge } from '../components/etf'
 import { PriceChart, OverlayChart } from '../components/chart'
 import styles from './ComparePage.module.css'
@@ -41,6 +41,7 @@ export function ComparePage() {
   >([])
   const [isChartLoading, setIsChartLoading] = useState(false)
   const [isFavoriteModalOpen, setIsFavoriteModalOpen] = useState(false)
+  const [isListModalOpen, setIsListModalOpen] = useState(false)
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
   const initialCodesRef = useRef<string[]>(codes)
 
@@ -156,6 +157,12 @@ export function ComparePage() {
         <h1 className={styles.title}>銘柄比較</h1>
         <div className={styles.headerButtons}>
           <button
+            className="btn btn-secondary"
+            onClick={() => setIsListModalOpen(true)}
+          >
+            銘柄リスト
+          </button>
+          <button
             className="btn btn-primary"
             onClick={() => setIsFavoriteModalOpen(true)}
           >
@@ -167,9 +174,20 @@ export function ComparePage() {
         </div>
       </div>
 
-      <FavoriteSelectModal
+      <ETFListModal
+        isOpen={isListModalOpen}
+        onClose={() => setIsListModalOpen(false)}
+        mode="compare"
+        etfs={etfs}
+        onSelect={handleAddFromFavorite}
+        onRemove={handleRemove}
+        existingCodes={codes}
+      />
+
+      <ETFListModal
         isOpen={isFavoriteModalOpen}
         onClose={() => setIsFavoriteModalOpen(false)}
+        mode="favorite"
         onSelect={handleAddFromFavorite}
         onRemove={handleRemove}
         existingCodes={codes}

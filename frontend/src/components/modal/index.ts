@@ -1,6 +1,6 @@
 /** Modal components exports */
 export { ETFDetailModal } from './ETFDetailModal'
-export { FavoriteSelectModal } from './FavoriteSelectModal'
+export { ETFListModal } from './ETFListModal'
 export { LoginPromptModal } from './LoginPromptModal'
 export { TradeFormModal } from './TradeFormModal'
 export { TradeHistoryModal } from './TradeHistoryModal'

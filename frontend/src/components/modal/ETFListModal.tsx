@@ -1,34 +1,41 @@
-/** Favorite select modal component for adding favorites to compare list */
+/** ETF list modal component for displaying favorites or compare list */
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks'
 import { favoritesApi } from '../../api/favorites'
 import { getBatchPerformance } from '../../api/etf'
-import { Favorite, BatchPerformanceData } from '../../api/types'
+import { Favorite, BatchPerformanceData, ETFDetail } from '../../api/types'
 import { ROUTES } from '../../utils'
 import { Loading } from '../common'
 import { FavoriteButton } from '../favorite/FavoriteButton'
 import { CompareCheckbox } from '../actions'
-import styles from './FavoriteSelectModal.module.css'
+import styles from './ETFListModal.module.css'
 
-interface FavoriteSelectModalProps {
+interface ETFListModalProps {
   isOpen: boolean
   onClose: () => void
-  onSelect: (code: string) => void
+  mode: 'favorite' | 'compare'
+  // favoriteモード用
+  onSelect?: (code: string) => void
   onRemove?: (code: string) => void
-  existingCodes: string[]
+  existingCodes?: string[]
+  // compareモード用
+  etfs?: ETFDetail[]
 }
 
-export function FavoriteSelectModal({
+export function ETFListModal({
   isOpen,
   onClose,
+  mode,
   onSelect,
   onRemove,
-  existingCodes,
-}: FavoriteSelectModalProps) {
+  existingCodes = [],
+  etfs = [],
+}: ETFListModalProps) {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const [favorites, setFavorites] = useState<Favorite[]>([])
+  const [compareEtfs, setCompareEtfs] = useState<ETFDetail[]>([]) // compareモード用の表示リスト
   const [removedCodes, setRemovedCodes] = useState<Set<string>>(new Set())
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -54,11 +61,37 @@ export function FavoriteSelectModal({
     }
   }, [])
 
-  useEffect(() => {
-    if (isOpen && isAuthenticated) {
-      fetchFavorites()
+  // compareモード用: propsのetfsからパフォーマンスデータを取得
+  const fetchComparePerformance = useCallback(async () => {
+    if (etfs.length === 0) {
+      setPerformance({})
+      return
     }
+    setIsLoading(true)
+    try {
+      const codes = etfs.map((e) => e.code)
+      const perfData = await getBatchPerformance(codes)
+      setPerformance(perfData)
+    } catch {
+      setPerformance({})
+    } finally {
+      setIsLoading(false)
+    }
+  }, [etfs])
+
+  // お気に入り状態の取得（両モードで必要）
+  useEffect(() => {
+    if (!isOpen || !isAuthenticated) return
+    fetchFavorites()
   }, [isOpen, isAuthenticated, fetchFavorites])
+
+  // compareモード用: モーダル開いたときに表示リストをコピー＆パフォーマンス取得
+  useEffect(() => {
+    if (!isOpen || mode !== 'compare') return
+    setCompareEtfs(etfs)
+    fetchComparePerformance()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, mode])
 
   if (!isOpen) return null
 
@@ -73,20 +106,10 @@ export function FavoriteSelectModal({
   }
 
   const handleFavoriteToggle = async (code: string) => {
+    const isInFavorites = favorites.some((f) => f.etf_code === code)
     const isCurrentlyRemoved = removedCodes.has(code)
-    if (isCurrentlyRemoved) {
-      // 再度お気に入りに追加
-      try {
-        await favoritesApi.add(code)
-        setRemovedCodes((prev) => {
-          const next = new Set(prev)
-          next.delete(code)
-          return next
-        })
-      } catch {
-        // エラー時は何もしない
-      }
-    } else {
+
+    if (isInFavorites && !isCurrentlyRemoved) {
       // お気に入りから削除
       try {
         await favoritesApi.remove(code)
@@ -94,14 +117,33 @@ export function FavoriteSelectModal({
       } catch {
         // エラー時は何もしない
       }
+    } else {
+      // お気に入りに追加（復帰または新規追加）
+      try {
+        await favoritesApi.add(code)
+        if (isCurrentlyRemoved) {
+          setRemovedCodes((prev) => {
+            const next = new Set(prev)
+            next.delete(code)
+            return next
+          })
+        } else {
+          // 新規追加の場合はfavoritesを再取得
+          const data = await favoritesApi.getAll()
+          setFavorites(data)
+        }
+      } catch {
+        // エラー時は何もしない
+      }
     }
   }
 
   const handleCheckboxChange = (code: string) => {
+    // 両モード共通: トグル動作
     if (existingCodes.includes(code)) {
       onRemove?.(code)
     } else {
-      onSelect(code)
+      onSelect?.(code)
     }
   }
 
@@ -116,8 +158,8 @@ export function FavoriteSelectModal({
     return value >= 0 ? styles.positive : styles.negative
   }
 
-  // 未ログイン時はログイン促進表示
-  if (!isAuthenticated) {
+  // 未ログイン時はログイン促進表示（favoriteモードのみ）
+  if (mode === 'favorite' && !isAuthenticated) {
     return (
       <div className={styles.overlay} onClick={onClose}>
         <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -147,6 +189,27 @@ export function FavoriteSelectModal({
     )
   }
 
+  // compareモード用のデータ
+  const displayItems =
+    mode === 'compare'
+      ? compareEtfs.map((etf) => ({
+          key: etf.code,
+          code: etf.code,
+          name: etf.name,
+          category: etf.category?.name || '-',
+        }))
+      : favorites.map((fav) => ({
+          key: String(fav.id),
+          code: fav.etf_code,
+          name: fav.etf.name,
+          category: fav.etf.category || '-',
+        }))
+
+  const emptyMessage =
+    mode === 'compare' ? '比較銘柄がありません' : 'お気に入り銘柄がありません'
+  const modalTitle =
+    mode === 'compare' ? '比較銘柄リスト' : 'お気に入り銘柄'
+
   return (
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -154,51 +217,63 @@ export function FavoriteSelectModal({
           &times;
         </button>
         <div className={styles.content}>
-          <h2 className={styles.title}>お気に入り銘柄</h2>
+          <h2 className={styles.title}>{modalTitle}</h2>
 
           {isLoading && <Loading />}
 
           {error && <p className={styles.error}>{error}</p>}
 
-          {!isLoading && !error && favorites.length === 0 && (
-            <p className={styles.empty}>お気に入り銘柄がありません</p>
+          {!isLoading && !error && displayItems.length === 0 && (
+            <p className={styles.empty}>{emptyMessage}</p>
           )}
 
-          {!isLoading && !error && favorites.length > 0 && (
+          {!isLoading && !error && displayItems.length > 0 && (
             <div className={styles.tableWrapper}>
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th className={styles.favoriteCol}></th>
+                    {isAuthenticated && (
+                      <th className={styles.favoriteCol}></th>
+                    )}
                     <th>コード</th>
                     <th>銘柄名</th>
                     <th>カテゴリ</th>
                     <th className={styles.performanceCol}>1Y</th>
-                    <th className={styles.compareCol}>比較</th>
+                    <th className={styles.compareCol}>
+                      比較
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {favorites.map((fav) => {
-                    const isInList = existingCodes.includes(fav.etf_code)
-                    const isRemoved = removedCodes.has(fav.etf_code)
-                    const perf = performance[fav.etf_code]?.returns || {}
+                  {displayItems.map((item) => {
+                    const isInList = existingCodes.includes(item.code)
+                    const isRemoved = removedCodes.has(item.code)
+                    const perf = performance[item.code]?.returns || {}
+                    // お気に入り状態: favoriteモードはremovedで判定、compareモードはfavoritesリストで判定
+                    const isFavorite =
+                      mode === 'favorite'
+                        ? !isRemoved
+                        : favorites.some((f) => f.etf_code === item.code) &&
+                          !isRemoved
                     return (
                       <tr
-                        key={fav.id}
-                        className={isRemoved ? styles.removed : ''}
+                        key={item.key}
+                        className={
+                          mode === 'favorite' && isRemoved ? styles.removed : ''
+                        }
                       >
-                        <td className={styles.favoriteCol}>
-                          <FavoriteButton
-                            isFavorite={!isRemoved}
-                            onClick={() => handleFavoriteToggle(fav.etf_code)}
-                            size="sm"
-                          />
-                        </td>
-                        <td className={styles.code}>{fav.etf_code}</td>
-                        <td className={styles.name}>{fav.etf.name}</td>
-                        <td className={styles.category}>
-                          {fav.etf.category || '-'}
-                        </td>
+                        {isAuthenticated && (
+                          <td className={styles.favoriteCol}>
+                            <FavoriteButton
+                              isFavorite={isFavorite}
+                              onClick={() => handleFavoriteToggle(item.code)}
+                              size="sm"
+                            />
+                          </td>
+                        )}
+                        <td className={styles.code}>{item.code}</td>
+                        <td className={styles.name}>{item.name}</td>
+                        <td className={styles.category}>{item.category}</td>
                         <td
                           className={`${styles.performanceCol} ${getPerformanceClass(perf['1y'])}`}
                         >
@@ -207,8 +282,8 @@ export function FavoriteSelectModal({
                         <td className={styles.compareCol}>
                           <CompareCheckbox
                             isInCompare={isInList}
-                            onToggle={() => handleCheckboxChange(fav.etf_code)}
-                            disabled={isRemoved}
+                            onToggle={() => handleCheckboxChange(item.code)}
+                            disabled={mode === 'favorite' && isRemoved}
                             size="sm"
                           />
                         </td>
