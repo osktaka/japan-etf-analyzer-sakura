@@ -3,10 +3,12 @@ import {
   ETFSummary,
   PerformancePeriod,
   PerformanceReturns,
+  BatchPerformanceData,
 } from '../../api/types'
 import { SortField, SortOrder } from '../../api/etf'
 import { FavoriteButton } from '../favorite'
 import { CompareCheckbox } from '../actions'
+import type { ReturnType } from './ReturnTypeToggle'
 import styles from './ETFTableView.module.css'
 
 // Map table column keys to API sort fields
@@ -30,8 +32,9 @@ type SortDirection = 'asc' | 'desc'
 
 interface ETFTableViewProps {
   items: ETFSummary[]
-  performance: Record<string, PerformanceReturns>
+  performance: BatchPerformanceData
   selectedPeriods: PerformancePeriod[]
+  returnType?: ReturnType
   onETFClick: (code: string) => void
   isInCompare?: (code: string) => boolean
   onCompareToggle?: (code: string) => void
@@ -46,6 +49,7 @@ export function ETFTableView({
   items,
   performance,
   selectedPeriods,
+  returnType = 'price',
   onETFClick,
   isInCompare,
   onCompareToggle,
@@ -55,6 +59,12 @@ export function ETFTableView({
   sortOrder,
   onSortChange,
 }: ETFTableViewProps) {
+  // Get the appropriate returns data based on returnType
+  const getReturnsData = (code: string): PerformanceReturns => {
+    const item = performance[code]
+    if (!item) return {}
+    return returnType === 'regression' ? item.regression : item.returns
+  }
   // Derive current sort key from sortField prop
   const getCurrentSortKey = (): SortKey => {
     if (!sortField) return 'code'
@@ -196,14 +206,17 @@ export function ETFTableView({
                 <td className={styles.numeric}>
                   {etf.expense_ratio ? `${etf.expense_ratio.toFixed(2)}%` : '-'}
                 </td>
-                {selectedPeriods.map((period) => (
-                  <td
-                    key={period}
-                    className={`${styles.numeric} ${getPerformanceClass(performance[etf.code]?.[period])}`}
-                  >
-                    {formatPerformance(performance[etf.code]?.[period])}
-                  </td>
-                ))}
+                {selectedPeriods.map((period) => {
+                  const returnsData = getReturnsData(etf.code)
+                  return (
+                    <td
+                      key={period}
+                      className={`${styles.numeric} ${getPerformanceClass(returnsData[period])}`}
+                    >
+                      {formatPerformance(returnsData[period])}
+                    </td>
+                  )
+                })}
                 {onCompareToggle && (
                   <td
                     className={styles.compareCol}

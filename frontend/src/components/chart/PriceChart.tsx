@@ -8,12 +8,14 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  ReferenceLine,
 } from 'recharts'
 import { ChartDataPoint, ChartPeriod } from '../../api'
 import {
   formatPrice,
   getMovingAveragePeriods,
   calculateMovingAverage,
+  calculateRegressionLine,
   MA_COLORS,
 } from '../../utils'
 import styles from './PriceChart.module.css'
@@ -22,6 +24,7 @@ interface PriceChartProps {
   data: ChartDataPoint[]
   height?: number
   period?: ChartPeriod
+  showRegressionLine?: boolean
 }
 
 interface ChartDataWithMA extends ChartDataPoint {
@@ -35,6 +38,7 @@ export function PriceChart({
   data,
   height = 300,
   period = '1y',
+  showRegressionLine = true,
 }: PriceChartProps) {
   // Calculate moving average data
   const { chartData, maPeriods } = useMemo(() => {
@@ -55,6 +59,21 @@ export function PriceChart({
 
     return { chartData: enhancedData, maPeriods: periods }
   }, [data, period])
+
+  // Calculate regression line
+  const regressionLine = useMemo(() => {
+    if (!showRegressionLine || data.length < 2) return null
+    return calculateRegressionLine(data)
+  }, [data, showRegressionLine])
+
+  // Get start and end dates for regression line segment
+  const regressionSegment = useMemo(() => {
+    if (!regressionLine || data.length < 2) return null
+    return [
+      { x: data[0].date, y: regressionLine.startY },
+      { x: data[data.length - 1].date, y: regressionLine.endY },
+    ]
+  }, [regressionLine, data])
 
   if (data.length === 0) {
     return (
@@ -148,6 +167,14 @@ export function PriceChart({
               strokeWidth={1}
               dot={false}
               connectNulls
+            />
+          )}
+          {regressionSegment && (
+            <ReferenceLine
+              segment={regressionSegment}
+              stroke="#666"
+              strokeWidth={1}
+              strokeDasharray="5 5"
             />
           )}
         </LineChart>

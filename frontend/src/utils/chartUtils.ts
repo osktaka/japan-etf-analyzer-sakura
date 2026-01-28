@@ -81,3 +81,85 @@ export function calculateMovingAverage(
     return sum / period
   })
 }
+
+export interface RegressionLineResult {
+  startY: number
+  endY: number
+}
+
+/**
+ * Calculate linear regression line using least squares method
+ * Returns start and end Y values for the regression line
+ * Formula: y = ax + b where a = slope, b = intercept
+ */
+export function calculateRegressionLine(
+  data: { date: string; close: number }[]
+): RegressionLineResult | null {
+  const n = data.length
+  if (n < 2) return null
+
+  // Use index as x value (0, 1, 2, ...)
+  const prices = data.map((d) => d.close)
+
+  // Calculate sums for least squares
+  let sumX = 0
+  let sumY = 0
+  let sumXY = 0
+  let sumXX = 0
+
+  for (let i = 0; i < n; i++) {
+    sumX += i
+    sumY += prices[i]
+    sumXY += i * prices[i]
+    sumXX += i * i
+  }
+
+  // Calculate slope (a) and intercept (b)
+  const denominator = n * sumXX - sumX * sumX
+  if (denominator === 0) return null
+
+  const slope = (n * sumXY - sumX * sumY) / denominator
+  const intercept = (sumY - slope * sumX) / n
+
+  // Calculate Y values at start (x=0) and end (x=n-1)
+  const startY = intercept
+  const endY = slope * (n - 1) + intercept
+
+  return { startY, endY }
+}
+
+/**
+ * Calculate linear regression line for normalized (percent change) data
+ * Returns start and end Y values for the regression line
+ */
+export function calculateNormalizedRegressionLine(
+  data: NormalizedDataPoint[]
+): RegressionLineResult | null {
+  const n = data.length
+  if (n < 2) return null
+
+  const values = data.map((d) => d.percentChange)
+
+  let sumX = 0
+  let sumY = 0
+  let sumXY = 0
+  let sumXX = 0
+
+  for (let i = 0; i < n; i++) {
+    sumX += i
+    sumY += values[i]
+    sumXY += i * values[i]
+    sumXX += i * i
+  }
+
+  const denominator = n * sumXX - sumX * sumX
+  if (denominator === 0) return null
+
+  const slope = (n * sumXY - sumX * sumY) / denominator
+  const intercept = (sumY - slope * sumX) / n
+
+  const startY = intercept
+  const endY = slope * (n - 1) + intercept
+
+  return { startY, endY }
+}

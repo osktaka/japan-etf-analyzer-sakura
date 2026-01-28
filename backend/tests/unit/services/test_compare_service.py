@@ -87,3 +87,36 @@ class TestCompareServiceBatchPerformance:
         # New structure: {"returns": {...}, "volatility": ...}
         assert result["1306"]["returns"]["20y"] is None
         assert result["1306"]["volatility"] is None
+
+    def test_get_batch_performance_with_regression(self, db_session):
+        """Test getting batch performance with regression data."""
+        # Setup cache data with regression rates
+        entries = [
+            PerformanceCache(
+                etf_code="1306",
+                period="1m",
+                return_rate=4.78,
+                regression_rate=4.25,
+            ),
+            PerformanceCache(
+                etf_code="1306",
+                period="1y",
+                return_rate=35.92,
+                regression_rate=32.10,
+                volatility=15.2,
+            ),
+        ]
+        for entry in entries:
+            entry.calculated_at = datetime.utcnow()
+            db_session.add(entry)
+        db_session.commit()
+
+        service = CompareService()
+        result = service.get_batch_performance(["1306"])
+
+        # Check regression field exists and contains correct values
+        assert "regression" in result["1306"]
+        assert result["1306"]["regression"]["1m"] == 4.25
+        assert result["1306"]["regression"]["1y"] == 32.10
+        assert result["1306"]["returns"]["1m"] == 4.78
+        assert result["1306"]["volatility"] == 15.2

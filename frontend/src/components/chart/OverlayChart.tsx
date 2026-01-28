@@ -1,4 +1,5 @@
 /** Overlay comparison chart component */
+import { useMemo } from 'react'
 import {
   LineChart,
   Line,
@@ -8,9 +9,14 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  ReferenceLine,
 } from 'recharts'
 import { ChartData } from '../../api'
-import { normalizeToPercentChange, getChartColor } from '../../utils'
+import {
+  normalizeToPercentChange,
+  getChartColor,
+  calculateNormalizedRegressionLine,
+} from '../../utils'
 import styles from './OverlayChart.module.css'
 
 interface OverlayChartProps {
@@ -20,6 +26,7 @@ interface OverlayChartProps {
     data: ChartData
   }>
   height?: number
+  showRegressionLine?: boolean
 }
 
 interface MergedDataPoint {
@@ -27,41 +34,70 @@ interface MergedDataPoint {
   [key: string]: string | number
 }
 
-export function OverlayChart({ datasets, height = 400 }: OverlayChartProps) {
-  if (datasets.length === 0) {
-    return (
-      <div className={styles.empty}>
-        <p>チャートデータがありません</p>
-      </div>
-    )
-  }
-
+export function OverlayChart({
+  datasets,
+  height = 400,
+  showRegressionLine = true,
+}: OverlayChartProps) {
   // Normalize each dataset and merge by date
-  const normalizedDatasets = datasets.map((ds) => ({
-    code: ds.code,
-    name: ds.name,
-    data: normalizeToPercentChange(ds.data.data),
-  }))
+  const { normalizedDatasets, mergedData } = useMemo(() => {
+    if (datasets.length === 0) {
+      return { normalizedDatasets: [], mergedData: [] }
+    }
 
-  // Create merged data structure with all ETFs' values aligned by date
-  const dateMap = new Map<string, MergedDataPoint>()
+    const normalized = datasets.map((ds) => ({
+      code: ds.code,
+      name: ds.name,
+      data: normalizeToPercentChange(ds.data.data),
+    }))
 
-  normalizedDatasets.forEach((ds) => {
-    ds.data.forEach((point) => {
-      if (!dateMap.has(point.date)) {
-        dateMap.set(point.date, { date: point.date })
-      }
-      const entry = dateMap.get(point.date)!
-      entry[ds.code] = point.percentChange
+    // Create merged data structure with all ETFs' values aligned by date
+    const dateMap = new Map<string, MergedDataPoint>()
+
+    normalized.forEach((ds) => {
+      ds.data.forEach((point) => {
+        if (!dateMap.has(point.date)) {
+          dateMap.set(point.date, { date: point.date })
+        }
+        const entry = dateMap.get(point.date)!
+        entry[ds.code] = point.percentChange
+      })
     })
-  })
 
-  // Sort by date and convert to array
-  const mergedData = Array.from(dateMap.values()).sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-  )
+    // Sort by date and convert to array
+    const merged = Array.from(dateMap.values()).sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    )
 
-  if (mergedData.length === 0) {
+    return { normalizedDatasets: normalized, mergedData: merged }
+  }, [datasets])
+
+  // Calculate regression lines for each dataset
+  const regressionSegments = useMemo(() => {
+    if (!showRegressionLine || mergedData.length < 2) return []
+
+    return normalizedDatasets
+      .map((ds, index) => {
+        const regression = calculateNormalizedRegressionLine(ds.data)
+        if (!regression || ds.data.length < 2) return null
+
+        return {
+          code: ds.code,
+          color: getChartColor(index),
+          segment: [
+            { x: ds.data[0].date, y: regression.startY },
+            { x: ds.data[ds.data.length - 1].date, y: regression.endY },
+          ],
+        }
+      })
+      .filter(Boolean) as Array<{
+      code: string
+      color: string
+      segment: Array<{ x: string; y: number }>
+    }>
+  }, [normalizedDatasets, showRegressionLine, mergedData.length])
+
+  if (datasets.length === 0 || mergedData.length === 0) {
     return (
       <div className={styles.empty}>
         <p>チャートデータがありません</p>
@@ -113,6 +149,16 @@ export function OverlayChart({ datasets, height = 400 }: OverlayChartProps) {
               strokeWidth={2}
               dot={false}
               connectNulls
+            />
+          ))}
+          {regressionSegments.map((rs) => (
+            <ReferenceLine
+              key={`regression-${rs.code}`}
+              segment={rs.segment}
+              stroke={rs.color}
+              strokeWidth={1}
+              strokeDasharray="5 5"
+              strokeOpacity={0.6}
             />
           ))}
         </LineChart>

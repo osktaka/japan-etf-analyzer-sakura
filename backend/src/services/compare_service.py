@@ -193,6 +193,66 @@ class CompareService:
         else:
             return "20y"
 
+    def _calculate_regression_return(self, code: str, days: int) -> Optional[float]:
+        """Calculate regression-based return for a given period.
+
+        Uses least squares method to fit a linear regression line (y = ax + b)
+        and calculates the return based on the regression line endpoints.
+
+        Args:
+            code: ETF code
+            days: Number of days to look back
+
+        Returns:
+            Regression return percentage or None if data unavailable
+        """
+        period = self._days_to_period(days)
+        result = self.chart_service.get_chart_data(code, period)
+
+        if not result or not result.get("data"):
+            return None
+
+        chart_data = result["data"]
+        if len(chart_data) < 2:
+            return None
+
+        # Extract close prices
+        prices = []
+        for point in chart_data:
+            close = point.get("close")
+            if close is not None:
+                prices.append(close)
+
+        if len(prices) < 2:
+            return None
+
+        n = len(prices)
+        # x values: 0, 1, 2, ..., n-1
+        # Least squares: y = ax + b
+        # a = (n * sum(xy) - sum(x) * sum(y)) / (n * sum(x^2) - sum(x)^2)
+        # b = (sum(y) - a * sum(x)) / n
+
+        sum_x = sum(range(n))  # 0 + 1 + ... + (n-1) = n*(n-1)/2
+        sum_y = sum(prices)
+        sum_xy = sum(i * prices[i] for i in range(n))
+        sum_x2 = sum(i * i for i in range(n))  # 0^2 + 1^2 + ... + (n-1)^2
+
+        denominator = n * sum_x2 - sum_x * sum_x
+        if denominator == 0:
+            return None
+
+        a = (n * sum_xy - sum_x * sum_y) / denominator
+        b = (sum_y - a * sum_x) / n
+
+        # Regression line: start at x=0, end at x=n-1
+        start_value = b  # y = a*0 + b = b
+        end_value = a * (n - 1) + b  # y = a*(n-1) + b
+
+        if start_value == 0:
+            return None
+
+        return ((end_value - start_value) / start_value) * 100
+
     def get_batch_performance(self, codes: List[str]) -> Dict[str, Dict]:
         """Get performance metrics for multiple ETFs from cache.
 
@@ -200,8 +260,9 @@ class CompareService:
             codes: List of ETF codes (max 50)
 
         Returns:
-            Dictionary mapping ETF code to its performance returns
-            Example: {"1306": {"1m": 2.5, "3m": 5.0, "6m": 8.2, ...}}
+            Dictionary mapping ETF code to its performance metrics
+            Example: {"1306": {"returns": {"1m": 2.5, ...}, "volatility": 15.2,
+                               "regression": {"1m": 2.3, ...}}}
         """
         from src.models import PerformanceCache
 
@@ -213,12 +274,22 @@ class CompareService:
             PerformanceCache.etf_code.in_(codes_limited)
         ).all()
 
-        # Build lookup dict: {etf_code: {period: rate}}
-        cache_lookup = {}
+        # Build lookup dict: {etf_code: {period: {return_rate, volatility, regression}}}
+        cache_lookup: Dict[str, Dict] = {}
         for entry in cache_entries:
             if entry.etf_code not in cache_lookup:
-                cache_lookup[entry.etf_code] = {}
-            cache_lookup[entry.etf_code][entry.period] = entry.return_rate
+                cache_lookup[entry.etf_code] = {
+                    "returns": {},
+                    "regression": {},
+                    "volatility": None,
+                }
+            cache_lookup[entry.etf_code]["returns"][entry.period] = entry.return_rate
+            cache_lookup[entry.etf_code]["regression"][
+                entry.period
+            ] = entry.regression_rate
+            # volatility is stored once per code (typically in 1y period)
+            if entry.volatility is not None:
+                cache_lookup[entry.etf_code]["volatility"] = entry.volatility
 
         # Build result for each code (empty dict if no cache)
         for code in codes_limited:

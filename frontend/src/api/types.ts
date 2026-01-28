@@ -205,7 +205,12 @@ export type PerformanceReturns = Partial<
   Record<PerformancePeriod, number | null>
 >
 
-export type BatchPerformanceData = Record<string, PerformanceReturns>
+export interface BatchPerformanceItem {
+  returns: PerformanceReturns
+  regression: PerformanceReturns
+}
+
+export type BatchPerformanceData = Record<string, BatchPerformanceItem>
 
 export interface ETFWithPerformance extends ETFSummary {
   performance?: PerformanceReturns

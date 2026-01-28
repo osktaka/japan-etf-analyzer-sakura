@@ -256,6 +256,69 @@ def calculate_volatility_from_df(df, days: int = 365) -> Optional[float]:
     return round(annualized, 2)
 
 
+def calculate_regression_return_from_df(df, days: int) -> Optional[float]:
+    """Calculate regression-based return rate from a DataFrame.
+
+    Uses least squares method to fit a linear regression line (y = ax + b)
+    and calculates the return based on the regression line endpoints.
+
+    Args:
+        df: DataFrame with price data (requires 'Close' column)
+        days: Number of days for the period
+
+    Returns:
+        Regression return percentage or None if insufficient data
+    """
+    if df.empty or len(df) < 2:
+        return None
+
+    # 必要な日数分のデータがあるか（50%以上で許容）
+    if len(df) < days * 0.5:
+        return None
+
+    # 指定日数分の範囲を取得（最新から遡って）
+    df_period = df.tail(min(days, len(df)))
+    if len(df_period) < 2:
+        return None
+
+    # 終値を抽出
+    closes = df_period["Close"].dropna()
+    prices = []
+    for close in closes:
+        if close is not None and not math.isnan(close):
+            prices.append(close)
+
+    if len(prices) < 2:
+        return None
+
+    n = len(prices)
+    # x values: 0, 1, 2, ..., n-1
+    # Least squares: y = ax + b
+    # a = (n * sum(xy) - sum(x) * sum(y)) / (n * sum(x^2) - sum(x)^2)
+    # b = (sum(y) - a * sum(x)) / n
+
+    sum_x = sum(range(n))  # 0 + 1 + ... + (n-1) = n*(n-1)/2
+    sum_y = sum(prices)
+    sum_xy = sum(i * prices[i] for i in range(n))
+    sum_x2 = sum(i * i for i in range(n))  # 0^2 + 1^2 + ... + (n-1)^2
+
+    denominator = n * sum_x2 - sum_x * sum_x
+    if denominator == 0:
+        return None
+
+    a = (n * sum_xy - sum_x * sum_y) / denominator
+    b = (sum_y - a * sum_x) / n
+
+    # Regression line: start at x=0, end at x=n-1
+    start_value = b  # y = a*0 + b = b
+    end_value = a * (n - 1) + b  # y = a*(n-1) + b
+
+    if start_value == 0:
+        return None
+
+    return round(((end_value - start_value) / start_value) * 100, 2)
+
+
 def update_performance_cache(codes: list) -> tuple:
     """Update performance cache for given ETF codes.
 
@@ -289,9 +352,10 @@ def update_performance_cache(codes: list) -> tuple:
             # ボラティリティを計算（1年データから）
             volatility = calculate_volatility_from_df(df, 365)
 
-            # 各期間の上昇率を計算
+            # 各期間の上昇率と回帰上昇率を計算
             for period_id, days in PERIODS.items():
                 return_rate = calculate_return_from_df(df, days)
+                regression_rate = calculate_regression_return_from_df(df, days)
 
                 # DBに保存（UPSERT）
                 existing = PerformanceCache.query.filter_by(
@@ -303,6 +367,7 @@ def update_performance_cache(codes: list) -> tuple:
 
                 if existing:
                     existing.return_rate = return_rate
+                    existing.regression_rate = regression_rate
                     existing.volatility = vol_value
                     existing.calculated_at = datetime.utcnow()
                 else:
@@ -310,6 +375,7 @@ def update_performance_cache(codes: list) -> tuple:
                         etf_code=code,
                         period=period_id,
                         return_rate=return_rate,
+                        regression_rate=regression_rate,
                         volatility=vol_value,
                         calculated_at=datetime.utcnow(),
                     )

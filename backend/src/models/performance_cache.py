@@ -16,6 +16,7 @@ class PerformanceCache(db.Model):
     )  # '1m','3m','6m','1y','3y','5y','10y','20y'
     return_rate = db.Column(db.Float, nullable=True)
     volatility = db.Column(db.Float, nullable=True)  # 年率ボラティリティ（1y期間のみ）
+    regression_rate = db.Column(db.Float, nullable=True)  # 回帰上昇率
     calculated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     __table_args__ = (
@@ -29,6 +30,7 @@ class PerformanceCache(db.Model):
             "period": self.period,
             "return_rate": self.return_rate,
             "volatility": self.volatility,
+            "regression_rate": self.regression_rate,
             "calculated_at": self.calculated_at.isoformat()
             if self.calculated_at
             else None,

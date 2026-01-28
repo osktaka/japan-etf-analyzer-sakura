@@ -9,15 +9,16 @@ import {
   ETFTableView,
   ViewModeToggle,
   PeriodSelector,
+  ReturnTypeToggle,
 } from '../components/search'
-import type { ViewMode } from '../components/search'
+import type { ViewMode, ReturnType } from '../components/search'
 import {
   SearchParams,
   SortField,
   SortOrder,
   getBatchPerformance,
-  BatchPerformanceData,
   PerformancePeriod,
+  BatchPerformanceData,
 } from '../api'
 import { RecommendSection } from '../components/recommend'
 import { ETFDetailModal, LoginPromptModal } from '../components/modal'
@@ -27,6 +28,7 @@ import styles from './TopPage.module.css'
 
 const PAGE_SIZE = 50
 const PERIODS_STORAGE_KEY = 'etf-table-view-periods'
+const RETURN_TYPE_STORAGE_KEY = 'etf-return-type'
 
 // ローカルストレージから表示期間を復元
 const getStoredPeriods = (): PerformancePeriod[] => {
@@ -42,6 +44,19 @@ const getStoredPeriods = (): PerformancePeriod[] => {
     // パースエラー時はデフォルト値を返す
   }
   return ['6m', '1y', '3y']
+}
+
+// ローカルストレージから上昇率タイプを復元
+const getStoredReturnType = (): ReturnType => {
+  try {
+    const stored = localStorage.getItem(RETURN_TYPE_STORAGE_KEY)
+    if (stored === 'price' || stored === 'regression') {
+      return stored
+    }
+  } catch {
+    // エラー時はデフォルト値を返す
+  }
+  return 'price'
 }
 
 export function TopPage() {
@@ -73,6 +88,7 @@ export function TopPage() {
   const [performance, setPerformance] = useState<BatchPerformanceData>({})
   const [selectedPeriods, setSelectedPeriods] =
     useState<PerformancePeriod[]>(getStoredPeriods)
+  const [returnType, setReturnType] = useState<ReturnType>(getStoredReturnType)
 
   // おすすめタブの状態
   const [recommendTab, setRecommendTab] = useState(
@@ -106,7 +122,9 @@ export function TopPage() {
   useEffect(() => {
     if (viewMode === 'table' && items.length > 0) {
       const codes = items.map((item) => item.code)
-      getBatchPerformance(codes).then(setPerformance)
+      getBatchPerformance(codes).then((data) => {
+        setPerformance(data)
+      })
     }
   }, [viewMode, items])
 
@@ -114,6 +132,11 @@ export function TopPage() {
   useEffect(() => {
     localStorage.setItem(PERIODS_STORAGE_KEY, JSON.stringify(selectedPeriods))
   }, [selectedPeriods])
+
+  // 上昇率タイプをローカルストレージに保存
+  useEffect(() => {
+    localStorage.setItem(RETURN_TYPE_STORAGE_KEY, returnType)
+  }, [returnType])
 
   // URLパラメータ更新ヘルパー
   const updateURL = useCallback(
@@ -412,10 +435,16 @@ export function TopPage() {
                 onSortChange={handleSortChange}
               />
             ) : (
-              <PeriodSelector
-                selectedPeriods={selectedPeriods}
-                onChange={setSelectedPeriods}
-              />
+              <>
+                <ReturnTypeToggle
+                  returnType={returnType}
+                  onChange={setReturnType}
+                />
+                <PeriodSelector
+                  selectedPeriods={selectedPeriods}
+                  onChange={setSelectedPeriods}
+                />
+              </>
             )}
             <ViewModeToggle mode={viewMode} onChange={handleViewModeChange} />
           </div>
@@ -439,6 +468,7 @@ export function TopPage() {
             items={items}
             performance={performance}
             selectedPeriods={selectedPeriods}
+            returnType={returnType}
             onETFClick={setSelectedCode}
             isInCompare={isInList}
             onCompareToggle={handleCompareToggle}
