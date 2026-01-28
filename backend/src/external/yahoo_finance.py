@@ -44,19 +44,40 @@ class YahooFinanceClient:
         if _is_mock_mode():
             return YahooFinanceClient._generate_mock_data(code, days)
 
-        # 本番モード: yfinanceでデータ取得
+        # 本番モード: DBキャッシュ優先
+        # 1. DBキャッシュを確認（当日データがあればキャッシュ有効）
+        cached = YahooFinanceClient._get_from_cache(code, days)
+        if cached and YahooFinanceClient._is_cache_valid(cached):
+            logger.info(f"Using cached data for {code}")
+            return cached
+
+        # 2. キャッシュがない/古い場合はyfinanceから取得
         try:
             return YahooFinanceClient._fetch_from_yfinance(code, days)
         except Exception as e:
             logger.warning(f"yfinance fetch failed for {code}: {e}")
-            # DBキャッシュからフォールバック
-            cached = YahooFinanceClient._get_from_cache(code, days)
+            # 3. yfinance失敗時、古いキャッシュがあればそれを使う
             if cached:
-                logger.info(f"Using cached data for {code}")
+                logger.info(f"Using stale cached data for {code}")
                 return cached
-            # キャッシュもない場合はモックデータ
+            # 4. キャッシュもない場合はモックデータ
             logger.warning(f"No cache available for {code}, using mock")
             return YahooFinanceClient._generate_mock_data(code, days)
+
+    @staticmethod
+    def _is_cache_valid(cached: List[Dict]) -> bool:
+        """Check if cached data is valid.
+
+        キャッシュデータが存在すれば常に有効として扱う。
+        DB更新は別途バッチ処理(update_etf_data.py)で行う。
+
+        Args:
+            cached: List of cached price data
+
+        Returns:
+            True if cache data exists
+        """
+        return bool(cached)
 
     @staticmethod
     def _fetch_from_yfinance(code: str, days: int) -> List[Dict]:

@@ -9,6 +9,7 @@ import {
   PerformanceComparison,
   getPerformanceComparison,
   getETFChart,
+  getETFsChartBatch,
 } from '../api'
 import { useCompareList, useChartData } from '../hooks'
 import {
@@ -109,6 +110,7 @@ export function ComparePage() {
   const etfCodesKey = useMemo(() => etfs.map((e) => e.code).join(','), [etfs])
 
   // Fetch chart data for overlay mode (period変更時のみ再取得)
+  // Uses batch API to fetch all ETFs in a single request
   useEffect(() => {
     const fetchChartData = async () => {
       if (etfs.length === 0) {
@@ -116,19 +118,20 @@ export function ComparePage() {
         return
       }
       setIsChartLoading(true)
-      const currentEtfs = etfs
-      const results = await Promise.all(
-        currentEtfs.map(async (etf) => {
-          const data = await getETFChart(etf.code, chartPeriod)
-          return data ? { code: etf.code, name: etf.name, data } : null
+      const codes = etfs.map((etf) => etf.code)
+      const batchResult = await getETFsChartBatch(codes, chartPeriod)
+      const datasets = etfs
+        .map((etf) => {
+          const chartData = batchResult[etf.code]
+          return chartData
+            ? { code: etf.code, name: etf.name, data: chartData }
+            : null
         })
-      )
-      setChartDatasets(
-        results.filter(
+        .filter(
           (r): r is { code: string; name: string; data: ChartData } =>
             r !== null
         )
-      )
+      setChartDatasets(datasets)
       setIsChartLoading(false)
     }
     fetchChartData()

@@ -1,6 +1,6 @@
-/** Hook for fetching multiple period chart data in parallel */
+/** Hook for fetching multiple period chart data with batch API */
 import { useState, useEffect, useCallback } from 'react'
-import { getETFChart, ChartData, ChartPeriod } from '../api'
+import { getETFChartBatchPeriods, ChartData, ChartPeriod } from '../api'
 
 const MULTI_PERIODS: ChartPeriod[] = ['3m', '6m', '1y', '3y', '5y', '10y']
 
@@ -38,14 +38,23 @@ export function useMultiPeriodChartData(code: string | null) {
 
     setState((prev) => ({ ...prev, isLoading: true, error: null }))
     try {
-      const results = await Promise.all(
-        MULTI_PERIODS.map((period) => getETFChart(code, period))
-      )
+      // Single batch API call instead of 6 parallel calls
+      const batchResult = await getETFChartBatchPeriods(code, MULTI_PERIODS)
 
       const newData: MultiPeriodChartData = { ...initialData }
-      MULTI_PERIODS.forEach((period, index) => {
-        newData[period] = results[index]
-      })
+      if (batchResult) {
+        MULTI_PERIODS.forEach((period) => {
+          const chartPoints = batchResult.charts[period]
+          if (chartPoints) {
+            newData[period] = {
+              code: batchResult.code,
+              name: batchResult.name,
+              period,
+              data: chartPoints,
+            }
+          }
+        })
+      }
 
       setState({ data: newData, isLoading: false, error: null })
     } catch (err) {

@@ -221,3 +221,15 @@ export type BatchPerformanceData = Record<string, BatchPerformanceItem>
 export interface ETFWithPerformance extends ETFSummary {
   performance?: PerformanceReturns
 }
+
+/** Batch chart API types */
+
+/** Single ETF, multiple periods response */
+export interface BatchPeriodsChartData {
+  code: string
+  name: string
+  charts: Partial<Record<ChartPeriod, ChartDataPoint[]>>
+}
+
+/** Multiple ETFs, single period response */
+export type BatchCodesChartData = Record<string, ChartData>

@@ -2,7 +2,9 @@
 import apiClient from './client'
 import {
   ApiResponse,
+  BatchCodesChartData,
   BatchPerformanceData,
+  BatchPeriodsChartData,
   Category,
   ChartData,
   ChartPeriod,
@@ -113,6 +115,44 @@ export async function getBatchPerformance(
   try {
     const response = await apiClient.get<ApiResponse<BatchPerformanceData>>(
       `/etfs/performance/batch?codes=${codes.join(',')}`
+    )
+    return response.data.data
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * Get chart data for a single ETF across multiple periods (batch).
+ * Reduces N API calls to 1 call for multi-period chart display.
+ */
+export async function getETFChartBatchPeriods(
+  code: string,
+  periods: ChartPeriod[]
+): Promise<BatchPeriodsChartData | null> {
+  if (!code || periods.length === 0) return null
+  try {
+    const response = await apiClient.get<ApiResponse<BatchPeriodsChartData>>(
+      `/etfs/${code}/chart/batch?periods=${periods.join(',')}`
+    )
+    return response.data.data
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Get chart data for multiple ETFs with a single period (batch).
+ * Reduces N API calls to 1 call for comparison chart display.
+ */
+export async function getETFsChartBatch(
+  codes: string[],
+  period: ChartPeriod = '1y'
+): Promise<BatchCodesChartData> {
+  if (codes.length === 0) return {}
+  try {
+    const response = await apiClient.get<ApiResponse<BatchCodesChartData>>(
+      `/etfs/chart/batch?codes=${codes.join(',')}&period=${period}`
     )
     return response.data.data
   } catch {

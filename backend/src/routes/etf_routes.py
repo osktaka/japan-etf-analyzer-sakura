@@ -177,4 +177,79 @@ def create_etf_bp():
 
         return api_response(data=result)
 
+    @bp.route("/<code>/chart/batch", methods=["GET"])
+    def get_etf_chart_batch(code: str):
+        """Get chart data for a single ETF across multiple periods.
+
+        GET /api/v1/etfs/{code}/chart/batch
+
+        Args:
+            code: ETF code (4 digits)
+
+        Query Parameters:
+            periods: Comma-separated periods (e.g., 3m,6m,1y,3y,5y,10y)
+
+        Returns:
+            Chart data for all requested periods or 404 error
+        """
+        is_valid, error = validate_etf_code(code)
+        if not is_valid:
+            return error_response(error, 400)
+
+        periods_param = request.args.get("periods", "")
+        if not periods_param:
+            return error_response("periods parameter is required", 400)
+
+        periods = [p.strip() for p in periods_param.split(",") if p.strip()]
+        if not periods:
+            return error_response("At least one valid period is required", 400)
+
+        if len(periods) > 10:
+            return error_response("Maximum 10 periods allowed", 400)
+
+        service = ChartService()
+        chart_data = service.get_batch_periods_chart_data(code, periods)
+
+        if not chart_data:
+            return error_response("ETF not found", 404)
+
+        return api_response(data=chart_data)
+
+    @bp.route("/chart/batch", methods=["GET"])
+    def get_etfs_chart_batch():
+        """Get chart data for multiple ETFs with a single period.
+
+        GET /api/v1/etfs/chart/batch
+
+        Query Parameters:
+            codes: Comma-separated ETF codes (max 50)
+            period: Time period (1m, 3m, 6m, 1y, 3y, 5y, 10y, 20y). Default: 1y
+
+        Returns:
+            Chart data for each requested ETF
+        """
+        codes_param = request.args.get("codes", "")
+        if not codes_param:
+            return error_response("codes parameter is required", 400)
+
+        codes = [c.strip() for c in codes_param.split(",") if c.strip()]
+        if not codes:
+            return error_response("At least one valid code is required", 400)
+
+        if len(codes) > 50:
+            return error_response("Maximum 50 codes allowed", 400)
+
+        # Validate each code
+        for code in codes:
+            is_valid, error = validate_etf_code(code)
+            if not is_valid:
+                return error_response(f"Invalid code '{code}': {error}", 400)
+
+        period = request.args.get("period", "1y")
+
+        service = ChartService()
+        result = service.get_batch_codes_chart_data(codes, period)
+
+        return api_response(data=result)
+
     return bp
