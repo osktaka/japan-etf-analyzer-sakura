@@ -34,6 +34,7 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
+logging.getLogger('yfinance').setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 ETF_MASTER_PATH = Path(__file__).parent.parent / "src" / "data" / "etf_master.json"
