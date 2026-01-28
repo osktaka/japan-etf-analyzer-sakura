@@ -3,9 +3,10 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks'
 import { tradesApi } from '../../api/trades'
-import { Trade, UpdateTradeRequest, TradeFilterOptions } from '../../api/types'
+import { Trade, TradeFilterOptions } from '../../api/types'
 import { ROUTES } from '../../utils'
 import { TradeList } from '../trade/TradeList'
+import { TradeFormModal } from './TradeFormModal'
 import styles from './TradeHistoryModal.module.css'
 
 interface TradeHistoryModalProps {
@@ -19,6 +20,7 @@ export function TradeHistoryModal({ isOpen, onClose }: TradeHistoryModalProps) {
   const [trades, setTrades] = useState<Trade[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [editingTrade, setEditingTrade] = useState<Trade | null>(null)
 
   // Filter states
   const [search, setSearch] = useState('')
@@ -62,20 +64,17 @@ export function TradeHistoryModal({ isOpen, onClose }: TradeHistoryModalProps) {
       setEndDate('')
       setTrades([])
       setError(null)
+      setEditingTrade(null)
     }
   }, [isOpen])
 
-  const handleUpdate = async (
-    id: number,
-    data: UpdateTradeRequest
-  ): Promise<boolean> => {
-    try {
-      await tradesApi.update(id, data)
-      await fetchTrades()
-      return true
-    } catch {
-      return false
-    }
+  const handleEdit = (trade: Trade) => {
+    setEditingTrade(trade)
+  }
+
+  const handleEditSuccess = () => {
+    fetchTrades()
+    setEditingTrade(null)
   }
 
   const handleDelete = async (id: number): Promise<boolean> => {
@@ -122,9 +121,6 @@ export function TradeHistoryModal({ isOpen, onClose }: TradeHistoryModalProps) {
                 新規登録
               </button>
             </div>
-            <button className={styles.closeLink} onClick={onClose}>
-              閉じる
-            </button>
           </div>
         </div>
       </div>
@@ -132,29 +128,29 @@ export function TradeHistoryModal({ isOpen, onClose }: TradeHistoryModalProps) {
   }
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div
-        className={styles.modal}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button className={styles.closeBtn} onClick={onClose}>
-          &times;
-        </button>
-        <div className={styles.content}>
-          <h2 className={styles.title}>取引履歴</h2>
+    <>
+      <div className={styles.overlay} onClick={onClose}>
+        <div
+          className={styles.modal}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button className={styles.closeBtn} onClick={onClose}>
+            &times;
+          </button>
+          <div className={styles.content}>
+            <h2 className={styles.title}>取引履歴</h2>
 
-          <div className={styles.filters}>
-            <div className={styles.filterGroup}>
-              <label className={styles.filterLabel}>銘柄検索</label>
-              <input
-                type="text"
-                className={styles.filterInput}
-                placeholder="銘柄コード・名前で検索"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            <div className={styles.filterRow}>
+            <div className={styles.filters}>
+              <div className={styles.filterGroup}>
+                <label className={styles.filterLabel}>銘柄検索</label>
+                <input
+                  type="text"
+                  className={styles.filterInput}
+                  placeholder="銘柄コード・名前で検索"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
               <div className={styles.filterGroup}>
                 <label className={styles.filterLabel}>開始日</label>
                 <input
@@ -174,24 +170,28 @@ export function TradeHistoryModal({ isOpen, onClose }: TradeHistoryModalProps) {
                 />
               </div>
             </div>
-          </div>
 
-          <div className={styles.listContainer}>
-            <TradeList
-              trades={trades}
-              isLoading={isLoading}
-              error={error}
-              onUpdate={handleUpdate}
-              onDelete={handleDelete}
-              showEtfInfo={true}
-            />
+            <div className={styles.listContainer}>
+              <TradeList
+                trades={trades}
+                isLoading={isLoading}
+                error={error}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                showEtfInfo={true}
+              />
+            </div>
           </div>
-
-          <button className={styles.closeLink} onClick={onClose}>
-            閉じる
-          </button>
         </div>
       </div>
-    </div>
+
+      <TradeFormModal
+        isOpen={editingTrade !== null}
+        onClose={() => setEditingTrade(null)}
+        onSuccess={handleEditSuccess}
+        trade={editingTrade ?? undefined}
+        isEdit={true}
+      />
+    </>
   )
 }

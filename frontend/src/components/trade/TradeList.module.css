@@ -1,10 +1,4 @@
-/** Trade list styles */
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
+/** Trade list table styles */
 .loading,
 .error,
 .empty {
@@ -19,24 +13,85 @@
   border-radius: 8px;
 }
 
-.item {
-  background: white;
-  border-radius: 8px;
-  padding: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+.tableContainer {
+  overflow-x: auto;
 }
 
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
 }
 
-.headerLeft {
+.table thead {
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.table th {
+  padding: 0.75rem 0.5rem;
+  text-align: left;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.table td {
+  padding: 0.75rem 0.5rem;
+  vertical-align: middle;
+}
+
+.numericHeader {
+  text-align: right;
+}
+
+.numericCell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dateCell {
+  white-space: nowrap;
+  color: #475569;
+}
+
+.dateContent {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.date {
+  font-size: 0.875rem;
+}
+
+.etfCell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.code {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.name {
+  font-size: 0.75rem;
+  color: #64748b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
 }
 
 .type {
@@ -45,6 +100,7 @@
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .buy {
@@ -57,20 +113,8 @@
   color: #991b1b;
 }
 
-.etfInfo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.code {
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.name {
-  font-size: 0.875rem;
-  color: #64748b;
+.actionsCell {
+  white-space: nowrap;
 }
 
 .actions {
@@ -113,47 +157,70 @@
   cursor: not-allowed;
 }
 
-.details {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
-  padding: 0.75rem;
-  background: #f8fafc;
-  border-radius: 4px;
-}
-
+/* Responsive: カード表示に切り替え */
 @media (max-width: 640px) {
-  .details {
-    grid-template-columns: repeat(2, 1fr);
+  .table,
+  .table thead,
+  .table tbody,
+  .table th,
+  .table tr,
+  .table td {
+    display: block;
   }
-}
 
-.detail {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
+  .table thead {
+    display: none;
+  }
 
-.label {
-  font-size: 0.75rem;
-  color: #64748b;
-}
+  .table tbody tr {
+    background: white;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: none;
+  }
 
-.value {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #1e293b;
-}
+  .table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.375rem 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
 
-.memo {
-  margin-top: 0.75rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid #e2e8f0;
-}
+  .table td:last-child {
+    border-bottom: none;
+    padding-top: 0.75rem;
+  }
 
-.memo p {
-  margin: 0.25rem 0 0;
-  font-size: 0.875rem;
-  color: #475569;
-  white-space: pre-wrap;
+  .table td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #64748b;
+    font-size: 0.75rem;
+  }
+
+  .numericCell {
+    text-align: left;
+  }
+
+  .etfCell {
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .name {
+    max-width: 150px;
+  }
+
+  .actions {
+    justify-content: flex-end;
+    width: 100%;
+  }
+
+  .actionsCell::before {
+    display: none;
+  }
 }

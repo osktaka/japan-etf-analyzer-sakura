@@ -44,3 +44,10 @@
 .content {
   margin-top: var(--spacing-md);
 }
+
+.title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--spacing-md);
+}
