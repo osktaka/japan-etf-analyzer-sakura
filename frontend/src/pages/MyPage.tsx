@@ -30,6 +30,7 @@ export function MyPage() {
   const [selectedETFCode, setSelectedETFCode] = useState<string | null>(null)
   const [showTradeFormModal, setShowTradeFormModal] = useState(false)
   const [showTradeHistoryModal, setShowTradeHistoryModal] = useState(false)
+  const [tradeHistoryCode, setTradeHistoryCode] = useState<string>('')
 
   const handleCardClick = (etf: ETFSummary) => {
     setSelectedETF(etf)
@@ -46,6 +47,16 @@ export function MyPage() {
 
   const handleTradeSuccess = () => {
     refreshPortfolio()
+  }
+
+  const handleHistoryClick = (code: string) => {
+    setTradeHistoryCode(code)
+    setShowTradeHistoryModal(true)
+  }
+
+  const handleCloseTradeHistory = () => {
+    setShowTradeHistoryModal(false)
+    setTradeHistoryCode('')
   }
 
   return (
@@ -83,6 +94,9 @@ export function MyPage() {
           isLoading={portfolioLoading}
           error={portfolioError}
           onETFClick={handleHoldingClick}
+          onHistoryClick={handleHistoryClick}
+          isInCompare={isInCompare}
+          onCompareToggle={toggleCompare}
         />
       </section>
 
@@ -141,7 +155,8 @@ export function MyPage() {
 
       <TradeHistoryModal
         isOpen={showTradeHistoryModal}
-        onClose={() => setShowTradeHistoryModal(false)}
+        onClose={handleCloseTradeHistory}
+        initialSearch={tradeHistoryCode}
       />
     </div>
   )

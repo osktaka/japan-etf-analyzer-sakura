@@ -12,9 +12,10 @@ import styles from './TradeHistoryModal.module.css'
 interface TradeHistoryModalProps {
   isOpen: boolean
   onClose: () => void
+  initialSearch?: string
 }
 
-export function TradeHistoryModal({ isOpen, onClose }: TradeHistoryModalProps) {
+export function TradeHistoryModal({ isOpen, onClose, initialSearch = '' }: TradeHistoryModalProps) {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const [trades, setTrades] = useState<Trade[]>([])
@@ -24,7 +25,7 @@ export function TradeHistoryModal({ isOpen, onClose }: TradeHistoryModalProps) {
   const [isAddFormOpen, setIsAddFormOpen] = useState(false)
 
   // Filter states
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState(initialSearch)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
 
@@ -57,10 +58,11 @@ export function TradeHistoryModal({ isOpen, onClose }: TradeHistoryModalProps) {
     }
   }, [isOpen, isAuthenticated, fetchTrades])
 
-  // Reset filters when modal closes
+  // Initialize search when modal opens, reset when closes
   useEffect(() => {
-    if (!isOpen) {
-      setSearch('')
+    if (isOpen) {
+      setSearch(initialSearch)
+    } else {
       setStartDate('')
       setEndDate('')
       setTrades([])
@@ -68,7 +70,7 @@ export function TradeHistoryModal({ isOpen, onClose }: TradeHistoryModalProps) {
       setEditingTrade(null)
       setIsAddFormOpen(false)
     }
-  }, [isOpen])
+  }, [isOpen, initialSearch])
 
   const handleEdit = (trade: Trade) => {
     setEditingTrade(trade)

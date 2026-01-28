@@ -49,6 +49,24 @@
   background: #f8fafc;
 }
 
+.row {
+  cursor: pointer;
+}
+
+.row:hover {
+  background-color: #f1f5f9;
+}
+
+.center {
+  text-align: center;
+}
+
+.etfInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
 .table tbody tr:last-child td {
   border-bottom: none;
 }
@@ -103,6 +121,26 @@
 
 .negative {
   color: #dc2626;
+}
+
+.historyBtn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+.historyBtn:hover:not(:disabled) {
+  background: #e2e8f0;
+}
+
+.historyBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
