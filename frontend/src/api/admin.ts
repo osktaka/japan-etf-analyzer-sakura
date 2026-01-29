@@ -15,6 +15,7 @@ export interface BatchLog {
 export interface StockSplit {
   id: number
   etf_code: string
+  etf_name?: string | null
   split_date: string
   ratio: number
   is_applied: boolean

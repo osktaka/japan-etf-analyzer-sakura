@@ -1,20 +1,36 @@
 /** Admin page component */
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { adminApi, BatchLog, StockSplit } from '../api/admin'
 import { User } from '../api/types'
+import { ETFDetailModal } from '../components/modal/ETFDetailModal'
 import styles from './AdminPage.module.css'
 
 type Tab = 'system' | 'users' | 'splits'
+type SortKey = 'detected_at' | 'etf_code' | 'etf_name' | 'split_date' | 'change_percent'
+type SortOrder = 'asc' | 'desc'
 
 export function AdminPage() {
   const { user: currentUser } = useAuth()
-  const [activeTab, setActiveTab] = useState<Tab>('system')
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  // URLからタブ状態を取得、なければ'system'
+  const initialTab = (searchParams.get('tab') as Tab) || 'system'
+  const [activeTab, setActiveTab] = useState<Tab>(initialTab)
+
   const [batchLogs, setBatchLogs] = useState<BatchLog[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [stockSplits, setStockSplits] = useState<StockSplit[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // ソート状態
+  const [sortKey, setSortKey] = useState<SortKey>('detected_at')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
+
+  // モーダル用の選択銘柄コード
+  const [selectedCode, setSelectedCode] = useState<string | null>(null)
 
   const loadBatchLogs = useCallback(async () => {
     try {
@@ -39,16 +55,74 @@ export function AdminPage() {
   const loadStockSplits = useCallback(async () => {
     try {
       const data = await adminApi.getStockSplits()
-      // 検出日時の降順でソート
-      const sortedData = data.sort((a, b) => {
-        return new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime()
-      })
-      setStockSplits(sortedData)
+      setStockSplits(data)
     } catch (err) {
       console.error('Failed to load stock splits:', err)
       setError('株式分割一覧の取得に失敗しました')
     }
   }, [])
+
+  // タブ変更時にURLも更新
+  const handleTabChange = useCallback((tab: Tab) => {
+    setActiveTab(tab)
+    setSearchParams({ tab })
+  }, [setSearchParams])
+
+  // ソートヘッダークリックのハンドラ
+  const handleSortClick = useCallback((key: SortKey) => {
+    if (sortKey === key) {
+      // 同じキーの場合は順序をトグル
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      // 新しいキーの場合はそのキーで降順ソート
+      setSortKey(key)
+      setSortOrder('desc')
+    }
+  }, [sortKey])
+
+  // ソート済みの株式分割データ
+  const sortedStockSplits = useMemo(() => {
+    const sorted = [...stockSplits]
+    sorted.sort((a, b) => {
+      let aVal: string | number | null = null
+      let bVal: string | number | null = null
+
+      switch (sortKey) {
+        case 'detected_at':
+          aVal = new Date(a.detected_at).getTime()
+          bVal = new Date(b.detected_at).getTime()
+          break
+        case 'etf_code':
+          aVal = a.etf_code
+          bVal = b.etf_code
+          break
+        case 'etf_name':
+          aVal = a.etf_name || ''
+          bVal = b.etf_name || ''
+          break
+        case 'split_date':
+          aVal = a.split_date
+          bVal = b.split_date
+          break
+        case 'change_percent':
+          aVal = a.change_percent ?? -Infinity
+          bVal = b.change_percent ?? -Infinity
+          break
+      }
+
+      if (aVal === null || bVal === null) return 0
+      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1
+      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1
+      return 0
+    })
+    return sorted
+  }, [stockSplits, sortKey, sortOrder])
+
+  // ソートインジケータの取得
+  const getSortIndicator = (key: SortKey): string => {
+    if (sortKey !== key) return ''
+    return sortOrder === 'asc' ? ' ▲' : ' ▼'
+  }
 
   useEffect(() => {
     const loadData = async () => {
@@ -271,20 +345,51 @@ export function AdminPage() {
       <table className={styles.table}>
         <thead>
           <tr>
-            <th>検出日時</th>
-            <th>銘柄コード</th>
-            <th>分割日</th>
-            <th>変動率</th>
+            <th
+              className={styles.sortable}
+              onClick={() => handleSortClick('detected_at')}
+            >
+              検出日時{getSortIndicator('detected_at')}
+            </th>
+            <th
+              className={styles.sortable}
+              onClick={() => handleSortClick('etf_code')}
+            >
+              銘柄コード{getSortIndicator('etf_code')}
+            </th>
+            <th
+              className={styles.sortable}
+              onClick={() => handleSortClick('etf_name')}
+            >
+              銘柄名{getSortIndicator('etf_name')}
+            </th>
+            <th
+              className={styles.sortable}
+              onClick={() => handleSortClick('split_date')}
+            >
+              分割日{getSortIndicator('split_date')}
+            </th>
+            <th
+              className={styles.sortable}
+              onClick={() => handleSortClick('change_percent')}
+            >
+              変動率{getSortIndicator('change_percent')}
+            </th>
             <th>分割比率</th>
             <th>ポートフォリオ適用</th>
             <th>チャート適用</th>
           </tr>
         </thead>
         <tbody>
-          {stockSplits.map((split) => (
-            <tr key={split.id}>
+          {sortedStockSplits.map((split) => (
+            <tr
+              key={split.id}
+              className={styles.clickableRow}
+              onClick={() => setSelectedCode(split.etf_code)}
+            >
               <td>{formatDateTime(split.detected_at)}</td>
               <td>{split.etf_code}</td>
+              <td>{split.etf_name || '-'}</td>
               <td>{split.split_date}</td>
               <td>
                 {split.change_percent !== null
@@ -293,7 +398,10 @@ export function AdminPage() {
               </td>
               <td>{split.ratio.toFixed(2)}</td>
               <td>
-                <label className={styles.toggle}>
+                <label
+                  className={styles.toggle}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <input
                     type="checkbox"
                     checked={split.is_applied}
@@ -305,7 +413,10 @@ export function AdminPage() {
                 </label>
               </td>
               <td>
-                <label className={styles.toggle}>
+                <label
+                  className={styles.toggle}
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <input
                     type="checkbox"
                     checked={split.is_chart_applied}
@@ -332,19 +443,19 @@ export function AdminPage() {
       <div className={styles.tabs}>
         <button
           className={`${styles.tab} ${activeTab === 'system' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('system')}
+          onClick={() => handleTabChange('system')}
         >
           システム状態
         </button>
         <button
           className={`${styles.tab} ${activeTab === 'users' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('users')}
+          onClick={() => handleTabChange('users')}
         >
           ユーザー管理
         </button>
         <button
           className={`${styles.tab} ${activeTab === 'splits' ? styles.tabActive : ''}`}
-          onClick={() => setActiveTab('splits')}
+          onClick={() => handleTabChange('splits')}
         >
           株式分割
         </button>
@@ -364,6 +475,12 @@ export function AdminPage() {
             ? renderUsersTab()
             : renderSplitsTab()}
       </section>
+
+      {/* ETF詳細モーダル */}
+      <ETFDetailModal
+        code={selectedCode}
+        onClose={() => setSelectedCode(null)}
+      />
     </div>
   )
 }

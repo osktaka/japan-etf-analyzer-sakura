@@ -2,7 +2,7 @@
 from flask import Blueprint, request
 from flask_login import current_user, login_required
 
-from src.models import User, db
+from src.models import StockSplit, User, db
 from src.repositories.batch_log_repository import BatchLogRepository
 from src.repositories.stock_split_repository import StockSplitRepository
 from src.utils import api_response, error_response
@@ -96,10 +96,24 @@ def create_admin_bp():
         GET /api/v1/admin/stock-splits
 
         Returns:
-            List of stock splits
+            List of stock splits with ETF names
         """
-        splits = stock_split_repo.get_all()
-        return api_response(data=[split.to_dict() for split in splits])
+        from src.models import ETF
+
+        # Get all splits with ETF names via LEFT JOIN
+        splits_with_names = (
+            db.session.query(StockSplit, ETF.name)
+            .outerjoin(ETF, StockSplit.etf_code == ETF.code)
+            .all()
+        )
+
+        result = []
+        for split, etf_name in splits_with_names:
+            split_dict = split.to_dict()
+            split_dict["etf_name"] = etf_name
+            result.append(split_dict)
+
+        return api_response(data=result)
 
     @bp.route("/stock-splits/<int:split_id>", methods=["PATCH"])
     @login_required
@@ -116,9 +130,11 @@ def create_admin_bp():
             }
 
         Returns:
-            Updated stock split data
+            Updated stock split data with ETF name
         """
         from datetime import datetime
+
+        from src.models import ETF
 
         data = request.get_json()
 
@@ -144,8 +160,16 @@ def create_admin_bp():
         split.reviewed_by = current_user.id
         db.session.commit()
 
+        # Get ETF name via JOIN
+        etf_name = (
+            db.session.query(ETF.name).filter(ETF.code == split.etf_code).scalar()
+        )
+
+        split_dict = split.to_dict()
+        split_dict["etf_name"] = etf_name
+
         return api_response(
-            data=split.to_dict(),
+            data=split_dict,
             message="株式分割の設定を更新しました",
         )
 
