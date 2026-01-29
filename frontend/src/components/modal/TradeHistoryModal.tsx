@@ -33,13 +33,15 @@ export function TradeHistoryModal({
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
 
-  const fetchTrades = useCallback(async () => {
+  const fetchTrades = useCallback(async (searchOverride?: string) => {
     setIsLoading(true)
     setError(null)
     try {
       const options: TradeFilterOptions = {}
-      if (search.trim()) {
-        options.search = search.trim()
+      // searchOverride is used when opening modal to avoid state update delay
+      const currentSearch = searchOverride !== undefined ? searchOverride : search
+      if (currentSearch.trim()) {
+        options.search = currentSearch.trim()
       }
       if (startDate) {
         options.startDate = startDate
@@ -56,17 +58,23 @@ export function TradeHistoryModal({
     }
   }, [search, startDate, endDate])
 
+  // Fetch trades when modal opens, using initialSearch directly
   useEffect(() => {
     if (isOpen && isAuthenticated) {
-      fetchTrades()
+      fetchTrades(initialSearch)
     }
-  }, [isOpen, isAuthenticated, fetchTrades])
+  }, [isOpen, isAuthenticated, initialSearch, startDate, endDate, fetchTrades])
 
-  // Initialize search when modal opens, reset when closes
+  // Initialize search when modal opens
   useEffect(() => {
     if (isOpen) {
       setSearch(initialSearch)
-    } else {
+    }
+  }, [isOpen, initialSearch])
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
       setStartDate('')
       setEndDate('')
       setTrades([])
@@ -74,7 +82,7 @@ export function TradeHistoryModal({
       setEditingTrade(null)
       setIsAddFormOpen(false)
     }
-  }, [isOpen, initialSearch])
+  }, [isOpen])
 
   const handleEdit = (trade: Trade) => {
     setEditingTrade(trade)
