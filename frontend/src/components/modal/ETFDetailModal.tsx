@@ -94,6 +94,10 @@ export function ETFDetailModal({
               )}
             </div>
 
+            {data.description && (
+              <p className={styles.description}>{data.description}</p>
+            )}
+
             <div className={styles.metrics}>
               <div className={styles.metric}>
                 <span className={styles.label}>市場価格</span>
@@ -130,10 +134,6 @@ export function ETFDetailModal({
                 </span>
               </div>
             </div>
-
-            {data.description && (
-              <p className={styles.description}>{data.description}</p>
-            )}
 
             <div className={styles.chart}>
               <MultiPeriodChart code={data.code} />

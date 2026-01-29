@@ -113,6 +113,7 @@
 }
 
 .description {
+  font-size: var(--text-sm);
   color: var(--color-text-secondary);
   line-height: 1.6;
   margin-bottom: var(--spacing-lg);
