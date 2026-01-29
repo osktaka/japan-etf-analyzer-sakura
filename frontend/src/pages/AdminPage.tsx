@@ -8,7 +8,12 @@ import { ETFDetailModal } from '../components/modal/ETFDetailModal'
 import styles from './AdminPage.module.css'
 
 type Tab = 'system' | 'users' | 'splits'
-type SortKey = 'detected_at' | 'etf_code' | 'etf_name' | 'split_date' | 'change_percent'
+type SortKey =
+  | 'detected_at'
+  | 'etf_code'
+  | 'etf_name'
+  | 'split_date'
+  | 'change_percent'
 type SortOrder = 'asc' | 'desc'
 
 export function AdminPage() {
@@ -31,6 +36,12 @@ export function AdminPage() {
 
   // モーダル用の選択銘柄コード
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
+
+  // 再計算処理中の管理
+  const [recalculatingIds, setRecalculatingIds] = useState<Set<number>>(
+    new Set()
+  )
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   const loadBatchLogs = useCallback(async () => {
     try {
@@ -63,22 +74,28 @@ export function AdminPage() {
   }, [])
 
   // タブ変更時にURLも更新
-  const handleTabChange = useCallback((tab: Tab) => {
-    setActiveTab(tab)
-    setSearchParams({ tab })
-  }, [setSearchParams])
+  const handleTabChange = useCallback(
+    (tab: Tab) => {
+      setActiveTab(tab)
+      setSearchParams({ tab })
+    },
+    [setSearchParams]
+  )
 
   // ソートヘッダークリックのハンドラ
-  const handleSortClick = useCallback((key: SortKey) => {
-    if (sortKey === key) {
-      // 同じキーの場合は順序をトグル
-      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
-    } else {
-      // 新しいキーの場合はそのキーで降順ソート
-      setSortKey(key)
-      setSortOrder('desc')
-    }
-  }, [sortKey])
+  const handleSortClick = useCallback(
+    (key: SortKey) => {
+      if (sortKey === key) {
+        // 同じキーの場合は順序をトグル
+        setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+      } else {
+        // 新しいキーの場合はそのキーで降順ソート
+        setSortKey(key)
+        setSortOrder('desc')
+      }
+    },
+    [sortKey]
+  )
 
   // ソート済みの株式分割データ
   const sortedStockSplits = useMemo(() => {
@@ -150,10 +167,7 @@ export function AdminPage() {
     }
   }
 
-  const handleToggleApplied = async (
-    splitId: number,
-    isApplied: boolean
-  ) => {
+  const handleToggleApplied = async (splitId: number, isApplied: boolean) => {
     try {
       const updatedSplit = await adminApi.toggleStockSplitApplied(
         splitId,
@@ -183,6 +197,37 @@ export function AdminPage() {
     } catch (err) {
       console.error('Failed to toggle stock split chart applied status:', err)
       setError('株式分割の更新に失敗しました')
+    }
+  }
+
+  const handleRecalculate = async (splitId: number) => {
+    try {
+      setRecalculatingIds((prev) => new Set(prev).add(splitId))
+      const result = await adminApi.recalculatePerformanceCache(splitId)
+
+      // Update stockSplits state to reflect needs_recalculation = false
+      setStockSplits((prev) =>
+        prev.map((split) =>
+          split.id === splitId
+            ? { ...split, needs_recalculation: false }
+            : split
+        )
+      )
+
+      setToastMessage(
+        `ETF ${result.etf_code} のパフォーマンスキャッシュを再計算しました（${result.updated_periods.length}期間）`
+      )
+      setTimeout(() => setToastMessage(null), 3000)
+    } catch (err) {
+      console.error('Failed to recalculate performance cache:', err)
+      setToastMessage('再計算に失敗しました')
+      setTimeout(() => setToastMessage(null), 3000)
+    } finally {
+      setRecalculatingIds((prev) => {
+        const newSet = new Set(prev)
+        newSet.delete(splitId)
+        return newSet
+      })
     }
   }
 
@@ -378,6 +423,7 @@ export function AdminPage() {
             <th>分割比率</th>
             <th>ポートフォリオ適用</th>
             <th>チャート適用</th>
+            <th>再計算</th>
           </tr>
         </thead>
         <tbody>
@@ -427,6 +473,21 @@ export function AdminPage() {
                   <span className={styles.toggleSlider} />
                 </label>
               </td>
+              <td onClick={(e) => e.stopPropagation()}>
+                <button
+                  className={styles.recalculateButton}
+                  onClick={() => handleRecalculate(split.id)}
+                  disabled={
+                    recalculatingIds.has(split.id) || !split.needs_recalculation
+                  }
+                >
+                  {recalculatingIds.has(split.id)
+                    ? '処理中...'
+                    : split.needs_recalculation
+                      ? '実行'
+                      : '済み'}
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
@@ -436,6 +497,9 @@ export function AdminPage() {
 
   return (
     <div className={styles.container}>
+      {/* Toast notification */}
+      {toastMessage && <div className={styles.toast}>{toastMessage}</div>}
+
       <div className={styles.header}>
         <h1 className={styles.title}>管理画面</h1>
       </div>

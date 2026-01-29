@@ -96,9 +96,9 @@ def create_admin_bp():
         GET /api/v1/admin/stock-splits
 
         Returns:
-            List of stock splits with ETF names
+            List of stock splits with ETF names and needs_recalculation flag
         """
-        from src.models import ETF
+        from src.models import ETF, PerformanceCache
 
         # Get all splits with ETF names via LEFT JOIN
         splits_with_names = (
@@ -111,6 +111,26 @@ def create_admin_bp():
         for split, etf_name in splits_with_names:
             split_dict = split.to_dict()
             split_dict["etf_name"] = etf_name
+
+            # Calculate needs_recalculation flag
+            # Needed if chart is applied AND (no cache exists OR cache is older than review)
+            needs_recalculation = False
+            if split.is_chart_applied:
+                # Check if any performance cache exists for this ETF
+                cache_exists = (
+                    db.session.query(PerformanceCache)
+                    .filter(PerformanceCache.etf_code == split.etf_code)
+                    .first()
+                )
+
+                if not cache_exists:
+                    # No cache at all
+                    needs_recalculation = True
+                elif split.reviewed_at and cache_exists.calculated_at:
+                    # Cache exists but is older than review
+                    needs_recalculation = cache_exists.calculated_at < split.reviewed_at
+
+            split_dict["needs_recalculation"] = needs_recalculation
             result.append(split_dict)
 
         return api_response(data=result)
@@ -172,5 +192,39 @@ def create_admin_bp():
             data=split_dict,
             message="株式分割の設定を更新しました",
         )
+
+    @bp.route("/stock-splits/<int:split_id>/recalculate", methods=["POST"])
+    @login_required
+    @admin_required
+    def recalculate_performance_cache(split_id: int):
+        """Recalculate performance cache for an ETF with split adjustments.
+
+        POST /api/v1/admin/stock-splits/<split_id>/recalculate
+
+        Returns:
+            Result with etf_code and updated_periods
+        """
+        from src.services.performance_cache_service import PerformanceCacheService
+
+        split = stock_split_repo.get_by_id(split_id)
+        if not split:
+            return error_response("株式分割が見つかりません", 404)
+
+        try:
+            service = PerformanceCacheService()
+            result = service.recalculate_for_split(split_id)
+
+            if not result:
+                return error_response(
+                    "パフォーマンスキャッシュの再計算に失敗しました", 500
+                )
+
+            return api_response(
+                data=result,
+                message=f"ETF {result['etf_code']} のパフォーマンスキャッシュを再計算しました",
+            )
+
+        except Exception as e:
+            return error_response(f"再計算中にエラーが発生しました: {str(e)}", 500)
 
     return bp

@@ -26,8 +26,14 @@ export interface StockSplit {
   previous_close: number | null
   current_close: number | null
   change_percent: number | null
+  needs_recalculation?: boolean
   created_at: string
   updated_at: string
+}
+
+export interface RecalculateResponse {
+  etf_code: string
+  updated_periods: string[]
 }
 
 export const adminApi = {
@@ -75,6 +81,15 @@ export const adminApi = {
     const response = await apiClient.patch<ApiResponse<StockSplit>>(
       `/admin/stock-splits/${splitId}`,
       { is_chart_applied: isChartApplied }
+    )
+    return response.data.data
+  },
+
+  async recalculatePerformanceCache(
+    splitId: number
+  ): Promise<RecalculateResponse> {
+    const response = await apiClient.post<ApiResponse<RecalculateResponse>>(
+      `/admin/stock-splits/${splitId}/recalculate`
     )
     return response.data.data
   },
