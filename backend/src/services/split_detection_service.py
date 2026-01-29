@@ -83,7 +83,7 @@ class SplitDetectionService:
                 etf_code=etf_code,
                 split_date=latest_split_date,
                 ratio=split_ratio,
-                status="pending",
+                is_applied=False,
                 detected_at=datetime.utcnow(),
                 previous_close=previous_close,
                 current_close=current_close,

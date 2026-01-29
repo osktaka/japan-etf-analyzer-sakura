@@ -17,7 +17,7 @@ export interface StockSplit {
   etf_code: string
   split_date: string
   ratio: number
-  status: 'pending' | 'approved' | 'rejected'
+  is_applied: boolean
   detected_at: string
   reviewed_at: string | null
   reviewed_by: number | null
@@ -48,22 +48,20 @@ export const adminApi = {
     return response.data.data
   },
 
-  async getStockSplits(status?: string): Promise<StockSplit[]> {
-    const params = status ? { status } : {}
+  async getStockSplits(): Promise<StockSplit[]> {
     const response = await apiClient.get<ApiResponse<StockSplit[]>>(
-      '/admin/stock-splits',
-      { params }
+      '/admin/stock-splits'
     )
     return response.data.data
   },
 
-  async updateStockSplitStatus(
+  async toggleStockSplitApplied(
     splitId: number,
-    status: 'approved' | 'rejected'
+    isApplied: boolean
   ): Promise<StockSplit> {
     const response = await apiClient.patch<ApiResponse<StockSplit>>(
       `/admin/stock-splits/${splitId}`,
-      { status }
+      { is_applied: isApplied }
     )
     return response.data.data
   },

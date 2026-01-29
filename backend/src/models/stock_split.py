@@ -14,7 +14,7 @@ class StockSplit(db.Model, TimestampMixin):
     etf_code = db.Column(db.String(10), nullable=False, index=True)
     split_date = db.Column(db.Date, nullable=False, index=True)
     ratio = db.Column(db.Float, nullable=False)
-    status = db.Column(db.String(20), nullable=False, default="pending", index=True)
+    is_applied = db.Column(db.Boolean, nullable=False, default=False, index=True)
     detected_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     reviewed_at = db.Column(db.DateTime, nullable=True)
     reviewed_by = db.Column(db.Integer, nullable=True)
@@ -33,7 +33,7 @@ class StockSplit(db.Model, TimestampMixin):
             "etf_code": self.etf_code,
             "split_date": self.split_date.isoformat() if self.split_date else None,
             "ratio": self.ratio,
-            "status": self.status,
+            "is_applied": self.is_applied,
             "detected_at": (
                 self.detected_at.isoformat() + "Z" if self.detected_at else None
             ),

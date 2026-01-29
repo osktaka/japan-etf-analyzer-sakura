@@ -207,8 +207,13 @@
     opacity 0.2s;
 }
 
-.button:hover {
+.button:hover:not(:disabled) {
   opacity: 0.8;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .buttonSuccess {

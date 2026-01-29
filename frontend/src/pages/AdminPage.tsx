@@ -76,17 +76,20 @@ export function AdminPage() {
     }
   }
 
-  const handleSplitStatusUpdate = async (
+  const handleToggleApplied = async (
     splitId: number,
-    status: 'approved' | 'rejected'
+    isApplied: boolean
   ) => {
     try {
-      const updatedSplit = await adminApi.updateStockSplitStatus(splitId, status)
+      const updatedSplit = await adminApi.toggleStockSplitApplied(
+        splitId,
+        isApplied
+      )
       setStockSplits((prev) =>
         prev.map((split) => (split.id === splitId ? updatedSplit : split))
       )
     } catch (err) {
-      console.error('Failed to update stock split status:', err)
+      console.error('Failed to toggle stock split applied status:', err)
       setError('株式分割の更新に失敗しました')
     }
   }
@@ -255,8 +258,7 @@ export function AdminPage() {
             <th>分割日</th>
             <th>変動率</th>
             <th>分割比率</th>
-            <th>状態</th>
-            <th>操作</th>
+            <th>適用</th>
           </tr>
         </thead>
         <tbody>
@@ -272,39 +274,16 @@ export function AdminPage() {
               </td>
               <td>{split.ratio.toFixed(2)}</td>
               <td>
-                <span
-                  className={`${styles.badge} ${
-                    split.status === 'pending'
-                      ? styles.badgeRunning
-                      : split.status === 'approved'
-                        ? styles.badgeSuccess
-                        : styles.badgeFailed
-                  }`}
-                >
-                  {split.status === 'pending'
-                    ? '承認待ち'
-                    : split.status === 'approved'
-                      ? '承認済み'
-                      : '却下'}
-                </span>
-              </td>
-              <td>
-                <div className={styles.buttonGroup}>
-                  <button
-                    className={`${styles.button} ${styles.buttonSuccess}`}
-                    onClick={() => handleSplitStatusUpdate(split.id, 'approved')}
-                    disabled={split.status === 'approved'}
-                  >
-                    承認
-                  </button>
-                  <button
-                    className={`${styles.button} ${styles.buttonDanger}`}
-                    onClick={() => handleSplitStatusUpdate(split.id, 'rejected')}
-                    disabled={split.status === 'rejected'}
-                  >
-                    却下
-                  </button>
-                </div>
+                <label className={styles.toggle}>
+                  <input
+                    type="checkbox"
+                    checked={split.is_applied}
+                    onChange={(e) =>
+                      handleToggleApplied(split.id, e.target.checked)
+                    }
+                  />
+                  <span className={styles.toggleSlider} />
+                </label>
               </td>
             </tr>
           ))}
