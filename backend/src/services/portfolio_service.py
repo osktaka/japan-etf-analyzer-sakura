@@ -39,56 +39,52 @@ class PortfolioService:
         """
         trades = self.trade_repository.get_by_user_id(user_id)
 
-        # Group trades by ETF code and store earliest trade date
+        # Group trades by ETF code and accumulate adjusted quantities
         holdings_data: Dict[str, Dict] = {}
 
         for trade in trades:
             code = trade.etf_code
             if code not in holdings_data:
                 holdings_data[code] = {
-                    "buy_quantity": 0,
-                    "buy_amount": Decimal("0"),
-                    "sell_quantity": 0,
-                    "sell_amount": Decimal("0"),
-                    "earliest_trade_date": trade.trade_date,
+                    "adjusted_buy_quantity": 0.0,
+                    "adjusted_sell_quantity": 0.0,
+                    "original_buy_amount": Decimal("0"),
                 }
-            else:
-                # Track earliest trade date for split adjustment
-                if trade.trade_date < holdings_data[code]["earliest_trade_date"]:
-                    holdings_data[code]["earliest_trade_date"] = trade.trade_date
+
+            # Calculate split adjustment factor from this trade's date to now
+            adjustment_factor = self.split_adjustment_service.get_adjustment_factor(
+                code, trade.trade_date
+            )
+
+            # Apply adjustment to this trade's quantity
+            adjusted_quantity = trade.quantity * adjustment_factor
 
             if trade.trade_type == "buy":
-                holdings_data[code]["buy_quantity"] += trade.quantity
-                holdings_data[code]["buy_amount"] += trade.total_amount
+                holdings_data[code]["adjusted_buy_quantity"] += adjusted_quantity
+                holdings_data[code]["original_buy_amount"] += trade.total_amount
             else:
-                holdings_data[code]["sell_quantity"] += trade.quantity
-                holdings_data[code]["sell_amount"] += trade.total_amount
+                holdings_data[code]["adjusted_sell_quantity"] += adjusted_quantity
 
         # Calculate holdings
         result = []
         for code, data in holdings_data.items():
-            held_quantity = data["buy_quantity"] - data["sell_quantity"]
-
-            if held_quantity <= 0:
-                continue
-
-            # Calculate split adjustment factor from earliest trade date
-            adjustment_factor = self.split_adjustment_service.get_adjustment_factor(
-                code, data["earliest_trade_date"]
+            adjusted_quantity = (
+                data["adjusted_buy_quantity"] - data["adjusted_sell_quantity"]
             )
 
-            # Calculate average cost (FIFO approximation using total avg)
-            if data["buy_quantity"] > 0:
-                avg_cost = float(data["buy_amount"] / data["buy_quantity"])
+            if adjusted_quantity <= 0:
+                continue
+
+            # Calculate average cost based on adjusted quantity
+            if data["adjusted_buy_quantity"] > 0:
+                adjusted_avg_cost = (
+                    float(data["original_buy_amount"]) / data["adjusted_buy_quantity"]
+                )
             else:
-                avg_cost = 0
+                adjusted_avg_cost = 0
 
-            # Apply split adjustment
-            adjusted_avg_cost = avg_cost / adjustment_factor
-            adjusted_quantity = held_quantity * adjustment_factor
-
-            # Total cost remains the same (original investment amount)
-            total_cost = avg_cost * held_quantity
+            # Total cost is the cost of currently held shares (excludes sold shares)
+            total_cost = adjusted_avg_cost * adjusted_quantity
 
             # Get ETF info and current price
             etf = self.etf_repository.get_by_code(code)
