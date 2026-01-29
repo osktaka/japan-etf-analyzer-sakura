@@ -22,7 +22,7 @@ import math
 import os
 import sys
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -39,30 +39,33 @@ logger = logging.getLogger(__name__)
 
 ETF_MASTER_PATH = Path(__file__).parent.parent / "src" / "data" / "etf_master.json"
 RATE_LIMIT_SECONDS = 1.0  # Yahoo Finance API rate limit対策
+JST = timezone(timedelta(hours=9))  # Japan Standard Time
 
 
-def get_etf_price_status(code: str) -> Tuple[bool, Optional[datetime]]:
-    """Check if ETF has existing price data and get the latest date.
+def get_etf_price_status(code: str) -> Tuple[bool, Optional[datetime], Optional[datetime]]:
+    """Check if ETF has existing price data and get the latest date and update time.
 
     Args:
         code: ETF code (e.g., "1306")
 
     Returns:
-        Tuple of (has_data, latest_date)
+        Tuple of (has_data, latest_date, updated_at)
         - has_data: True if ETF has any price history
         - latest_date: The most recent date in price history, or None if no data
+        - updated_at: The updated_at timestamp of the latest record, or None if no data
     """
     from sqlalchemy import func
 
     from src.models import PriceHistory
 
-    result = (
+    latest_record = (
         PriceHistory.query.filter_by(etf_code=code)
-        .with_entities(func.max(PriceHistory.date))
+        .order_by(PriceHistory.date.desc())
         .first()
     )
-    latest_date = result[0] if result else None
-    return (latest_date is not None, latest_date)
+    if latest_record:
+        return (True, latest_record.date, latest_record.updated_at)
+    return (False, None, None)
 
 
 def load_etf_list() -> list:
@@ -98,7 +101,7 @@ def update_single_etf(
     smart_status = None
     if smart and not dry_run:
         smart_status = get_etf_price_status(code)
-        has_data, latest_date = smart_status
+        has_data, latest_date, updated_at = smart_status
         if not has_data:
             logger.info(f"[SMART] {code}: New ETF - fetching full history")
             full = True
@@ -124,10 +127,27 @@ def update_single_etf(
 
         # Smart mode with existing data: use start date for incremental fetch
         if smart and not full and smart_status:
-            has_data, latest_date = smart_status
+            has_data, latest_date, updated_at = smart_status
             if has_data and latest_date:
-                # Fetch from the day after the latest date
-                start_date = latest_date + timedelta(days=1)
+                # Check if re-fetch is needed based on cutoff time (15:30 JST)
+                now_jst = datetime.now(JST)
+                today_jst = now_jst.date()
+                cutoff_time = time(15, 30)
+
+                # Convert updated_at (UTC) to JST for comparison
+                if updated_at:
+                    updated_at_jst = updated_at.replace(tzinfo=timezone.utc).astimezone(JST)
+                    updated_time_jst = updated_at_jst.time()
+                else:
+                    updated_time_jst = None
+
+                if latest_date == today_jst and updated_time_jst and updated_time_jst < cutoff_time:
+                    # Today's data updated before 15:30 JST - re-fetch from latest date
+                    start_date = latest_date
+                    logger.info(f"[SMART] {code}: Re-fetching today's data (updated at {updated_at_jst.strftime('%H:%M:%S')} JST)")
+                else:
+                    # Either not today, or already updated after 15:30 - fetch next day onwards
+                    start_date = latest_date + timedelta(days=1)
                 df = stock.history(start=start_date.strftime("%Y-%m-%d"))
                 if df.empty:
                     logger.info(f"{code}: No new data since {latest_date}")
