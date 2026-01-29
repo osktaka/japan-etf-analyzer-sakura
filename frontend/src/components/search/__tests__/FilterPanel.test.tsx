@@ -109,11 +109,7 @@ describe('FilterPanel', () => {
 
   it('保有中ボタンが表示される', async () => {
     render(
-      <FilterPanel
-        onFilter={vi.fn()}
-        onSearch={vi.fn()}
-        holdingsCount={5}
-      />
+      <FilterPanel onFilter={vi.fn()} onSearch={vi.fn()} holdingsCount={5} />
     )
 
     await waitFor(() => {

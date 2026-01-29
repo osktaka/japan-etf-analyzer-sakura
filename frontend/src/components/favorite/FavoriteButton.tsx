@@ -29,7 +29,13 @@ export function FavoriteButton({
       onClick={handleClick}
       disabled={disabled}
       aria-label={isFavorite ? 'お気に入りから削除' : 'お気に入りに追加'}
-      title={isHolding ? '保有中' : isFavorite ? 'お気に入りから削除' : 'お気に入りに追加'}
+      title={
+        isHolding
+          ? '保有中'
+          : isFavorite
+            ? 'お気に入りから削除'
+            : 'お気に入りに追加'
+      }
     >
       <svg
         className={styles.icon}

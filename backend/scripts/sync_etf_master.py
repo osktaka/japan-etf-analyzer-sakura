@@ -7,9 +7,9 @@ from sqlalchemy import text
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.app import create_app
-from src.models import db
-from src.repositories import CategoryRepository, ETFRepository
+from src.app import create_app  # noqa: E402
+from src.models import db  # noqa: E402
+from src.repositories import CategoryRepository, ETFRepository  # noqa: E402
 
 
 def ensure_columns():

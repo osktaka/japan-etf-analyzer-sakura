@@ -11,7 +11,13 @@ import {
   getETFChart,
   getETFsChartBatch,
 } from '../api'
-import { useCompareList, useChartData, useFavorites, useAuth, usePortfolio } from '../hooks'
+import {
+  useCompareList,
+  useChartData,
+  useFavorites,
+  useAuth,
+  usePortfolio,
+} from '../hooks'
 import {
   formatPrice,
   formatPercent,
@@ -20,7 +26,11 @@ import {
   CHART_PERIODS,
 } from '../utils'
 import { Loading, ErrorMessage } from '../components/common'
-import { ETFListModal, ETFDetailModal, LoginPromptModal } from '../components/modal'
+import {
+  ETFListModal,
+  ETFDetailModal,
+  LoginPromptModal,
+} from '../components/modal'
 import { TagBadge } from '../components/etf'
 import { FavoriteButton } from '../components/favorite'
 import { PriceChart, OverlayChart } from '../components/chart'

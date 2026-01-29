@@ -37,7 +37,10 @@ export function CompareFloatingButton() {
 
   // sessionStorageに除外リストを保存
   useEffect(() => {
-    sessionStorage.setItem(EXCLUDED_STORAGE_KEY, JSON.stringify([...excludedCodes]))
+    sessionStorage.setItem(
+      EXCLUDED_STORAGE_KEY,
+      JSON.stringify([...excludedCodes])
+    )
   }, [excludedCodes])
 
   // 有効件数の計算
@@ -158,7 +161,9 @@ export function CompareFloatingButton() {
               {etfList.map((etf) => (
                 <li key={etf.code} className={styles.tooltipItem}>
                   {/* お気に入りアイコン */}
-                  <span className={`${styles.favoriteIcon} ${holdingCodes.has(etf.code) ? styles.holding : ''}`}>
+                  <span
+                    className={`${styles.favoriteIcon} ${holdingCodes.has(etf.code) ? styles.holding : ''}`}
+                  >
                     {isFavorite(etf.code) ? (
                       <svg
                         viewBox="0 0 24 24"

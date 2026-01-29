@@ -50,7 +50,11 @@ export function MultiPeriodChart({ code }: MultiPeriodChartProps) {
               <div className={styles.periodLabel}>{getPeriodLabel(period)}</div>
               {chartData && dataLength > 0 ? (
                 <div className={overlayStyles.chartWrapper}>
-                  <PriceChart data={chartData.data} height={200} period={period} />
+                  <PriceChart
+                    data={chartData.data}
+                    height={200}
+                    period={period}
+                  />
                   {!sufficiency.isSufficient && (
                     <ChartOverlay
                       actualPeriodLabel={sufficiency.actualPeriodLabel}

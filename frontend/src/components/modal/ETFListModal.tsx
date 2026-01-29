@@ -215,8 +215,7 @@ export function ETFListModal({
 
   const emptyMessage =
     mode === 'compare' ? '比較銘柄がありません' : 'お気に入り銘柄がありません'
-  const modalTitle =
-    mode === 'compare' ? '比較銘柄リスト' : 'お気に入り銘柄'
+  const modalTitle = mode === 'compare' ? '比較銘柄リスト' : 'お気に入り銘柄'
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -247,9 +246,7 @@ export function ETFListModal({
                     <th>銘柄名</th>
                     <th>カテゴリ</th>
                     <th className={styles.performanceCol}>1Y</th>
-                    <th className={styles.compareCol}>
-                      比較
-                    </th>
+                    <th className={styles.compareCol}>比較</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -316,7 +313,9 @@ export function ETFListModal({
         <ETFDetailModal
           code={selectedCode}
           onClose={() => setSelectedCode(null)}
-          isInCompare={selectedCode ? existingCodes.includes(selectedCode) : false}
+          isInCompare={
+            selectedCode ? existingCodes.includes(selectedCode) : false
+          }
           onCompareToggle={() => {
             if (selectedCode) {
               handleCheckboxChange(selectedCode)

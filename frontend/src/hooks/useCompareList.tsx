@@ -1,5 +1,12 @@
 /** Context for managing compare list with sessionStorage */
-import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  ReactNode,
+} from 'react'
 import { MAX_COMPARE_ITEMS } from '../utils'
 
 interface CompareContextType {
@@ -69,9 +76,12 @@ export function CompareProvider({ children }: { children: ReactNode }) {
     canAdd: codes.length < MAX_COMPARE_ITEMS,
   }
 
-  return <CompareContext.Provider value={value}>{children}</CompareContext.Provider>
+  return (
+    <CompareContext.Provider value={value}>{children}</CompareContext.Provider>
+  )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useCompareList() {
   const context = useContext(CompareContext)
   if (!context) {

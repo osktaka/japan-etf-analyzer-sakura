@@ -72,7 +72,10 @@ export function AdminPage() {
     })
   }
 
-  const formatDuration = (startedAt: string | null, finishedAt: string | null): string => {
+  const formatDuration = (
+    startedAt: string | null,
+    finishedAt: string | null
+  ): string => {
     if (!startedAt || !finishedAt) return '-'
     const start = new Date(startedAt)
     const finish = new Date(finishedAt)
@@ -188,7 +191,11 @@ export function AdminPage() {
                   </label>
                 </td>
                 <td>{formatDateTime(user.created_at)}</td>
-                <td>{user.last_login_at ? formatDateTime(user.last_login_at) : '-'}</td>
+                <td>
+                  {user.last_login_at
+                    ? formatDateTime(user.last_login_at)
+                    : '-'}
+                </td>
               </tr>
             )
           })}

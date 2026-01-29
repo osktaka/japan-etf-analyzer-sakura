@@ -15,7 +15,11 @@ interface TradeHistoryModalProps {
   initialSearch?: string
 }
 
-export function TradeHistoryModal({ isOpen, onClose, initialSearch = '' }: TradeHistoryModalProps) {
+export function TradeHistoryModal({
+  isOpen,
+  onClose,
+  initialSearch = '',
+}: TradeHistoryModalProps) {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const [trades, setTrades] = useState<Trade[]>([])
@@ -135,10 +139,7 @@ export function TradeHistoryModal({ isOpen, onClose, initialSearch = '' }: Trade
   return (
     <>
       <div className={styles.overlay} onClick={onClose}>
-        <div
-          className={styles.modal}
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
           <button className={styles.closeBtn} onClick={onClose}>
             &times;
           </button>

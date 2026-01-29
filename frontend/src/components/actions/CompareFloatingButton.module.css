@@ -20,7 +20,9 @@
   cursor: pointer;
   box-shadow: var(--shadow-lg);
   opacity: 0.6;
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
   position: relative;
 }
 
@@ -82,7 +84,9 @@
   border-radius: 50%;
   cursor: pointer;
   box-shadow: var(--shadow-md);
-  transition: transform 0.2s ease, background-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .listButton:hover {
@@ -193,7 +197,9 @@
   border-radius: 50%;
   cursor: pointer;
   box-shadow: var(--shadow-md);
-  transition: transform 0.2s ease, background-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .clearButton:hover {

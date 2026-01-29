@@ -9,7 +9,10 @@ import {
 } from './types'
 
 export const tradesApi = {
-  async getAll(etfCode?: string, options?: TradeFilterOptions): Promise<Trade[]> {
+  async getAll(
+    etfCode?: string,
+    options?: TradeFilterOptions
+  ): Promise<Trade[]> {
     const params: Record<string, string> = {}
     if (etfCode) {
       params.etf_code = etfCode

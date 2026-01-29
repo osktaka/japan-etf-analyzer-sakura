@@ -69,7 +69,9 @@ export function TradeList({
             <tr key={trade.id}>
               <td className={styles.dateCell} data-label="日付">
                 <div className={styles.dateContent}>
-                  <span className={styles.date}>{formatDate(trade.trade_date)}</span>
+                  <span className={styles.date}>
+                    {formatDate(trade.trade_date)}
+                  </span>
                   <span
                     className={`${styles.type} ${trade.trade_type === 'buy' ? styles.buy : styles.sell}`}
                   >
@@ -85,9 +87,15 @@ export function TradeList({
                   )}
                 </td>
               )}
-              <td className={styles.numericCell} data-label="数量">{trade.quantity}口</td>
-              <td className={styles.numericCell} data-label="価格">{formatPrice(trade.price)}</td>
-              <td className={styles.numericCell} data-label="合計">{formatPrice(trade.total_amount)}</td>
+              <td className={styles.numericCell} data-label="数量">
+                {trade.quantity}口
+              </td>
+              <td className={styles.numericCell} data-label="価格">
+                {formatPrice(trade.price)}
+              </td>
+              <td className={styles.numericCell} data-label="合計">
+                {formatPrice(trade.total_amount)}
+              </td>
               <td className={styles.actionsCell}>
                 <div className={styles.actions}>
                   {onEdit && (

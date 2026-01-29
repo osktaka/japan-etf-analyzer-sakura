@@ -128,7 +128,8 @@ export function TopPage() {
 
   // 保有コードのSetを作成（quantity > 0の銘柄のみ）
   const holdingCodes = useMemo(
-    () => new Set(holdings.filter((h) => h.quantity > 0).map((h) => h.etf_code)),
+    () =>
+      new Set(holdings.filter((h) => h.quantity > 0).map((h) => h.etf_code)),
     [holdings]
   )
 

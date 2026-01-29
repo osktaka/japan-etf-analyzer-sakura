@@ -8,7 +8,10 @@ interface ReturnTypeToggleProps {
   onChange: (returnType: ReturnType) => void
 }
 
-export function ReturnTypeToggle({ returnType, onChange }: ReturnTypeToggleProps) {
+export function ReturnTypeToggle({
+  returnType,
+  onChange,
+}: ReturnTypeToggleProps) {
   return (
     <div className={styles.viewModeToggle}>
       <button

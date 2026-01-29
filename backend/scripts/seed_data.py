@@ -4,9 +4,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.app import create_app
-from src.models import db
-from src.repositories import CategoryRepository, TagRepository
+from src.app import create_app  # noqa: E402
+from src.repositories import CategoryRepository, TagRepository  # noqa: E402
 
 CATEGORIES = [
     {"name": "国内株式", "description": "日本国内の株式市場に連動するETF", "sort_order": 1},
