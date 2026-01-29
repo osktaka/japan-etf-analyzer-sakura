@@ -285,7 +285,18 @@ export function ComparePage() {
                 <tr>
                   <th>項目</th>
                   {etfs.map((etf) => (
-                    <th key={etf.code}>
+                    <th
+                      key={etf.code}
+                      className={styles.clickableCell}
+                      onClick={() => setSelectedCode(etf.code)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          setSelectedCode(etf.code)
+                        }
+                      }}
+                      tabIndex={0}
+                    >
                       <div className={styles.etfHeader}>
                         <span className={styles.codeRow}>
                           <FavoriteButton
@@ -294,24 +305,15 @@ export function ComparePage() {
                             size="sm"
                             isHolding={holdingCodes.has(etf.code)}
                           />
-                          <span
-                            className={styles.code}
-                            style={{ cursor: 'pointer' }}
-                            onClick={() => setSelectedCode(etf.code)}
-                          >
-                            {etf.code}
-                          </span>
+                          <span className={styles.code}>{etf.code}</span>
                         </span>
-                        <span
-                          className={styles.name}
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => setSelectedCode(etf.code)}
-                        >
-                          {etf.name}
-                        </span>
+                        <span className={styles.name}>{etf.name}</span>
                         <button
                           className={styles.removeBtn}
-                          onClick={() => handleRemove(etf.code)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleRemove(etf.code)
+                          }}
                         >
                           &times;
                         </button>
