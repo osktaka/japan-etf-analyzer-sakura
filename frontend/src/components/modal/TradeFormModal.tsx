@@ -10,6 +10,7 @@ interface TradeFormModalProps {
   onSuccess?: () => void
   trade?: Trade
   isEdit?: boolean
+  defaultEtfCode?: string
 }
 
 export function TradeFormModal({
@@ -18,6 +19,7 @@ export function TradeFormModal({
   onSuccess,
   trade,
   isEdit = false,
+  defaultEtfCode,
 }: TradeFormModalProps) {
   if (!isOpen) return null
 
@@ -56,6 +58,7 @@ export function TradeFormModal({
         <div className={styles.content}>
           <h2 className={styles.title}>{isEdit ? '取引編集' : '取引登録'}</h2>
           <TradeForm
+            etfCode={defaultEtfCode}
             initialData={initialData}
             isEdit={isEdit}
             onSubmit={handleSubmit}

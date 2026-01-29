@@ -209,6 +209,7 @@ export function TradeHistoryModal({
         onSuccess={handleFormSuccess}
         trade={editingTrade ?? undefined}
         isEdit={editingTrade !== null}
+        defaultEtfCode={search}
       />
     </>
   )
