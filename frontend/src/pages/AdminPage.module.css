@@ -190,6 +190,37 @@
   color: var(--color-text-secondary);
 }
 
+.buttonGroup {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.button {
+  padding: 0.375rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    opacity 0.2s;
+}
+
+.button:hover {
+  opacity: 0.8;
+}
+
+.buttonSuccess {
+  background: #22c55e;
+  color: white;
+}
+
+.buttonDanger {
+  background: #ef4444;
+  color: white;
+}
+
 @media (max-width: 640px) {
   .container {
     padding: 1rem 0;

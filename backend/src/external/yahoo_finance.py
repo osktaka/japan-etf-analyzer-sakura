@@ -89,7 +89,7 @@ class YahooFinanceClient:
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days + 10)
 
-        df = stock.history(start=start_date, end=end_date)
+        df = stock.history(start=start_date, end=end_date, auto_adjust=True)
         if df.empty:
             raise ValueError(f"No data returned for {ticker}")
 
@@ -200,7 +200,7 @@ class YahooFinanceClient:
 
             if price is None:
                 # historyから最新価格を取得
-                df = stock.history(period="1d")
+                df = stock.history(period="1d", auto_adjust=True)
                 if df.empty:
                     raise ValueError(f"No price data for {ticker}")
                 price = float(df["Close"].iloc[-1])

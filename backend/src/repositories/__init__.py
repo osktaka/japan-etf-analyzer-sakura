@@ -4,6 +4,7 @@ from .batch_log_repository import BatchLogRepository
 from .category_repository import CategoryRepository
 from .etf_repository import ETFRepository
 from .tag_repository import TagRepository
+from .stock_split_repository import StockSplitRepository
 
 __all__ = [
     "BaseRepository",
@@ -11,4 +12,5 @@ __all__ = [
     "CategoryRepository",
     "ETFRepository",
     "TagRepository",
+    "StockSplitRepository",
 ]

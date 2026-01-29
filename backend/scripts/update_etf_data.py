@@ -163,6 +163,10 @@ def update_single_etf(
         if dividend_yield is not None:
             dividend_yield = round(dividend_yield, 2)
 
+        # 株式分割検知処理（データが2行以上ある場合のみ）
+        if not df.empty and len(df) >= 2:
+            check_stock_split(code, df)
+
         # DBに保存（Flask app contextが必要）
         save_to_db(code, df)
         market_price = round(float(df["Close"].iloc[-1]), 2) if not df.empty else None
@@ -205,6 +209,43 @@ def update_etf_info(
         if market_price is not None:
             etf.market_price = market_price
         db.session.commit()
+
+
+def check_stock_split(code: str, df) -> None:
+    """Check for stock splits based on price changes.
+
+    Args:
+        code: ETF code
+        df: DataFrame with price data (requires 'Close' column and date index)
+    """
+    try:
+        from src.services.split_detection_service import SplitDetectionService
+
+        # 最新2日分のデータを取得
+        if len(df) < 2:
+            return
+
+        # 前日と当日の終値を取得
+        previous_close = float(df["Close"].iloc[-2])
+        current_close = float(df["Close"].iloc[-1])
+        current_date = df.index[-1].date()
+
+        # 分割検知サービスを使用
+        split_service = SplitDetectionService()
+        stock_split = split_service.check_for_splits(
+            etf_code=code,
+            previous_close=previous_close,
+            current_close=current_close,
+            current_date=current_date,
+        )
+
+        # 検知された分割をDBに登録
+        if stock_split:
+            split_service.register_split(stock_split)
+
+    except Exception as e:
+        # 分割検知の失敗は全体の処理を止めない
+        logger.warning(f"{code}: Stock split check failed - {e}")
 
 
 def save_to_db(code: str, df) -> None:

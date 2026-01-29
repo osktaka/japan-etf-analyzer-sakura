@@ -22,6 +22,7 @@ from .trade import Trade  # noqa: E402
 from .price_history import PriceHistory  # noqa: E402
 from .performance_cache import PerformanceCache  # noqa: E402
 from .batch_log import BatchLog  # noqa: E402
+from .stock_split import StockSplit  # noqa: E402
 
 __all__ = [
     "db",
@@ -36,4 +37,5 @@ __all__ = [
     "PriceHistory",
     "PerformanceCache",
     "BatchLog",
+    "StockSplit",
 ]

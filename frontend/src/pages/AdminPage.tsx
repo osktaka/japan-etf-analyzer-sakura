@@ -1,17 +1,18 @@
 /** Admin page component */
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../hooks/useAuth'
-import { adminApi, BatchLog } from '../api/admin'
+import { adminApi, BatchLog, StockSplit } from '../api/admin'
 import { User } from '../api/types'
 import styles from './AdminPage.module.css'
 
-type Tab = 'system' | 'users'
+type Tab = 'system' | 'users' | 'splits'
 
 export function AdminPage() {
   const { user: currentUser } = useAuth()
   const [activeTab, setActiveTab] = useState<Tab>('system')
   const [batchLogs, setBatchLogs] = useState<BatchLog[]>([])
   const [users, setUsers] = useState<User[]>([])
+  const [stockSplits, setStockSplits] = useState<StockSplit[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -35,19 +36,35 @@ export function AdminPage() {
     }
   }, [])
 
+  const loadStockSplits = useCallback(async () => {
+    try {
+      const data = await adminApi.getStockSplits()
+      // 検出日時の降順でソート
+      const sortedData = data.sort((a, b) => {
+        return new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime()
+      })
+      setStockSplits(sortedData)
+    } catch (err) {
+      console.error('Failed to load stock splits:', err)
+      setError('株式分割一覧の取得に失敗しました')
+    }
+  }, [])
+
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true)
       setError(null)
       if (activeTab === 'system') {
         await loadBatchLogs()
-      } else {
+      } else if (activeTab === 'users') {
         await loadUsers()
+      } else if (activeTab === 'splits') {
+        await loadStockSplits()
       }
       setIsLoading(false)
     }
     loadData()
-  }, [activeTab, loadBatchLogs, loadUsers])
+  }, [activeTab, loadBatchLogs, loadUsers, loadStockSplits])
 
   const handleAdminToggle = async (userId: number, newValue: boolean) => {
     try {
@@ -56,6 +73,21 @@ export function AdminPage() {
     } catch (err) {
       console.error('Failed to update user admin status:', err)
       setError('管理者権限の更新に失敗しました')
+    }
+  }
+
+  const handleSplitStatusUpdate = async (
+    splitId: number,
+    status: 'approved' | 'rejected'
+  ) => {
+    try {
+      const updatedSplit = await adminApi.updateStockSplitStatus(splitId, status)
+      setStockSplits((prev) =>
+        prev.map((split) => (split.id === splitId ? updatedSplit : split))
+      )
+    } catch (err) {
+      console.error('Failed to update stock split status:', err)
+      setError('株式分割の更新に失敗しました')
     }
   }
 
@@ -204,6 +236,83 @@ export function AdminPage() {
     )
   }
 
+  const renderSplitsTab = () => {
+    if (isLoading) {
+      return <div className={styles.loading}>読み込み中...</div>
+    }
+    if (error) {
+      return <div className={styles.error}>{error}</div>
+    }
+    if (stockSplits.length === 0) {
+      return <div className={styles.empty}>株式分割の候補はありません</div>
+    }
+    return (
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th>検出日時</th>
+            <th>銘柄コード</th>
+            <th>分割日</th>
+            <th>変動率</th>
+            <th>分割比率</th>
+            <th>状態</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          {stockSplits.map((split) => (
+            <tr key={split.id}>
+              <td>{formatDateTime(split.detected_at)}</td>
+              <td>{split.etf_code}</td>
+              <td>{split.split_date}</td>
+              <td>
+                {split.change_percent !== null
+                  ? `${split.change_percent.toFixed(2)}%`
+                  : '-'}
+              </td>
+              <td>{split.ratio.toFixed(2)}</td>
+              <td>
+                <span
+                  className={`${styles.badge} ${
+                    split.status === 'pending'
+                      ? styles.badgeRunning
+                      : split.status === 'approved'
+                        ? styles.badgeSuccess
+                        : styles.badgeFailed
+                  }`}
+                >
+                  {split.status === 'pending'
+                    ? '承認待ち'
+                    : split.status === 'approved'
+                      ? '承認済み'
+                      : '却下'}
+                </span>
+              </td>
+              <td>
+                {split.status === 'pending' && (
+                  <div className={styles.buttonGroup}>
+                    <button
+                      className={`${styles.button} ${styles.buttonSuccess}`}
+                      onClick={() => handleSplitStatusUpdate(split.id, 'approved')}
+                    >
+                      承認
+                    </button>
+                    <button
+                      className={`${styles.button} ${styles.buttonDanger}`}
+                      onClick={() => handleSplitStatusUpdate(split.id, 'rejected')}
+                    >
+                      却下
+                    </button>
+                  </div>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -223,13 +332,27 @@ export function AdminPage() {
         >
           ユーザー管理
         </button>
+        <button
+          className={`${styles.tab} ${activeTab === 'splits' ? styles.tabActive : ''}`}
+          onClick={() => setActiveTab('splits')}
+        >
+          株式分割
+        </button>
       </div>
 
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>
-          {activeTab === 'system' ? 'バッチ実行履歴' : 'ユーザー一覧'}
+          {activeTab === 'system'
+            ? 'バッチ実行履歴'
+            : activeTab === 'users'
+              ? 'ユーザー一覧'
+              : '株式分割候補'}
         </h2>
-        {activeTab === 'system' ? renderSystemTab() : renderUsersTab()}
+        {activeTab === 'system'
+          ? renderSystemTab()
+          : activeTab === 'users'
+            ? renderUsersTab()
+            : renderSplitsTab()}
       </section>
     </div>
   )

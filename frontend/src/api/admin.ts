@@ -12,6 +12,22 @@ export interface BatchLog {
   created_at: string
 }
 
+export interface StockSplit {
+  id: number
+  etf_code: string
+  split_date: string
+  ratio: number
+  status: 'pending' | 'approved' | 'rejected'
+  detected_at: string
+  reviewed_at: string | null
+  reviewed_by: number | null
+  previous_close: number | null
+  current_close: number | null
+  change_percent: number | null
+  created_at: string
+  updated_at: string
+}
+
 export const adminApi = {
   async getUsers(): Promise<User[]> {
     const response = await apiClient.get<ApiResponse<User[]>>('/admin/users')
@@ -29,6 +45,26 @@ export const adminApi = {
   async getBatchLogs(): Promise<BatchLog[]> {
     const response =
       await apiClient.get<ApiResponse<BatchLog[]>>('/admin/batch-logs')
+    return response.data.data
+  },
+
+  async getStockSplits(status?: string): Promise<StockSplit[]> {
+    const params = status ? { status } : {}
+    const response = await apiClient.get<ApiResponse<StockSplit[]>>(
+      '/admin/stock-splits',
+      { params }
+    )
+    return response.data.data
+  },
+
+  async updateStockSplitStatus(
+    splitId: number,
+    status: 'approved' | 'rejected'
+  ): Promise<StockSplit> {
+    const response = await apiClient.patch<ApiResponse<StockSplit>>(
+      `/admin/stock-splits/${splitId}`,
+      { status }
+    )
     return response.data.data
   },
 }

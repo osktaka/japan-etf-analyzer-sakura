@@ -4,6 +4,7 @@ from typing import Dict, List, Optional
 
 from src.repositories.etf_repository import ETFRepository
 from src.repositories.trade_repository import TradeRepository
+from src.services.split_adjustment_service import SplitAdjustmentService
 
 
 class PortfolioService:
@@ -13,10 +14,14 @@ class PortfolioService:
         self,
         trade_repository: Optional[TradeRepository] = None,
         etf_repository: Optional[ETFRepository] = None,
+        split_adjustment_service: Optional[SplitAdjustmentService] = None,
     ):
         """Initialize portfolio service."""
         self.trade_repository = trade_repository or TradeRepository()
         self.etf_repository = etf_repository or ETFRepository()
+        self.split_adjustment_service = (
+            split_adjustment_service or SplitAdjustmentService()
+        )
 
     def get_holdings(self, user_id: int) -> List[Dict]:
         """
@@ -34,7 +39,7 @@ class PortfolioService:
         """
         trades = self.trade_repository.get_by_user_id(user_id)
 
-        # Group trades by ETF code
+        # Group trades by ETF code and store earliest trade date
         holdings_data: Dict[str, Dict] = {}
 
         for trade in trades:
@@ -45,7 +50,12 @@ class PortfolioService:
                     "buy_amount": Decimal("0"),
                     "sell_quantity": 0,
                     "sell_amount": Decimal("0"),
+                    "earliest_trade_date": trade.trade_date,
                 }
+            else:
+                # Track earliest trade date for split adjustment
+                if trade.trade_date < holdings_data[code]["earliest_trade_date"]:
+                    holdings_data[code]["earliest_trade_date"] = trade.trade_date
 
             if trade.trade_type == "buy":
                 holdings_data[code]["buy_quantity"] += trade.quantity
@@ -62,18 +72,28 @@ class PortfolioService:
             if held_quantity <= 0:
                 continue
 
+            # Calculate split adjustment factor from earliest trade date
+            adjustment_factor = self.split_adjustment_service.get_adjustment_factor(
+                code, data["earliest_trade_date"]
+            )
+
             # Calculate average cost (FIFO approximation using total avg)
             if data["buy_quantity"] > 0:
                 avg_cost = float(data["buy_amount"] / data["buy_quantity"])
             else:
                 avg_cost = 0
 
+            # Apply split adjustment
+            adjusted_avg_cost = avg_cost / adjustment_factor
+            adjusted_quantity = held_quantity * adjustment_factor
+
+            # Total cost remains the same (original investment amount)
             total_cost = avg_cost * held_quantity
 
             # Get ETF info and current price
             etf = self.etf_repository.get_by_code(code)
             current_price = float(etf.market_price) if etf and etf.market_price else 0.0
-            current_value = current_price * held_quantity
+            current_value = current_price * adjusted_quantity
 
             unrealized_pnl = current_value - float(total_cost)
             pnl_percent = (unrealized_pnl / total_cost * 100) if total_cost > 0 else 0
@@ -82,8 +102,8 @@ class PortfolioService:
                 {
                     "etf_code": code,
                     "etf": etf.to_dict() if etf else None,
-                    "quantity": held_quantity,
-                    "average_cost": round(avg_cost, 2),
+                    "quantity": adjusted_quantity,
+                    "average_cost": round(adjusted_avg_cost, 2),
                     "total_cost": round(total_cost, 2),
                     "current_price": current_price,
                     "current_value": round(current_value, 2),

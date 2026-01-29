@@ -6,6 +6,7 @@ from .chart_service import ChartService
 from .recommend_service import RecommendService
 from .scoring_service import ScoringService
 from .compare_service import CompareService
+from .split_detection_service import SplitDetectionService
 
 __all__ = [
     "CategoryService",
@@ -15,4 +16,5 @@ __all__ = [
     "RecommendService",
     "ScoringService",
     "CompareService",
+    "SplitDetectionService",
 ]
