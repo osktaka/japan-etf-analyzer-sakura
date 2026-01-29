@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useCompareList, useFavorites, usePortfolio } from '../../hooks'
 import { searchETFs } from '../../api'
 import { ROUTES } from '../../utils'
+import { ETFDetailModal } from '../modal'
 import styles from './CompareFloatingButton.module.css'
 
 interface ETFInfo {
@@ -15,9 +16,10 @@ const EXCLUDED_STORAGE_KEY = 'etf-compare-excluded'
 
 export function CompareFloatingButton() {
   const navigate = useNavigate()
-  const { codes, count, clearAll } = useCompareList()
-  const { isFavorite } = useFavorites()
+  const { codes, count, clearAll, toggleCode } = useCompareList()
+  const { isFavorite, toggleFavorite } = useFavorites()
   const { holdings } = usePortfolio()
+  const [selectedCode, setSelectedCode] = useState<string | null>(null)
 
   // 保有銘柄コードのSet
   const holdingCodes = useMemo(() => {
@@ -59,7 +61,7 @@ export function CompareFloatingButton() {
     })
   }
 
-  // 枠外クリックでリストを閉じる
+  // 枠外クリックでリストを閉じる（モーダル表示中は無効化）
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -70,14 +72,14 @@ export function CompareFloatingButton() {
       }
     }
 
-    if (showTooltip) {
+    if (showTooltip && !selectedCode) {
       document.addEventListener('mousedown', handleClickOutside)
     }
 
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showTooltip])
+  }, [showTooltip, selectedCode])
 
   // 銘柄名を取得
   useEffect(() => {
@@ -156,7 +158,7 @@ export function CompareFloatingButton() {
         {/* ツールチップ */}
         {showTooltip && (
           <div className={styles.tooltip}>
-            <div className={styles.tooltipHeader}>銘柄比較</div>
+            <div className={styles.tooltipHeader}>銘柄リスト</div>
             <ul className={styles.tooltipList}>
               {etfList.map((etf) => (
                 <li key={etf.code} className={styles.tooltipItem}>
@@ -184,8 +186,20 @@ export function CompareFloatingButton() {
                       </svg>
                     )}
                   </span>
-                  <span className={styles.tooltipCode}>{etf.code}</span>
-                  <span className={styles.tooltipName}>{etf.name}</span>
+                  <span
+                    className={styles.tooltipCode}
+                    onClick={() => setSelectedCode(etf.code)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {etf.code}
+                  </span>
+                  <span
+                    className={styles.tooltipName}
+                    onClick={() => setSelectedCode(etf.code)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {etf.name}
+                  </span>
                   {/* 比較チェックボックス */}
                   <label className={styles.compareCheckbox}>
                     <input
@@ -217,6 +231,18 @@ export function CompareFloatingButton() {
           <path d="M18 6L6 18M6 6l12 12" />
         </svg>
       </button>
+
+      {/* 銘柄詳細モーダル */}
+      {selectedCode && (
+        <ETFDetailModal
+          code={selectedCode}
+          onClose={() => setSelectedCode(null)}
+          isInCompare={codes.includes(selectedCode)}
+          onCompareToggle={() => selectedCode && toggleCode(selectedCode)}
+          isFavorite={isFavorite(selectedCode)}
+          onFavoriteToggle={() => selectedCode && toggleFavorite(selectedCode)}
+        />
+      )}
     </div>
   )
 }

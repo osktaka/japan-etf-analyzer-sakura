@@ -129,6 +129,11 @@
   gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-md);
   border-bottom: 1px solid var(--color-border-light);
+  transition: background-color 0.2s ease;
+}
+
+.tooltipItem:hover {
+  background-color: var(--color-bg-secondary, #f5f5f5);
 }
 
 .tooltipItem:last-child {
