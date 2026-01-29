@@ -35,6 +35,8 @@ import styles from './TopPage.module.css'
 const PAGE_SIZE = 50
 const PERIODS_STORAGE_KEY = 'etf-table-view-periods'
 const RETURN_TYPE_STORAGE_KEY = 'etf-return-type'
+const VIEW_MODE_STORAGE_KEY = 'etf-view-mode'
+const SORT_STORAGE_KEY = 'etf-sort-state'
 
 // ローカルストレージから表示期間を復元
 const getStoredPeriods = (): PerformancePeriod[] => {
@@ -65,6 +67,39 @@ const getStoredReturnType = (): ReturnType => {
   return 'price'
 }
 
+// ローカルストレージから表示モードを復元
+const getStoredViewMode = (): ViewMode | null => {
+  try {
+    const stored = localStorage.getItem(VIEW_MODE_STORAGE_KEY)
+    if (stored === 'card' || stored === 'table') {
+      return stored
+    }
+  } catch {
+    // エラー時はnullを返す
+  }
+  return null
+}
+
+// ローカルストレージからソート状態を復元
+const getStoredSort = (): { sort: SortField; order: SortOrder } | null => {
+  try {
+    const stored = localStorage.getItem(SORT_STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      if (
+        parsed &&
+        typeof parsed.sort === 'string' &&
+        typeof parsed.order === 'string'
+      ) {
+        return parsed
+      }
+    }
+  } catch {
+    // パースエラー時はnullを返す
+  }
+  return null
+}
+
 export function TopPage() {
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -87,10 +122,13 @@ export function TopPage() {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
 
-  // 表示モード
-  const [viewMode, setViewMode] = useState<ViewMode>(
-    (searchParams.get('view') as ViewMode) || 'card'
-  )
+  // 表示モード（URL優先 → localStorage → デフォルト）
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const urlView = searchParams.get('view') as ViewMode
+    if (urlView) return urlView
+    const storedView = getStoredViewMode()
+    return storedView || 'card'
+  })
   const [performance, setPerformance] = useState<BatchPerformanceData>({})
   const [selectedPeriods, setSelectedPeriods] =
     useState<PerformancePeriod[]>(getStoredPeriods)
@@ -106,12 +144,20 @@ export function TopPage() {
   )
   const [currentFilters, setCurrentFilters] =
     useState<SearchParams>(getInitialFilters())
-  const [currentSort, setCurrentSort] = useState<SortField>(
-    (searchParams.get('sort') as SortField) || 'code'
-  )
-  const [currentOrder, setCurrentOrder] = useState<SortOrder>(
-    (searchParams.get('order') as SortOrder) || 'asc'
-  )
+
+  // ソート状態（URL優先 → localStorage → デフォルト）
+  const [currentSort, setCurrentSort] = useState<SortField>(() => {
+    const urlSort = searchParams.get('sort') as SortField
+    if (urlSort) return urlSort
+    const storedSort = getStoredSort()
+    return storedSort?.sort || 'code'
+  })
+  const [currentOrder, setCurrentOrder] = useState<SortOrder>(() => {
+    const urlOrder = searchParams.get('order') as SortOrder
+    if (urlOrder) return urlOrder
+    const storedSort = getStoredSort()
+    return storedSort?.order || 'asc'
+  })
   const [currentPage, setCurrentPage] = useState(
     Number(searchParams.get('page')) || 1
   )
@@ -155,6 +201,19 @@ export function TopPage() {
   useEffect(() => {
     localStorage.setItem(RETURN_TYPE_STORAGE_KEY, returnType)
   }, [returnType])
+
+  // 表示モードをローカルストレージに保存
+  useEffect(() => {
+    localStorage.setItem(VIEW_MODE_STORAGE_KEY, viewMode)
+  }, [viewMode])
+
+  // ソート状態をローカルストレージに保存
+  useEffect(() => {
+    localStorage.setItem(
+      SORT_STORAGE_KEY,
+      JSON.stringify({ sort: currentSort, order: currentOrder })
+    )
+  }, [currentSort, currentOrder])
 
   // URLパラメータ更新ヘルパー
   const updateURL = useCallback(
