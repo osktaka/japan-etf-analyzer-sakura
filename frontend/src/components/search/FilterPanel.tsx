@@ -15,6 +15,9 @@ interface FilterPanelProps {
   favoritesOnly?: boolean
   onFavoritesOnlyChange?: (value: boolean) => void
   favoritesCount?: number
+  compareOnly?: boolean
+  onCompareOnlyChange?: (value: boolean) => void
+  compareCount?: number
 }
 
 export function FilterPanel({
@@ -28,6 +31,9 @@ export function FilterPanel({
   favoritesOnly = false,
   onFavoritesOnlyChange,
   favoritesCount = 0,
+  compareOnly = false,
+  onCompareOnlyChange,
+  compareCount = 0,
 }: FilterPanelProps) {
   const [categories, setCategories] = useState<Category[]>([])
   const [tags, setTags] = useState<Tag[]>([])
@@ -99,17 +105,57 @@ export function FilterPanel({
     if (favoritesOnly && onFavoritesOnlyChange) {
       onFavoritesOnlyChange(false)
     }
+    // 銘柄比較フィルターもクリア
+    if (compareOnly && onCompareOnlyChange) {
+      onCompareOnlyChange(false)
+    }
   }
 
   const handleHoldingsToggle = () => {
     if (onHoldingsOnlyChange) {
-      onHoldingsOnlyChange(!holdingsOnly)
+      const newValue = !holdingsOnly
+      onHoldingsOnlyChange(newValue)
+      // 排他制御: 保有中をONにする場合、他をOFF
+      if (newValue) {
+        if (favoritesOnly && onFavoritesOnlyChange) {
+          onFavoritesOnlyChange(false)
+        }
+        if (compareOnly && onCompareOnlyChange) {
+          onCompareOnlyChange(false)
+        }
+      }
     }
   }
 
   const handleFavoritesToggle = () => {
     if (onFavoritesOnlyChange) {
-      onFavoritesOnlyChange(!favoritesOnly)
+      const newValue = !favoritesOnly
+      onFavoritesOnlyChange(newValue)
+      // 排他制御: お気に入りをONにする場合、他をOFF
+      if (newValue) {
+        if (holdingsOnly && onHoldingsOnlyChange) {
+          onHoldingsOnlyChange(false)
+        }
+        if (compareOnly && onCompareOnlyChange) {
+          onCompareOnlyChange(false)
+        }
+      }
+    }
+  }
+
+  const handleCompareToggle = () => {
+    if (onCompareOnlyChange) {
+      const newValue = !compareOnly
+      onCompareOnlyChange(newValue)
+      // 排他制御: 銘柄比較をONにする場合、他をOFF
+      if (newValue) {
+        if (holdingsOnly && onHoldingsOnlyChange) {
+          onHoldingsOnlyChange(false)
+        }
+        if (favoritesOnly && onFavoritesOnlyChange) {
+          onFavoritesOnlyChange(false)
+        }
+      }
     }
   }
 
@@ -142,6 +188,13 @@ export function FilterPanel({
           onClick={handleFavoritesToggle}
         >
           お気に入り({favoritesCount})
+        </button>
+        <button
+          className={`${styles.categoryBtn} ${compareOnly ? styles.active : ''}`}
+          onClick={handleCompareToggle}
+          disabled={compareCount === 0}
+        >
+          銘柄比較({compareCount})
         </button>
       </div>
 

@@ -173,12 +173,19 @@ export function TopPage() {
   const etfListRef = useRef<HTMLElement>(null)
   const isInitialMount = useRef(true)
   const { items, total, isLoading, error, search } = useETFSearch()
-  const { isInList, toggleCode, canAdd } = useCompareList()
+  const {
+    isInList,
+    toggleCode,
+    canAdd,
+    codes: compareCodes,
+    count: compareCount,
+  } = useCompareList()
   const { isAuthenticated } = useAuth()
   const { isFavorite, toggleFavorite, favoriteCodes } = useFavorites()
   const { holdings } = usePortfolio()
   const [favoritesOnly, setFavoritesOnly] = useState(false)
   const [holdingsOnly, setHoldingsOnly] = useState(false)
+  const [compareOnly, setCompareOnly] = useState(false)
 
   // 保有コードのSetを作成（quantity > 0の銘柄のみ）
   const holdingCodes = useMemo(
@@ -333,6 +340,11 @@ export function TopPage() {
       searchParams.holding_codes = Array.from(holdingCodes)
     }
 
+    if (compareOnly) {
+      // 比較リストで絞り込み
+      searchParams.favorite_codes = compareCodes
+    }
+
     search(searchParams)
 
     etfListRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -376,6 +388,10 @@ export function TopPage() {
         searchParams.holding_codes = Array.from(holdingCodes)
       }
 
+      if (compareOnly) {
+        searchParams.favorite_codes = compareCodes
+      }
+
       search(searchParams)
     },
     [
@@ -389,6 +405,8 @@ export function TopPage() {
       favoriteCodes,
       holdingsOnly,
       holdingCodes,
+      compareOnly,
+      compareCodes,
     ]
   )
 
@@ -481,6 +499,10 @@ export function TopPage() {
       params.holding_codes = Array.from(holdingCodes)
     }
 
+    if (compareOnly) {
+      params.favorite_codes = compareCodes
+    }
+
     search(params)
     // favoritesOnly/holdingsOnly変更時のみ発動
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -560,6 +582,9 @@ export function TopPage() {
             favoritesOnly={favoritesOnly}
             onFavoritesOnlyChange={handleFavoritesOnlyChange}
             favoritesCount={favoriteCodes.size}
+            compareOnly={compareOnly}
+            onCompareOnlyChange={setCompareOnly}
+            compareCount={compareCount}
           />
         </div>
 

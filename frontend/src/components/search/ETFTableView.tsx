@@ -15,6 +15,7 @@ import styles from './ETFTableView.module.css'
 const SORT_FIELD_MAP: Record<string, SortField> = {
   code: 'code',
   name: 'name',
+  price: 'price',
   dividend: 'dividend_yield',
   expense: 'expense_ratio',
   '1m': 'return_1m',
@@ -80,8 +81,8 @@ export function ETFTableView({
   const currentSortDirection: SortDirection = sortOrder || 'asc'
 
   const handleSort = (key: SortKey) => {
-    // category and price are not sortable via API
-    if (key === 'category' || key === 'price') return
+    // category is not sortable via API
+    if (key === 'category') return
 
     const apiField = SORT_FIELD_MAP[key]
     if (!apiField || !onSortChange) return
@@ -91,9 +92,17 @@ export function ETFTableView({
       // Toggle direction
       newDirection = currentSortDirection === 'asc' ? 'desc' : 'asc'
     } else {
-      // New column: default desc for performance, asc for others
+      // New column: determine default direction
+      // Desc (higher is better): performance, dividend, price
+      // Asc (lower is better): expense_ratio
+      // Asc (alphabetical): code, name
       const isPerformanceSort = apiField.startsWith('return_')
-      newDirection = isPerformanceSort ? 'desc' : 'asc'
+      const isDescSort =
+        isPerformanceSort ||
+        apiField === 'dividend_yield' ||
+        apiField === 'price'
+      const isAscSort = apiField === 'expense_ratio'
+      newDirection = isDescSort ? 'desc' : isAscSort ? 'asc' : 'asc'
     }
     onSortChange(apiField, newDirection)
   }

@@ -11,6 +11,7 @@ from .base_repository import BaseRepository
 SORT_COLUMNS = {
     "code": ETF.code,
     "name": ETF.name,
+    "price": ETF.market_price,
     "dividend_yield": ETF.dividend_yield,
     "expense_ratio": ETF.expense_ratio,
     "total_assets": ETF.total_assets,

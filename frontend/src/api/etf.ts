@@ -16,6 +16,7 @@ import {
 export type SortField =
   | 'code'
   | 'name'
+  | 'price'
   | 'dividend_yield'
   | 'expense_ratio'
   | 'total_assets'
