@@ -28,14 +28,13 @@ export function PortfolioSummary({ summary }: PortfolioSummaryProps) {
           {pnlSign}
           {formatPrice(summary.total_unrealized_pnl)}
         </span>
-        <span className={`${styles.percent} ${pnlClass}`}>
-          ({pnlSign}
-          {summary.total_unrealized_pnl_percent.toFixed(2)}%)
-        </span>
       </div>
       <div className={styles.card}>
-        <span className={styles.label}>保有銘柄数</span>
-        <span className={styles.value}>{summary.holdings_count}銘柄</span>
+        <span className={styles.label}>損益率</span>
+        <span className={`${styles.value} ${pnlClass}`}>
+          {pnlSign}
+          {summary.total_unrealized_pnl_percent.toFixed(2)}%
+        </span>
       </div>
     </div>
   )
