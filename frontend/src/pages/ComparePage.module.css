@@ -57,6 +57,7 @@
 .table th {
   background-color: var(--color-bg);
   font-weight: 600;
+  vertical-align: top;
 }
 
 .table td:first-child {
