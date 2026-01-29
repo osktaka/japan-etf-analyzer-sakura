@@ -30,6 +30,7 @@ def create_etf_bp():
             holding_codes: Filter by holding codes (comma-separated)
             sort: Sort column (code, name, dividend_yield, expense_ratio, total_assets)
             order: Sort order (asc, desc). Default: asc
+            return_type: Return type for performance sorting (price, regression). Default: price
             limit: Number of results (default: 50, max: 100)
             offset: Pagination offset (default: 0)
 
@@ -45,9 +46,15 @@ def create_etf_bp():
         holding_codes_param = request.args.get("holding_codes")
         sort = request.args.get("sort")
         order = request.args.get("order", "asc")
+        return_type = request.args.get("return_type", "price")
 
         if order not in ("asc", "desc"):
             return error_response("Invalid order parameter. Use 'asc' or 'desc'", 400)
+
+        if return_type not in ("price", "regression"):
+            return error_response(
+                "Invalid return_type parameter. Use 'price' or 'regression'", 400
+            )
 
         limit, offset, error = validate_pagination(
             request.args.get("limit"),
@@ -86,6 +93,7 @@ def create_etf_bp():
             holding_codes=holding_codes,
             sort=sort,
             order=order,
+            return_type=return_type,
             limit=limit,
             offset=offset,
         )

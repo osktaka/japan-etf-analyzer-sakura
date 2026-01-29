@@ -39,6 +39,7 @@ export interface SearchParams {
   holding_codes?: string[]
   sort?: SortField
   order?: SortOrder
+  return_type?: 'price' | 'regression'
   limit?: number
   offset?: number
 }
@@ -75,6 +76,7 @@ export async function searchETFs(params: SearchParams = {}): Promise<{
     queryParams.append('holding_codes', params.holding_codes.join(','))
   if (params.sort) queryParams.append('sort', params.sort)
   if (params.order) queryParams.append('order', params.order)
+  if (params.return_type) queryParams.append('return_type', params.return_type)
   if (params.limit) queryParams.append('limit', String(params.limit))
   if (params.offset) queryParams.append('offset', String(params.offset))
 

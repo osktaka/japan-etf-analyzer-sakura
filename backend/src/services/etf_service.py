@@ -22,6 +22,7 @@ class ETFService:
         holding_codes: Optional[List[str]] = None,
         sort: Optional[str] = None,
         order: str = "asc",
+        return_type: str = "price",
         limit: int = 50,
         offset: int = 0,
     ) -> Dict:
@@ -36,6 +37,7 @@ class ETFService:
             holding_codes=holding_codes,
             sort=sort,
             order=order,
+            return_type=return_type,
             limit=limit,
             offset=offset,
         )

@@ -102,6 +102,7 @@ class ETFRepository(BaseRepository[ETF]):
         holding_codes: List[str] = None,
         sort: str = None,
         order: str = "asc",
+        return_type: str = "price",
         limit: int = 50,
         offset: int = 0,
     ) -> List[ETF]:
@@ -123,17 +124,23 @@ class ETFRepository(BaseRepository[ETF]):
             else:
                 query = query.order_by(column.asc().nulls_last())
         elif sort and sort in PERFORMANCE_SORT_PERIODS:
-            # Join with performance_cache for sorting by return rate
+            # Join with performance_cache for sorting by return rate or regression rate
             period = PERFORMANCE_SORT_PERIODS[sort]
             query = query.outerjoin(
                 PerformanceCache,
                 (ETF.code == PerformanceCache.etf_code)
                 & (PerformanceCache.period == period),
             )
+            # Choose sort column based on return_type
+            sort_column = (
+                PerformanceCache.regression_rate
+                if return_type == "regression"
+                else PerformanceCache.return_rate
+            )
             if order == "desc":
-                query = query.order_by(PerformanceCache.return_rate.desc().nulls_last())
+                query = query.order_by(sort_column.desc().nulls_last())
             else:
-                query = query.order_by(PerformanceCache.return_rate.asc().nulls_last())
+                query = query.order_by(sort_column.asc().nulls_last())
         else:
             query = query.order_by(ETF.code.asc())
 

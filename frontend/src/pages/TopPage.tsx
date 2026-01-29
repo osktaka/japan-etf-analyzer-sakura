@@ -285,6 +285,7 @@ export function TopPage() {
       keyword,
       sort,
       order,
+      return_type: returnType,
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
     })
@@ -317,6 +318,7 @@ export function TopPage() {
       keyword: trimmed || undefined,
       sort: currentSort,
       order: currentOrder,
+      return_type: returnType,
       limit: PAGE_SIZE,
       offset: 0,
     }
@@ -361,6 +363,7 @@ export function TopPage() {
         keyword: currentKeyword || undefined,
         sort: currentSort,
         order: currentOrder,
+        return_type: returnType,
         limit: PAGE_SIZE,
         offset: 0,
       }
@@ -379,6 +382,7 @@ export function TopPage() {
       currentKeyword,
       currentSort,
       currentOrder,
+      returnType,
       search,
       updateURL,
       favoritesOnly,
@@ -404,6 +408,7 @@ export function TopPage() {
       keyword: currentKeyword || undefined,
       sort,
       order,
+      return_type: returnType,
       limit: PAGE_SIZE,
       offset: 0,
     }
@@ -431,6 +436,7 @@ export function TopPage() {
       keyword: currentKeyword || undefined,
       sort: currentSort,
       order: currentOrder,
+      return_type: returnType,
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
     }
@@ -462,6 +468,7 @@ export function TopPage() {
       keyword: currentKeyword || undefined,
       sort: currentSort,
       order: currentOrder,
+      return_type: returnType,
       limit: PAGE_SIZE,
       offset: 0,
     }
