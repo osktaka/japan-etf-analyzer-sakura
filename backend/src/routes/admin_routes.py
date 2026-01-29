@@ -111,29 +111,42 @@ def create_admin_bp():
 
         Request Body:
             {
-                "is_applied": true or false
+                "is_applied": true or false (optional),
+                "is_chart_applied": true or false (optional)
             }
 
         Returns:
             Updated stock split data
         """
+        from datetime import datetime
+
         data = request.get_json()
 
         if not data:
             return error_response("リクエストボディが必要です", 400)
 
-        if "is_applied" not in data:
-            return error_response("is_applied フィールドが必要です", 400)
+        if "is_applied" not in data and "is_chart_applied" not in data:
+            return error_response(
+                "is_applied または is_chart_applied フィールドが必要です", 400
+            )
 
-        is_applied = bool(data["is_applied"])
-
-        split = stock_split_repo.update_applied(split_id, is_applied, current_user.id)
+        split = stock_split_repo.get_by_id(split_id)
         if not split:
             return error_response("株式分割が見つかりません", 404)
 
+        # Update fields if provided
+        if "is_applied" in data:
+            split.is_applied = bool(data["is_applied"])
+        if "is_chart_applied" in data:
+            split.is_chart_applied = bool(data["is_chart_applied"])
+
+        split.reviewed_at = datetime.utcnow()
+        split.reviewed_by = current_user.id
+        db.session.commit()
+
         return api_response(
             data=split.to_dict(),
-            message=f"株式分割を{'適用' if is_applied else '非適用'}に設定しました",
+            message="株式分割の設定を更新しました",
         )
 
     return bp

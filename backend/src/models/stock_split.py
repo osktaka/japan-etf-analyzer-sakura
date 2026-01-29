@@ -15,6 +15,7 @@ class StockSplit(db.Model, TimestampMixin):
     split_date = db.Column(db.Date, nullable=False, index=True)
     ratio = db.Column(db.Float, nullable=False)
     is_applied = db.Column(db.Boolean, nullable=False, default=False, index=True)
+    is_chart_applied = db.Column(db.Boolean, nullable=False, default=False, index=True)
     detected_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     reviewed_at = db.Column(db.DateTime, nullable=True)
     reviewed_by = db.Column(db.Integer, nullable=True)
@@ -34,6 +35,7 @@ class StockSplit(db.Model, TimestampMixin):
             "split_date": self.split_date.isoformat() if self.split_date else None,
             "ratio": self.ratio,
             "is_applied": self.is_applied,
+            "is_chart_applied": self.is_chart_applied,
             "detected_at": (
                 self.detected_at.isoformat() + "Z" if self.detected_at else None
             ),

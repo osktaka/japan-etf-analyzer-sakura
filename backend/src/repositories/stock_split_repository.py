@@ -48,6 +48,21 @@ class StockSplitRepository(BaseRepository[StockSplit]):
             .all()
         )
 
+    def get_chart_applied_splits_since(
+        self, etf_code: str, since_date: date
+    ) -> List[StockSplit]:
+        """Get chart-applied stock splits for an ETF since a specific date."""
+        return (
+            db.session.query(StockSplit)
+            .filter(
+                StockSplit.etf_code == etf_code,
+                StockSplit.is_chart_applied.is_(True),
+                StockSplit.split_date >= since_date,
+            )
+            .order_by(StockSplit.split_date.asc())
+            .all()
+        )
+
     def update_applied(
         self, split_id: int, is_applied: bool, reviewed_by: int
     ) -> Optional[StockSplit]:

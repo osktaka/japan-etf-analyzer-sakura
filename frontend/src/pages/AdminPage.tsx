@@ -94,6 +94,24 @@ export function AdminPage() {
     }
   }
 
+  const handleToggleChartApplied = async (
+    splitId: number,
+    isChartApplied: boolean
+  ) => {
+    try {
+      const updatedSplit = await adminApi.toggleStockSplitChartApplied(
+        splitId,
+        isChartApplied
+      )
+      setStockSplits((prev) =>
+        prev.map((split) => (split.id === splitId ? updatedSplit : split))
+      )
+    } catch (err) {
+      console.error('Failed to toggle stock split chart applied status:', err)
+      setError('株式分割の更新に失敗しました')
+    }
+  }
+
   const formatDateTime = (dateStr: string | null): string => {
     if (!dateStr) return '-'
     const date = new Date(dateStr)
@@ -258,7 +276,8 @@ export function AdminPage() {
             <th>分割日</th>
             <th>変動率</th>
             <th>分割比率</th>
-            <th>適用</th>
+            <th>ポートフォリオ適用</th>
+            <th>チャート適用</th>
           </tr>
         </thead>
         <tbody>
@@ -280,6 +299,18 @@ export function AdminPage() {
                     checked={split.is_applied}
                     onChange={(e) =>
                       handleToggleApplied(split.id, e.target.checked)
+                    }
+                  />
+                  <span className={styles.toggleSlider} />
+                </label>
+              </td>
+              <td>
+                <label className={styles.toggle}>
+                  <input
+                    type="checkbox"
+                    checked={split.is_chart_applied}
+                    onChange={(e) =>
+                      handleToggleChartApplied(split.id, e.target.checked)
                     }
                   />
                   <span className={styles.toggleSlider} />

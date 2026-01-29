@@ -92,7 +92,7 @@ def test_split_before_all_trades(
             etf_code="1234",
             split_date=date(2024, 2, 1),
             ratio=2.0,
-            status="approved",
+            is_applied=True,
         )
     ]
 
@@ -176,7 +176,7 @@ def test_split_between_trades(
                     etf_code="1234",
                     split_date=date(2024, 2, 1),
                     ratio=2.0,
-                    status="approved",
+                    is_applied=True,
                 )
             ]
         else:
@@ -236,7 +236,7 @@ def test_split_with_sell(
                     etf_code="1234",
                     split_date=date(2024, 2, 1),
                     ratio=2.0,
-                    status="approved",
+                    is_applied=True,
                 )
             ]
         else:

@@ -18,6 +18,7 @@ export interface StockSplit {
   split_date: string
   ratio: number
   is_applied: boolean
+  is_chart_applied: boolean
   detected_at: string
   reviewed_at: string | null
   reviewed_by: number | null
@@ -62,6 +63,17 @@ export const adminApi = {
     const response = await apiClient.patch<ApiResponse<StockSplit>>(
       `/admin/stock-splits/${splitId}`,
       { is_applied: isApplied }
+    )
+    return response.data.data
+  },
+
+  async toggleStockSplitChartApplied(
+    splitId: number,
+    isChartApplied: boolean
+  ): Promise<StockSplit> {
+    const response = await apiClient.patch<ApiResponse<StockSplit>>(
+      `/admin/stock-splits/${splitId}`,
+      { is_chart_applied: isChartApplied }
     )
     return response.data.data
   },
