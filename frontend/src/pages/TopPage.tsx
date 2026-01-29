@@ -122,13 +122,16 @@ export function TopPage() {
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
 
-  // 表示モード（URL優先 → localStorage → デフォルト）
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+  // 表示モードの初期値を取得（ソート初期化で参照するため）
+  const getInitialViewMode = (): ViewMode => {
     const urlView = searchParams.get('view') as ViewMode
     if (urlView) return urlView
     const storedView = getStoredViewMode()
     return storedView || 'card'
-  })
+  }
+
+  // 表示モード（URL優先 → localStorage → デフォルト）
+  const [viewMode, setViewMode] = useState<ViewMode>(getInitialViewMode)
   const [performance, setPerformance] = useState<BatchPerformanceData>({})
   const [selectedPeriods, setSelectedPeriods] =
     useState<PerformancePeriod[]>(getStoredPeriods)
@@ -146,17 +149,22 @@ export function TopPage() {
     useState<SearchParams>(getInitialFilters())
 
   // ソート状態（URL優先 → localStorage → デフォルト）
+  // 表形式: 1年降順、カード形式: 銘柄コード昇順
   const [currentSort, setCurrentSort] = useState<SortField>(() => {
     const urlSort = searchParams.get('sort') as SortField
     if (urlSort) return urlSort
     const storedSort = getStoredSort()
-    return storedSort?.sort || 'code'
+    const initialViewMode = getInitialViewMode()
+    const defaultSort = initialViewMode === 'table' ? 'return_1y' : 'code'
+    return storedSort?.sort || defaultSort
   })
   const [currentOrder, setCurrentOrder] = useState<SortOrder>(() => {
     const urlOrder = searchParams.get('order') as SortOrder
     if (urlOrder) return urlOrder
     const storedSort = getStoredSort()
-    return storedSort?.order || 'asc'
+    const initialViewMode = getInitialViewMode()
+    const defaultOrder = initialViewMode === 'table' ? 'desc' : 'asc'
+    return storedSort?.order || defaultOrder
   })
   const [currentPage, setCurrentPage] = useState(
     Number(searchParams.get('page')) || 1
@@ -253,8 +261,11 @@ export function TopPage() {
     // 初回マウント時、URLパラメータがあれば検索を実行
     const filters = getInitialFilters()
     const keyword = searchParams.get('q') || undefined
-    const sort = (searchParams.get('sort') as SortField) || 'code'
-    const order = (searchParams.get('order') as SortOrder) || 'asc'
+    const initialViewMode = getInitialViewMode()
+    const defaultSort = initialViewMode === 'table' ? 'return_1y' : 'code'
+    const defaultOrder = initialViewMode === 'table' ? 'desc' : 'asc'
+    const sort = (searchParams.get('sort') as SortField) || defaultSort
+    const order = (searchParams.get('order') as SortOrder) || defaultOrder
     const page = Number(searchParams.get('page')) || 1
 
     // フィルタ条件があるか判定
