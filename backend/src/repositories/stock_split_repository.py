@@ -33,7 +33,6 @@ class StockSplitRepository(BaseRepository[StockSplit]):
             .all()
         )
 
-
     def get_approved_splits_since(
         self, etf_code: str, since_date: date
     ) -> List[StockSplit]:
@@ -60,7 +59,6 @@ class StockSplitRepository(BaseRepository[StockSplit]):
             split.reviewed_by = reviewed_by
             db.session.commit()
         return split
-
 
     def exists(self, etf_code: str, split_date: date) -> bool:
         """Check if a stock split already exists for the given ETF code and date."""
