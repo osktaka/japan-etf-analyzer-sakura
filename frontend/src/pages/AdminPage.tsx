@@ -72,6 +72,22 @@ export function AdminPage() {
     })
   }
 
+  const formatDuration = (startedAt: string | null, finishedAt: string | null): string => {
+    if (!startedAt || !finishedAt) return '-'
+    const start = new Date(startedAt)
+    const finish = new Date(finishedAt)
+    const durationMs = finish.getTime() - start.getTime()
+
+    // 負の値の場合はエラー表示
+    if (durationMs < 0) return 'エラー'
+
+    const totalSeconds = Math.floor(durationMs / 1000)
+    const hours = Math.floor(totalSeconds / 3600)
+    const minutes = Math.floor((totalSeconds % 3600) / 60)
+    const seconds = totalSeconds % 60
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+  }
+
   const renderStatusBadge = (status: BatchLog['status']) => {
     const badgeClass =
       status === 'success'
@@ -102,6 +118,7 @@ export function AdminPage() {
             <th>状態</th>
             <th>開始日時</th>
             <th>終了日時</th>
+            <th>処理時間</th>
             <th>エラーメッセージ</th>
           </tr>
         </thead>
@@ -112,6 +129,7 @@ export function AdminPage() {
               <td>{renderStatusBadge(log.status)}</td>
               <td>{formatDateTime(log.started_at)}</td>
               <td>{formatDateTime(log.finished_at)}</td>
+              <td>{formatDuration(log.started_at, log.finished_at)}</td>
               <td>
                 {log.error_message && (
                   <span className={styles.errorMessage}>
