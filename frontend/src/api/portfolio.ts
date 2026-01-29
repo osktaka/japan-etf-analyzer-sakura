@@ -1,6 +1,12 @@
 /** Portfolio API client */
 import { apiClient } from './client'
-import { ApiResponse, Holding, PortfolioSummary } from './types'
+import {
+  ApiResponse,
+  Holding,
+  PortfolioSummary,
+  ValuationHistory,
+  ValuationHistoryPeriod,
+} from './types'
 
 export const portfolioApi = {
   async getSummary(): Promise<PortfolioSummary> {
@@ -12,6 +18,15 @@ export const portfolioApi = {
   async getHoldings(): Promise<Holding[]> {
     const response = await apiClient.get<ApiResponse<Holding[]>>(
       '/portfolio/holdings'
+    )
+    return response.data.data
+  },
+
+  async getValuationHistory(
+    period: ValuationHistoryPeriod = '1y'
+  ): Promise<ValuationHistory> {
+    const response = await apiClient.get<ApiResponse<ValuationHistory>>(
+      `/portfolio/valuation-history?period=${period}`
     )
     return response.data.data
   },

@@ -63,6 +63,22 @@ class StockSplitRepository(BaseRepository[StockSplit]):
             .all()
         )
 
+    def get_approved_splits_between(
+        self, etf_code: str, start_date: date, end_date: date
+    ) -> List[StockSplit]:
+        """Get applied stock splits for an ETF between two dates (exclusive of start, inclusive of end)."""
+        return (
+            db.session.query(StockSplit)
+            .filter(
+                StockSplit.etf_code == etf_code,
+                StockSplit.is_applied.is_(True),
+                StockSplit.split_date > start_date,
+                StockSplit.split_date <= end_date,
+            )
+            .order_by(StockSplit.split_date.asc())
+            .all()
+        )
+
     def update_applied(
         self, split_id: int, is_applied: bool, reviewed_by: int
     ) -> Optional[StockSplit]:

@@ -38,3 +38,35 @@ class SplitAdjustmentService:
             cumulative_factor *= split.ratio
 
         return cumulative_factor
+
+    def get_adjustment_factor_at_date(
+        self, etf_code: str, trade_date: date, target_date: date
+    ) -> float:
+        """
+        Calculate cumulative split adjustment factor from trade date to target date.
+
+        Args:
+            etf_code: ETF code
+            trade_date: Trade execution date
+            target_date: Date to calculate adjustment for
+
+        Returns:
+            Cumulative adjustment factor
+            Returns 1.0 if no splits occurred between the dates
+
+        Note:
+            Unlike get_adjustment_factor which calculates to today,
+            this calculates to a specific target date.
+        """
+        if target_date <= trade_date:
+            return 1.0
+
+        splits = self.stock_split_repository.get_approved_splits_between(
+            etf_code, trade_date, target_date
+        )
+
+        cumulative_factor = 1.0
+        for split in splits:
+            cumulative_factor *= split.ratio
+
+        return cumulative_factor

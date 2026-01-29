@@ -1,6 +1,10 @@
 /** Portfolio page component */
 import { useState } from 'react'
-import { PortfolioSummary, HoldingsList } from '../components/portfolio'
+import {
+  PortfolioSummary,
+  HoldingsList,
+  PortfolioValueChart,
+} from '../components/portfolio'
 import { ETFDetailModal } from '../components/modal/ETFDetailModal'
 import { usePortfolio } from '../hooks/usePortfolio'
 import styles from './PortfolioPage.module.css'
@@ -17,6 +21,8 @@ export function PortfolioPage() {
     setSelectedCode(null)
   }
 
+  const hasHoldings = holdings.length > 0
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -27,6 +33,12 @@ export function PortfolioPage() {
       </div>
 
       {summary && <PortfolioSummary summary={summary} />}
+
+      {hasHoldings && (
+        <section className={styles.section}>
+          <PortfolioValueChart />
+        </section>
+      )}
 
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>保有銘柄</h2>

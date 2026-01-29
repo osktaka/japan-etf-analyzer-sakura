@@ -6,7 +6,11 @@ import {
   TradeFormModal,
   TradeHistoryModal,
 } from '../components/modal'
-import { PortfolioSummary, HoldingsList } from '../components/portfolio'
+import {
+  PortfolioSummary,
+  HoldingsList,
+  PortfolioValueChart,
+} from '../components/portfolio'
 import { useAuth } from '../hooks/useAuth'
 import { useFavorites } from '../hooks/useFavorites'
 import { useCompareList } from '../hooks/useCompareList'
@@ -95,6 +99,10 @@ export function MyPage() {
         </div>
 
         {summary && <PortfolioSummary summary={summary} />}
+
+        <div className={styles.chartSection}>
+          <PortfolioValueChart />
+        </div>
 
         <HoldingsList
           holdings={holdings}

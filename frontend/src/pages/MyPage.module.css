@@ -147,6 +147,10 @@
   right: 0.5rem;
 }
 
+.chartSection {
+  margin: 1.5rem 0;
+}
+
 @media (max-width: 640px) {
   .container {
     padding: 1rem 0;

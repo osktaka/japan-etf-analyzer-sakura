@@ -183,6 +183,15 @@ export interface PortfolioSummary {
   holdings_count: number
 }
 
+export type ValuationHistoryPeriod = '1m' | '3m' | '6m' | '1y' | '3y' | '5y' | '10y' | '20y'
+
+export interface ValuationDataPoint {
+  date: string
+  value: number
+}
+
+export type ValuationHistory = ValuationDataPoint[]
+
 export interface ETFPerformance {
   code: string
   returns: {
