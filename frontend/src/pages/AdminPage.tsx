@@ -289,22 +289,22 @@ export function AdminPage() {
                 </span>
               </td>
               <td>
-                {split.status === 'pending' && (
-                  <div className={styles.buttonGroup}>
-                    <button
-                      className={`${styles.button} ${styles.buttonSuccess}`}
-                      onClick={() => handleSplitStatusUpdate(split.id, 'approved')}
-                    >
-                      承認
-                    </button>
-                    <button
-                      className={`${styles.button} ${styles.buttonDanger}`}
-                      onClick={() => handleSplitStatusUpdate(split.id, 'rejected')}
-                    >
-                      却下
-                    </button>
-                  </div>
-                )}
+                <div className={styles.buttonGroup}>
+                  <button
+                    className={`${styles.button} ${styles.buttonSuccess}`}
+                    onClick={() => handleSplitStatusUpdate(split.id, 'approved')}
+                    disabled={split.status === 'approved'}
+                  >
+                    承認
+                  </button>
+                  <button
+                    className={`${styles.button} ${styles.buttonDanger}`}
+                    onClick={() => handleSplitStatusUpdate(split.id, 'rejected')}
+                    disabled={split.status === 'rejected'}
+                  >
+                    却下
+                  </button>
+                </div>
               </td>
             </tr>
           ))}
