@@ -42,6 +42,16 @@ make help
 | OS | Debian (Docker) | FreeBSD 13.0 |
 | OpenSSL | - | 1.0.2-chacha（重要制約） |
 
+## 本番環境固有の設定
+
+| 項目 | 開発環境 | 本番環境 |
+|------|---------|---------|
+| データベースパス | backend/data/etf.db | ./data/etf.db |
+| 作業ディレクトリ | /app (コンテナ内) | ~/www/japan-etf-analyzer |
+| Pythonスクリプト実行 | `docker compose exec backend python scripts/xxx.py` | `cd ~/www/japan-etf-analyzer && python backend/scripts/xxx.py` |
+
+**重要**: 本番環境でPythonスクリプトを実行する際は、必ずプロジェクトルート（~/www/japan-etf-analyzer）から実行すること。データベースパスが相対パス（./data/etf.db）のため。
+
 ## ポート番号
 
 | サービス | ホスト | コンテナ | URL |
