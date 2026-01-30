@@ -8,10 +8,13 @@ echo "========================================="
 PROJECT_ROOT=$(cd "$(dirname "$0")" && pwd)
 cd "$PROJECT_ROOT"
 
-# Pythonパス確認
-PYTHON_PATH="/usr/local/bin/python3"
-if [ ! -x "$PYTHON_PATH" ]; then
-    echo "Error: Python3 not found at $PYTHON_PATH"
+# Pythonパス確認（pyenv優先、なければシステムPython）
+if [ -f "$HOME/.pyenv/versions/3.9.18/bin/python3" ]; then
+    PYTHON_PATH="$HOME/.pyenv/versions/3.9.18/bin/python3"
+elif [ -x "/usr/local/bin/python3" ]; then
+    PYTHON_PATH="/usr/local/bin/python3"
+else
+    echo "Error: Python3 not found"
     exit 1
 fi
 
