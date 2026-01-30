@@ -172,18 +172,6 @@ export function ComparePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chartPeriod, etfCodesKey])
 
-  if (codes.length === 0) {
-    return (
-      <div className={styles.empty}>
-        <h1>比較リストが空です</h1>
-        <p>トップページで銘柄を追加してください</p>
-        <Link to={ROUTES.HOME} className="btn btn-primary">
-          トップページへ
-        </Link>
-      </div>
-    )
-  }
-
   return (
     <div className={styles.page}>
       <div className={styles.header}>
@@ -226,9 +214,19 @@ export function ComparePage() {
         existingCodes={codes}
       />
 
-      {isLoading && <Loading />}
+      {codes.length === 0 ? (
+        <div className={styles.empty}>
+          <p>比較リストが空です</p>
+          <p>トップページで銘柄を追加してください</p>
+          <Link to={ROUTES.HOME} className="btn btn-primary">
+            トップページへ
+          </Link>
+        </div>
+      ) : (
+        <>
+          {isLoading && <Loading />}
 
-      {!isLoading && etfs.length > 0 && (
+          {!isLoading && etfs.length > 0 && (
         <>
           <div className={styles.chartSection}>
             <div className={styles.chartHeader}>
@@ -442,6 +440,8 @@ export function ComparePage() {
               </tbody>
             </table>
           </div>
+        </>
+          )}
         </>
       )}
 

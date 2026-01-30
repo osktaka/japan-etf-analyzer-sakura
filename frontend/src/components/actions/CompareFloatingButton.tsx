@@ -1,6 +1,6 @@
 /** Floating compare button component */
 import { useState, useEffect, useRef, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useCompareList, useFavorites, usePortfolio } from '../../hooks'
 import { searchETFs } from '../../api'
 import { ROUTES } from '../../utils'
@@ -16,6 +16,7 @@ const EXCLUDED_STORAGE_KEY = 'etf-compare-excluded'
 
 export function CompareFloatingButton() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { codes, count, clearAll, toggleCode } = useCompareList()
   const { isFavorite, toggleFavorite } = useFavorites()
   const { holdings } = usePortfolio()
@@ -99,6 +100,11 @@ export function CompareFloatingButton() {
 
     fetchNames()
   }, [codes])
+
+  // 管理画面では非表示（Hooksの後で早期リターン）
+  if (location.pathname.startsWith('/admin')) {
+    return null
+  }
 
   const handleClick = () => {
     navigate(ROUTES.COMPARE)

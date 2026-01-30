@@ -197,11 +197,6 @@ export function Header() {
           role="menu"
           aria-label="モバイルナビゲーション"
         >
-          {isAuthenticated && user && (
-            <div className={styles.mobileUserInfo}>
-              {user.username} でログイン中
-            </div>
-          )}
           <Link
             to={ROUTES.HOME}
             className={`${styles.mobileNavLink} ${location.pathname === ROUTES.HOME ? styles.active : ''}`}
@@ -216,7 +211,7 @@ export function Header() {
             role="menuitem"
             onClick={closeMobileMenu}
           >
-            比較
+            銘柄比較
           </Link>
           {!isLoading && (
             <>
@@ -239,6 +234,11 @@ export function Header() {
                     >
                       管理
                     </Link>
+                  )}
+                  {user && (
+                    <div className={styles.mobileUserInfo}>
+                      {user.username} でログイン中
+                    </div>
                   )}
                   <button
                     className={styles.mobileLogoutBtn}

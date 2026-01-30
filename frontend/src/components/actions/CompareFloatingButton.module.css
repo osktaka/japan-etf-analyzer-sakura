@@ -211,3 +211,21 @@
   transform: scale(1.1);
   background-color: var(--color-secondary);
 }
+
+/* モバイルレスポンシブ */
+@media (max-width: 768px) {
+  .mainButton {
+    padding: 0.5rem var(--spacing-sm);
+  }
+
+  .icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .listButton,
+  .clearButton {
+    width: 36px;
+    height: 36px;
+  }
+}

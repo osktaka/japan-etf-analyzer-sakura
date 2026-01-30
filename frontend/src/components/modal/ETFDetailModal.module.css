@@ -22,7 +22,7 @@
 
 .closeBtn {
   position: absolute;
-  top: var(--spacing-md);
+  top: var(--spacing-lg);
   right: var(--spacing-md);
   width: 32px;
   height: 32px;

@@ -203,7 +203,7 @@
   display: block;
   color: var(--color-text-secondary);
   font-weight: 500;
-  padding: var(--spacing-md);
+  padding: var(--spacing-sm) var(--spacing-md);
   border-radius: var(--radius-md);
   transition: all 0.2s;
   text-decoration: none;
