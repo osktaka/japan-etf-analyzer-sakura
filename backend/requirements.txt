@@ -19,3 +19,7 @@ multitasking==0.0.11
 
 # Production (for Sakura)
 gunicorn==21.2.0
+
+# FreeBSD OpenSSL 1.0.2互換性のための制約
+urllib3<2.0  # OpenSSL 1.1.1+が不要
+requests<2.29.0  # urllib3 v1系を使用
