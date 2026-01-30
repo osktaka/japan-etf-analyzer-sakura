@@ -21,9 +21,9 @@ echo "Python: $PYTHON_VERSION"
 # venv作成
 echo ""
 echo "[1/5] Creating virtual environment..."
-if [ ! -d "venv" ]; then
-    $PYTHON_PATH -m venv venv
-    echo "  ✓ venv created"
+if [ ! -d "backend/venv" ]; then
+    $PYTHON_PATH -m venv backend/venv
+    echo "  ✓ venv created at backend/venv"
 else
     echo "  ✓ venv already exists"
 fi
@@ -31,7 +31,7 @@ fi
 # 依存関係インストール
 echo ""
 echo "[2/5] Installing backend dependencies..."
-source venv/bin/activate
+source backend/venv/bin/activate
 pip install --upgrade pip
 pip install -r backend/requirements.txt
 echo "  ✓ Dependencies installed"
@@ -76,7 +76,7 @@ echo "Next steps:"
 echo "  1. Create .env file (if not exists): cp .env.example .env"
 echo "  2. Edit .env to set SECRET_KEY and other configs"
 echo "  3. Initialize database:"
-echo "       source venv/bin/activate"
+echo "       source backend/venv/bin/activate"
 echo "       cd backend"
 echo "       python scripts/init_db.py"
 echo "       python scripts/seed_data.py"
