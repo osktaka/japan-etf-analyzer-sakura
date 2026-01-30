@@ -6,16 +6,14 @@ import random
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
-# Yahoo Finance API 429エラー対策: User-Agentをブラウザのものに設定
+# Yahoo Finance API 429エラー対策: User-Agentを強制的に上書き
+# yfinance 0.1.63が設定する古いUser-Agent (Chrome 39, 2014年) をブロック回避のため置換
 import requests
-from requests.adapters import HTTPAdapter
-from requests.structures import CaseInsensitiveDict
 
-# requestsのデフォルトヘッダーを上書き
 original_prepare_request = requests.Session.prepare_request
 def custom_prepare_request(self, request):
-    if not request.headers.get('User-Agent'):
-        request.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    # 常に新しいUser-Agentに置き換える（yfinanceの古いUser-Agentを上書き）
+    request.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     return original_prepare_request(self, request)
 requests.Session.prepare_request = custom_prepare_request
 
