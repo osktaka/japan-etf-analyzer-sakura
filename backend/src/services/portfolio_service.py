@@ -1,16 +1,23 @@
 """Portfolio service for calculating user's holdings and P&L."""
-from datetime import date, timedelta
+import logging
+from datetime import date, datetime, timedelta
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 from src.models import PriceHistory
 from src.repositories.etf_repository import ETFRepository
 from src.repositories.trade_repository import TradeRepository
 from src.services.split_adjustment_service import SplitAdjustmentService
 
+logger = logging.getLogger(__name__)
+
 
 class PortfolioService:
     """Service for portfolio calculations."""
+
+    # クラスレベルキャッシュ: {user_id}:{period} -> (timestamp, data)
+    _valuation_cache: Dict[str, Tuple[datetime, List[Dict]]] = {}
+    _cache_ttl = 300  # 5分（秒）
 
     def __init__(
         self,
@@ -24,6 +31,25 @@ class PortfolioService:
         self.split_adjustment_service = (
             split_adjustment_service or SplitAdjustmentService()
         )
+
+    @classmethod
+    def clear_valuation_cache(cls, user_id: Optional[int] = None) -> None:
+        """
+        Clear valuation cache.
+
+        Args:
+            user_id: If specified, clear only this user's cache. Otherwise, clear all.
+        """
+        if user_id is None:
+            cls._valuation_cache.clear()
+            logger.info("Cleared all valuation cache")
+        else:
+            keys_to_remove = [
+                k for k in cls._valuation_cache if k.startswith(f"{user_id}:")
+            ]
+            for key in keys_to_remove:
+                del cls._valuation_cache[key]
+            logger.info(f"Cleared valuation cache for user_id={user_id}")
 
     def get_holdings(self, user_id: int) -> List[Dict]:
         """
@@ -151,6 +177,17 @@ class PortfolioService:
         Returns:
             List of {date, value} representing daily portfolio value
         """
+        # キャッシュチェック
+        cache_key = f"{user_id}:{period}"
+        if cache_key in self._valuation_cache:
+            cached_time, cached_data = self._valuation_cache[cache_key]
+            age = (datetime.now() - cached_time).total_seconds()
+            if age < self._cache_ttl:
+                logger.info(
+                    f"Valuation history cache hit: user_id={user_id}, period={period}, age={age:.1f}s"
+                )
+                return cached_data
+
         period_days = {
             "1m": 30,
             "3m": 90,
@@ -167,6 +204,8 @@ class PortfolioService:
         # Get all trades before end of period
         trades = self.trade_repository.get_by_user_id(user_id)
         if not trades:
+            # 取引0件も空配列としてキャッシュ
+            self._valuation_cache[cache_key] = (datetime.now(), [])
             return []
 
         # Collect ETF codes from trades
@@ -175,6 +214,8 @@ class PortfolioService:
         # Get price histories for all ETF codes in period
         price_map = self._build_price_map(etf_codes, start_date)
         if not price_map:
+            # 価格データなし時も空配列としてキャッシュ
+            self._valuation_cache[cache_key] = (datetime.now(), [])
             return []
 
         # Generate valuation for each date
@@ -190,6 +231,10 @@ class PortfolioService:
                         "value": round(total_value, 2),
                     }
                 )
+
+        # キャッシュに保存
+        self._valuation_cache[cache_key] = (datetime.now(), result)
+        logger.info(f"Valuation history cached: user_id={user_id}, period={period}")
 
         return result
 

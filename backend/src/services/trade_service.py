@@ -19,6 +19,13 @@ class TradeService:
         self.trade_repository = trade_repository or TradeRepository()
         self.etf_repository = etf_repository or ETFRepository()
 
+    def _clear_portfolio_cache(self, user_id: int) -> None:
+        """Clear portfolio-related cache after trade CUD operations."""
+        # Avoid circular import by lazy import
+        from src.services.portfolio_service import PortfolioService
+
+        PortfolioService.clear_valuation_cache(user_id)
+
     def get_user_trades(
         self,
         user_id: int,
@@ -136,6 +143,7 @@ class TradeService:
 
         try:
             self.trade_repository.create(trade)
+            self._clear_portfolio_cache(user_id)
             return trade, None
         except Exception as e:
             self.trade_repository.rollback()
@@ -190,6 +198,7 @@ class TradeService:
 
         try:
             self.trade_repository.update(trade)
+            self._clear_portfolio_cache(user_id)
             return trade, None
         except Exception as e:
             self.trade_repository.rollback()
@@ -207,6 +216,7 @@ class TradeService:
 
         try:
             self.trade_repository.delete(trade)
+            self._clear_portfolio_cache(user_id)
             return True, None
         except Exception as e:
             self.trade_repository.rollback()
