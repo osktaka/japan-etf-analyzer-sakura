@@ -29,6 +29,7 @@ const mockRecommendation = {
       dividend_yield: 2.0,
       market_price: 2000,
       tags: [],
+      score: 85.5,
     },
   ],
 }

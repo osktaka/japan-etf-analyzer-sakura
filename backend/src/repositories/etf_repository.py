@@ -1,9 +1,10 @@
 """ETF repository for ETF data access."""
-from typing import List, Optional
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional
 
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 
-from src.models import ETF, ETFTagRelation, Category, Tag, PerformanceCache, db
+from src.models import ETF, ETFTagRelation, Category, Tag, PerformanceCache, PriceHistory, db
 
 from .base_repository import BaseRepository
 
@@ -246,3 +247,53 @@ class ETFRepository(BaseRepository[ETF]):
 
         db.session.commit()
         return etf
+
+    def get_average_volume(self, etf_code: str, days: int = 30) -> Optional[float]:
+        """Get average trading volume for an ETF.
+
+        Args:
+            etf_code: ETF code
+            days: Number of days for calculation (default: 30)
+
+        Returns:
+            Average volume or None if data unavailable
+        """
+        cutoff_date = datetime.utcnow().date() - timedelta(days=days)
+        result = (
+            db.session.query(func.avg(PriceHistory.volume))
+            .filter(
+                PriceHistory.etf_code == etf_code,
+                PriceHistory.date >= cutoff_date,
+                PriceHistory.volume.isnot(None),
+            )
+            .scalar()
+        )
+        return float(result) if result else None
+
+    def get_return_rates(self, etf_code: str) -> Dict[str, Optional[float]]:
+        """Get return rates for an ETF.
+
+        Args:
+            etf_code: ETF code
+
+        Returns:
+            Dictionary with return rates for different periods
+        """
+        performance_data = (
+            db.session.query(PerformanceCache)
+            .filter(PerformanceCache.etf_code == etf_code)
+            .all()
+        )
+
+        return_rates = {
+            "1y": None,
+            "3y": None,
+        }
+
+        for perf in performance_data:
+            if perf.period == "1y":
+                return_rates["1y"] = perf.return_rate
+            elif perf.period == "3y":
+                return_rates["3y"] = perf.return_rate
+
+        return return_rates

@@ -50,6 +50,28 @@
   line-height: 1.4;
 }
 
+.scoreSection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.scoreLabel {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: white;
+}
+
+.scoreValue {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: white;
+}
+
 .metrics {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

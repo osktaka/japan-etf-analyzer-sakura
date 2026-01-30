@@ -103,4 +103,16 @@ describe('ETFCard', () => {
     render(<ETFCard etf={etfNoTags} />)
     expect(screen.queryByText('TOPIX連動')).not.toBeInTheDocument()
   })
+
+  it('スコアが表示される', () => {
+    const etfWithScore = { ...mockETF, score: 85.5 }
+    render(<ETFCard etf={etfWithScore} />)
+    expect(screen.getByText('評価スコア')).toBeInTheDocument()
+    expect(screen.getByText('86点')).toBeInTheDocument()
+  })
+
+  it('スコアがない場合は表示されない', () => {
+    render(<ETFCard etf={mockETF} />)
+    expect(screen.queryByText('評価スコア')).not.toBeInTheDocument()
+  })
 })

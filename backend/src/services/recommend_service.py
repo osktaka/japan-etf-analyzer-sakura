@@ -1,7 +1,7 @@
 """Recommendation service for ETF recommendations."""
 from typing import Dict, List
 
-from src.repositories import ETFRepository, TagRepository
+from src.repositories import ETFRepository
 
 from .scoring_service import ScoringService
 
@@ -11,39 +11,40 @@ class RecommendService:
 
     PERSPECTIVES = [
         {
-            "id": "high-dividend",
-            "name": "高配当",
-            "description": "配当利回りと安定性を考慮したおすすめ",
+            "id": "dividend",
+            "name": "配当収入",
+            "description": "配当利回りが高く、定期的な配当収入を期待できる銘柄",
         },
         {
             "id": "low-cost",
             "name": "低コスト",
-            "description": "信託報酬と純資産規模を考慮したおすすめ",
+            "description": "信託報酬が低く、長期保有でコストを抑えられる銘柄",
         },
         {
-            "id": "beginner",
-            "name": "初心者向け",
-            "description": "低リスク・高流動性のおすすめETF",
+            "id": "stability",
+            "name": "安定性",
+            "description": "純資産規模が大きく、安心して保有できる銘柄",
         },
         {
-            "id": "diversified",
-            "name": "分散投資",
-            "description": "幅広い銘柄に分散投資できるETF",
+            "id": "volume",
+            "name": "取引規模",
+            "description": "出来高が多く、売買が成立しやすい銘柄",
         },
         {
-            "id": "popular",
-            "name": "人気",
-            "description": "取引量が多い人気のETF",
+            "id": "growth",
+            "name": "成長性",
+            "description": "過去の値上がり実績が良好な銘柄",
+        },
+        {
+            "id": "balance",
+            "name": "バランス",
+            "description": "複数の観点でバランス良く評価された銘柄",
         },
     ]
-
-    # Perspectives that use composite scoring
-    SCORED_PERSPECTIVES = {"high-dividend", "low-cost", "beginner"}
 
     def __init__(self):
         """Initialize service with repositories."""
         self.etf_repository = ETFRepository()
-        self.tag_repository = TagRepository()
         self.scoring_service = ScoringService()
 
     def get_perspectives(self) -> List[Dict]:
@@ -52,7 +53,7 @@ class RecommendService:
 
     def get_recommendations(
         self,
-        perspective: str = "popular",
+        perspective: str = "balance",
         limit: int = 5,
     ) -> Dict:
         """Get recommended ETFs based on perspective.
@@ -62,41 +63,24 @@ class RecommendService:
             limit: Maximum number of recommendations
 
         Returns:
-            Dictionary with perspective info and recommended ETFs
+            Dictionary with perspective info and recommended ETFs with scores
         """
         perspective_info = next(
             (p for p in self.PERSPECTIVES if p["id"] == perspective),
-            self.PERSPECTIVES[4],
+            self.PERSPECTIVES[5],  # Default to balance
         )
 
-        etfs = self._get_etfs_by_perspective(perspective, limit)
+        scored_items = self._get_scored_etfs(perspective, limit)
 
         return {
             "perspective": perspective_info,
-            "items": [etf.to_summary_dict() for etf in etfs],
+            "items": [
+                {**item["etf"].to_summary_dict(), "score": item["score"]}
+                for item in scored_items
+            ],
         }
 
-    def _get_etfs_by_perspective(self, perspective: str, limit: int) -> List:
-        """Get ETFs based on perspective."""
-        # Use composite scoring for specific perspectives
-        if perspective in self.SCORED_PERSPECTIVES:
-            return self._get_scored_etfs(perspective, limit)
-
-        # Tag-based recommendations for other perspectives
-        if perspective in ("diversified", "popular"):
-            tag_name_map = {
-                "diversified": "分散投資",
-                "popular": "人気",
-            }
-            tag_name = tag_name_map.get(perspective, "人気")
-            tag = self.tag_repository.get_by_name(tag_name)
-            if tag:
-                return self.etf_repository.get_by_tag(tag.id)[:limit]
-            return []
-
-        return self.etf_repository.search(limit=limit)
-
-    def _get_scored_etfs(self, perspective: str, limit: int) -> List:
+    def _get_scored_etfs(self, perspective: str, limit: int) -> List[Dict]:
         """Get ETFs ranked by composite score.
 
         Args:
@@ -104,19 +88,29 @@ class RecommendService:
             limit: Maximum number of results
 
         Returns:
-            List of ETFs sorted by composite score
+            List of dicts with ETF and score, sorted by composite score
         """
         # Get candidate ETFs based on perspective
-        if perspective == "high-dividend":
+        if perspective == "dividend":
             # Get ETFs with dividend data
             candidates = self.etf_repository.get_high_dividend(limit * 3)
         elif perspective == "low-cost":
             # Get ETFs with expense ratio data
             candidates = self.etf_repository.get_low_cost(limit * 3)
+        elif perspective == "stability":
+            # Get ETFs sorted by total assets
+            candidates = self.etf_repository.search(
+                sort="total_assets", order="desc", limit=limit * 3
+            )
+        elif perspective == "volume":
+            # Get all ETFs (volume will be evaluated in scoring)
+            candidates = self.etf_repository.search(limit=limit * 3)
+        elif perspective == "growth":
+            # Get all ETFs (return data will be evaluated in scoring)
+            candidates = self.etf_repository.search(limit=limit * 3)
         else:
-            # Get all ETFs for beginner perspective
+            # Get all ETFs for balance perspective
             candidates = self.etf_repository.search(limit=limit * 3)
 
         # Rank by composite score
-        ranked = self.scoring_service.rank_etfs(candidates, perspective, limit)
-        return [item["etf"] for item in ranked]
+        return self.scoring_service.rank_etfs(candidates, perspective, limit)

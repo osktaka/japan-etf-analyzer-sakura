@@ -30,14 +30,14 @@ def create_recommend_bp():
         GET /api/v1/recommendations
 
         Query Parameters:
-            perspective: Perspective ID (high-dividend, low-cost, beginner,
-                         diversified, popular). Default: popular
+            perspective: Perspective ID (dividend, low-cost, stability,
+                         volume, growth, balance). Default: balance
             limit: Number of recommendations (default: 5, max: 20)
 
         Returns:
             Recommended ETFs with perspective info
         """
-        perspective = request.args.get("perspective", "popular")
+        perspective = request.args.get("perspective", "balance")
         limit = request.args.get("limit", 5, type=int)
 
         if limit < 1:
