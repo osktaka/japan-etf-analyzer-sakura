@@ -36,6 +36,9 @@ echo ""
 echo "[2/5] Installing backend dependencies..."
 source backend/venv/bin/activate
 pip install --upgrade pip
+# TMPDIR設定（/tmp, /var/tmpがnoexecの場合の対策）
+export TMPDIR="$HOME/tmp"
+mkdir -p "$TMPDIR"
 pip install -r backend/requirements.txt
 echo "  ✓ Dependencies installed"
 
