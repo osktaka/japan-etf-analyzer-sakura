@@ -11,7 +11,6 @@ import {
   HoldingsList,
   PortfolioValueChart,
 } from '../components/portfolio'
-import { useAuth } from '../hooks/useAuth'
 import { useFavorites } from '../hooks/useFavorites'
 import { useCompareList } from '../hooks/useCompareList'
 import { usePortfolio } from '../hooks/usePortfolio'
@@ -19,7 +18,6 @@ import { ETFSummary } from '../api/types'
 import styles from './MyPage.module.css'
 
 export function MyPage() {
-  const { user } = useAuth()
   const { favorites, isLoading, error, toggleFavorite, isFavorite } =
     useFavorites()
   const { isInList: isInCompare, toggleCode: toggleCompare } = useCompareList()
@@ -74,9 +72,6 @@ export function MyPage() {
     <div className={styles.container}>
       <div className={styles.header}>
         <h1 className={styles.title}>マイページ</h1>
-        <p className={styles.welcome}>
-          ようこそ、<strong>{user?.username}</strong> さん
-        </p>
       </div>
 
       <section className={styles.section}>

@@ -45,7 +45,7 @@ export function Header() {
             to={ROUTES.HOME}
             className={`${styles.navLink} ${location.pathname === ROUTES.HOME ? styles.active : ''}`}
           >
-            ホーム
+            トップ
           </Link>
           <Link
             to={ROUTES.COMPARE}

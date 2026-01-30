@@ -145,6 +145,9 @@
   text-align: center;
   width: 40px;
   padding: var(--spacing-xs) !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .compareCol {

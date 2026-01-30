@@ -190,7 +190,7 @@ export function ComparePage() {
         <h1 className={styles.title}>銘柄比較</h1>
         <div className={styles.headerButtons}>
           <button
-            className="btn btn-secondary"
+            className="btn btn-primary"
             onClick={() => setIsListModalOpen(true)}
           >
             銘柄リスト

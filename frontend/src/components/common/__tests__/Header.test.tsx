@@ -52,13 +52,13 @@ describe('Header', () => {
     expect(screen.getByText('Japan ETF Analyzer')).toBeInTheDocument()
   })
 
-  it('ホームリンクが表示される', () => {
+  it('トップリンクが表示される', () => {
     render(
       <BrowserRouter>
         <Header />
       </BrowserRouter>
     )
-    expect(screen.getByText('ホーム')).toBeInTheDocument()
+    expect(screen.getByText('トップ')).toBeInTheDocument()
   })
 
   it('比較リンクが表示される', () => {

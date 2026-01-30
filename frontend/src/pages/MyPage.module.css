@@ -14,14 +14,6 @@
   margin-bottom: 0.5rem;
 }
 
-.welcome {
-  color: var(--color-text-secondary);
-}
-
-.welcome strong {
-  color: var(--color-text);
-}
-
 .section {
   background: var(--color-surface);
   border-radius: 8px;
