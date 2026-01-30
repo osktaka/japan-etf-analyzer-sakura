@@ -22,7 +22,7 @@ import logging
 import math
 import os
 import sys
-import time
+import time as time_module
 from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Optional, Tuple
@@ -43,14 +43,16 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Yahoo Finance API 429エラー対策: User-Agentをブラウザのものに設定
 import requests
-_original_request = requests.Session.request
-def _custom_request(self, method, url, **kwargs):
-    if 'headers' not in kwargs:
-        kwargs['headers'] = {}
-    if 'User-Agent' not in kwargs['headers']:
-        kwargs['headers']['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-    return _original_request(self, method, url, **kwargs)
-requests.Session.request = _custom_request
+from requests.adapters import HTTPAdapter
+from requests.structures import CaseInsensitiveDict
+
+# requestsのデフォルトヘッダーを上書き
+original_prepare_request = requests.Session.prepare_request
+def custom_prepare_request(self, request):
+    if not request.headers.get('User-Agent'):
+        request.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    return original_prepare_request(self, request)
+requests.Session.prepare_request = custom_prepare_request
 
 logging.basicConfig(
     level=logging.INFO,
@@ -561,7 +563,7 @@ def update_performance_cache(codes: list, rate_limit: float = 1.0) -> tuple:
 
             # レート制限対策
             if i < len(codes):
-                time.sleep(rate_limit)
+                time_module.sleep(rate_limit)
 
         except Exception as e:
             logger.error(f"[{i}/{len(codes)}] {code}: Performance calc failed - {e}")
@@ -674,7 +676,7 @@ def main() -> int:
 
             # レート制限対策（最後の銘柄以外）
             if i < len(etfs) and not args.dry_run:
-                time.sleep(args.rate_limit)
+                time_module.sleep(args.rate_limit)
 
         # パフォーマンスキャッシュの更新
         if not args.dry_run and not args.skip_performance:

@@ -5,14 +5,16 @@ from typing import Dict, List
 
 # Yahoo Finance API 429エラー対策: User-Agentをブラウザのものに設定
 import requests
-_original_request = requests.Session.request
-def _custom_request(self, method, url, **kwargs):
-    if 'headers' not in kwargs:
-        kwargs['headers'] = {}
-    if 'User-Agent' not in kwargs['headers']:
-        kwargs['headers']['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-    return _original_request(self, method, url, **kwargs)
-requests.Session.request = _custom_request
+from requests.adapters import HTTPAdapter
+from requests.structures import CaseInsensitiveDict
+
+# requestsのデフォルトヘッダーを上書き
+original_prepare_request = requests.Session.prepare_request
+def custom_prepare_request(self, request):
+    if not request.headers.get('User-Agent'):
+        request.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    return original_prepare_request(self, request)
+requests.Session.prepare_request = custom_prepare_request
 
 import yfinance as yf
 
