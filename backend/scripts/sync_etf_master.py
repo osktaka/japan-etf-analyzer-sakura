@@ -1,9 +1,21 @@
 """Sync ETF master data from etf_master.json to database."""
 import json
+import os
 import sys
 from pathlib import Path
 
 from sqlalchemy import text
+
+# Load .env file if it exists
+project_root = Path(__file__).resolve().parent.parent.parent
+env_file = project_root / ".env"
+if env_file.exists():
+    with open(env_file) as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, value = line.split("=", 1)
+                os.environ.setdefault(key, value)
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
