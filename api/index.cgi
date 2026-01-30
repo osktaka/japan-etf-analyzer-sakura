@@ -11,7 +11,7 @@ APP_ROOT = Path(__file__).parent.parent.resolve()
 sys.path.insert(0, str(APP_ROOT / "backend" / "src"))
 
 # venv有効化（本番環境）
-venv_site_packages = APP_ROOT / "backend" / "venv" / "lib" / "python3.8" / "site-packages"
+venv_site_packages = APP_ROOT / "backend" / "venv" / "lib" / "python3.9" / "site-packages"
 if venv_site_packages.exists():
     sys.path.insert(0, str(venv_site_packages))
 
