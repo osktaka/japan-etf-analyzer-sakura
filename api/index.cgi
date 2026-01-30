@@ -33,6 +33,16 @@ os.environ.setdefault("APP_DATA_DIR", str(APP_ROOT / "data"))
 # カレントディレクトリをプロジェクトルートに変更（相対パス解決用）
 os.chdir(APP_ROOT)
 
+# デバッグ情報（一時的）
+print("Content-Type: text/plain\n")
+print(f"APP_ROOT: {APP_ROOT}")
+print(f"CWD: {os.getcwd()}")
+print(f"DATABASE_URL: {os.environ.get('DATABASE_URL')}")
+print(f"DB exists: {(APP_ROOT / 'data' / 'etf.db').exists()}")
+print(f"FLASK_ENV: {os.environ.get('FLASK_ENV')}")
+import sys
+sys.exit(0)
+
 # Flaskアプリケーション読み込み
 from src.app import app
 from wsgiref.handlers import CGIHandler
