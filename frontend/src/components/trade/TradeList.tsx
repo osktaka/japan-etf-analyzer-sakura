@@ -81,10 +81,12 @@ export function TradeList({
               </td>
               {showEtfInfo && (
                 <td className={styles.etfCell} data-label="銘柄">
-                  <span className={styles.code}>{trade.etf_code}</span>
-                  {trade.etf && (
-                    <span className={styles.name}>{trade.etf.name}</span>
-                  )}
+                  <div className={styles.etfInfo}>
+                    <span className={styles.code}>{trade.etf_code}</span>
+                    {trade.etf && (
+                      <span className={styles.name}>{trade.etf.name}</span>
+                    )}
+                  </div>
                 </td>
               )}
               <td className={styles.numericCell} data-label="数量">

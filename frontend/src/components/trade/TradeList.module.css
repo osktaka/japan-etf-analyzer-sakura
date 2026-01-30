@@ -74,7 +74,7 @@
   font-size: 0.875rem;
 }
 
-.etfCell {
+.etfInfo {
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
@@ -205,14 +205,14 @@
     text-align: left;
   }
 
-  .etfCell {
-    flex-direction: row;
-    gap: 0.5rem;
-    align-items: center;
+  .etfInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
   }
 
   .name {
-    max-width: 150px;
+    max-width: none;
   }
 
   .actions {
