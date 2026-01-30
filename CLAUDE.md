@@ -33,13 +33,14 @@ make help
 
 ## 技術スタック
 
-| レイヤー | 技術 |
-|----------|------|
-| バックエンド | Flask (Python 3.8) |
-| フロントエンド | React + Vite |
-| データベース | SQLite |
-| 開発環境 | Docker Compose |
-| 本番環境 | さくらレンタルサーバー スタンダード |
+| レイヤー | 開発環境 | 本番環境 |
+|----------|----------|----------|
+| バックエンド | Flask (Python 3.8) | Flask (Python 3.9.18) |
+| フロントエンド | React + Vite | ビルド済み静的ファイル |
+| データベース | SQLite | SQLite |
+| 環境 | Docker Compose | さくらレンタルサーバー スタンダード |
+| OS | Debian (Docker) | FreeBSD 13.0 |
+| OpenSSL | - | 1.0.2-chacha（重要制約） |
 
 ## ポート番号
 
@@ -143,6 +144,24 @@ ApacheのDocumentRootから`frontend/dist/`内のファイルにアクセスす�
 - `assets/` → `frontend/dist/assets/`
 
 `setup.sh`で自動作成されます。
+
+### 依存ライブラリのバージョン制約
+
+#### OpenSSL 1.0.2互換性
+FreeBSD 13.0のOpenSSL 1.0.2により、以下のバージョン制約が必要:
+- `urllib3 < 2.0`: v2.0以降はOpenSSL 1.1.1+が必要
+- `requests < 2.29.0`: urllib3 v2依存を避けるため
+
+#### FreeBSDビルド制約
+- `numpy==1.19.5`: メモリ消費が少なく、FreeBSD環境でビルド可能
+- `pandas==1.3.5`: numpy 1.19.5との互換性
+- `yfinance==0.1.63`: cryptography 2.x系と互換性あり
+- `CRYPTOGRAPHY_DONT_BUILD_RUST=1`: setup.shで自動設定
+
+**重要**: requirements.txtの変更後は必ずvenvを再構築:
+```bash
+rm -rf backend/venv && ./setup.sh
+```
 
 ## 内部構造ガイド
 
