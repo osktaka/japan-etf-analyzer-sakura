@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 # プロジェクトルートを特定
-APP_ROOT = Path(__file__).parent.parent.resolve()
+APP_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(APP_ROOT / "backend"))
 
 # venv有効化（本番環境）
