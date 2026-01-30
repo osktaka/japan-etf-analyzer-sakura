@@ -504,9 +504,9 @@ export function TopPage() {
     }
 
     search(params)
-    // favoritesOnly/holdingsOnly変更時のみ発動
+    // favoritesOnly/holdingsOnly/compareOnly変更時のみ発動
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [favoritesOnly, holdingsOnly])
+  }, [favoritesOnly, holdingsOnly, compareOnly])
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
