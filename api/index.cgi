@@ -8,7 +8,7 @@ from pathlib import Path
 
 # プロジェクトルートを特定
 APP_ROOT = Path(__file__).parent.parent.resolve()
-sys.path.insert(0, str(APP_ROOT / "backend" / "src"))
+sys.path.insert(0, str(APP_ROOT / "backend"))
 
 # venv有効化（本番環境）
 venv_site_packages = APP_ROOT / "backend" / "venv" / "lib" / "python3.9" / "site-packages"
@@ -31,7 +31,7 @@ os.environ.setdefault("APP_BASE_DIR", str(APP_ROOT))
 os.environ.setdefault("APP_DATA_DIR", str(APP_ROOT / "data"))
 
 # Flaskアプリケーション読み込み
-from app import app
+from src.app import app
 from wsgiref.handlers import CGIHandler
 
 # CGIハンドラーで実行
