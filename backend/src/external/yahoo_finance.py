@@ -6,6 +6,17 @@ import random
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 
+# Yahoo Finance API 429エラー対策: User-Agentをブラウザのものに設定
+import requests
+_original_request = requests.Session.request
+def _custom_request(self, method, url, **kwargs):
+    if 'headers' not in kwargs:
+        kwargs['headers'] = {}
+    if 'User-Agent' not in kwargs['headers']:
+        kwargs['headers']['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    return _original_request(self, method, url, **kwargs)
+requests.Session.request = _custom_request
+
 logger = logging.getLogger(__name__)
 
 

@@ -41,6 +41,17 @@ if env_file.exists():
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+# Yahoo Finance API 429エラー対策: User-Agentをブラウザのものに設定
+import requests
+_original_request = requests.Session.request
+def _custom_request(self, method, url, **kwargs):
+    if 'headers' not in kwargs:
+        kwargs['headers'] = {}
+    if 'User-Agent' not in kwargs['headers']:
+        kwargs['headers']['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    return _original_request(self, method, url, **kwargs)
+requests.Session.request = _custom_request
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
