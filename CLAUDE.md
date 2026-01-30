@@ -77,18 +77,43 @@ frontend/
 
 ## さくらレンタルサーバーへのデプロイ
 
+### デプロイフロー
+
 本番環境では以下の構成でデプロイ:
 
-1. **フロントエンド**: Reactをビルドし、静的ファイルとして配置
-2. **バックエンド**: Flask + CGI/FastCGI
+1. **ローカル**: frontend/src変更時、pre-commit hookで自動ビルド
+2. **Git**: frontend/dist/をコミット・プッシュ（さくらサーバーにNode.js非インストール）
+3. **本番**: `git pull` → `./setup.sh` で環境構築
 
 ```bash
-# フロントエンドビルド
-cd frontend && npm run build
+# 初回セットアップ（開発環境）
+./scripts/install-hooks.sh
 
-# ビルド結果を転送
-scp -r dist/* user@server:/home/user/www/
+# フロントエンド変更
+# → git commitで自動ビルド・ステージング
+
+# 本番デプロイ
+ssh user@server
+cd ~/www/japan-etf-analyzer
+git pull
+./setup.sh
+# .envファイルを編集
+# DBを初期化（初回のみ）
 ```
+
+### frontend/dist/ のGit管理ポリシー
+
+**重要**: frontend/dist/は.gitignoreで除外せず、Git管理に含める
+
+**理由**:
+- さくらレンタルサーバーにNode.jsインストール不可
+- ビルド済みアセットをgit pullで配信
+- pre-commit hookで自動ビルド → 手動ビルド忘れ防止
+
+**運用ルール**:
+- frontend/src変更時: hookが自動ビルド・ステージング
+- dist/のみ変更時: コミット不要（hookで再生成される）
+- hookインストール: `./scripts/install-hooks.sh` を実行
 
 ## 内部構造ガイド
 

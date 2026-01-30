@@ -23,23 +23,25 @@ __pycache__/
 *.py[cod]
 *$py.class
 .venv/
-venv/
+backend/venv/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
 htmlcov/
 .coverage
 *.egg-info/
-dist/
+backend/dist/
 build/
 
 # Node.js
 node_modules/
-dist/
 build/
 coverage/
 .turbo/
 *.tsbuildinfo
+
+# frontend/dist/ is tracked for Sakura server deployment (exclude from gitignore)
+!frontend/dist/
 
 # MySQL
 *.sql

@@ -1,0 +1,24 @@
+#!/bin/bash
+# Pre-commit hook: Auto-build frontend when frontend/src changes
+
+# ステージングされたfrontend/src/以下のファイルを検出
+FRONTEND_SRC_CHANGED=$(git diff --cached --name-only --diff-filter=ACM | grep '^frontend/src/' || true)
+
+if [ -n "$FRONTEND_SRC_CHANGED" ]; then
+    echo "Frontend source files changed. Building..."
+
+    (cd frontend && npm run build)
+    BUILD_STATUS=$?
+
+    if [ $BUILD_STATUS -ne 0 ]; then
+        echo "Error: Frontend build failed. Commit aborted."
+        exit 1
+    fi
+
+    # ビルド成果物をステージング
+    git add frontend/dist/
+
+    echo "✓ Frontend built and staged"
+fi
+
+exit 0

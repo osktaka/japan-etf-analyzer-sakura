@@ -18,7 +18,7 @@ import './styles/global.css'
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/japan-etf-analyzer">
       <AuthProvider>
         <CompareProvider>
           <div className="app">

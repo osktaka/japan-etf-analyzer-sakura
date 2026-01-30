@@ -1,0 +1,39 @@
+#!/usr/local/bin/python3
+# -*- coding: utf-8 -*-
+"""Flask CGI entry point for Sakura rental server."""
+
+import os
+import sys
+from pathlib import Path
+
+# プロジェクトルートを特定
+APP_ROOT = Path(__file__).parent.parent.resolve()
+sys.path.insert(0, str(APP_ROOT / "backend" / "src"))
+
+# venv有効化（本番環境）
+venv_site_packages = APP_ROOT / "backend" / "venv" / "lib" / "python3.8" / "site-packages"
+if venv_site_packages.exists():
+    sys.path.insert(0, str(venv_site_packages))
+
+# .env読み込み
+env_file = APP_ROOT / ".env"
+if env_file.exists():
+    with open(env_file) as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                key, _, value = line.partition("=")
+                os.environ.setdefault(key.strip(), value.strip())
+
+# 環境変数設定（本番環境用）
+os.environ.setdefault("FLASK_ENV", "production")
+os.environ.setdefault("APP_BASE_DIR", str(APP_ROOT))
+os.environ.setdefault("APP_DATA_DIR", str(APP_ROOT / "data"))
+
+# Flaskアプリケーション読み込み
+from app import app
+from wsgiref.handlers import CGIHandler
+
+# CGIハンドラーで実行
+if __name__ == "__main__":
+    CGIHandler().run(app)

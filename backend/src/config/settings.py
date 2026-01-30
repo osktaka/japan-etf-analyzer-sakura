@@ -10,9 +10,9 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
 
-    # データディレクトリ（Docker内: /app/data）
-    BASE_DIR = Path("/app")
-    DATA_DIR = BASE_DIR / "data"
+    # データディレクトリ（環境変数で上書き可能）
+    BASE_DIR = Path(os.environ.get("APP_BASE_DIR", "/app"))
+    DATA_DIR = Path(os.environ.get("APP_DATA_DIR", str(BASE_DIR / "data")))
 
     # モックデータ使用フラグ（True: モック、False: 本番yfinance）
     USE_MOCK_DATA = os.environ.get("USE_MOCK_DATA", "true").lower() == "true"
