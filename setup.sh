@@ -39,6 +39,8 @@ pip install --upgrade pip
 # TMPDIR設定（/tmp, /var/tmpがnoexecの場合の対策）
 export TMPDIR="$HOME/tmp"
 mkdir -p "$TMPDIR"
+# cryptographyのRustビルドをスキップ（FreeBSD対応）
+export CRYPTOGRAPHY_DONT_BUILD_RUST=1
 pip install -r backend/requirements.txt
 echo "  ✓ Dependencies installed"
 
