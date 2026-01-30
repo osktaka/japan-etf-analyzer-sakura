@@ -133,10 +133,11 @@ class TestRecommendEndpoints:
         response = client.get("/api/v1/perspectives")
         assert response.status_code == 200
         data = response.json["data"]
-        assert len(data) == 5
+        assert len(data) == 6
         perspective_ids = [p["id"] for p in data]
-        assert "high-dividend" in perspective_ids
+        assert "dividend" in perspective_ids
         assert "low-cost" in perspective_ids
+        assert "balance" in perspective_ids
 
     def test_get_recommendations(self, client, db_session):
         """Test getting recommendations."""
@@ -152,8 +153,12 @@ class TestRecommendEndpoints:
         db_session.add(relation)
         db_session.commit()
 
-        response = client.get("/api/v1/recommendations?perspective=popular")
+        response = client.get("/api/v1/recommendations?perspective=balance")
         assert response.status_code == 200
         data = response.json["data"]
-        assert data["perspective"]["id"] == "popular"
+        assert data["perspective"]["id"] == "balance"
         assert len(data["items"]) >= 0
+        # Check that items have score field
+        if len(data["items"]) > 0:
+            assert "score" in data["items"][0]
+            assert isinstance(data["items"][0]["score"], (int, float))

@@ -5,9 +5,9 @@ import { PerspectiveTabs } from '../PerspectiveTabs'
 import { Perspective } from '../../../api'
 
 const mockPerspectives: Perspective[] = [
-  { id: 'popular', name: '人気', description: '人気のETF' },
-  { id: 'dividend', name: '高配当', description: '配当利回りが高いETF' },
-  { id: 'low-cost', name: '低コスト', description: '信託報酬が低いETF' },
+  { id: 'dividend', name: '配当収入', description: '配当利回りが高く、定期的な配当収入を期待できる銘柄' },
+  { id: 'low-cost', name: '低コスト', description: '信託報酬が低く、長期保有でコストを抑えられる銘柄' },
+  { id: 'balance', name: 'バランス', description: '複数の観点でバランス良く評価された銘柄' },
 ]
 
 describe('PerspectiveTabs', () => {
@@ -15,14 +15,14 @@ describe('PerspectiveTabs', () => {
     render(
       <PerspectiveTabs
         perspectives={mockPerspectives}
-        selected="popular"
+        selected="balance"
         onSelect={vi.fn()}
       />
     )
 
-    expect(screen.getByText('人気')).toBeInTheDocument()
-    expect(screen.getByText('高配当')).toBeInTheDocument()
+    expect(screen.getByText('配当収入')).toBeInTheDocument()
     expect(screen.getByText('低コスト')).toBeInTheDocument()
+    expect(screen.getByText('バランス')).toBeInTheDocument()
   })
 
   it('タブクリック時にonSelectが呼ばれる', () => {
@@ -30,12 +30,12 @@ describe('PerspectiveTabs', () => {
     render(
       <PerspectiveTabs
         perspectives={mockPerspectives}
-        selected="popular"
+        selected="balance"
         onSelect={handleSelect}
       />
     )
 
-    fireEvent.click(screen.getByText('高配当'))
+    fireEvent.click(screen.getByText('配当収入'))
     expect(handleSelect).toHaveBeenCalledWith('dividend')
   })
 
@@ -48,7 +48,7 @@ describe('PerspectiveTabs', () => {
       />
     )
 
-    const dividendTab = screen.getByText('高配当')
+    const dividendTab = screen.getByText('配当収入')
     expect(dividendTab.closest('button')?.className).toContain('active')
   })
 
@@ -56,7 +56,7 @@ describe('PerspectiveTabs', () => {
     const { container } = render(
       <PerspectiveTabs
         perspectives={[]}
-        selected="popular"
+        selected="balance"
         onSelect={vi.fn()}
       />
     )
@@ -68,7 +68,7 @@ describe('PerspectiveTabs', () => {
     render(
       <PerspectiveTabs
         perspectives={mockPerspectives}
-        selected="popular"
+        selected="balance"
         onSelect={vi.fn()}
       />
     )

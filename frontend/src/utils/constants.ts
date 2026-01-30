@@ -14,11 +14,12 @@ export const CHART_PERIODS = [
 export const MAX_COMPARE_ITEMS = 5
 
 export const PERSPECTIVE_COLORS: Record<string, string> = {
-  'high-dividend': '#10B981',
-  'low-cost': '#3B82F6',
-  beginner: '#14B8A6',
-  diversified: '#8B5CF6',
-  popular: '#F59E0B',
+  dividend: '#10B981', // 配当収入: Green
+  'low-cost': '#3B82F6', // 低コスト: Blue
+  stability: '#14B8A6', // 安定性: Teal
+  volume: '#F59E0B', // 取引規模: Amber
+  growth: '#8B5CF6', // 成長性: Purple
+  balance: '#64748b', // バランス: Slate
 }
 
 export const ROUTES = {

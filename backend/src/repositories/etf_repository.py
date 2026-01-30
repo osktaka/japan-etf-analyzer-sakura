@@ -1,9 +1,10 @@
 """ETF repository for ETF data access."""
-from typing import List, Optional
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional
 
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 
-from src.models import ETF, ETFTagRelation, Category, Tag, PerformanceCache, db
+from src.models import ETF, ETFTagRelation, Category, Tag, PerformanceCache, PriceHistory, db
 
 from .base_repository import BaseRepository
 
@@ -38,6 +39,10 @@ class ETFRepository(BaseRepository[ETF]):
     def get_by_code(self, code: str) -> Optional[ETF]:
         """Get ETF by code."""
         return db.session.get(ETF, code)
+
+    def get_all(self) -> List[ETF]:
+        """Get all ETFs."""
+        return db.session.query(ETF).all()
 
     def _build_filter_query(
         self,
@@ -246,3 +251,120 @@ class ETFRepository(BaseRepository[ETF]):
 
         db.session.commit()
         return etf
+
+    def get_average_volume(self, etf_code: str, days: int = 30) -> Optional[float]:
+        """Get average trading volume for an ETF.
+
+        Args:
+            etf_code: ETF code
+            days: Number of days for calculation (default: 30)
+
+        Returns:
+            Average volume or None if data unavailable
+        """
+        cutoff_date = datetime.utcnow().date() - timedelta(days=days)
+        result = (
+            db.session.query(func.avg(PriceHistory.volume))
+            .filter(
+                PriceHistory.etf_code == etf_code,
+                PriceHistory.date >= cutoff_date,
+                PriceHistory.volume.isnot(None),
+            )
+            .scalar()
+        )
+        return float(result) if result else None
+
+    def get_return_rates(self, etf_code: str) -> Dict[str, Optional[float]]:
+        """Get return rates for an ETF.
+
+        Args:
+            etf_code: ETF code
+
+        Returns:
+            Dictionary with return rates for different periods
+        """
+        performance_data = (
+            db.session.query(PerformanceCache)
+            .filter(PerformanceCache.etf_code == etf_code)
+            .all()
+        )
+
+        return_rates = {
+            "1y": None,
+            "3y": None,
+        }
+
+        for perf in performance_data:
+            if perf.period == "1y":
+                return_rates["1y"] = perf.return_rate
+            elif perf.period == "3y":
+                return_rates["3y"] = perf.return_rate
+
+        return return_rates
+
+    def get_average_volumes_batch(
+        self, codes: List[str], days: int = 30
+    ) -> Dict[str, Optional[float]]:
+        """Get average trading volumes for multiple ETFs in a single query.
+
+        Args:
+            codes: List of ETF codes
+            days: Number of days for calculation (default: 30)
+
+        Returns:
+            Dictionary mapping ETF code to average volume
+        """
+        if not codes:
+            return {}
+
+        cutoff_date = datetime.utcnow().date() - timedelta(days=days)
+        results = (
+            db.session.query(
+                PriceHistory.etf_code,
+                func.avg(PriceHistory.volume).label("avg_volume"),
+            )
+            .filter(
+                PriceHistory.etf_code.in_(codes),
+                PriceHistory.date >= cutoff_date,
+                PriceHistory.volume.isnot(None),
+            )
+            .group_by(PriceHistory.etf_code)
+            .all()
+        )
+
+        return {
+            code: float(avg_vol) if avg_vol else None for code, avg_vol in results
+        }
+
+    def get_return_rates_batch(
+        self, codes: List[str]
+    ) -> Dict[str, Dict[str, Optional[float]]]:
+        """Get return rates for multiple ETFs in a single query.
+
+        Args:
+            codes: List of ETF codes
+
+        Returns:
+            Dictionary mapping ETF code to return rates dict
+        """
+        if not codes:
+            return {}
+
+        performance_data = (
+            db.session.query(PerformanceCache)
+            .filter(
+                PerformanceCache.etf_code.in_(codes),
+                PerformanceCache.period.in_(["1y", "3y"]),
+            )
+            .all()
+        )
+
+        # Initialize result dictionary
+        result = {code: {"1y": None, "3y": None} for code in codes}
+
+        # Populate with performance data
+        for perf in performance_data:
+            if perf.etf_code in result:
+                result[perf.etf_code][perf.period] = perf.return_rate
+
+        return result

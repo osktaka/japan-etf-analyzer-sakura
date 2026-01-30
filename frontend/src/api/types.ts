@@ -61,9 +61,13 @@ export interface Perspective {
   description: string
 }
 
+export interface RecommendationItem extends ETFSummary {
+  score: number
+}
+
 export interface Recommendation {
   perspective: Perspective
-  items: ETFSummary[]
+  items: RecommendationItem[]
 }
 
 export interface ApiResponse<T> {
