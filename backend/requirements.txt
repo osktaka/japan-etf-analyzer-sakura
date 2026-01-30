@@ -9,7 +9,8 @@ Flask-SQLAlchemy==3.1.1
 
 # Data Processing
 # Use older versions to avoid heavy build requirements
-# numpy: pandasの依存関係として自動解決（FreeBSD互換性のため）
+# numpy 1.19.5: メモリ消費が少なく、FreeBSD環境でビルド可能
+numpy==1.19.5
 pandas==1.3.5
 # yfinance 0.1.63: cryptography 2.x系と互換性あり（要検証）
 yfinance==0.1.63
