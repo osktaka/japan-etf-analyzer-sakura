@@ -9,6 +9,9 @@ from src.repositories import ETFRepository
 class ScoringService:
     """Service for calculating ETF scores based on unified 5-axis evaluation."""
 
+    # Minimum required axes for scoring (out of 5 axes)
+    MIN_REQUIRED_AXES = 3
+
     # Unified weight configurations for 6 perspectives
     # Each perspective weights: dividend_power, cost_efficiency, scale, trading_quality, return_performance
     WEIGHTS = {
@@ -59,6 +62,38 @@ class ScoringService:
     def __init__(self):
         """Initialize service with repository."""
         self.etf_repository = ETFRepository()
+        self._avg_volumes_cache = {}
+        self._return_rates_cache = {}
+
+    def _percentile_score(
+        self, value: Optional[float], values: List[float], inverted: bool = False
+    ) -> Optional[float]:
+        """Calculate percentile-based score (0-1).
+
+        Args:
+            value: Target value to score
+            values: List of all values for comparison
+            inverted: If True, lower values get higher scores (for costs)
+
+        Returns:
+            Percentile score (0-1) or None if data unavailable
+        """
+        if value is None:
+            return None
+
+        # Filter out None values
+        sorted_vals = sorted([v for v in values if v is not None])
+        if not sorted_vals:
+            return None
+
+        # Calculate rank (number of values <= target value)
+        rank = sum(1 for v in sorted_vals if v <= value)
+
+        # Convert to percentile (0-1)
+        score = (rank - 1) / max(len(sorted_vals) - 1, 1)
+
+        # Invert if needed (for cost metrics where lower is better)
+        return 1 - score if inverted else score
 
     def calculate_score(self, etf: ETF, perspective: str) -> float:
         """Calculate composite score for an ETF based on perspective.
@@ -68,7 +103,7 @@ class ScoringService:
             perspective: Scoring perspective (dividend, low-cost, stability, volume, growth, balance)
 
         Returns:
-            Composite score (0-100)
+            Composite score (0-100), or 0 if insufficient data (< 3 axes)
         """
         if perspective not in self.WEIGHTS:
             return 0.0
@@ -76,12 +111,18 @@ class ScoringService:
         weights = self.WEIGHTS[perspective]
         score = 0.0
         total_weight = 0.0
+        available_axes = 0
 
         for axis, weight in weights.items():
             axis_score = self._get_axis_score(etf, axis)
             if axis_score is not None:
                 score += axis_score * weight
                 total_weight += weight
+                available_axes += 1
+
+        # Require minimum number of axes for scoring
+        if available_axes < self.MIN_REQUIRED_AXES:
+            return 0.0
 
         if total_weight == 0:
             return 0.0
@@ -114,85 +155,114 @@ class ScoringService:
         """Score dividend power (配当力).
 
         Metric: dividend_yield
-        Normalization: min(dividend_yield / 10.0, 1.0)
+        Normalization: Percentile-based (higher is better)
         """
         if etf.dividend_yield is None:
             return None
-        return min(float(etf.dividend_yield) / 10.0, 1.0)
+        return self._percentile_score(
+            float(etf.dividend_yield), self._dividend_yields, inverted=False
+        )
 
     def _score_cost_efficiency(self, etf: ETF) -> Optional[float]:
         """Score cost efficiency (コスト効率).
 
         Metric: expense_ratio
-        Normalization: max(0.0, 1.0 - expense_ratio / 1.0)
-        Lower is better (inverted)
+        Normalization: Percentile-based (lower is better, inverted)
         """
         if etf.expense_ratio is None:
             return None
-        ratio = float(etf.expense_ratio)
-        return max(0.0, 1.0 - (ratio / 1.0))
+        return self._percentile_score(
+            float(etf.expense_ratio), self._expense_ratios, inverted=True
+        )
 
     def _score_scale_reliability(self, etf: ETF) -> Optional[float]:
         """Score scale and reliability (規模・信頼性).
 
         Metric: total_assets
-        Normalization: (log10(assets) - 8) / 4, capped at [0, 1]
-        Log scale: 10^8 (100M) = 0, 10^12 (1T) = 1
+        Normalization: Percentile-based (higher is better)
         """
         if etf.total_assets is None:
             return None
-        assets = float(etf.total_assets)
-        if assets <= 0:
-            return 0.0
-        log_assets = math.log10(assets)
-        return min(max((log_assets - 8) / 4, 0.0), 1.0)
+        return self._percentile_score(
+            float(etf.total_assets), self._total_assets, inverted=False
+        )
 
     def _score_trading_quality(self, etf: ETF) -> Optional[float]:
         """Score trading quality (取引品質).
 
         Metrics:
-        - average_volume (30-day moving average)
-        - deviation_rate (absolute value)
+        - trading_value (price * average_volume) - 50%
+        - average_volume (30-day moving average) - 30%
+        - deviation_rate (absolute value) - 20%
 
-        Weighted: volume 70%, deviation 30%
+        All metrics use percentile normalization
         """
-        avg_volume = self.etf_repository.get_average_volume(etf.code)
+        # Use cached data if available, otherwise fetch directly
+        avg_volume = self._avg_volumes_cache.get(etf.code)
+        if avg_volume is None and not self._avg_volumes_cache:
+            avg_volume = self.etf_repository.get_average_volume(etf.code)
         deviation = etf.deviation_rate
 
+        trading_value_score = None
         volume_score = None
         deviation_score = None
 
-        # Volume score (log scale: 10^3 = 0, 10^6 = 1)
-        if avg_volume is not None and avg_volume > 0:
-            log_volume = math.log10(avg_volume)
-            volume_score = min(max((log_volume - 3) / 3, 0.0), 1.0)
+        # Trading value score (price * volume)
+        if avg_volume is not None and etf.market_price is not None:
+            trading_value = float(etf.market_price) * avg_volume
+            trading_value_score = self._percentile_score(
+                trading_value, self._trading_values, inverted=False
+            )
 
-        # Deviation score (lower is better: 0% = 1.0, 5% = 0)
+        # Volume score (percentile-based)
+        if avg_volume is not None:
+            volume_score = self._percentile_score(
+                avg_volume, self._avg_volumes, inverted=False
+            )
+
+        # Deviation score (lower is better)
         if deviation is not None:
             deviation_abs = abs(float(deviation))
-            deviation_score = max(0.0, 1.0 - (deviation_abs / 5.0))
+            deviation_score = self._percentile_score(
+                deviation_abs, self._deviation_rates, inverted=True
+            )
 
-        # Weighted average (if both available)
-        if volume_score is not None and deviation_score is not None:
-            return volume_score * 0.7 + deviation_score * 0.3
-        elif volume_score is not None:
-            return volume_score
-        elif deviation_score is not None:
-            return deviation_score
-        return None
+        # Weighted average
+        scores = []
+        weights = []
+        if trading_value_score is not None:
+            scores.append(trading_value_score)
+            weights.append(0.5)
+        if volume_score is not None:
+            scores.append(volume_score)
+            weights.append(0.3)
+        if deviation_score is not None:
+            scores.append(deviation_score)
+            weights.append(0.2)
+
+        if not scores:
+            return None
+
+        # Normalize weights
+        total_weight = sum(weights)
+        return sum(s * w for s, w in zip(scores, weights)) / total_weight
 
     def _score_return_performance(self, etf: ETF) -> Optional[float]:
         """Score return performance (リターン実績).
 
         Metrics:
-        - return_1y
-        - return_3y
+        - return_1y - 40%
+        - return_3y - 60%
 
-        Normalization: (return_rate + 50) / 150
-        Range: -50% to +100% mapped to 0-1
-        Weighted: 1y 40%, 3y 60%
+        Normalization: Percentile-based (higher is better)
         """
-        return_rates = self.etf_repository.get_return_rates(etf.code)
+        # Use cached data if available, otherwise fetch directly
+        return_rates = self._return_rates_cache.get(etf.code)
+        if return_rates is None and not self._return_rates_cache:
+            return_rates = self.etf_repository.get_return_rates(etf.code)
+        else:
+            return_rates = return_rates or {"1y": None, "3y": None}
+
         return_1y = return_rates.get("1y")
         return_3y = return_rates.get("3y")
 
@@ -200,12 +270,14 @@ class ScoringService:
         score_3y = None
 
         if return_1y is not None:
-            score_1y = (return_1y + 50) / 150
-            score_1y = max(0.0, min(1.0, score_1y))
+            score_1y = self._percentile_score(
+                return_1y, self._return_1y, inverted=False
+            )
 
         if return_3y is not None:
-            score_3y = (return_3y + 50) / 150
-            score_3y = max(0.0, min(1.0, score_3y))
+            score_3y = self._percentile_score(
+                return_3y, self._return_3y, inverted=False
+            )
 
         # Weighted average
         if score_1y is not None and score_3y is not None:
@@ -229,12 +301,57 @@ class ScoringService:
         Returns:
             List of dicts with ETF and score, sorted by score descending
         """
+        # Batch fetch data and cache for individual scoring
+        etf_codes = [etf.code for etf in etfs]
+        self._avg_volumes_cache = self.etf_repository.get_average_volumes_batch(etf_codes)
+        self._return_rates_cache = self.etf_repository.get_return_rates_batch(etf_codes)
+
+        # Collect values for percentile calculation
+        self._collect_percentile_data(etfs)
+
         scored = []
         for etf in etfs:
             score = self.calculate_score(etf, perspective)
             if score > 0:
                 scored.append({"etf": etf, "score": score})
 
+        # Clear cache after scoring
+        self._avg_volumes_cache = {}
+        self._return_rates_cache = {}
+
         # Sort by score descending
         scored.sort(key=lambda x: x["score"], reverse=True)
         return scored[:limit]
+
+    def _collect_percentile_data(self, etfs: List[ETF]) -> None:
+        """Collect values from all ETFs for percentile calculation.
+
+        Args:
+            etfs: List of ETF objects
+        """
+        self._dividend_yields = [etf.dividend_yield for etf in etfs if etf.dividend_yield is not None]
+        self._expense_ratios = [etf.expense_ratio for etf in etfs if etf.expense_ratio is not None]
+        self._total_assets = [etf.total_assets for etf in etfs if etf.total_assets is not None]
+
+        # Use cached data (already fetched in rank_etfs)
+        self._avg_volumes = [vol for vol in self._avg_volumes_cache.values() if vol is not None]
+
+        # Collect trading value (price * volume)
+        self._trading_values = []
+        for etf in etfs:
+            avg_volume = self._avg_volumes_cache.get(etf.code)
+            if avg_volume is not None and etf.market_price is not None:
+                trading_value = float(etf.market_price) * avg_volume
+                self._trading_values.append(trading_value)
+
+        # Collect deviation rates
+        self._deviation_rates = [abs(float(etf.deviation_rate)) for etf in etfs if etf.deviation_rate is not None]
+
+        # Use cached return rates (already fetched in rank_etfs)
+        self._return_1y = []
+        self._return_3y = []
+        for etf_code, return_rates in self._return_rates_cache.items():
+            if return_rates.get("1y") is not None:
+                self._return_1y.append(return_rates["1y"])
+            if return_rates.get("3y") is not None:
+                self._return_3y.append(return_rates["3y"])

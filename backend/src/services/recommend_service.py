@@ -9,6 +9,17 @@ from .scoring_service import ScoringService
 class RecommendService:
     """Service for ETF recommendation operations."""
 
+    # Exclusion criteria
+    EXCLUDE_KEYWORDS = [
+        "レバレッジ",
+        "インバース",
+        "ダブル",
+        "ベア",
+        "2倍",
+        "-2倍",
+    ]
+    MIN_AUM = 100_000_000  # 1億円 (minimum AUM to avoid delisting risk)
+
     PERSPECTIVES = [
         {
             "id": "dividend",
@@ -46,6 +57,25 @@ class RecommendService:
         """Initialize service with repositories."""
         self.etf_repository = ETFRepository()
         self.scoring_service = ScoringService()
+
+    def _is_excluded(self, etf) -> bool:
+        """Check if ETF should be excluded from recommendations.
+
+        Args:
+            etf: ETF object to check
+
+        Returns:
+            True if ETF should be excluded
+        """
+        # Exclude leveraged/inverse ETFs
+        if any(keyword in etf.name for keyword in self.EXCLUDE_KEYWORDS):
+            return True
+
+        # Exclude small AUM ETFs (delisting risk)
+        if etf.total_assets and etf.total_assets < self.MIN_AUM:
+            return True
+
+        return False
 
     def get_perspectives(self) -> List[Dict]:
         """Get available recommendation perspectives."""
@@ -90,27 +120,11 @@ class RecommendService:
         Returns:
             List of dicts with ETF and score, sorted by composite score
         """
-        # Get candidate ETFs based on perspective
-        if perspective == "dividend":
-            # Get ETFs with dividend data
-            candidates = self.etf_repository.get_high_dividend(limit * 3)
-        elif perspective == "low-cost":
-            # Get ETFs with expense ratio data
-            candidates = self.etf_repository.get_low_cost(limit * 3)
-        elif perspective == "stability":
-            # Get ETFs sorted by total assets
-            candidates = self.etf_repository.search(
-                sort="total_assets", order="desc", limit=limit * 3
-            )
-        elif perspective == "volume":
-            # Get all ETFs (volume will be evaluated in scoring)
-            candidates = self.etf_repository.search(limit=limit * 3)
-        elif perspective == "growth":
-            # Get all ETFs (return data will be evaluated in scoring)
-            candidates = self.etf_repository.search(limit=limit * 3)
-        else:
-            # Get all ETFs for balance perspective
-            candidates = self.etf_repository.search(limit=limit * 3)
+        # Get all ETFs for percentile calculation across entire dataset
+        all_etfs = self.etf_repository.get_all()
+
+        # Apply exclusion filters (leverage/inverse and small AUM)
+        filtered_candidates = [etf for etf in all_etfs if not self._is_excluded(etf)]
 
         # Rank by composite score
-        return self.scoring_service.rank_etfs(candidates, perspective, limit)
+        return self.scoring_service.rank_etfs(filtered_candidates, perspective, limit)
