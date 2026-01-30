@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Dict, List, Optional, Tuple
 
+from src.config.settings import Config
 from src.models import PriceHistory
 from src.repositories.etf_repository import ETFRepository
 from src.repositories.trade_repository import TradeRepository
@@ -17,7 +18,7 @@ class PortfolioService:
 
     # クラスレベルキャッシュ: {user_id}:{period} -> (timestamp, data)
     _valuation_cache: Dict[str, Tuple[datetime, List[Dict]]] = {}
-    _cache_ttl = 300  # 5分（秒）
+    _cache_ttl = Config.CACHE_TTL  # 環境変数CACHE_TTLで設定可能（デフォルト: 300秒）
 
     def __init__(
         self,

@@ -17,6 +17,9 @@ class Config:
     # モックデータ使用フラグ（True: モック、False: 本番yfinance）
     USE_MOCK_DATA = os.environ.get("USE_MOCK_DATA", "true").lower() == "true"
 
+    # キャッシュTTL（秒）
+    CACHE_TTL = int(os.environ.get("CACHE_TTL", "300"))
+
     @classmethod
     def init_app(cls, app):
         """Initialize application with this config."""
