@@ -199,6 +199,7 @@
 .periods {
   display: flex;
   gap: 4px;
+  flex-wrap: wrap;
 }
 
 .periodBtn {
@@ -240,10 +241,31 @@
   color: var(--color-text);
 }
 
+/* テキスト切り替え用 */
+.mobileText {
+  display: none;
+}
+
+.desktopText {
+  display: inline;
+}
+
 /* モバイル対応 */
 @media (max-width: 768px) {
   .header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .headerButtons button {
+    font-size: var(--text-sm);
+  }
+
+  .mobileText {
+    display: inline;
+  }
+
+  .desktopText {
+    display: none;
   }
 }

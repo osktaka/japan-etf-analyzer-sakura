@@ -190,7 +190,8 @@ export function ComparePage() {
             お気に入り
           </button>
           <button className="btn btn-secondary" onClick={handleClearAll}>
-            リストをクリア
+            <span className={styles.desktopText}>リストをクリア</span>
+            <span className={styles.mobileText}>クリア</span>
           </button>
         </div>
       </div>
