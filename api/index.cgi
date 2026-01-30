@@ -37,21 +37,20 @@ os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
 # カレントディレクトリをプロジェクトルートに変更（相対パス解決用）
 os.chdir(APP_ROOT)
 
-# Flaskアプリケーション読み込み（エラー詳細捕捉）
-print("Content-Type: text/plain\n", flush=True)
+# Flaskアプリケーション読み込み
 try:
-    print(f"Importing Flask app...", flush=True)
+    from src.app import app
+except Exception as e:
+    # エラー時のみデバッグ情報を出力
+    print("Content-Type: text/plain\n", flush=True)
+    print(f"ERROR: Failed to load Flask app", flush=True)
     print(f"CWD: {os.getcwd()}", flush=True)
     print(f"DATABASE_URL: {os.environ.get('DATABASE_URL')}", flush=True)
-    from src.app import app
-    print(f"SUCCESS: Flask app loaded", flush=True)
-except Exception as e:
+    print(f"\n{e}", flush=True)
     import traceback
-    print(f"ERROR: {e}", flush=True)
-    print(f"\nFull traceback:", flush=True)
     traceback.print_exc()
-    import sys
     sys.exit(1)
+
 from wsgiref.handlers import CGIHandler
 
 # CGIハンドラーで実行
