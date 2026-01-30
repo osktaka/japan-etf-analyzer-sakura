@@ -9,7 +9,7 @@ Flask-SQLAlchemy==3.1.1
 
 # Data Processing
 # Use older versions to avoid heavy build requirements
-numpy==1.19.5
+numpy==1.20.3
 pandas==1.3.5
 yfinance==0.1.96
 beautifulsoup4==4.12.2
