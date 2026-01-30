@@ -83,7 +83,7 @@ frontend/
 
 1. **ローカル**: frontend/src変更時、pre-commit hookで自動ビルド
 2. **Git**: frontend/dist/をコミット・プッシュ（さくらサーバーにNode.js非インストール）
-3. **本番**: `git pull` → `./setup.sh` で環境構築
+3. **本番**: `git pull` → `./setup.sh` で環境構築（シンボリックリンク自動作成）
 
 ```bash
 # 初回セットアップ（開発環境）
@@ -96,8 +96,8 @@ frontend/
 ssh user@server
 cd ~/www/japan-etf-analyzer
 git pull
-./setup.sh
-# .envファイルを編集
+./setup.sh  # venv構築、シンボリックリンク作成を自動実行
+# .envファイルを編集（初回のみ）
 # DBを初期化（初回のみ）
 ```
 
@@ -114,6 +114,35 @@ git pull
 - frontend/src変更時: hookが自動ビルド・ステージング
 - dist/のみ変更時: コミット不要（hookで再生成される）
 - hookインストール: `./scripts/install-hooks.sh` を実行
+
+### CGI環境の技術的注意点
+
+#### 1. PATH_INFO調整
+CGI環境では、RewriteRule後のPATH_INFOがFlaskルート定義と一致しない問題があります。
+
+- リクエスト: `/japan-etf-analyzer/api/v1/health`
+- RewriteRule後: `/japan-etf-analyzer/api/index.cgi/v1/health`
+- PATH_INFO: `/v1/health`（`/api`プレフィックスなし）
+- Flaskルート: `/api/v1/health`（`/api`プレフィックスあり）
+
+**解決策**: `api/index.cgi`でWSGI middlewareを使用し、PATH_INFOに`/api`を追加。
+
+#### 2. .htaccessの無限リダイレクト対策
+`RewriteRule ^api/(.*)$ api/index.cgi/$1`は、`api/index.cgi/v1/health`も再度マッチしてループします。
+
+**解決策**: RewriteCondで`index.cgi`を除外。
+```apache
+RewriteCond %{REQUEST_URI} !index\.cgi
+RewriteRule ^api/(.*)$ api/index.cgi/$1 [L,QSA]
+```
+
+#### 3. フロントエンドのシンボリックリンク
+ApacheのDocumentRootから`frontend/dist/`内のファイルにアクセスするため、シンボリックリンクが必要。
+
+- `index.html` → `frontend/dist/index.html`
+- `assets/` → `frontend/dist/assets/`
+
+`setup.sh`で自動作成されます。
 
 ## 内部構造ガイド
 

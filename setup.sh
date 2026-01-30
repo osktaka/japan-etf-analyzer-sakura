@@ -23,7 +23,7 @@ echo "Python: $PYTHON_VERSION"
 
 # venv作成
 echo ""
-echo "[1/5] Creating virtual environment..."
+echo "[1/6] Creating virtual environment..."
 if [ ! -d "backend/venv" ]; then
     $PYTHON_PATH -m venv backend/venv
     echo "  ✓ venv created at backend/venv"
@@ -33,7 +33,7 @@ fi
 
 # 依存関係インストール
 echo ""
-echo "[2/5] Installing backend dependencies..."
+echo "[2/6] Installing backend dependencies..."
 source backend/venv/bin/activate
 pip install --upgrade pip
 # TMPDIR設定（/tmp, /var/tmpがnoexecの場合の対策）
@@ -46,7 +46,7 @@ echo "  ✓ Dependencies installed"
 
 # .env確認
 echo ""
-echo "[3/5] Checking .env file..."
+echo "[3/6] Checking .env file..."
 if [ ! -f ".env" ]; then
     echo "  Warning: .env file not found!"
     echo "  Please create .env from .env.example:"
@@ -63,17 +63,24 @@ fi
 
 # dataディレクトリ作成
 echo ""
-echo "[4/5] Creating data directory..."
+echo "[4/6] Creating data directory..."
 mkdir -p data
 echo "  ✓ data directory created"
 
 # 権限設定
 echo ""
-echo "[5/5] Setting permissions..."
+echo "[5/6] Setting permissions..."
 chmod 755 api/index.cgi
 chmod 755 setup.sh
 chmod 644 .htaccess
 echo "  ✓ Permissions set"
+
+# フロントエンドシンボリックリンク作成
+echo ""
+echo "[6/6] Creating frontend symbolic links..."
+ln -sf frontend/dist/index.html index.html
+ln -sf frontend/dist/assets assets
+echo "  ✓ Symbolic links created"
 
 echo ""
 echo "========================================="
@@ -90,5 +97,6 @@ echo "       python scripts/init_db.py"
 echo "       python scripts/seed_data.py"
 echo "       python scripts/sync_etf_master.py"
 echo "  4. Verify CGI execution:"
-echo "       curl http://your-domain/japan-etf-analyzer/api/v1/health"
+echo "       curl http://your-domain/japan-etf-analyzer/api/health"
+echo "       curl http://your-domain/japan-etf-analyzer/api/v1/"
 echo ""
