@@ -33,6 +33,8 @@ echo ""
 echo "[2/5] Installing backend dependencies..."
 source backend/venv/bin/activate
 pip install --upgrade pip
+# numpyを先にwheel版でインストール（pandasのビルドエラー回避）
+pip install --only-binary :all: numpy==1.21.6
 pip install -r backend/requirements.txt
 echo "  ✓ Dependencies installed"
 
