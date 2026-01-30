@@ -40,6 +40,15 @@ print(f"CWD: {os.getcwd()}")
 print(f"DATABASE_URL: {os.environ.get('DATABASE_URL')}")
 print(f"DB exists: {(APP_ROOT / 'data' / 'etf.db').exists()}")
 print(f"FLASK_ENV: {os.environ.get('FLASK_ENV')}")
+import pwd
+print(f"User: {pwd.getpwuid(os.getuid()).pw_name}")
+print(f"UID: {os.getuid()}")
+print(f"GID: {os.getgid()}")
+import stat
+data_stat = os.stat(APP_ROOT / 'data')
+print(f"data/ permissions: {oct(data_stat.st_mode)[-3:]}")
+print(f"data/ owner UID: {data_stat.st_uid}")
+print(f"data/ writable by current user: {os.access(APP_ROOT / 'data', os.W_OK)}")
 import sys
 sys.exit(0)
 
