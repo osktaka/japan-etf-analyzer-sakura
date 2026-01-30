@@ -83,3 +83,10 @@
   margin-bottom: var(--spacing-sm);
   text-align: right;
 }
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+  .sectionControls {
+    margin-left: 0;
+  }
+}

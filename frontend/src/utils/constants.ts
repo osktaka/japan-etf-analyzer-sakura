@@ -1,14 +1,14 @@
 /** Application constants */
 
 export const CHART_PERIODS = [
-  { id: '1m', label: '1ヶ月' },
-  { id: '3m', label: '3ヶ月' },
-  { id: '6m', label: '6ヶ月' },
-  { id: '1y', label: '1年' },
-  { id: '3y', label: '3年' },
-  { id: '5y', label: '5年' },
-  { id: '10y', label: '10年' },
-  { id: '20y', label: '20年' },
+  { id: '1m', label: '1M' },
+  { id: '3m', label: '3M' },
+  { id: '6m', label: '6M' },
+  { id: '1y', label: '1Y' },
+  { id: '3y', label: '3Y' },
+  { id: '5y', label: '5Y' },
+  { id: '10y', label: '10Y' },
+  { id: '20y', label: '20Y' },
 ] as const
 
 export const MAX_COMPARE_ITEMS = 5

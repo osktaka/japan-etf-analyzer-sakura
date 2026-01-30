@@ -69,7 +69,7 @@
 }
 
 .value {
-  font-size: var(--text-sm);
+  font-size: var(--text-lg);
   font-weight: 600;
   color: var(--color-text);
 }

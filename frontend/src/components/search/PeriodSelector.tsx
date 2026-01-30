@@ -53,7 +53,6 @@ export function PeriodSelector({
 
   return (
     <div className={styles.periodSelector}>
-      <span className={styles.periodLabel}>表示期間:</span>
       <div className={styles.periodButtons}>
         {ALL_PERIODS.map(({ id, label }) => (
           <button
