@@ -2,8 +2,8 @@
 """Update ETF price data from Yahoo Finance.
 
 Usage:
-    python scripts/update_etf_data.py [--limit N] [--dry-run] [--skip-performance]
-    python scripts/update_etf_data.py --smart [--limit N] [--dry-run]
+    python scripts/update_etf_data.py [--limit N] [--dry-run] [--skip-performance] [--rate-limit N]
+    python scripts/update_etf_data.py --smart [--limit N] [--dry-run] [--rate-limit N]
 
 Options:
     --limit N           Only update first N ETFs (for testing)
@@ -11,9 +11,10 @@ Options:
     --skip-performance  Skip performance cache calculation
     --full              Fetch full history (period='max') instead of 1 year
     --smart             Smart update: full history for new ETFs, incremental for existing
+    --rate-limit N      Rate limit in seconds between requests (default: 1.0)
 
 This script should be run via cron:
-    0 19 * * 1-5 cd ~/app/backend && python3 scripts/update_etf_data.py >> ~/logs/etf_update.log 2>&1
+    0 19 * * 1-5 cd ~/app/backend && python3 scripts/update_etf_data.py --smart --rate-limit 3.0 >> ~/logs/etf_update.log 2>&1
 """
 import argparse
 import json
@@ -477,11 +478,12 @@ def calculate_regression_return_from_df(df, days: int) -> Optional[float]:
     return round(((end_value - start_value) / start_value) * 100, 2)
 
 
-def update_performance_cache(codes: list) -> tuple:
+def update_performance_cache(codes: list, rate_limit: float = 1.0) -> tuple:
     """Update performance cache for given ETF codes.
 
     Args:
         codes: List of ETF codes to update
+        rate_limit: Rate limit in seconds between requests
 
     Returns:
         Tuple of (success_count, fail_count)
@@ -548,7 +550,7 @@ def update_performance_cache(codes: list) -> tuple:
 
             # レート制限対策
             if i < len(codes):
-                time.sleep(RATE_LIMIT_SECONDS)
+                time.sleep(rate_limit)
 
         except Exception as e:
             logger.error(f"[{i}/{len(codes)}] {code}: Performance calc failed - {e}")
@@ -579,6 +581,12 @@ def main() -> int:
         "--smart",
         action="store_true",
         help="Smart update: full history for new ETFs, incremental for existing",
+    )
+    parser.add_argument(
+        "--rate-limit",
+        type=float,
+        default=1.0,
+        help="Rate limit in seconds between requests (default: 1.0)",
     )
     args = parser.parse_args()
 
@@ -655,14 +663,14 @@ def main() -> int:
 
             # レート制限対策（最後の銘柄以外）
             if i < len(etfs) and not args.dry_run:
-                time.sleep(RATE_LIMIT_SECONDS)
+                time.sleep(args.rate_limit)
 
         # パフォーマンスキャッシュの更新
         if not args.dry_run and not args.skip_performance:
             logger.info("-" * 60)
             logger.info("Starting performance cache calculation...")
             codes = [etf["code"] for etf in etfs]
-            perf_success, perf_fail = update_performance_cache(codes)
+            perf_success, perf_fail = update_performance_cache(codes, args.rate_limit)
             logger.info(
                 f"Performance cache: {perf_success} success, {perf_fail} failed"
             )
