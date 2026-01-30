@@ -30,6 +30,9 @@ os.environ.setdefault("FLASK_ENV", "production")
 os.environ.setdefault("APP_BASE_DIR", str(APP_ROOT))
 os.environ.setdefault("APP_DATA_DIR", str(APP_ROOT / "data"))
 
+# カレントディレクトリをプロジェクトルートに変更（相対パス解決用）
+os.chdir(APP_ROOT)
+
 # Flaskアプリケーション読み込み
 from src.app import app
 from wsgiref.handlers import CGIHandler
