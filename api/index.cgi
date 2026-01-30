@@ -33,27 +33,21 @@ os.environ.setdefault("APP_DATA_DIR", str(APP_ROOT / "data"))
 # カレントディレクトリをプロジェクトルートに変更（相対パス解決用）
 os.chdir(APP_ROOT)
 
-# デバッグ情報（一時的）
-print("Content-Type: text/plain\n")
-print(f"APP_ROOT: {APP_ROOT}")
-print(f"CWD: {os.getcwd()}")
-print(f"DATABASE_URL: {os.environ.get('DATABASE_URL')}")
-print(f"DB exists: {(APP_ROOT / 'data' / 'etf.db').exists()}")
-print(f"FLASK_ENV: {os.environ.get('FLASK_ENV')}")
-import pwd
-print(f"User: {pwd.getpwuid(os.getuid()).pw_name}")
-print(f"UID: {os.getuid()}")
-print(f"GID: {os.getgid()}")
-import stat
-data_stat = os.stat(APP_ROOT / 'data')
-print(f"data/ permissions: {oct(data_stat.st_mode)[-3:]}")
-print(f"data/ owner UID: {data_stat.st_uid}")
-print(f"data/ writable by current user: {os.access(APP_ROOT / 'data', os.W_OK)}")
-import sys
-sys.exit(0)
-
-# Flaskアプリケーション読み込み
-from src.app import app
+# Flaskアプリケーション読み込み（エラー詳細捕捉）
+print("Content-Type: text/plain\n", flush=True)
+try:
+    print(f"Importing Flask app...", flush=True)
+    print(f"CWD: {os.getcwd()}", flush=True)
+    print(f"DATABASE_URL: {os.environ.get('DATABASE_URL')}", flush=True)
+    from src.app import app
+    print(f"SUCCESS: Flask app loaded", flush=True)
+except Exception as e:
+    import traceback
+    print(f"ERROR: {e}", flush=True)
+    print(f"\nFull traceback:", flush=True)
+    traceback.print_exc()
+    import sys
+    sys.exit(1)
 from wsgiref.handlers import CGIHandler
 
 # CGIハンドラーで実行
