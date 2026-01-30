@@ -11,7 +11,8 @@ Header set X-XSS-Protection "1; mode=block"
 RewriteEngine On
 RewriteBase /japan-etf-analyzer/
 
-# APIリクエストをindex.cgiにルーティング
+# APIリクエストをindex.cgiにルーティング（index.cgi自体は除外）
+RewriteCond %{REQUEST_URI} !index\.cgi
 RewriteRule ^api/(.*)$ api/index.cgi/$1 [L,QSA]
 
 # SPAルーティング（フロントエンド）
