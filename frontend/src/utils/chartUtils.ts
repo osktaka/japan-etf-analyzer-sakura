@@ -217,3 +217,27 @@ function getActualPeriodLabel(days: number): string {
   }
   return `${days}日分`
 }
+
+/**
+ * Calculate price return (percent change from first to last price)
+ * Returns null if data is insufficient or start price is zero
+ */
+export function calculatePriceReturn(data: ChartDataPoint[]): number | null {
+  if (data.length < 2) return null
+  const startPrice = data[0].close
+  const endPrice = data[data.length - 1].close
+  if (startPrice === 0) return null
+  return ((endPrice - startPrice) / startPrice) * 100
+}
+
+/**
+ * Calculate regression line return (percent change from regression start to end)
+ * Returns null if regression calculation fails or start value is zero
+ */
+export function calculateRegressionReturn(
+  data: ChartDataPoint[]
+): number | null {
+  const regression = calculateRegressionLine(data)
+  if (!regression || regression.startY === 0) return null
+  return ((regression.endY - regression.startY) / regression.startY) * 100
+}

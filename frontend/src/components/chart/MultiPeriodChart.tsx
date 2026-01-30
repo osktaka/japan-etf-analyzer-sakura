@@ -2,7 +2,11 @@
 import { useMultiPeriodChartData } from '../../hooks'
 import { ChartPeriod } from '../../api'
 import { CHART_PERIODS } from '../../utils/constants'
-import { checkDataSufficiency } from '../../utils/chartUtils'
+import {
+  checkDataSufficiency,
+  calculatePriceReturn,
+  calculateRegressionReturn,
+} from '../../utils/chartUtils'
 import { Loading } from '../common'
 import { PriceChart } from './PriceChart'
 import { ChartOverlay } from './ChartOverlay'
@@ -44,10 +48,49 @@ export function MultiPeriodChart({ code }: MultiPeriodChartProps) {
           const chartData = data[period]
           const dataLength = chartData?.data.length ?? 0
           const sufficiency = checkDataSufficiency(period, dataLength)
+          const priceReturn =
+            chartData && sufficiency.isSufficient
+              ? calculatePriceReturn(chartData.data)
+              : null
+          const regressionReturn =
+            chartData && sufficiency.isSufficient
+              ? calculateRegressionReturn(chartData.data)
+              : null
+
+          const formatReturn = (value: number | null): string => {
+            if (value === null) return '-'
+            const sign = value >= 0 ? '+' : ''
+            return `${sign}${value.toFixed(1)}%`
+          }
 
           return (
             <div key={period} className={styles.chartItem}>
-              <div className={styles.periodLabel}>{getPeriodLabel(period)}</div>
+              <div className={styles.header}>
+                <div className={styles.periodLabel}>
+                  {getPeriodLabel(period)}
+                </div>
+                {sufficiency.isSufficient && priceReturn !== null && (
+                  <div className={styles.returnInfo}>
+                    <span
+                      className={
+                        priceReturn >= 0 ? styles.positive : styles.negative
+                      }
+                    >
+                      株価: {formatReturn(priceReturn)}
+                    </span>
+                    <span className={styles.separator}>/</span>
+                    <span
+                      className={
+                        regressionReturn !== null && regressionReturn >= 0
+                          ? styles.positive
+                          : styles.negative
+                      }
+                    >
+                      回帰: {formatReturn(regressionReturn)}
+                    </span>
+                  </div>
+                )}
+              </div>
               {chartData && dataLength > 0 ? (
                 <div className={overlayStyles.chartWrapper}>
                   <PriceChart
