@@ -85,6 +85,11 @@ def delete_old_files(log_dir: Path, days: int, dry_run: bool = False) -> List[st
     Returns list of actions taken/would be taken.
     """
     actions = []
+
+    # Skip if directory doesn't exist
+    if not log_dir.exists():
+        return actions
+
     cutoff_date = datetime.now() - timedelta(days=days)
 
     # Check all files including rotated ones
@@ -112,9 +117,23 @@ def cleanup_db_logs(days: int, dry_run: bool = False) -> str:
     if dry_run:
         return f"Would delete DB batch logs older than {days} days"
 
-    # Add project root to path for imports
-    project_root = Path(__file__).resolve().parent.parent
-    sys.path.insert(0, str(project_root))
+    # Calculate paths relative to script location
+    # Script: backend/scripts/rotate_logs.py → backend_dir: backend/
+    script_dir = Path(__file__).resolve().parent
+    backend_dir = script_dir.parent
+
+    # Add backend to path for imports
+    sys.path.insert(0, str(backend_dir))
+
+    # Determine database path (differs between Docker and production)
+    # Docker:      /app/data/etf.db (backend_dir = /app)
+    # Production:  project_root/data/etf.db (backend_dir = project_root/backend)
+    db_path_docker = backend_dir / "data" / "etf.db"
+    db_path_prod = backend_dir.parent / "data" / "etf.db"
+
+    # Use Docker path if it exists, otherwise production path
+    db_path = db_path_docker if db_path_docker.exists() else db_path_prod
+    os.environ.setdefault("DATABASE_URL", f"sqlite:///{db_path}")
 
     try:
         from src.app import create_app
