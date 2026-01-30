@@ -35,7 +35,7 @@ make help
 
 | レイヤー | 開発環境 | 本番環境 |
 |----------|----------|----------|
-| バックエンド | Flask (Python 3.8) | Flask (Python 3.9.18) |
+| バックエンド | Flask (Python 3.9) | Flask (Python 3.9.18) |
 | フロントエンド | React + Vite | ビルド済み静的ファイル |
 | データベース | SQLite | SQLite |
 | 環境 | Docker Compose | さくらレンタルサーバー スタンダード |

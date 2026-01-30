@@ -80,7 +80,7 @@ make test
 ## 技術スタック
 
 - **Frontend**: React + TypeScript + Vite
-- **Backend**: Flask + Python 3.8
+- **Backend**: Flask + Python 3.9
 - **Database**: SQLite
 - **Container**: Docker Compose
 
