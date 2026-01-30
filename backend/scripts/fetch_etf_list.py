@@ -12,7 +12,7 @@ import logging
 import re
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Set
 
 import requests
 from bs4 import BeautifulSoup
@@ -231,7 +231,7 @@ def main() -> int:
         all_items = etfs + etns + leveraged
 
         # Remove duplicates by code (keep first occurrence)
-        seen_codes: set[str] = set()
+        seen_codes: Set[str] = set()
         unique_items = []
         for item in all_items:
             if item["code"] not in seen_codes:
