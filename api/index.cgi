@@ -53,6 +53,24 @@ except Exception as e:
 
 from wsgiref.handlers import CGIHandler
 
+
+# WSGI middleware to adjust PATH_INFO for CGI environment
+class PrefixMiddleware:
+    """Add prefix to PATH_INFO to match Flask route definitions."""
+
+    def __init__(self, app, prefix=""):
+        self.app = app
+        self.prefix = prefix
+
+    def __call__(self, environ, start_response):
+        if "PATH_INFO" in environ:
+            environ["PATH_INFO"] = self.prefix + environ["PATH_INFO"]
+        return self.app(environ, start_response)
+
+
+# Wrap app with middleware to add /api prefix
+app = PrefixMiddleware(app, "/api")
+
 # CGIハンドラーで実行
 if __name__ == "__main__":
     CGIHandler().run(app)
