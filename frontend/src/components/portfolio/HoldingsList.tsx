@@ -12,6 +12,7 @@ type SortKey =
   | 'current_price'
   | 'current_value'
   | 'unrealized_pnl'
+  | 'unrealized_pnl_percent'
 type SortOrder = 'asc' | 'desc'
 
 interface HoldingsListProps {
@@ -33,7 +34,7 @@ export function HoldingsList({
   isInCompare,
   onCompareToggle,
 }: HoldingsListProps) {
-  const [sortKey, setSortKey] = useState<SortKey>('current_value')
+  const [sortKey, setSortKey] = useState<SortKey>('unrealized_pnl')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
 
   const handleSortClick = useCallback(
@@ -83,6 +84,10 @@ export function HoldingsList({
         case 'unrealized_pnl':
           aVal = a.unrealized_pnl
           bVal = b.unrealized_pnl
+          break
+        case 'unrealized_pnl_percent':
+          aVal = a.unrealized_pnl_percent
+          bVal = b.unrealized_pnl_percent
           break
         default:
           return 0
@@ -166,6 +171,13 @@ export function HoldingsList({
             >
               評価損益{getSortIndicator('unrealized_pnl')}
             </th>
+            <th
+              className={styles.right}
+              onClick={() => handleSortClick('unrealized_pnl_percent')}
+              style={{ cursor: 'pointer' }}
+            >
+              損益率{getSortIndicator('unrealized_pnl_percent')}
+            </th>
             {onHistoryClick && <th className={styles.center}>履歴</th>}
             {onCompareToggle && <th className={styles.center}>比較</th>}
           </tr>
@@ -201,16 +213,12 @@ export function HoldingsList({
                   {formatPrice(holding.current_value)}
                 </td>
                 <td className={`${styles.right} ${pnlClass}`}>
-                  <div className={styles.pnl}>
-                    <span>
-                      {pnlSign}
-                      {formatPrice(holding.unrealized_pnl)}
-                    </span>
-                    <span className={styles.pnlPercent}>
-                      ({pnlSign}
-                      {holding.unrealized_pnl_percent.toFixed(2)}%)
-                    </span>
-                  </div>
+                  {pnlSign}
+                  {formatPrice(holding.unrealized_pnl)}
+                </td>
+                <td className={`${styles.right} ${pnlClass}`}>
+                  {pnlSign}
+                  {holding.unrealized_pnl_percent.toFixed(2)}%
                 </td>
                 {onHistoryClick && (
                   <td
