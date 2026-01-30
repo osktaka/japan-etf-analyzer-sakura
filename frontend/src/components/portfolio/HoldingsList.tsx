@@ -5,7 +5,13 @@ import { formatPrice } from '../../utils'
 import { CompareCheckbox } from '../actions/CompareCheckbox'
 import styles from './HoldingsList.module.css'
 
-type SortKey = 'etf_code' | 'quantity' | 'average_cost' | 'current_price' | 'current_value' | 'unrealized_pnl'
+type SortKey =
+  | 'etf_code'
+  | 'quantity'
+  | 'average_cost'
+  | 'current_price'
+  | 'current_value'
+  | 'unrealized_pnl'
 type SortOrder = 'asc' | 'desc'
 
 interface HoldingsListProps {
@@ -30,14 +36,17 @@ export function HoldingsList({
   const [sortKey, setSortKey] = useState<SortKey>('current_value')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
 
-  const handleSortClick = useCallback((key: SortKey) => {
-    if (sortKey === key) {
-      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
-    } else {
-      setSortKey(key)
-      setSortOrder('desc')
-    }
-  }, [sortKey])
+  const handleSortClick = useCallback(
+    (key: SortKey) => {
+      if (sortKey === key) {
+        setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+      } else {
+        setSortKey(key)
+        setSortOrder('desc')
+      }
+    },
+    [sortKey]
+  )
 
   const getSortIndicator = (key: SortKey): string => {
     if (sortKey !== key) return ''

@@ -33,30 +33,34 @@ export function TradeHistoryModal({
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
 
-  const fetchTrades = useCallback(async (searchOverride?: string) => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      const options: TradeFilterOptions = {}
-      // searchOverride is used when opening modal to avoid state update delay
-      const currentSearch = searchOverride !== undefined ? searchOverride : search
-      if (currentSearch.trim()) {
-        options.search = currentSearch.trim()
+  const fetchTrades = useCallback(
+    async (searchOverride?: string) => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const options: TradeFilterOptions = {}
+        // searchOverride is used when opening modal to avoid state update delay
+        const currentSearch =
+          searchOverride !== undefined ? searchOverride : search
+        if (currentSearch.trim()) {
+          options.search = currentSearch.trim()
+        }
+        if (startDate) {
+          options.startDate = startDate
+        }
+        if (endDate) {
+          options.endDate = endDate
+        }
+        const data = await tradesApi.getAll(undefined, options)
+        setTrades(data)
+      } catch {
+        setError('取引履歴の取得に失敗しました')
+      } finally {
+        setIsLoading(false)
       }
-      if (startDate) {
-        options.startDate = startDate
-      }
-      if (endDate) {
-        options.endDate = endDate
-      }
-      const data = await tradesApi.getAll(undefined, options)
-      setTrades(data)
-    } catch {
-      setError('取引履歴の取得に失敗しました')
-    } finally {
-      setIsLoading(false)
-    }
-  }, [search, startDate, endDate])
+    },
+    [search, startDate, endDate]
+  )
 
   // Fetch trades when modal opens, using initialSearch directly
   useEffect(() => {
