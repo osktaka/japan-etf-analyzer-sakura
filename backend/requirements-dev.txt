@@ -1,0 +1,7 @@
+# Development tools (not needed in production)
+-r requirements.txt
+
+ruff==0.1.6
+pytest==7.4.3
+pytest-cov==4.1.0
+pre-commit==3.5.0
