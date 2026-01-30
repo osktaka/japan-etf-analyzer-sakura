@@ -58,7 +58,9 @@ describe('Header', () => {
         <Header />
       </BrowserRouter>
     )
-    expect(screen.getByText('トップ')).toBeInTheDocument()
+    // デスクトップnavとモバイルメニューの両方に存在
+    const topLinks = screen.getAllByText('トップ')
+    expect(topLinks.length).toBeGreaterThanOrEqual(1)
   })
 
   it('比較リンクが表示される', () => {
@@ -67,7 +69,9 @@ describe('Header', () => {
         <Header />
       </BrowserRouter>
     )
-    expect(screen.getByText('比較')).toBeInTheDocument()
+    // デスクトップnavとモバイルメニューの両方に存在
+    const compareLinks = screen.getAllByText('比較')
+    expect(compareLinks.length).toBeGreaterThanOrEqual(1)
   })
 
   it('認証済みの場合、マイページリンクが表示される', () => {
@@ -76,7 +80,9 @@ describe('Header', () => {
         <Header />
       </BrowserRouter>
     )
-    expect(screen.getByText('マイページ')).toBeInTheDocument()
+    // デスクトップnavとモバイルメニューの両方に存在
+    const mypageLinks = screen.getAllByText('マイページ')
+    expect(mypageLinks.length).toBeGreaterThanOrEqual(1)
   })
 
   it('認証済みの場合、ユーザー名が表示される', () => {
@@ -85,7 +91,9 @@ describe('Header', () => {
         <Header />
       </BrowserRouter>
     )
-    expect(screen.getByText('testuser')).toBeInTheDocument()
+    // デスクトップドロップダウンボタンとモバイルユーザー情報の両方にtestuserが含まれる
+    const userElements = screen.getAllByText(/testuser/)
+    expect(userElements.length).toBeGreaterThanOrEqual(1)
   })
 
   it('認証済みの場合、ログアウトボタンが表示される', () => {
@@ -94,7 +102,9 @@ describe('Header', () => {
         <Header />
       </BrowserRouter>
     )
-    expect(screen.getByText('ログアウト')).toBeInTheDocument()
+    // デスクトップドロップダウンとモバイルメニューの両方に存在
+    const logoutButtons = screen.getAllByText('ログアウト')
+    expect(logoutButtons.length).toBeGreaterThanOrEqual(1)
   })
 
   it('未認証の場合、ログインリンクが表示される', () => {
@@ -109,7 +119,9 @@ describe('Header', () => {
         <Header />
       </BrowserRouter>
     )
-    expect(screen.getByText('ログイン')).toBeInTheDocument()
+    // デスクトップnavとモバイルメニューの両方に存在
+    const loginLinks = screen.getAllByText('ログイン')
+    expect(loginLinks.length).toBeGreaterThanOrEqual(1)
   })
 
   it('未認証の場合、マイページリンクが表示されない', () => {
@@ -156,7 +168,9 @@ describe('Header', () => {
       </BrowserRouter>
     )
 
-    fireEvent.click(screen.getByText('ログアウト'))
+    // デスクトップドロップダウンのログアウトボタン（最初の要素）をクリック
+    const logoutButtons = screen.getAllByText('ログアウト')
+    fireEvent.click(logoutButtons[0])
     expect(mockLogout).toHaveBeenCalled()
   })
 
@@ -167,7 +181,103 @@ describe('Header', () => {
       </MemoryRouter>
     )
 
-    const compareLink = screen.getByText('比較')
-    expect(compareLink.className).toContain('active')
+    // デスクトップnavとモバイルメニューの両方に存在
+    const compareLinks = screen.getAllByText('比較')
+    // 少なくとも1つがactiveクラスを持つ
+    const hasActive = compareLinks.some((link) => link.className.includes('active'))
+    expect(hasActive).toBe(true)
+  })
+
+  describe('モバイルメニュー', () => {
+    it('ハンバーガーボタンが表示される', () => {
+      render(
+        <BrowserRouter>
+          <Header />
+        </BrowserRouter>
+      )
+      const hamburgerButton = screen.getByRole('button', { name: 'メニューを開く' })
+      expect(hamburgerButton).toBeInTheDocument()
+    })
+
+    it('ハンバーガーボタンにaria-expanded属性がある', () => {
+      render(
+        <BrowserRouter>
+          <Header />
+        </BrowserRouter>
+      )
+      const hamburgerButton = screen.getByRole('button', { name: 'メニューを開く' })
+      expect(hamburgerButton).toHaveAttribute('aria-expanded', 'false')
+    })
+
+    it('ハンバーガーボタンクリックでメニューが開く', () => {
+      render(
+        <BrowserRouter>
+          <Header />
+        </BrowserRouter>
+      )
+      const hamburgerButton = screen.getByRole('button', { name: 'メニューを開く' })
+      fireEvent.click(hamburgerButton)
+      expect(hamburgerButton).toHaveAttribute('aria-expanded', 'true')
+      expect(hamburgerButton).toHaveAttribute('aria-label', 'メニューを閉じる')
+    })
+
+    it('モバイルメニューにrole="menu"属性がある', () => {
+      render(
+        <BrowserRouter>
+          <Header />
+        </BrowserRouter>
+      )
+      const mobileMenu = screen.getByRole('menu', { name: 'モバイルナビゲーション' })
+      expect(mobileMenu).toBeInTheDocument()
+    })
+
+    it('モバイルメニュー内のリンクにrole="menuitem"属性がある', () => {
+      render(
+        <BrowserRouter>
+          <Header />
+        </BrowserRouter>
+      )
+      const menuItems = screen.getAllByRole('menuitem')
+      expect(menuItems.length).toBeGreaterThan(0)
+    })
+
+    it('Escapeキーでメニューが閉じる', () => {
+      render(
+        <BrowserRouter>
+          <Header />
+        </BrowserRouter>
+      )
+      const hamburgerButton = screen.getByRole('button', { name: 'メニューを開く' })
+      fireEvent.click(hamburgerButton)
+      expect(hamburgerButton).toHaveAttribute('aria-expanded', 'true')
+
+      fireEvent.keyDown(document, { key: 'Escape' })
+      expect(hamburgerButton).toHaveAttribute('aria-expanded', 'false')
+    })
+
+    it('認証済みの場合、モバイルメニューにユーザー情報が表示される', () => {
+      render(
+        <BrowserRouter>
+          <Header />
+        </BrowserRouter>
+      )
+      expect(screen.getByText('testuser でログイン中')).toBeInTheDocument()
+    })
+
+    it('未認証の場合、モバイルメニューにログインリンクが表示される', () => {
+      vi.mocked(useAuthModule.useAuth).mockReturnValue({
+        ...mockAuthValue,
+        user: null,
+        isAuthenticated: false,
+      })
+
+      render(
+        <BrowserRouter>
+          <Header />
+        </BrowserRouter>
+      )
+      const loginLinks = screen.getAllByText('ログイン')
+      expect(loginLinks.length).toBeGreaterThanOrEqual(1)
+    })
   })
 })

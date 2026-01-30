@@ -123,3 +123,168 @@
   background-color: var(--color-primary-hover);
   text-decoration: none;
 }
+
+/* ハンバーガーボタン */
+.hamburgerButton {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 40px;
+  height: 40px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: var(--spacing-sm);
+  gap: 5px;
+}
+
+.hamburgerLine {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background-color: var(--color-text);
+  border-radius: var(--radius-full);
+  transition: all 0.3s ease;
+}
+
+.hamburgerButton[aria-expanded="true"] .hamburgerLine:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburgerButton[aria-expanded="true"] .hamburgerLine:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburgerButton[aria-expanded="true"] .hamburgerLine:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* モバイルメニューオーバーレイ */
+.mobileOverlay {
+  display: none;
+  position: fixed;
+  top: 64px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.mobileOverlay.active {
+  display: block;
+}
+
+/* モバイルメニュー */
+.mobileMenu {
+  display: none;
+  position: fixed;
+  top: 64px;
+  right: -280px;
+  width: 280px;
+  height: auto;
+  max-height: calc(100vh - 64px);
+  background-color: var(--color-bg-card);
+  border-left: 1px solid var(--color-border);
+  z-index: 1000;
+  flex-direction: column;
+  padding: var(--spacing-lg);
+  gap: var(--spacing-md);
+  transition: right 0.3s ease;
+  overflow-y: auto;
+}
+
+.mobileMenu.active {
+  right: 0;
+}
+
+.mobileNavLink {
+  display: block;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.mobileNavLink:hover {
+  color: var(--color-text);
+  background-color: var(--color-bg-hover);
+  text-decoration: none;
+}
+
+.mobileNavLink.active {
+  color: var(--color-primary);
+  background-color: var(--color-bg-hover);
+}
+
+.mobileLoginBtn {
+  display: block;
+  background-color: var(--color-primary);
+  color: white;
+  font-weight: 500;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  text-align: center;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.mobileLoginBtn:hover {
+  background-color: var(--color-primary-hover);
+  text-decoration: none;
+}
+
+.mobileLogoutBtn {
+  display: block;
+  width: 100%;
+  background: none;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: var(--spacing-md);
+}
+
+.mobileLogoutBtn:hover {
+  color: var(--color-error);
+  border-color: var(--color-error);
+  background-color: var(--color-bg-hover);
+}
+
+.mobileUserInfo {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: var(--spacing-md);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+/* モバイルレスポンシブ */
+@media (max-width: 768px) {
+  .nav {
+    display: none;
+  }
+
+  .hamburgerButton {
+    display: flex;
+  }
+
+  .mobileMenu {
+    display: flex;
+  }
+
+  .mobileOverlay {
+    display: none;
+  }
+
+  .mobileOverlay.active {
+    display: block;
+  }
+}
