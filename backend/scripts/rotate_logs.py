@@ -12,6 +12,9 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Tuple
 
+# Add backend to path for imports
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 # Constants
 LOG_DIR = "./logs"
 SIZE_THRESHOLD_MB = 10
@@ -122,9 +125,6 @@ def cleanup_db_logs(days: int, dry_run: bool = False) -> str:
     script_dir = Path(__file__).resolve().parent
     backend_dir = script_dir.parent
 
-    # Add backend to path for imports
-    sys.path.insert(0, str(backend_dir))
-
     # Determine database path (differs between Docker and production)
     # Docker:      /app/data/etf.db (backend_dir = /app)
     # Production:  project_root/data/etf.db (backend_dir = project_root/backend)
@@ -188,42 +188,97 @@ def main():
         print("** DRY RUN MODE - No changes will be made **")
     print()
 
-    all_actions = []
+    # Flask app context and batch log (non-dry-run only)
+    batch_log = None
+    batch_log_repo = None
+    app = None
+    ctx = None
+    if not args.dry_run:
+        # Calculate database path
+        script_dir = Path(__file__).resolve().parent
+        backend_dir = script_dir.parent
+        db_path_docker = backend_dir / "data" / "etf.db"
+        db_path_prod = backend_dir.parent / "data" / "etf.db"
+        db_path = db_path_docker if db_path_docker.exists() else db_path_prod
+        os.environ.setdefault("DATABASE_URL", f"sqlite:///{db_path}")
 
-    # Rotate large log files
-    log_files = get_log_files(log_dir)
-    for log_file in log_files:
-        size_mb = get_file_size_mb(log_file)
-        if size_mb >= args.size_mb:
-            print(f"Rotating {log_file} ({size_mb:.2f}MB >= {args.size_mb}MB)")
-            actions = rotate_file(log_file, dry_run=args.dry_run)
-            all_actions.extend(actions)
+        from src.app import create_app
+        from src.repositories import BatchLogRepository
+
+        app = create_app()
+        ctx = app.app_context()
+        ctx.push()
+
+        batch_log_repo = BatchLogRepository()
+        batch_log = batch_log_repo.create(
+            batch_name="rotate_logs",
+            status="running",
+            started_at=datetime.utcnow(),
+        )
+        print(f"Batch log created: id={batch_log.id}\n")
+
+    try:
+        all_actions = []
+
+        # Rotate large log files
+        log_files = get_log_files(log_dir)
+        for log_file in log_files:
+            size_mb = get_file_size_mb(log_file)
+            if size_mb >= args.size_mb:
+                print(f"Rotating {log_file} ({size_mb:.2f}MB >= {args.size_mb}MB)")
+                actions = rotate_file(log_file, dry_run=args.dry_run)
+                all_actions.extend(actions)
+                for action in actions:
+                    print(f"  {action}")
+            else:
+                print(f"Skipping {log_file} ({size_mb:.2f}MB < {args.size_mb}MB)")
+
+        print()
+
+        # Delete old files
+        print(f"Checking for files older than {args.retention_days} days...")
+        actions = delete_old_files(log_dir, args.retention_days, dry_run=args.dry_run)
+        all_actions.extend(actions)
+        if actions:
             for action in actions:
                 print(f"  {action}")
         else:
-            print(f"Skipping {log_file} ({size_mb:.2f}MB < {args.size_mb}MB)")
+            print("  No old files to delete")
 
-    print()
+        print()
 
-    # Delete old files
-    print(f"Checking for files older than {args.retention_days} days...")
-    actions = delete_old_files(log_dir, args.retention_days, dry_run=args.dry_run)
-    all_actions.extend(actions)
-    if actions:
-        for action in actions:
-            print(f"  {action}")
-    else:
-        print("  No old files to delete")
+        # Cleanup DB logs
+        print("Cleaning up database batch logs...")
+        db_action = cleanup_db_logs(args.retention_days, dry_run=args.dry_run)
+        print(f"  {db_action}")
 
-    print()
+        print()
+        print(f"Log rotation completed. Total actions: {len(all_actions)}")
 
-    # Cleanup DB logs
-    print("Cleaning up database batch logs...")
-    db_action = cleanup_db_logs(args.retention_days, dry_run=args.dry_run)
-    print(f"  {db_action}")
+        # Update batch log to success
+        if batch_log_repo and batch_log:
+            batch_log_repo.update(
+                batch_log.id,
+                status="success",
+                finished_at=datetime.utcnow(),
+            )
+            print(f"\nBatch log updated: id={batch_log.id}, status=success")
 
-    print()
-    print(f"Log rotation completed. Total actions: {len(all_actions)}")
+    except Exception as e:
+        # Update batch log to failed
+        if batch_log_repo and batch_log:
+            batch_log_repo.update(
+                batch_log.id,
+                status="failed",
+                finished_at=datetime.utcnow(),
+                error_message=str(e),
+            )
+            print(f"\nBatch log updated: id={batch_log.id}, status=failed")
+        raise
+
+    finally:
+        if ctx:
+            ctx.pop()
 
 
 if __name__ == "__main__":

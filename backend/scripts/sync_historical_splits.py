@@ -18,8 +18,10 @@ if env_file.exists():
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from datetime import datetime  # noqa: E402
+
 from src.app import create_app  # noqa: E402
-from src.repositories import ETFRepository  # noqa: E402
+from src.repositories import BatchLogRepository, ETFRepository  # noqa: E402
 from src.services.split_history_service import SplitHistoryService  # noqa: E402
 
 
@@ -113,51 +115,85 @@ def main():
             print("\nTo execute sync, run without --dry-run option")
             return
 
-        # Execute sync
-        print(f"\nSyncing {len(etf_codes)} ETF(s)...")
-        print(f"Rate limit: {args.rate_limit} sec/request")
-        print("=" * 60)
-
-        results = []
-        for i, etf_code in enumerate(etf_codes, 1):
-            print(
-                f"[{i}/{len(etf_codes)}] Processing {etf_code}...", end=" ", flush=True
+        # Batch log recording (non-dry-run only)
+        batch_log = None
+        batch_log_repo = None
+        if not args.dry_run:
+            batch_log_repo = BatchLogRepository()
+            batch_log = batch_log_repo.create(
+                batch_name="sync_historical_splits",
+                status="running",
+                started_at=datetime.utcnow(),
             )
+            print(f"Batch log created: id={batch_log.id}")
 
-            result = service.sync_splits_for_etf(etf_code)
-            results.append(result)
+        try:
+            # Execute sync
+            print(f"\nSyncing {len(etf_codes)} ETF(s)...")
+            print(f"Rate limit: {args.rate_limit} sec/request")
+            print("=" * 60)
 
-            if result["error"] is None:
+            results = []
+            for i, etf_code in enumerate(etf_codes, 1):
                 print(
-                    f"✓ (fetched={result['fetched']}, "
-                    f"registered={result['registered']}, "
-                    f"skipped={result['skipped']})"
+                    f"[{i}/{len(etf_codes)}] Processing {etf_code}...", end=" ", flush=True
                 )
-            else:
-                print(f"✗ Error: {result['error']}")
 
-            # Rate limiting (except for last item)
-            if i < len(etf_codes):
-                time.sleep(args.rate_limit)
+                result = service.sync_splits_for_etf(etf_code)
+                results.append(result)
 
-        # Summary
-        summary = {
-            "total": len(etf_codes),
-            "success": sum(1 for r in results if r["error"] is None),
-            "failed": sum(1 for r in results if r["error"] is not None),
-            "total_fetched": sum(r["fetched"] for r in results),
-            "total_registered": sum(r["registered"] for r in results),
-            "total_skipped": sum(r["skipped"] for r in results),
-        }
+                if result["error"] is None:
+                    print(
+                        f"✓ (fetched={result['fetched']}, "
+                        f"registered={result['registered']}, "
+                        f"skipped={result['skipped']})"
+                    )
+                else:
+                    print(f"✗ Error: {result['error']}")
 
-        print_summary(summary)
+                # Rate limiting (except for last item)
+                if i < len(etf_codes):
+                    time.sleep(args.rate_limit)
 
-        # Detailed results if requested
-        if summary["failed"] > 0:
-            print("\nFailed ETFs:")
-            for result in results:
-                if result["error"]:
-                    print(f"  - {result['etf_code']}: {result['error']}")
+            # Summary
+            summary = {
+                "total": len(etf_codes),
+                "success": sum(1 for r in results if r["error"] is None),
+                "failed": sum(1 for r in results if r["error"] is not None),
+                "total_fetched": sum(r["fetched"] for r in results),
+                "total_registered": sum(r["registered"] for r in results),
+                "total_skipped": sum(r["skipped"] for r in results),
+            }
+
+            print_summary(summary)
+
+            # Detailed results if requested
+            if summary["failed"] > 0:
+                print("\nFailed ETFs:")
+                for result in results:
+                    if result["error"]:
+                        print(f"  - {result['etf_code']}: {result['error']}")
+
+            # Update batch log to success
+            if batch_log_repo and batch_log:
+                batch_log_repo.update(
+                    batch_log.id,
+                    status="success",
+                    finished_at=datetime.utcnow(),
+                )
+                print(f"\nBatch log updated: id={batch_log.id}, status=success")
+
+        except Exception as e:
+            # Update batch log to failed
+            if batch_log_repo and batch_log:
+                batch_log_repo.update(
+                    batch_log.id,
+                    status="failed",
+                    finished_at=datetime.utcnow(),
+                    error_message=str(e),
+                )
+                print(f"\nBatch log updated: id={batch_log.id}, status=failed")
+            raise
 
 
 if __name__ == "__main__":
