@@ -17,6 +17,7 @@ Thumbs.db
 # Logs
 *.log
 logs/
+!logs/.gitkeep
 
 # Python
 __pycache__/
