@@ -30,6 +30,10 @@ os.environ.setdefault("FLASK_ENV", "production")
 os.environ.setdefault("APP_BASE_DIR", str(APP_ROOT))
 os.environ.setdefault("APP_DATA_DIR", str(APP_ROOT / "data"))
 
+# DATABASE_URLを絶対パスに変更（CGI環境での相対パス問題を回避）
+db_path = APP_ROOT / "data" / "etf.db"
+os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
+
 # カレントディレクトリをプロジェクトルートに変更（相対パス解決用）
 os.chdir(APP_ROOT)
 
