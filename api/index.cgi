@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3
+#!/home/kima3/.pyenv/versions/3.9.18/bin/python3
 # -*- coding: utf-8 -*-
 """Flask CGI entry point for Sakura rental server."""
 
