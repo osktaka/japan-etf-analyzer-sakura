@@ -490,82 +490,42 @@ def calculate_regression_return_from_df(df, days: int) -> Optional[float]:
 
 
 def update_performance_cache(codes: list, rate_limit: float = 1.0) -> tuple:
-    """Update performance cache for given ETF codes.
+    """Update performance cache for given ETF codes using DB-first approach.
 
     Args:
         codes: List of ETF codes to update
-        rate_limit: Rate limit in seconds between requests
+        rate_limit: Rate limit (deprecated - kept for backward compatibility)
 
     Returns:
         Tuple of (success_count, fail_count)
     """
-    import yfinance as yf
-    from src.models import PerformanceCache, db
+    from src.services.performance_cache_service import PerformanceCacheService
 
     logger.info(f"Calculating performance cache for {len(codes)} ETFs...")
     success = 0
     fail = 0
 
+    service = PerformanceCacheService()
+
     for i, code in enumerate(codes, 1):
         try:
-            ticker = f"{code}.T"
-            stock = yf.Ticker(ticker)
-
-            # 最大期間のデータを取得（20年分）
-            df = stock.history(period="max")
-            if df.empty:
+            result = service.recalculate_for_etf(code)
+            if result is None:
                 logger.warning(
                     f"[{i}/{len(codes)}] {code}: No data for performance calc"
                 )
                 fail += 1
                 continue
 
-            # ボラティリティを計算（1年データから）
-            volatility = calculate_volatility_from_df(df, 365)
-
-            # 各期間の上昇率と回帰上昇率を計算
-            for period_id, days in PERIODS.items():
-                return_rate = calculate_return_from_df(df, days)
-                regression_rate = calculate_regression_return_from_df(df, days)
-
-                # DBに保存（UPSERT）
-                existing = PerformanceCache.query.filter_by(
-                    etf_code=code, period=period_id
-                ).first()
-
-                # ボラティリティは1y期間のレコードにのみ保存
-                vol_value = volatility if period_id == "1y" else None
-
-                if existing:
-                    existing.return_rate = return_rate
-                    existing.regression_rate = regression_rate
-                    existing.volatility = vol_value
-                    existing.calculated_at = datetime.utcnow()
-                else:
-                    cache = PerformanceCache(
-                        etf_code=code,
-                        period=period_id,
-                        return_rate=return_rate,
-                        regression_rate=regression_rate,
-                        volatility=vol_value,
-                        calculated_at=datetime.utcnow(),
-                    )
-                    db.session.add(cache)
-
-            db.session.commit()
             success += 1
-            vol_str = f"{volatility}%" if volatility else "N/A"
+            updated_periods = ", ".join(result["updated_periods"])
             logger.info(
-                f"[{i}/{len(codes)}] {code}: Performance cache updated (vol={vol_str})"
+                f"[{i}/{len(codes)}] {code}: Performance cache updated "
+                f"(periods: {updated_periods})"
             )
-
-            # レート制限対策
-            if i < len(codes):
-                time_module.sleep(rate_limit)
 
         except Exception as e:
             logger.error(f"[{i}/{len(codes)}] {code}: Performance calc failed - {e}")
-            db.session.rollback()
             fail += 1
 
     return success, fail

@@ -39,19 +39,28 @@ class PerformanceCacheService:
         Returns:
             Dictionary with etf_code and updated_periods, or None if split not found
         """
-        from src.models import PerformanceCache, db
-
         # Get the stock split
         split = self.stock_split_repo.get_by_id(split_id)
         if not split:
             return None
 
-        etf_code = split.etf_code
+        return self.recalculate_for_etf(split.etf_code)
+
+    def recalculate_for_etf(self, etf_code: str) -> Optional[dict]:
+        """Recalculate performance cache for an ETF using DB-first approach.
+
+        Args:
+            etf_code: ETF code
+
+        Returns:
+            Dictionary with etf_code and updated_periods, or None if data not available
+        """
+        from src.models import PerformanceCache, db
 
         # Get all periods defined in update_etf_data.py
         periods = list(PERIODS.keys())
 
-        # Get split-adjusted chart data for all periods
+        # Get split-adjusted chart data for all periods (DB-first with API fallback)
         batch_data = self.chart_service.get_batch_periods_chart_data(etf_code, periods)
         if not batch_data:
             return None
