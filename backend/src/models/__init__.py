@@ -21,6 +21,7 @@ from .favorite import Favorite  # noqa: E402
 from .trade import Trade  # noqa: E402
 from .price_history import PriceHistory  # noqa: E402
 from .performance_cache import PerformanceCache  # noqa: E402
+from .score_cache import ScoreCache  # noqa: E402
 from .batch_log import BatchLog  # noqa: E402
 from .stock_split import StockSplit  # noqa: E402
 
@@ -36,6 +37,7 @@ __all__ = [
     "Trade",
     "PriceHistory",
     "PerformanceCache",
+    "ScoreCache",
     "BatchLog",
     "StockSplit",
 ]

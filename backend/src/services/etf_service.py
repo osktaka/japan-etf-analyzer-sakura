@@ -1,7 +1,7 @@
 """ETF service for ETF business logic."""
 from typing import Dict, List, Optional
 
-from src.repositories import ETFRepository
+from src.repositories import ETFRepository, ScoreCacheRepository
 from src.services.scoring_service import ScoringService
 
 # Map score sort fields to scoring service perspective keys
@@ -21,6 +21,7 @@ class ETFService:
     def __init__(self):
         """Initialize service with repository."""
         self.repository = ETFRepository()
+        self.score_cache_repository = ScoreCacheRepository()
         self.scoring_service = ScoringService()
 
     def search(
@@ -59,9 +60,9 @@ class ETFService:
                 offset=0,
             )
 
-            # Compute scores for all ETFs
+            # Get scores from cache (with fallback to calculation)
             codes = [etf.code for etf in all_etfs]
-            all_scores = self.scoring_service.get_all_scores_batch(codes)
+            all_scores = self.get_batch_scores(codes)
 
             # Get the score key to sort by
             score_key = SCORE_SORT_FIELDS[sort]
@@ -134,4 +135,25 @@ class ETFService:
         Returns:
             Dict mapping ETF code to dict of perspective scores
         """
-        return self.scoring_service.get_all_scores_batch(codes)
+        # Try to get from cache first
+        cached_data = self.score_cache_repository.get_all_perspectives_batch(codes)
+
+        result = {}
+        missing_codes = []
+
+        for code in codes:
+            if code in cached_data and cached_data[code]:
+                # Convert cached data to score dict
+                result[code] = {
+                    perspective: cache.total_score
+                    for perspective, cache in cached_data[code].items()
+                }
+            else:
+                missing_codes.append(code)
+
+        # Fallback: calculate missing scores on-the-fly
+        if missing_codes:
+            calculated_scores = self.scoring_service.get_all_scores_batch(missing_codes)
+            result.update(calculated_scores)
+
+        return result

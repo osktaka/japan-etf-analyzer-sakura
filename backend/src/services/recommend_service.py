@@ -1,7 +1,7 @@
 """Recommendation service for ETF recommendations."""
 from typing import Dict, List
 
-from src.repositories import ETFRepository
+from src.repositories import ETFRepository, ScoreCacheRepository
 
 from .scoring_service import ScoringService
 
@@ -56,6 +56,7 @@ class RecommendService:
     def __init__(self):
         """Initialize service with repositories."""
         self.etf_repository = ETFRepository()
+        self.score_cache_repository = ScoreCacheRepository()
         self.scoring_service = ScoringService()
 
     def _is_excluded(self, etf) -> bool:
@@ -100,18 +101,87 @@ class RecommendService:
             self.PERSPECTIVES[5],  # Default to balance
         )
 
-        scored_items = self._get_scored_etfs(perspective, limit)
+        scored_items = self._get_scored_etfs_cached(perspective, limit)
 
         return {
             "perspective": perspective_info,
             "items": [
-                {**item["etf"].to_summary_dict(), "score": item["score"]}
+                {
+                    **item["etf"].to_summary_dict(),
+                    "score": item["score"],
+                    "axis_scores": item["axis_scores"],
+                }
                 for item in scored_items
             ],
         }
 
+    def _get_scored_etfs_cached(self, perspective: str, limit: int) -> List[Dict]:
+        """Get ETFs ranked by cached composite score.
+
+        Args:
+            perspective: Scoring perspective
+            limit: Maximum number of results
+
+        Returns:
+            List of dicts with ETF, score, and axis_scores, sorted by composite score
+        """
+        # Get top scored ETFs from cache (with buffer for exclusion filtering)
+        cached_scores = self.score_cache_repository.get_scores_for_perspective(
+            perspective, limit=limit * 3
+        )
+
+        # Get ETF details for cached scores
+        result = []
+        for cache in cached_scores:
+            etf = self.etf_repository.get_by_code(cache.etf_code)
+            if not etf:
+                continue
+
+            # Apply exclusion filters
+            if self._is_excluded(etf):
+                continue
+
+            result.append(
+                {
+                    "etf": etf,
+                    "score": cache.total_score,
+                    "axis_scores": {
+                        "dividend_power": cache.dividend_power,
+                        "cost_efficiency": cache.cost_efficiency,
+                        "scale_reliability": cache.scale_reliability,
+                        "trading_quality": cache.trading_quality,
+                        "return_performance": cache.return_performance,
+                    },
+                }
+            )
+
+            if len(result) >= limit:
+                break
+
+        # Fallback: if cache is empty, calculate on-the-fly
+        if not result:
+            all_etfs = self.etf_repository.get_all()
+            filtered_candidates = [
+                etf for etf in all_etfs if not self._is_excluded(etf)
+            ]
+            scored = self.scoring_service.rank_etfs(
+                filtered_candidates, perspective, limit
+            )
+            # Add empty axis_scores for compatibility
+            for item in scored:
+                item["axis_scores"] = {
+                    "dividend_power": None,
+                    "cost_efficiency": None,
+                    "scale_reliability": None,
+                    "trading_quality": None,
+                    "return_performance": None,
+                }
+            return scored
+
+        return result
+
     def _get_scored_etfs(self, perspective: str, limit: int) -> List[Dict]:
-        """Get ETFs ranked by composite score.
+        """Get ETFs ranked by composite score (legacy method for backward compatibility).
 
         Args:
             perspective: Scoring perspective

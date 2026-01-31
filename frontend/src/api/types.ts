@@ -61,8 +61,17 @@ export interface Perspective {
   description: string
 }
 
+export interface AxisScores {
+  dividend_power: number | null
+  cost_efficiency: number | null
+  scale_reliability: number | null
+  trading_quality: number | null
+  return_performance: number | null
+}
+
 export interface RecommendationItem extends ETFSummary {
   score: number
+  axis_scores?: AxisScores
 }
 
 export interface Recommendation {
