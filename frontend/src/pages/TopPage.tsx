@@ -7,6 +7,7 @@ import {
   useFavorites,
   useAuth,
   usePortfolio,
+  useTopPageStorage,
 } from '../hooks'
 import {
   SearchResults,
@@ -17,12 +18,15 @@ import {
   PeriodSelector,
   ReturnTypeToggle,
   TableDisplayToggle,
+  ScoringModeToggle,
+  PerspectiveSelector,
 } from '../components/search'
 import type {
   ViewMode,
   ReturnType,
   DisplayMode,
   PerspectiveKey,
+  ScoringMode,
 } from '../components/search'
 import {
   SearchParams,
@@ -37,18 +41,10 @@ import {
 import { RecommendSection } from '../components/recommend'
 import { ETFDetailModal, LoginPromptModal } from '../components/modal'
 import { Pagination } from '../components/common'
-import { MAX_COMPARE_ITEMS } from '../utils'
+import { MAX_COMPARE_ITEMS, buildSearchParams } from '../utils'
 import styles from './TopPage.module.css'
 
 const PAGE_SIZE = 50
-const PERIODS_STORAGE_KEY = 'etf-table-view-periods'
-const RETURN_TYPE_STORAGE_KEY = 'etf-return-type'
-const VIEW_MODE_STORAGE_KEY = 'etf-view-mode'
-const SCORE_SORT_STORAGE_KEY = 'etf-score-sort-state'
-const TREND_SORT_STORAGE_KEY = 'etf-trend-sort-state'
-const CARD_SORT_STORAGE_KEY = 'etf-card-sort-state'
-const DISPLAY_MODE_STORAGE_KEY = 'etf-table-display-mode'
-const PERSPECTIVE_STORAGE_KEY = 'etf-perspective'
 
 // 切り口からソートフィールドへのマッピング（共通定義）
 const PERSPECTIVE_TO_SORT_FIELD: Record<PerspectiveKey, SortField> = {
@@ -60,160 +56,9 @@ const PERSPECTIVE_TO_SORT_FIELD: Record<PerspectiveKey, SortField> = {
   growth: 'score_growth',
 }
 
-// ローカルストレージから表示期間を復元
-const getStoredPeriods = (): PerformancePeriod[] => {
-  try {
-    const stored = localStorage.getItem(PERIODS_STORAGE_KEY)
-    if (stored) {
-      const parsed = JSON.parse(stored)
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed
-      }
-    }
-  } catch {
-    // パースエラー時はデフォルト値を返す
-  }
-  return ['6m', '1y', '3y']
-}
-
-// ローカルストレージから上昇率タイプを復元
-const getStoredReturnType = (): ReturnType => {
-  try {
-    const stored = localStorage.getItem(RETURN_TYPE_STORAGE_KEY)
-    if (stored === 'price' || stored === 'regression') {
-      return stored
-    }
-  } catch {
-    // エラー時はデフォルト値を返す
-  }
-  return 'price'
-}
-
-// ローカルストレージから表示モードを復元
-const getStoredViewMode = (): ViewMode | null => {
-  try {
-    const stored = localStorage.getItem(VIEW_MODE_STORAGE_KEY)
-    if (stored === 'card' || stored === 'table') {
-      return stored
-    }
-  } catch {
-    // エラー時はnullを返す
-  }
-  return null
-}
-
-// ローカルストレージから銘柄スコア表示用のソート状態を復元
-const getStoredScoreSort = (): { sort: SortField; order: SortOrder } => {
-  try {
-    const stored = localStorage.getItem(SCORE_SORT_STORAGE_KEY)
-    if (stored) {
-      const parsed = JSON.parse(stored)
-      if (
-        parsed &&
-        typeof parsed.sort === 'string' &&
-        typeof parsed.order === 'string'
-      ) {
-        return parsed
-      }
-    }
-  } catch {
-    // パースエラー時はデフォルト値を返す
-  }
-  return { sort: 'score_balance', order: 'desc' }
-}
-
-// ローカルストレージから株価傾向表示用のソート状態を復元
-const getStoredTrendSort = (): { sort: SortField; order: SortOrder } => {
-  try {
-    const stored = localStorage.getItem(TREND_SORT_STORAGE_KEY)
-    if (stored) {
-      const parsed = JSON.parse(stored)
-      if (
-        parsed &&
-        typeof parsed.sort === 'string' &&
-        typeof parsed.order === 'string'
-      ) {
-        return parsed
-      }
-    }
-  } catch {
-    // パースエラー時はデフォルト値を返す
-  }
-  return { sort: 'return_1y', order: 'desc' }
-}
-
-// ローカルストレージからカード形式用のソート状態を復元
-const getStoredCardSort = (): { sort: SortField; order: SortOrder } => {
-  try {
-    const stored = localStorage.getItem(CARD_SORT_STORAGE_KEY)
-    if (stored) {
-      const parsed = JSON.parse(stored)
-      if (
-        parsed &&
-        typeof parsed.sort === 'string' &&
-        typeof parsed.order === 'string'
-      ) {
-        return parsed
-      }
-    }
-  } catch {
-    // パースエラー時はデフォルト値を返す
-  }
-  return { sort: 'return_1y', order: 'desc' }
-}
-
-// ローカルストレージから表示モードを復元
-const getStoredDisplayMode = (): DisplayMode => {
-  try {
-    const stored = localStorage.getItem(DISPLAY_MODE_STORAGE_KEY)
-    if (stored === 'score' || stored === 'trend') {
-      return stored
-    }
-  } catch {
-    // エラー時はデフォルト値を返す
-  }
-  return 'trend'
-}
-
-// ローカルストレージから切り口を復元
-const getStoredPerspective = (): PerspectiveKey => {
-  try {
-    const stored = localStorage.getItem(PERSPECTIVE_STORAGE_KEY)
-    const validPerspectives: PerspectiveKey[] = [
-      'balance',
-      'dividend',
-      'low-cost',
-      'stability',
-      'volume',
-      'growth',
-    ]
-    if (stored && validPerspectives.includes(stored as PerspectiveKey)) {
-      return stored as PerspectiveKey
-    }
-  } catch {
-    // エラー時はデフォルト値を返す
-  }
-  return 'balance'
-}
-
-// ソート状態をローカルストレージに保存するヘルパー関数
-const saveSortState = (
-  viewMode: ViewMode,
-  displayMode: DisplayMode,
-  sort: SortField,
-  order: SortOrder
-): void => {
-  if (viewMode === 'card') {
-    localStorage.setItem(CARD_SORT_STORAGE_KEY, JSON.stringify({ sort, order }))
-  } else if (viewMode === 'table') {
-    const storageKey =
-      displayMode === 'score' ? SCORE_SORT_STORAGE_KEY : TREND_SORT_STORAGE_KEY
-    localStorage.setItem(storageKey, JSON.stringify({ sort, order }))
-  }
-}
-
 export function TopPage() {
   const [searchParams, setSearchParams] = useSearchParams()
+  const storage = useTopPageStorage()
 
   // URLパラメータから初期状態を復元
   const getInitialFilters = (): SearchParams => {
@@ -238,7 +83,7 @@ export function TopPage() {
   const getInitialViewMode = (): ViewMode => {
     const urlView = searchParams.get('view') as ViewMode
     if (urlView) return urlView
-    const storedView = getStoredViewMode()
+    const storedView = storage.getStoredViewMode()
     return storedView || 'card'
   }
 
@@ -246,17 +91,21 @@ export function TopPage() {
   const [viewMode, setViewMode] = useState<ViewMode>(getInitialViewMode)
   const [performance, setPerformance] = useState<BatchPerformanceData>({})
   const [scores, setScores] = useState<BatchScoreData>({})
-  const [selectedPeriods, setSelectedPeriods] =
-    useState<PerformancePeriod[]>(getStoredPeriods)
-  const [returnType, setReturnType] = useState<ReturnType>(getStoredReturnType)
-  const [displayMode, setDisplayMode] =
-    useState<DisplayMode>(getStoredDisplayMode)
-  const [scoringMode, setScoringMode] = useState<'full' | 'partial'>(() => {
+  const [selectedPeriods, setSelectedPeriods] = useState<PerformancePeriod[]>(
+    storage.getStoredPeriods
+  )
+  const [returnType, setReturnType] = useState<ReturnType>(
+    storage.getStoredReturnType()
+  )
+  const [displayMode, setDisplayMode] = useState<DisplayMode>(
+    storage.getStoredDisplayMode()
+  )
+  const [scoringMode, setScoringMode] = useState<ScoringMode>(() => {
     const saved = localStorage.getItem('scoringMode')
-    return (saved === 'partial' ? 'partial' : 'full') as 'full' | 'partial'
+    return (saved === 'partial' ? 'partial' : 'full') as ScoringMode
   })
   const [selectedPerspective, setSelectedPerspective] =
-    useState<PerspectiveKey>(getStoredPerspective)
+    useState<PerspectiveKey>(storage.getStoredPerspective())
 
   // おすすめタブの状態
   const [recommendTab, setRecommendTab] = useState(
@@ -277,16 +126,16 @@ export function TopPage() {
     const urlSort = searchParams.get('sort') as SortField
     if (urlSort) return urlSort
     const initialViewMode = getInitialViewMode()
-    const initialDisplayMode = getStoredDisplayMode()
+    const initialDisplayMode = storage.getStoredDisplayMode()
     // カード形式の場合
     if (initialViewMode === 'card') {
-      const storedSort = getStoredCardSort()
+      const storedSort = storage.getStoredCardSort()
       return storedSort.sort
     }
     // 表形式かつスコア表示の場合
     if (initialDisplayMode === 'score') {
-      const storedSort = getStoredScoreSort()
-      const initialPerspective = getStoredPerspective()
+      const storedSort = storage.getStoredScoreSort()
+      const initialPerspective = storage.getStoredPerspective()
       // evaluation_score または score_*ソート時は選択中の切り口を反映
       if (
         storedSort.sort === 'evaluation_score' ||
@@ -297,26 +146,26 @@ export function TopPage() {
       return storedSort.sort
     }
     // 表形式かつ傾向表示の場合
-    const storedSort = getStoredTrendSort()
+    const storedSort = storage.getStoredTrendSort()
     return storedSort.sort
   })
   const [currentOrder, setCurrentOrder] = useState<SortOrder>(() => {
     const urlOrder = searchParams.get('order') as SortOrder
     if (urlOrder) return urlOrder
     const initialViewMode = getInitialViewMode()
-    const initialDisplayMode = getStoredDisplayMode()
+    const initialDisplayMode = storage.getStoredDisplayMode()
     // カード形式の場合
     if (initialViewMode === 'card') {
-      const storedSort = getStoredCardSort()
+      const storedSort = storage.getStoredCardSort()
       return storedSort.order
     }
     // 表形式かつスコア表示の場合
     if (initialDisplayMode === 'score') {
-      const storedSort = getStoredScoreSort()
+      const storedSort = storage.getStoredScoreSort()
       return storedSort.order
     }
     // 表形式かつ傾向表示の場合
-    const storedSort = getStoredTrendSort()
+    const storedSort = storage.getStoredTrendSort()
     return storedSort.order
   })
   const [currentPage, setCurrentPage] = useState(
@@ -373,23 +222,29 @@ export function TopPage() {
 
   // 表示期間をローカルストレージに保存
   useEffect(() => {
-    localStorage.setItem(PERIODS_STORAGE_KEY, JSON.stringify(selectedPeriods))
-  }, [selectedPeriods])
+    localStorage.setItem(
+      storage.keys.PERIODS_STORAGE_KEY,
+      JSON.stringify(selectedPeriods)
+    )
+  }, [selectedPeriods, storage.keys.PERIODS_STORAGE_KEY])
 
   // 切り口をローカルストレージに保存
   useEffect(() => {
-    localStorage.setItem(PERSPECTIVE_STORAGE_KEY, selectedPerspective)
-  }, [selectedPerspective])
+    localStorage.setItem(
+      storage.keys.PERSPECTIVE_STORAGE_KEY,
+      selectedPerspective
+    )
+  }, [selectedPerspective, storage.keys.PERSPECTIVE_STORAGE_KEY])
 
   // 上昇率タイプをローカルストレージに保存
   useEffect(() => {
-    localStorage.setItem(RETURN_TYPE_STORAGE_KEY, returnType)
-  }, [returnType])
+    localStorage.setItem(storage.keys.RETURN_TYPE_STORAGE_KEY, returnType)
+  }, [returnType, storage.keys.RETURN_TYPE_STORAGE_KEY])
 
   // 表示モードをローカルストレージに保存
   useEffect(() => {
-    localStorage.setItem(VIEW_MODE_STORAGE_KEY, viewMode)
-  }, [viewMode])
+    localStorage.setItem(storage.keys.VIEW_MODE_STORAGE_KEY, viewMode)
+  }, [viewMode, storage.keys.VIEW_MODE_STORAGE_KEY])
 
   // viewMode変更時にソート状態を保存・復元
   useEffect(() => {
@@ -399,7 +254,7 @@ export function TopPage() {
     }
 
     // 前回のviewModeのソート状態を保存（prevViewModeRef.currentは前のviewModeを指している）
-    saveSortState(
+    storage.saveSortState(
       prevViewModeRef.current,
       displayMode,
       currentSort,
@@ -423,11 +278,11 @@ export function TopPage() {
     // 新しいviewModeのソート状態を復元
     let storedSort: { sort: SortField; order: SortOrder }
     if (viewMode === 'card') {
-      storedSort = getStoredCardSort()
+      storedSort = storage.getStoredCardSort()
     } else if (displayMode === 'score') {
-      storedSort = getStoredScoreSort()
+      storedSort = storage.getStoredScoreSort()
     } else {
-      storedSort = getStoredTrendSort()
+      storedSort = storage.getStoredTrendSort()
     }
 
     const newSort = storedSort.sort
@@ -438,29 +293,22 @@ export function TopPage() {
 
     // ソート状態が変わった場合は検索を実行
     if (newSort !== currentSort || newOrder !== currentOrder) {
-      const searchParams: SearchParams = {
-        ...currentFilters,
-        keyword: currentKeyword || undefined,
-        sort: newSort,
-        order: newOrder,
-        return_type: returnType,
-        scoring_mode: scoringMode,
-        limit: PAGE_SIZE,
-        offset: (currentPage - 1) * PAGE_SIZE,
-      }
-
-      if (favoritesOnly) {
-        searchParams.favorite_codes = Array.from(favoriteCodes)
-      }
-
-      if (holdingsOnly) {
-        searchParams.holding_codes = Array.from(holdingCodes)
-      }
-
-      if (compareOnly) {
-        searchParams.favorite_codes = compareCodes
-      }
-
+      const searchParams = buildSearchParams({
+        currentFilters,
+        currentKeyword,
+        currentSort: newSort,
+        currentOrder: newOrder,
+        currentPage,
+        returnType,
+        scoringMode,
+        pageSize: PAGE_SIZE,
+        favoritesOnly,
+        holdingsOnly,
+        compareOnly,
+        favoriteCodes,
+        holdingCodes,
+        compareCodes,
+      })
       search(searchParams)
     }
     // viewMode変更時のみ実行（他の依存は意図的に除外）
@@ -488,29 +336,22 @@ export function TopPage() {
     ].includes(currentSort)
 
     if (isPerformanceSort) {
-      const searchParams: SearchParams = {
-        ...currentFilters,
-        keyword: currentKeyword || undefined,
-        sort: currentSort,
-        order: currentOrder,
-        return_type: returnType,
-        scoring_mode: scoringMode,
-        limit: PAGE_SIZE,
-        offset: (currentPage - 1) * PAGE_SIZE,
-      }
-
-      if (favoritesOnly) {
-        searchParams.favorite_codes = Array.from(favoriteCodes)
-      }
-
-      if (holdingsOnly) {
-        searchParams.holding_codes = Array.from(holdingCodes)
-      }
-
-      if (compareOnly) {
-        searchParams.favorite_codes = compareCodes
-      }
-
+      const searchParams = buildSearchParams({
+        currentFilters,
+        currentKeyword,
+        currentSort,
+        currentOrder,
+        currentPage,
+        returnType,
+        scoringMode,
+        pageSize: PAGE_SIZE,
+        favoritesOnly,
+        holdingsOnly,
+        compareOnly,
+        favoriteCodes,
+        holdingCodes,
+        compareCodes,
+      })
       search(searchParams)
     }
     // returnType変更時のみ実行
@@ -519,8 +360,8 @@ export function TopPage() {
 
   // 表示モードをローカルストレージに保存
   useEffect(() => {
-    localStorage.setItem(DISPLAY_MODE_STORAGE_KEY, displayMode)
-  }, [displayMode])
+    localStorage.setItem(storage.keys.DISPLAY_MODE_STORAGE_KEY, displayMode)
+  }, [displayMode, storage.keys.DISPLAY_MODE_STORAGE_KEY])
 
   // scoringMode変更時にスコアソート中なら一覧を再取得
   useEffect(() => {
@@ -534,29 +375,22 @@ export function TopPage() {
     const isScoreSort = currentSort.startsWith('score_')
 
     if (isScoreSort) {
-      const searchParams: SearchParams = {
-        ...currentFilters,
-        keyword: currentKeyword || undefined,
-        sort: currentSort,
-        order: currentOrder,
-        return_type: returnType,
-        scoring_mode: scoringMode,
-        limit: PAGE_SIZE,
-        offset: (currentPage - 1) * PAGE_SIZE,
-      }
-
-      if (favoritesOnly) {
-        searchParams.favorite_codes = Array.from(favoriteCodes)
-      }
-
-      if (holdingsOnly) {
-        searchParams.holding_codes = Array.from(holdingCodes)
-      }
-
-      if (compareOnly) {
-        searchParams.favorite_codes = compareCodes
-      }
-
+      const searchParams = buildSearchParams({
+        currentFilters,
+        currentKeyword,
+        currentSort,
+        currentOrder,
+        currentPage,
+        returnType,
+        scoringMode,
+        pageSize: PAGE_SIZE,
+        favoritesOnly,
+        holdingsOnly,
+        compareOnly,
+        favoriteCodes,
+        holdingCodes,
+        compareCodes,
+      })
       search(searchParams)
     }
     // scoringMode変更時のみ実行
@@ -580,29 +414,22 @@ export function TopPage() {
       setCurrentSort(newSort)
 
       // ソート変更でsearch()を実行
-      const searchParams: SearchParams = {
-        ...currentFilters,
-        keyword: currentKeyword || undefined,
-        sort: newSort,
-        order: currentOrder,
-        return_type: returnType,
-        scoring_mode: scoringMode,
-        limit: PAGE_SIZE,
-        offset: (currentPage - 1) * PAGE_SIZE,
-      }
-
-      if (favoritesOnly) {
-        searchParams.favorite_codes = Array.from(favoriteCodes)
-      }
-
-      if (holdingsOnly) {
-        searchParams.holding_codes = Array.from(holdingCodes)
-      }
-
-      if (compareOnly) {
-        searchParams.favorite_codes = compareCodes
-      }
-
+      const searchParams = buildSearchParams({
+        currentFilters,
+        currentKeyword,
+        currentSort: newSort,
+        currentOrder,
+        currentPage,
+        returnType,
+        scoringMode,
+        pageSize: PAGE_SIZE,
+        favoritesOnly,
+        holdingsOnly,
+        compareOnly,
+        favoriteCodes,
+        holdingCodes,
+        compareCodes,
+      })
       search(searchParams)
     }
     // selectedPerspective変更時のみ実行
@@ -617,7 +444,7 @@ export function TopPage() {
     }
 
     // 前回のモードのソート状態を保存（prevDisplayModeRef.currentは前のdisplayModeを指している）
-    saveSortState(
+    storage.saveSortState(
       viewMode,
       prevDisplayModeRef.current,
       currentSort,
@@ -640,7 +467,9 @@ export function TopPage() {
 
     // 新しいdisplayModeに応じたソート状態を復元
     const storedSort =
-      displayMode === 'score' ? getStoredScoreSort() : getStoredTrendSort()
+      displayMode === 'score'
+        ? storage.getStoredScoreSort()
+        : storage.getStoredTrendSort()
 
     const newSort = storedSort.sort
     const newOrder = storedSort.order
@@ -650,29 +479,22 @@ export function TopPage() {
 
     // ソート状態が変わった場合は検索を実行
     if (newSort !== currentSort || newOrder !== currentOrder) {
-      const searchParams: SearchParams = {
-        ...currentFilters,
-        keyword: currentKeyword || undefined,
-        sort: newSort,
-        order: newOrder,
-        return_type: returnType,
-        scoring_mode: scoringMode,
-        limit: PAGE_SIZE,
-        offset: (currentPage - 1) * PAGE_SIZE,
-      }
-
-      if (favoritesOnly) {
-        searchParams.favorite_codes = Array.from(favoriteCodes)
-      }
-
-      if (holdingsOnly) {
-        searchParams.holding_codes = Array.from(holdingCodes)
-      }
-
-      if (compareOnly) {
-        searchParams.favorite_codes = compareCodes
-      }
-
+      const searchParams = buildSearchParams({
+        currentFilters,
+        currentKeyword,
+        currentSort: newSort,
+        currentOrder: newOrder,
+        currentPage,
+        returnType,
+        scoringMode,
+        pageSize: PAGE_SIZE,
+        favoritesOnly,
+        holdingsOnly,
+        compareOnly,
+        favoriteCodes,
+        holdingCodes,
+        compareCodes,
+      })
       search(searchParams)
     }
     // displayMode変更時のみ実行（他の依存は意図的に除外）
@@ -718,7 +540,7 @@ export function TopPage() {
     const filters = getInitialFilters()
     const keyword = searchParams.get('q') || undefined
     const initialViewMode = getInitialViewMode()
-    const initialDisplayMode = getStoredDisplayMode()
+    const initialDisplayMode = storage.getStoredDisplayMode()
 
     // URLパラメータ優先、なければviewMode/displayModeに応じたデフォルト
     let sort: SortField
@@ -728,12 +550,12 @@ export function TopPage() {
       sort = searchParams.get('sort') as SortField
       order = (searchParams.get('order') as SortOrder) || 'desc'
     } else if (initialViewMode === 'card') {
-      const storedSort = getStoredCardSort()
+      const storedSort = storage.getStoredCardSort()
       sort = storedSort.sort
       order = storedSort.order
     } else if (initialDisplayMode === 'score') {
-      const storedSort = getStoredScoreSort()
-      const initialPerspective = getStoredPerspective()
+      const storedSort = storage.getStoredScoreSort()
+      const initialPerspective = storage.getStoredPerspective()
       // evaluation_score または score_*ソート時は選択中の切り口を反映
       if (
         storedSort.sort === 'evaluation_score' ||
@@ -745,7 +567,7 @@ export function TopPage() {
       }
       order = storedSort.order
     } else {
-      const storedSort = getStoredTrendSort()
+      const storedSort = storage.getStoredTrendSort()
       sort = storedSort.sort
       order = storedSort.order
     }
@@ -798,31 +620,22 @@ export function TopPage() {
       page: '1',
     })
 
-    const searchParams: SearchParams = {
-      ...currentFilters,
-      keyword: trimmed || undefined,
-      sort: currentSort,
-      order: currentOrder,
-      return_type: returnType,
-      scoring_mode: scoringMode,
-      limit: PAGE_SIZE,
-      offset: 0,
-    }
-
-    if (favoritesOnly) {
-      // 0件でも空配列を渡して「該当なし」を表示
-      searchParams.favorite_codes = Array.from(favoriteCodes)
-    }
-
-    if (holdingsOnly) {
-      // 0件でも空配列を渡して「該当なし」を表示
-      searchParams.holding_codes = Array.from(holdingCodes)
-    }
-
-    if (compareOnly) {
-      // 比較リストで絞り込み
-      searchParams.favorite_codes = compareCodes
-    }
+    const searchParams = buildSearchParams({
+      currentFilters,
+      currentKeyword: trimmed,
+      currentSort,
+      currentOrder,
+      currentPage: 1,
+      returnType,
+      scoringMode,
+      pageSize: PAGE_SIZE,
+      favoritesOnly,
+      holdingsOnly,
+      compareOnly,
+      favoriteCodes,
+      holdingCodes,
+      compareCodes,
+    })
 
     search(searchParams)
 
@@ -849,28 +662,22 @@ export function TopPage() {
         page: '1',
       })
 
-      const searchParams: SearchParams = {
-        ...filters,
-        keyword: currentKeyword || undefined,
-        sort: currentSort,
-        order: currentOrder,
-        return_type: returnType,
-        scoring_mode: scoringMode,
-        limit: PAGE_SIZE,
-        offset: 0,
-      }
-
-      if (favoritesOnly) {
-        searchParams.favorite_codes = Array.from(favoriteCodes)
-      }
-
-      if (holdingsOnly) {
-        searchParams.holding_codes = Array.from(holdingCodes)
-      }
-
-      if (compareOnly) {
-        searchParams.favorite_codes = compareCodes
-      }
+      const searchParams = buildSearchParams({
+        currentFilters: filters,
+        currentKeyword,
+        currentSort,
+        currentOrder,
+        currentPage: 1,
+        returnType,
+        scoringMode,
+        pageSize: PAGE_SIZE,
+        favoritesOnly,
+        holdingsOnly,
+        compareOnly,
+        favoriteCodes,
+        holdingCodes,
+        compareCodes,
+      })
 
       search(searchParams)
     },
@@ -897,7 +704,7 @@ export function TopPage() {
     setCurrentPage(1)
 
     // ソート状態をローカルストレージに保存
-    saveSortState(viewMode, displayMode, sort, order)
+    storage.saveSortState(viewMode, displayMode, sort, order)
 
     updateURL({
       sort,
@@ -905,24 +712,22 @@ export function TopPage() {
       page: '1',
     })
 
-    const searchParams: SearchParams = {
-      ...currentFilters,
-      keyword: currentKeyword || undefined,
-      sort,
-      order,
-      return_type: returnType,
-      scoring_mode: scoringMode,
-      limit: PAGE_SIZE,
-      offset: 0,
-    }
-
-    if (favoritesOnly) {
-      searchParams.favorite_codes = Array.from(favoriteCodes)
-    }
-
-    if (holdingsOnly) {
-      searchParams.holding_codes = Array.from(holdingCodes)
-    }
+    const searchParams = buildSearchParams({
+      currentFilters,
+      currentKeyword,
+      currentSort: sort,
+      currentOrder: order,
+      currentPage: 1,
+      returnType,
+      scoringMode,
+      pageSize: PAGE_SIZE,
+      favoritesOnly,
+      holdingsOnly,
+      compareOnly,
+      favoriteCodes,
+      holdingCodes,
+      compareCodes,
+    })
 
     search(searchParams)
   }
@@ -934,24 +739,22 @@ export function TopPage() {
       page: page.toString(),
     })
 
-    const searchParams: SearchParams = {
-      ...currentFilters,
-      keyword: currentKeyword || undefined,
-      sort: currentSort,
-      order: currentOrder,
-      return_type: returnType,
-      scoring_mode: scoringMode,
-      limit: PAGE_SIZE,
-      offset: (page - 1) * PAGE_SIZE,
-    }
-
-    if (favoritesOnly) {
-      searchParams.favorite_codes = Array.from(favoriteCodes)
-    }
-
-    if (holdingsOnly) {
-      searchParams.holding_codes = Array.from(holdingCodes)
-    }
+    const searchParams = buildSearchParams({
+      currentFilters,
+      currentKeyword,
+      currentSort,
+      currentOrder,
+      currentPage: page,
+      returnType,
+      scoringMode,
+      pageSize: PAGE_SIZE,
+      favoritesOnly,
+      holdingsOnly,
+      compareOnly,
+      favoriteCodes,
+      holdingCodes,
+      compareCodes,
+    })
 
     search(searchParams)
     etfListRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -967,28 +770,22 @@ export function TopPage() {
 
     setCurrentPage(1)
 
-    const params: SearchParams = {
-      ...currentFilters,
-      keyword: currentKeyword || undefined,
-      sort: currentSort,
-      order: currentOrder,
-      return_type: returnType,
-      scoring_mode: scoringMode,
-      limit: PAGE_SIZE,
-      offset: 0,
-    }
-
-    if (favoritesOnly) {
-      params.favorite_codes = Array.from(favoriteCodes)
-    }
-
-    if (holdingsOnly) {
-      params.holding_codes = Array.from(holdingCodes)
-    }
-
-    if (compareOnly) {
-      params.favorite_codes = compareCodes
-    }
+    const params = buildSearchParams({
+      currentFilters,
+      currentKeyword,
+      currentSort,
+      currentOrder,
+      currentPage: 1,
+      returnType,
+      scoringMode,
+      pageSize: PAGE_SIZE,
+      favoritesOnly,
+      holdingsOnly,
+      compareOnly,
+      favoriteCodes,
+      holdingCodes,
+      compareCodes,
+    })
 
     search(params)
     // favoritesOnly/holdingsOnly/compareOnly変更時のみ発動
@@ -1095,64 +892,19 @@ export function TopPage() {
                 />
                 {displayMode === 'score' && (
                   <>
-                    <div className={styles.scoringModeToggle}>
-                      <button
-                        className={`${styles.toggleButton} ${scoringMode === 'full' ? styles.active : ''}`}
-                        onClick={() => {
-                          setScoringMode('full')
-                          localStorage.setItem('scoringMode', 'full')
-                        }}
-                      >
-                        総合評価
-                      </button>
-                      <button
-                        className={`${styles.toggleButton} ${scoringMode === 'partial' ? styles.active : ''}`}
-                        onClick={() => {
-                          setScoringMode('partial')
-                          localStorage.setItem('scoringMode', 'partial')
-                        }}
-                      >
-                        軸別評価
-                      </button>
-                    </div>
-                    <div className={styles.scoringModeToggle}>
-                      <button
-                        className={`${styles.toggleButton} ${selectedPerspective === 'balance' ? styles.active : ''}`}
-                        onClick={() => setSelectedPerspective('balance')}
-                      >
-                        バランス
-                      </button>
-                      <button
-                        className={`${styles.toggleButton} ${selectedPerspective === 'dividend' ? styles.active : ''}`}
-                        onClick={() => setSelectedPerspective('dividend')}
-                      >
-                        配当収入
-                      </button>
-                      <button
-                        className={`${styles.toggleButton} ${selectedPerspective === 'low-cost' ? styles.active : ''}`}
-                        onClick={() => setSelectedPerspective('low-cost')}
-                      >
-                        低コスト
-                      </button>
-                      <button
-                        className={`${styles.toggleButton} ${selectedPerspective === 'stability' ? styles.active : ''}`}
-                        onClick={() => setSelectedPerspective('stability')}
-                      >
-                        安定性
-                      </button>
-                      <button
-                        className={`${styles.toggleButton} ${selectedPerspective === 'volume' ? styles.active : ''}`}
-                        onClick={() => setSelectedPerspective('volume')}
-                      >
-                        取引規模
-                      </button>
-                      <button
-                        className={`${styles.toggleButton} ${selectedPerspective === 'growth' ? styles.active : ''}`}
-                        onClick={() => setSelectedPerspective('growth')}
-                      >
-                        成長性
-                      </button>
-                    </div>
+                    <ScoringModeToggle
+                      scoringMode={scoringMode}
+                      onChange={(mode) => {
+                        setScoringMode(mode)
+                        localStorage.setItem('scoringMode', mode)
+                      }}
+                      className={styles.scoringModeToggle}
+                    />
+                    <PerspectiveSelector
+                      selectedPerspective={selectedPerspective}
+                      onChange={setSelectedPerspective}
+                      className={styles.scoringModeToggle}
+                    />
                   </>
                 )}
                 {displayMode === 'trend' && (
