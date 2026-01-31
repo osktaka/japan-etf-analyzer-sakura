@@ -45,14 +45,14 @@
 .tabsAndToggle {
   display: flex;
   align-items: center;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
   margin-bottom: var(--spacing-lg);
 }
 
 .scoringModeToggle {
   display: flex;
   align-items: center;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
 }
 
 .toggleLabel {
@@ -63,7 +63,7 @@
 
 .toggleButton {
   padding: var(--spacing-xs) var(--spacing-md);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-dark);
   background: var(--color-bg);
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
