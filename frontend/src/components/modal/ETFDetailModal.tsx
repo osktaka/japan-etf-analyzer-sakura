@@ -1,5 +1,5 @@
 /** ETF detail modal component */
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useETFDetail, usePortfolio } from '../../hooks'
 import {
   formatPercent,
@@ -7,6 +7,8 @@ import {
   formatDate,
   formatVolume,
   formatTradingValue,
+  PERSPECTIVE_COLORS,
+  PERSPECTIVE_GRADIENTS,
 } from '../../utils'
 import { Loading, ErrorMessage } from '../common'
 import { TagBadge } from '../etf'
@@ -14,6 +16,32 @@ import { FavoriteButton } from '../favorite'
 import { CompareCheckbox } from '../actions'
 import { MultiPeriodChart } from '../chart'
 import styles from './ETFDetailModal.module.css'
+
+type PerspectiveKey =
+  | 'balance'
+  | 'dividend'
+  | 'low-cost'
+  | 'stability'
+  | 'volume'
+  | 'growth'
+
+const PERSPECTIVES: { key: PerspectiveKey; label: string }[] = [
+  { key: 'balance', label: 'バランス' },
+  { key: 'dividend', label: '配当収入' },
+  { key: 'low-cost', label: '低コスト' },
+  { key: 'stability', label: '安定性' },
+  { key: 'volume', label: '取引規模' },
+  { key: 'growth', label: '成長性' },
+]
+
+const PERSPECTIVE_TO_SCORE_KEY: Record<PerspectiveKey, string> = {
+  balance: 'score_balance',
+  dividend: 'score_dividend',
+  'low-cost': 'score_low_cost',
+  stability: 'score_stability',
+  volume: 'score_volume',
+  growth: 'score_growth',
+}
 
 interface ETFDetailModalProps {
   code: string | null
@@ -34,11 +62,35 @@ export function ETFDetailModal({
 }: ETFDetailModalProps) {
   const { data, isLoading, error, refetch } = useETFDetail(code)
   const { holdings } = usePortfolio()
+  const [selectedPerspective, setSelectedPerspective] =
+    useState<PerspectiveKey>('balance')
 
   const holdingCodes = useMemo(
     () => new Set(holdings.map((h) => h.etf_code)),
     [holdings]
   )
+
+  // 選択中の切り口のスコアを取得（フォールバックとしてdata.scoreを使用）
+  const currentScore = useMemo(() => {
+    if (!data) return null
+    const scoreKey = PERSPECTIVE_TO_SCORE_KEY[selectedPerspective]
+    const scoreValue = (
+      data as unknown as Record<string, number | null | undefined>
+    )[scoreKey]
+    // 切り口ごとのスコアがない場合は、デフォルトスコアを使用
+    if (scoreValue !== undefined && scoreValue !== null) {
+      return scoreValue
+    }
+    // フォールバック: data.scoreを使用
+    const dataWithScore = data as unknown as Record<string, number | null | undefined>
+    return dataWithScore.score !== undefined && dataWithScore.score !== null
+      ? dataWithScore.score
+      : null
+  }, [data, selectedPerspective])
+
+  // 選択中の切り口のグラデーションを取得
+  const perspectiveGradient =
+    PERSPECTIVE_GRADIENTS[selectedPerspective] || PERSPECTIVE_GRADIENTS.balance
 
   if (!code) return null
 
@@ -99,11 +151,40 @@ export function ETFDetailModal({
               <p className={styles.description}>{data.description}</p>
             )}
 
-            {data.score !== undefined && data.score !== null && (
-              <div className={styles.scoreSection}>
+            <div className={styles.perspectiveTabs}>
+              {PERSPECTIVES.map(({ key, label }) => {
+                const isActive = selectedPerspective === key
+                const activeColor = PERSPECTIVE_COLORS[key] || PERSPECTIVE_COLORS.balance
+                return (
+                  <button
+                    key={key}
+                    className={`${styles.perspectiveTab} ${isActive ? styles.active : ''}`}
+                    onClick={() => setSelectedPerspective(key)}
+                    type="button"
+                    style={
+                      isActive
+                        ? {
+                            backgroundColor: activeColor,
+                            borderColor: activeColor,
+                            color: 'white',
+                          }
+                        : undefined
+                    }
+                  >
+                    {label}
+                  </button>
+                )
+              })}
+            </div>
+
+            {currentScore !== null && (
+              <div
+                className={styles.scoreSection}
+                style={{ background: perspectiveGradient }}
+              >
                 <span className={styles.scoreLabel}>評価スコア</span>
                 <span className={styles.scoreValue}>
-                  {Math.round(data.score)}点
+                  {Math.round(currentScore)}点
                 </span>
               </div>
             )}

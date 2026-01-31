@@ -937,6 +937,7 @@ export function TopPage() {
             isFavorite={isFavorite}
             onFavoriteToggle={handleFavoriteToggle}
             isHolding={isHolding}
+            perspective={selectedPerspective}
           />
         ) : (
           <ETFTableView

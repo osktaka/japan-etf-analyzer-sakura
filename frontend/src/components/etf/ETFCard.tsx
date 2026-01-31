@@ -1,6 +1,6 @@
 /** ETF card component */
 import { ETFSummary, AxisScores } from '../../api'
-import { formatPrice, formatPercent } from '../../utils'
+import { formatPrice, formatPercent, PERSPECTIVE_GRADIENTS } from '../../utils'
 import { FavoriteButton } from '../favorite'
 import { CompareCheckbox } from '../actions'
 import { TagBadge } from './TagBadge'
@@ -15,6 +15,7 @@ interface ETFCardProps {
   isFavorite?: boolean
   onFavoriteToggle?: () => void
   isHolding?: boolean
+  perspective?: string
 }
 
 export function ETFCard({
@@ -26,7 +27,12 @@ export function ETFCard({
   isFavorite,
   onFavoriteToggle,
   isHolding,
+  perspective,
 }: ETFCardProps) {
+  const scoreGradient = perspective
+    ? PERSPECTIVE_GRADIENTS[perspective] || PERSPECTIVE_GRADIENTS.balance
+    : PERSPECTIVE_GRADIENTS.balance
+
   return (
     <div
       className={`${styles.card} ${isSelected ? styles.selected : ''}`}
@@ -60,7 +66,10 @@ export function ETFCard({
         {etf.name}
       </h3>
       {etf.score !== undefined && (
-        <div className={styles.scoreSection}>
+        <div
+          className={styles.scoreSection}
+          style={{ background: scoreGradient }}
+        >
           <span className={styles.scoreLabel}>評価スコア</span>
           <span className={styles.scoreValue}>{Math.round(etf.score)}点</span>
         </div>

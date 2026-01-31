@@ -14,12 +14,21 @@ export const CHART_PERIODS = [
 export const MAX_COMPARE_ITEMS = 5
 
 export const PERSPECTIVE_COLORS: Record<string, string> = {
-  dividend: '#10B981', // 配当収入: Green
+  dividend: '#10B981', // 配当収入: Emerald
   'low-cost': '#3B82F6', // 低コスト: Blue
-  stability: '#14B8A6', // 安定性: Teal
-  volume: '#F59E0B', // 取引規模: Amber
-  growth: '#8B5CF6', // 成長性: Purple
-  balance: '#64748b', // バランス: Slate
+  stability: '#06B6D4', // 安定性: Cyan
+  volume: '#F97316', // 取引規模: Orange
+  growth: '#8B5CF6', // 成長性: Violet
+  balance: '#6366F1', // バランス: Indigo
+}
+
+export const PERSPECTIVE_GRADIENTS: Record<string, string> = {
+  dividend: 'linear-gradient(135deg, #10B981, #059669)',
+  'low-cost': 'linear-gradient(135deg, #3B82F6, #1D4ED8)',
+  stability: 'linear-gradient(135deg, #06B6D4, #0891B2)',
+  volume: 'linear-gradient(135deg, #F97316, #C2410C)',
+  growth: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
+  balance: 'linear-gradient(135deg, #6366F1, #4F46E5)',
 }
 
 export const ROUTES = {

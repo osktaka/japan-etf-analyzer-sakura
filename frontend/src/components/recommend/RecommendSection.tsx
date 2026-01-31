@@ -101,6 +101,7 @@ export function RecommendSection({
               onFavoriteToggle={
                 onFavoriteToggle ? () => onFavoriteToggle(etf.code) : undefined
               }
+              perspective={selected}
             />
           ))}
         </div>

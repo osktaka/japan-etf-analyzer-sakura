@@ -14,6 +14,7 @@ interface SearchResultsProps {
   isFavorite?: (code: string) => boolean
   onFavoriteToggle?: (code: string) => void
   isHolding?: (code: string) => boolean
+  perspective?: string
 }
 
 export function SearchResults({
@@ -26,6 +27,7 @@ export function SearchResults({
   isFavorite,
   onFavoriteToggle,
   isHolding,
+  perspective,
 }: SearchResultsProps) {
   if (isLoading) {
     return <Loading message="検索中..." />
@@ -59,6 +61,7 @@ export function SearchResults({
               onFavoriteToggle ? () => onFavoriteToggle(etf.code) : undefined
             }
             isHolding={isHolding?.(etf.code)}
+            perspective={perspective}
           />
         ))}
       </div>

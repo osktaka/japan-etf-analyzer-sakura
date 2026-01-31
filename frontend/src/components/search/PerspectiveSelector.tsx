@@ -1,4 +1,5 @@
 /** Perspective selector component */
+import { PERSPECTIVE_COLORS } from '../../utils'
 import styles from '../../pages/TopPage.module.css'
 import type { PerspectiveKey } from './ETFTableView'
 
@@ -24,16 +25,29 @@ export function PerspectiveSelector({
 }: PerspectiveSelectorProps) {
   return (
     <div className={className || styles.scoringModeToggle}>
-      {PERSPECTIVES.map(({ key, label }) => (
-        <button
-          key={key}
-          className={`${styles.toggleButton} ${selectedPerspective === key ? styles.active : ''}`}
-          onClick={() => onChange(key)}
-          type="button"
-        >
-          {label}
-        </button>
-      ))}
+      {PERSPECTIVES.map(({ key, label }) => {
+        const isActive = selectedPerspective === key
+        const activeColor = PERSPECTIVE_COLORS[key] || PERSPECTIVE_COLORS.balance
+        return (
+          <button
+            key={key}
+            className={`${styles.toggleButton} ${isActive ? styles.active : ''}`}
+            onClick={() => onChange(key)}
+            type="button"
+            style={
+              isActive
+                ? {
+                    backgroundColor: activeColor,
+                    borderColor: activeColor,
+                    color: 'white',
+                  }
+                : undefined
+            }
+          >
+            {label}
+          </button>
+        )
+      })}
     </div>
   )
 }

@@ -137,6 +137,7 @@ export function MyPage() {
                 isSelected={isInCompare(favorite.etf_code)}
                 onCompareToggle={() => toggleCompare(favorite.etf_code)}
                 isHolding={isHolding(favorite.etf_code)}
+                perspective="balance"
               />
             ))}
           </div>
