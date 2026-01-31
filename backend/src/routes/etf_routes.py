@@ -31,6 +31,7 @@ def create_etf_bp():
             sort: Sort column (code, name, dividend_yield, expense_ratio, total_assets)
             order: Sort order (asc, desc). Default: asc
             return_type: Return type for performance sorting (price, regression). Default: price
+            scoring_mode: Scoring mode - "full" (default) or "partial"
             limit: Number of results (default: 50, max: 100)
             offset: Pagination offset (default: 0)
 
@@ -47,6 +48,7 @@ def create_etf_bp():
         sort = request.args.get("sort")
         order = request.args.get("order", "asc")
         return_type = request.args.get("return_type", "price")
+        scoring_mode = request.args.get("scoring_mode", "full")
 
         if order not in ("asc", "desc"):
             return error_response("Invalid order parameter. Use 'asc' or 'desc'", 400)
@@ -54,6 +56,11 @@ def create_etf_bp():
         if return_type not in ("price", "regression"):
             return error_response(
                 "Invalid return_type parameter. Use 'price' or 'regression'", 400
+            )
+
+        if scoring_mode not in ("full", "partial"):
+            return error_response(
+                "Invalid scoring_mode parameter. Use 'full' or 'partial'", 400
             )
 
         limit, offset, error = validate_pagination(
@@ -94,6 +101,7 @@ def create_etf_bp():
             sort=sort,
             order=order,
             return_type=return_type,
+            scoring_mode=scoring_mode,
             limit=limit,
             offset=offset,
         )

@@ -36,6 +36,7 @@ class ETFService:
         sort: Optional[str] = None,
         order: str = "asc",
         return_type: str = "price",
+        scoring_mode: str = "full",
         limit: int = 50,
         offset: int = 0,
     ) -> Dict:
@@ -62,7 +63,7 @@ class ETFService:
 
             # Get scores from cache (with fallback to calculation)
             codes = [etf.code for etf in all_etfs]
-            all_scores = self.get_batch_scores(codes)
+            all_scores = self.get_batch_scores(codes, scoring_mode)
 
             # Get the score key to sort by
             score_key = SCORE_SORT_FIELDS[sort]

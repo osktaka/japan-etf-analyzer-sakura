@@ -194,7 +194,7 @@ export function TopPage() {
     useState<SearchParams>(getInitialFilters())
 
   // ソート状態（URL優先 → localStorage → デフォルト）
-  // 表形式かつスコア表示: 銘柄コード昇順（ETFTableView側でbalance降順にローカルソート）
+  // 表形式かつスコア表示: バランススコア降順
   // 表形式かつ傾向表示: 1年降順
   // カード形式: 銘柄コード昇順
   const [currentSort, setCurrentSort] = useState<SortField>(() => {
@@ -205,7 +205,7 @@ export function TopPage() {
     // 表形式かつスコア表示の場合はスコア用のソート状態を使用
     if (initialViewMode === 'table' && initialDisplayMode === 'score') {
       const storedSort = getStoredScoreSort()
-      return storedSort?.sort || 'code'
+      return storedSort?.sort || 'score_balance'
     }
     // 表形式かつ傾向表示の場合は傾向用のソート状態を使用
     if (initialViewMode === 'table' && initialDisplayMode === 'trend') {
@@ -224,7 +224,7 @@ export function TopPage() {
     // 表形式かつスコア表示の場合はスコア用のソート状態を使用
     if (initialViewMode === 'table' && initialDisplayMode === 'score') {
       const storedSort = getStoredScoreSort()
-      return storedSort?.order || 'asc'
+      return storedSort?.order || 'desc'
     }
     // 表形式かつ傾向表示の場合は傾向用のソート状態を使用
     if (initialViewMode === 'table' && initialDisplayMode === 'trend') {
@@ -241,6 +241,7 @@ export function TopPage() {
 
   const etfListRef = useRef<HTMLElement>(null)
   const isInitialMount = useRef(true)
+  const isScoringModeInitialMount = useRef(true)
   const prevDisplayModeRef = useRef<DisplayMode>(displayMode)
   const { items, total, isLoading, error, search } = useETFSearch()
   const {
@@ -315,6 +316,47 @@ export function TopPage() {
     localStorage.setItem(DISPLAY_MODE_STORAGE_KEY, displayMode)
   }, [displayMode])
 
+  // scoringMode変更時にスコアソート中なら一覧を再取得
+  useEffect(() => {
+    // 初回マウント時はスキップ
+    if (isScoringModeInitialMount.current) {
+      isScoringModeInitialMount.current = false
+      return
+    }
+
+    // スコアソートのフィールドか判定
+    const isScoreSort = currentSort.startsWith('score_')
+
+    if (isScoreSort) {
+      const searchParams: SearchParams = {
+        ...currentFilters,
+        keyword: currentKeyword || undefined,
+        sort: currentSort,
+        order: currentOrder,
+        return_type: returnType,
+        scoring_mode: scoringMode,
+        limit: PAGE_SIZE,
+        offset: (currentPage - 1) * PAGE_SIZE,
+      }
+
+      if (favoritesOnly) {
+        searchParams.favorite_codes = Array.from(favoriteCodes)
+      }
+
+      if (holdingsOnly) {
+        searchParams.holding_codes = Array.from(holdingCodes)
+      }
+
+      if (compareOnly) {
+        searchParams.favorite_codes = compareCodes
+      }
+
+      search(searchParams)
+    }
+    // scoringMode変更時のみ実行
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scoringMode])
+
   // displayMode変更時にソート状態を復元
   useEffect(() => {
     // 初回マウント時はスキップ
@@ -341,8 +383,8 @@ export function TopPage() {
     // 新しいdisplayModeに応じたソート状態を復元
     const storedSort =
       displayMode === 'score' ? getStoredScoreSort() : getStoredTrendSort()
-    const defaultSort = displayMode === 'score' ? 'code' : 'return_1y'
-    const defaultOrder = displayMode === 'score' ? 'asc' : 'desc'
+    const defaultSort = displayMode === 'score' ? 'score_balance' : 'return_1y'
+    const defaultOrder = displayMode === 'score' ? 'desc' : 'desc'
 
     const newSort = storedSort?.sort || defaultSort
     const newOrder = storedSort?.order || defaultOrder
@@ -361,6 +403,7 @@ export function TopPage() {
         sort: newSort,
         order: newOrder,
         return_type: returnType,
+        scoring_mode: scoringMode,
         limit: PAGE_SIZE,
         offset: (currentPage - 1) * PAGE_SIZE,
       }
@@ -446,6 +489,7 @@ export function TopPage() {
       sort,
       order,
       return_type: returnType,
+      scoring_mode: scoringMode,
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
     })
@@ -479,6 +523,7 @@ export function TopPage() {
       sort: currentSort,
       order: currentOrder,
       return_type: returnType,
+      scoring_mode: scoringMode,
       limit: PAGE_SIZE,
       offset: 0,
     }
@@ -529,6 +574,7 @@ export function TopPage() {
         sort: currentSort,
         order: currentOrder,
         return_type: returnType,
+        scoring_mode: scoringMode,
         limit: PAGE_SIZE,
         offset: 0,
       }
@@ -552,6 +598,7 @@ export function TopPage() {
       currentSort,
       currentOrder,
       returnType,
+      scoringMode,
       search,
       updateURL,
       favoritesOnly,
@@ -580,6 +627,7 @@ export function TopPage() {
       sort,
       order,
       return_type: returnType,
+      scoring_mode: scoringMode,
       limit: PAGE_SIZE,
       offset: 0,
     }
@@ -608,6 +656,7 @@ export function TopPage() {
       sort: currentSort,
       order: currentOrder,
       return_type: returnType,
+      scoring_mode: scoringMode,
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
     }
@@ -640,6 +689,7 @@ export function TopPage() {
       sort: currentSort,
       order: currentOrder,
       return_type: returnType,
+      scoring_mode: scoringMode,
       limit: PAGE_SIZE,
       offset: 0,
     }
