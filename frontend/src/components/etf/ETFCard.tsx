@@ -82,7 +82,7 @@ export function ETFCard({
             </span>
           </div>
           <div className={styles.axisScore}>
-            <span className={styles.axisLabel}>規模</span>
+            <span className={styles.axisLabel}>安定</span>
             <span className={styles.axisValue}>
               {etf.axis_scores.scale_reliability !== null
                 ? Math.round(etf.axis_scores.scale_reliability)
@@ -90,7 +90,7 @@ export function ETFCard({
             </span>
           </div>
           <div className={styles.axisScore}>
-            <span className={styles.axisLabel}>取引</span>
+            <span className={styles.axisLabel}>規模</span>
             <span className={styles.axisValue}>
               {etf.axis_scores.trading_quality !== null
                 ? Math.round(etf.axis_scores.trading_quality)
