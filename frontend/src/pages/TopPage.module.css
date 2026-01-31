@@ -56,7 +56,7 @@
 .sectionHeader {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
@@ -74,7 +74,6 @@
   align-items: center;
   gap: var(--spacing-md);
   flex-wrap: wrap;
-  margin-left: auto;
 }
 
 .resultCount {
@@ -113,9 +112,3 @@
   border-color: var(--color-primary);
 }
 
-/* モバイル対応 */
-@media (max-width: 768px) {
-  .sectionControls {
-    margin-left: 0;
-  }
-}

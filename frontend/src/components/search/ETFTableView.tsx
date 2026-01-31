@@ -263,7 +263,7 @@ export function ETFTableView({
                   </td>
                 )}
                 <td className={styles.code}>{etf.code}</td>
-                <td className={styles.name}>{etf.name}</td>
+                <td className={styles.name} title={etf.name}>{etf.name}</td>
                 <td className={styles.category}>{etf.category || '-'}</td>
                 <td className={styles.numeric}>
                   {etf.market_price

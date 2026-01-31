@@ -796,6 +796,7 @@ export function TopPage() {
             {hasSearched ? '検索結果' : '全銘柄一覧'}
           </h2>
           <div className={styles.sectionControls}>
+            <ViewModeToggle mode={viewMode} onChange={handleViewModeChange} />
             {viewMode === 'card' ? (
               <SortSelector
                 sort={currentSort}
@@ -844,7 +845,6 @@ export function TopPage() {
                 )}
               </>
             )}
-            <ViewModeToggle mode={viewMode} onChange={handleViewModeChange} />
           </div>
         </div>
         <div className={styles.resultCount}>

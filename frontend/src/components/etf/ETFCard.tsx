@@ -56,7 +56,7 @@ export function ETFCard({
           />
         )}
       </div>
-      <h3 className={styles.name}>{etf.name}</h3>
+      <h3 className={styles.name} title={etf.name}>{etf.name}</h3>
       {etf.score !== undefined && (
         <div className={styles.scoreSection}>
           <span className={styles.scoreLabel}>評価スコア</span>
