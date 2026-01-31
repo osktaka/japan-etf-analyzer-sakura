@@ -231,5 +231,5 @@ rm -rf backend/venv && ./setup.sh
 マスターデータが消失した場合:
 ```bash
 docker compose exec backend python scripts/seed_data.py
-docker compose exec backend python scripts/sync_etf_master.py
+docker compose exec backend python scripts/sync_etf_from_jpx.py
 ```

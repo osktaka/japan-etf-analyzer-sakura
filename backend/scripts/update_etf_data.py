@@ -17,7 +17,6 @@ This script should be run via cron:
     0 19 * * 1-5 cd ~/app/backend && python3 scripts/update_etf_data.py --smart --rate-limit 3.0 >> ~/logs/etf_update.log 2>&1
 """
 import argparse
-import json
 import logging
 import math
 import os
@@ -60,7 +59,6 @@ logging.basicConfig(
 logging.getLogger("yfinance").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
-ETF_MASTER_PATH = Path(__file__).parent.parent / "src" / "data" / "etf_master.json"
 RATE_LIMIT_SECONDS = 1.0  # Yahoo Finance API rate limit対策
 JST = timezone(timedelta(hours=9))  # Japan Standard Time
 
@@ -92,15 +90,12 @@ def get_etf_price_status(code: str) -> Tuple[bool, Optional[datetime], Optional[
 
 
 def load_etf_list() -> list:
-    """Load ETF list from master JSON."""
-    if not ETF_MASTER_PATH.exists():
-        logger.error(f"ETF master file not found: {ETF_MASTER_PATH}")
-        return []
+    """Load ETF list from database."""
+    from src.repositories import ETFRepository
 
-    with open(ETF_MASTER_PATH, encoding="utf-8") as f:
-        data = json.load(f)
-
-    return data.get("etfs", [])
+    etf_repo = ETFRepository()
+    etfs = etf_repo.get_all()
+    return [{"code": e.code, "name": e.name} for e in etfs]
 
 
 def update_single_etf(
@@ -583,9 +578,17 @@ def main() -> int:
         logger.info(f"Mode: {', '.join(mode_info)}")
     logger.info("=" * 60)
 
+    # Flask app contextが必要（ETFリスト読み込みのため）
+    os.environ["USE_MOCK_DATA"] = "false"
+    from src.app import create_app
+
+    app = create_app()
+    ctx = app.app_context()
+    ctx.push()
+
     etfs = load_etf_list()
     if not etfs:
-        logger.error("No ETFs found in master list")
+        logger.error("No ETFs found in database")
         return 1
 
     if args.limit:
@@ -593,15 +596,6 @@ def main() -> int:
         logger.info(f"Limited to first {args.limit} ETFs")
 
     logger.info(f"Updating {len(etfs)} ETFs...")
-
-    # Flask app contextが必要（dry-run以外）
-    if not args.dry_run:
-        os.environ["USE_MOCK_DATA"] = "false"
-        from src.app import create_app
-
-        app = create_app()
-        ctx = app.app_context()
-        ctx.push()
 
     success_count = 0
     fail_count = 0
