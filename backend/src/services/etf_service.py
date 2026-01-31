@@ -22,6 +22,16 @@ SCORE_SORT_FIELDS = {
     'evaluation_score': 'score',
 }
 
+# Map perspective names to API response keys
+PERSPECTIVE_TO_KEY = {
+    'balance': 'score_balance',
+    'dividend': 'score_dividend',
+    'low-cost': 'score_low_cost',
+    'stability': 'score_stability',
+    'volume': 'score_volume',
+    'growth': 'score_growth',
+}
+
 
 class ETFService:
     """Service for ETF operations."""
@@ -143,13 +153,19 @@ class ETFService:
         # Get basic ETF data
         result = etf.to_dict()
 
-        # Get score from cache (balance perspective for detail view)
+        # Get score from cache (all 6 perspectives)
         score_caches = self.score_cache_repository.get_by_code(code)
-        balance_cache = next(
-            (cache for cache in score_caches if cache.perspective == 'balance'),
-            None
-        )
 
+        # Add all perspective scores
+        balance_cache = None
+        for cache in score_caches:
+            key = PERSPECTIVE_TO_KEY.get(cache.perspective)
+            if key:
+                result[key] = cache.total_score
+            if cache.perspective == 'balance':
+                balance_cache = cache
+
+        # Set default score and axis_scores from balance perspective
         if balance_cache:
             result['score'] = balance_cache.total_score
             result['score_full'] = balance_cache.total_score_full

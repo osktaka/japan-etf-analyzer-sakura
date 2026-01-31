@@ -39,6 +39,12 @@ export interface ETFDetail {
   tags: Tag[]
   score?: number | null
   score_full?: number | null
+  score_balance?: number | null
+  score_dividend?: number | null
+  score_low_cost?: number | null
+  score_stability?: number | null
+  score_volume?: number | null
+  score_growth?: number | null
   axis_scores?: AxisScores | null
   average_volume?: number | null
   trading_value?: number | null

@@ -977,6 +977,7 @@ export function TopPage() {
         onFavoriteToggle={() =>
           selectedCode && handleFavoriteToggle(selectedCode)
         }
+        initialPerspective={selectedPerspective}
       />
 
       <LoginPromptModal

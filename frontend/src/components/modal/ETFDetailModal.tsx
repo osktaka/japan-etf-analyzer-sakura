@@ -50,6 +50,7 @@ interface ETFDetailModalProps {
   onCompareToggle?: () => void
   isFavorite?: boolean
   onFavoriteToggle?: () => void
+  initialPerspective?: PerspectiveKey
 }
 
 export function ETFDetailModal({
@@ -59,11 +60,12 @@ export function ETFDetailModal({
   onCompareToggle,
   isFavorite,
   onFavoriteToggle,
+  initialPerspective,
 }: ETFDetailModalProps) {
   const { data, isLoading, error, refetch } = useETFDetail(code)
   const { holdings } = usePortfolio()
   const [selectedPerspective, setSelectedPerspective] =
-    useState<PerspectiveKey>('balance')
+    useState<PerspectiveKey>(initialPerspective ?? 'balance')
 
   const holdingCodes = useMemo(
     () => new Set(holdings.map((h) => h.etf_code)),
