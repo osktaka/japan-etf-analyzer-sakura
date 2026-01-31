@@ -62,8 +62,6 @@ interface ETFTableViewProps {
   displayMode?: 'score' | 'trend'
   selectedPeriods: PerformancePeriod[]
   returnType?: ReturnType
-  scoringMode?: 'full' | 'partial'
-  onScoringModeChange?: (mode: 'full' | 'partial') => void
   onETFClick: (code: string) => void
   isInCompare?: (code: string) => boolean
   onCompareToggle?: (code: string) => void
@@ -82,8 +80,6 @@ export function ETFTableView({
   displayMode = 'trend',
   selectedPeriods,
   returnType = 'price',
-  scoringMode = 'full',
-  onScoringModeChange,
   onETFClick,
   isInCompare,
   onCompareToggle,
@@ -180,23 +176,6 @@ export function ETFTableView({
 
   return (
     <div className={styles.container}>
-      {displayMode === 'score' && onScoringModeChange && (
-        <div className={styles.scoringModeToggle}>
-          <span className={styles.toggleLabel}>スコア計算:</span>
-          <button
-            className={`${styles.toggleButton} ${scoringMode === 'full' ? styles.active : ''}`}
-            onClick={() => onScoringModeChange('full')}
-          >
-            総合評価
-          </button>
-          <button
-            className={`${styles.toggleButton} ${scoringMode === 'partial' ? styles.active : ''}`}
-            onClick={() => onScoringModeChange('partial')}
-          >
-            軸別評価
-          </button>
-        </div>
-      )}
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
           <thead>

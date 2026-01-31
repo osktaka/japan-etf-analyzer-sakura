@@ -758,6 +758,28 @@ export function TopPage() {
                   displayMode={displayMode}
                   onChange={setDisplayMode}
                 />
+                {displayMode === 'score' && (
+                  <div className={styles.scoringModeToggle}>
+                    <button
+                      className={`${styles.toggleButton} ${scoringMode === 'full' ? styles.active : ''}`}
+                      onClick={() => {
+                        setScoringMode('full')
+                        localStorage.setItem('scoringMode', 'full')
+                      }}
+                    >
+                      総合評価
+                    </button>
+                    <button
+                      className={`${styles.toggleButton} ${scoringMode === 'partial' ? styles.active : ''}`}
+                      onClick={() => {
+                        setScoringMode('partial')
+                        localStorage.setItem('scoringMode', 'partial')
+                      }}
+                    >
+                      軸別評価
+                    </button>
+                  </div>
+                )}
                 {displayMode === 'trend' && (
                   <>
                     <ReturnTypeToggle
@@ -798,11 +820,6 @@ export function TopPage() {
             displayMode={displayMode}
             selectedPeriods={selectedPeriods}
             returnType={returnType}
-            scoringMode={scoringMode}
-            onScoringModeChange={(mode) => {
-              setScoringMode(mode)
-              localStorage.setItem('scoringMode', mode)
-            }}
             onETFClick={setSelectedCode}
             isInCompare={isInList}
             onCompareToggle={handleCompareToggle}

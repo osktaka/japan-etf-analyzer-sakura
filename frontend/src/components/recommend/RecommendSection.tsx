@@ -60,27 +60,28 @@ export function RecommendSection({
     <section className={styles.section}>
       <h2 className={styles.title}>おすすめ銘柄</h2>
       {perspectives.length > 0 && (
-        <PerspectiveTabs
-          perspectives={perspectives}
-          selected={selected}
-          onSelect={handleSelect}
-        />
+        <div className={styles.tabsAndToggle}>
+          <PerspectiveTabs
+            perspectives={perspectives}
+            selected={selected}
+            onSelect={handleSelect}
+          />
+          <div className={styles.scoringModeToggle}>
+            <button
+              className={`${styles.toggleButton} ${scoringMode === 'full' ? styles.active : ''}`}
+              onClick={() => handleScoringModeChange('full')}
+            >
+              総合評価
+            </button>
+            <button
+              className={`${styles.toggleButton} ${scoringMode === 'partial' ? styles.active : ''}`}
+              onClick={() => handleScoringModeChange('partial')}
+            >
+              軸別評価
+            </button>
+          </div>
+        </div>
       )}
-      <div className={styles.scoringModeToggle}>
-        <span className={styles.toggleLabel}>スコア計算:</span>
-        <button
-          className={`${styles.toggleButton} ${scoringMode === 'full' ? styles.active : ''}`}
-          onClick={() => handleScoringModeChange('full')}
-        >
-          総合評価
-        </button>
-        <button
-          className={`${styles.toggleButton} ${scoringMode === 'partial' ? styles.active : ''}`}
-          onClick={() => handleScoringModeChange('partial')}
-        >
-          軸別評価
-        </button>
-      </div>
       {data && (
         <p className={styles.description}>{data.perspective.description}</p>
       )}

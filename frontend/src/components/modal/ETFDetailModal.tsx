@@ -101,7 +101,9 @@ export function ETFDetailModal({
             {data.score !== undefined && data.score !== null && (
               <div className={styles.scoreSection}>
                 <span className={styles.scoreLabel}>評価スコア</span>
-                <span className={styles.scoreValue}>{Math.round(data.score)}点</span>
+                <span className={styles.scoreValue}>
+                  {Math.round(data.score)}点
+                </span>
               </div>
             )}
 
