@@ -339,14 +339,21 @@ class ScoringService:
         if not etfs:
             return {}
 
-        # Batch fetch data
-        self._avg_volumes_cache = self.etf_repository.get_average_volumes_batch(etf_codes)
-        self._return_rates_cache = self.etf_repository.get_return_rates_batch(etf_codes)
-        self._collect_percentile_data(etfs)
+        # Get ALL ETFs for percentile calculation (consistent population)
+        all_etfs = self.etf_repository.search(limit=None, offset=0)
+        all_etf_codes = [etf.code for etf in all_etfs]
+
+        # Batch fetch data for ALL ETFs
+        self._avg_volumes_cache = self.etf_repository.get_average_volumes_batch(all_etf_codes)
+        self._return_rates_cache = self.etf_repository.get_return_rates_batch(all_etf_codes)
+
+        # Collect percentile data from ALL ETFs
+        self._collect_percentile_data(all_etfs)
 
         result = {}
         perspectives = ["balance", "dividend", "low-cost", "stability", "volume", "growth"]
 
+        # Calculate scores only for requested ETFs
         for etf in etfs:
             scores = {}
             for perspective in perspectives:
