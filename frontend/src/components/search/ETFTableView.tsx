@@ -133,6 +133,20 @@ export function ETFTableView({
     const apiField = SORT_FIELD_MAP[key]
     if (!apiField || !onSortChange) return
 
+    // evaluation_score の場合、選択中の切り口に対応する score_* フィールドに変換
+    let finalApiField = apiField
+    if (apiField === 'evaluation_score' && selectedPerspective) {
+      const perspectiveToField: Record<PerspectiveKey, SortField> = {
+        balance: 'score_balance',
+        dividend: 'score_dividend',
+        'low-cost': 'score_low_cost',
+        stability: 'score_stability',
+        volume: 'score_volume',
+        growth: 'score_growth',
+      }
+      finalApiField = perspectiveToField[selectedPerspective]
+    }
+
     let newDirection: SortOrder
     if (currentSortKey === key) {
       // Toggle direction
@@ -142,21 +156,21 @@ export function ETFTableView({
       // Desc (higher is better): performance, dividend, price, scores, evaluation_score, axis_*
       // Asc (lower is better): expense_ratio
       // Asc (alphabetical): code, name
-      const isPerformanceSort = apiField.startsWith('return_')
-      const isScoreSort = apiField.startsWith('score_')
-      const isAxisSort = apiField.startsWith('axis_')
-      const isEvaluationSort = apiField === 'evaluation_score'
+      const isPerformanceSort = finalApiField.startsWith('return_')
+      const isScoreSort = finalApiField.startsWith('score_')
+      const isAxisSort = finalApiField.startsWith('axis_')
+      const isEvaluationSort = finalApiField === 'evaluation_score'
       const isDescSort =
         isPerformanceSort ||
         isScoreSort ||
         isAxisSort ||
         isEvaluationSort ||
-        apiField === 'dividend_yield' ||
-        apiField === 'price'
-      const isAscSort = apiField === 'expense_ratio'
+        finalApiField === 'dividend_yield' ||
+        finalApiField === 'price'
+      const isAscSort = finalApiField === 'expense_ratio'
       newDirection = isDescSort ? 'desc' : isAscSort ? 'asc' : 'asc'
     }
-    onSortChange(apiField, newDirection)
+    onSortChange(finalApiField, newDirection)
   }
 
   const renderSortIcon = (key: SortKey) => {
