@@ -12,8 +12,6 @@ interface ETFInfo {
   name: string
 }
 
-const EXCLUDED_STORAGE_KEY = 'etf-compare-excluded'
-
 export function CompareFloatingButton() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -29,38 +27,9 @@ export function CompareFloatingButton() {
   const [etfNames, setETFNames] = useState<Map<string, string>>(new Map())
   const [showTooltip, setShowTooltip] = useState(false)
   const tooltipRef = useRef<HTMLDivElement>(null)
-  const [excludedCodes, setExcludedCodes] = useState<Set<string>>(() => {
-    try {
-      const stored = sessionStorage.getItem(EXCLUDED_STORAGE_KEY)
-      return stored ? new Set(JSON.parse(stored)) : new Set()
-    } catch {
-      return new Set()
-    }
-  })
-
-  // sessionStorageに除外リストを保存
-  useEffect(() => {
-    sessionStorage.setItem(
-      EXCLUDED_STORAGE_KEY,
-      JSON.stringify([...excludedCodes])
-    )
-  }, [excludedCodes])
 
   // 有効件数の計算
-  const activeCount = codes.filter((c) => !excludedCodes.has(c)).length
-
-  // チェックボックストグル関数
-  const handleExcludeToggle = (code: string) => {
-    setExcludedCodes((prev) => {
-      const next = new Set(prev)
-      if (next.has(code)) {
-        next.delete(code)
-      } else {
-        next.add(code)
-      }
-      return next
-    })
-  }
+  const activeCount = codes.length
 
   // 枠外クリックでリストを閉じる（モーダル表示中は無効化）
   useEffect(() => {
@@ -210,8 +179,8 @@ export function CompareFloatingButton() {
                   <label className={styles.compareCheckbox}>
                     <input
                       type="checkbox"
-                      checked={!excludedCodes.has(etf.code)}
-                      onChange={() => handleExcludeToggle(etf.code)}
+                      checked={true}
+                      onChange={() => toggleCode(etf.code)}
                     />
                   </label>
                 </li>
