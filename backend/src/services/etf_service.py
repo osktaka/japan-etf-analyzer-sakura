@@ -141,6 +141,21 @@ class ETFService:
             result['score_full'] = None
             result['axis_scores'] = None
 
+        # Add score basis data
+        # 30-day average volume
+        result['average_volume'] = self.repository.get_average_volume(code, days=30)
+
+        # Trading value (price × volume)
+        if etf.market_price and result['average_volume']:
+            result['trading_value'] = float(etf.market_price) * result['average_volume']
+        else:
+            result['trading_value'] = None
+
+        # Return rates
+        return_rates = self.repository.get_return_rates(code)
+        result['return_1y'] = return_rates.get('1y')
+        result['return_3y'] = return_rates.get('3y')
+
         return result
 
     def get_all(self, limit: int = 50, offset: int = 0) -> Dict:

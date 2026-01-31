@@ -86,7 +86,8 @@ export async function searchETFs(params: SearchParams = {}): Promise<{
   if (params.sort) queryParams.append('sort', params.sort)
   if (params.order) queryParams.append('order', params.order)
   if (params.return_type) queryParams.append('return_type', params.return_type)
-  if (params.scoring_mode) queryParams.append('scoring_mode', params.scoring_mode)
+  if (params.scoring_mode)
+    queryParams.append('scoring_mode', params.scoring_mode)
   if (params.limit) queryParams.append('limit', String(params.limit))
   if (params.offset) queryParams.append('offset', String(params.offset))
 

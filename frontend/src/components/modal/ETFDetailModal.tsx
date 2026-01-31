@@ -2,10 +2,11 @@
 import { useMemo } from 'react'
 import { useETFDetail, usePortfolio } from '../../hooks'
 import {
-  formatPrice,
   formatPercent,
   formatAssets,
   formatDate,
+  formatVolume,
+  formatTradingValue,
 } from '../../utils'
 import { Loading, ErrorMessage } from '../common'
 import { TagBadge } from '../etf'
@@ -153,39 +154,66 @@ export function ETFDetailModal({
             )}
 
             <div className={styles.metrics}>
-              <div className={styles.metric}>
-                <span className={styles.label}>市場価格</span>
-                <span className={styles.value}>
-                  {formatPrice(data.market_price)}
-                </span>
+              <div className={styles.metricGroup}>
+                <h4 className={styles.groupTitle}>配当力</h4>
+                <div className={styles.metric}>
+                  <span className={styles.label}>配当利回り</span>
+                  <span className={styles.value}>
+                    {formatPercent(data.dividend_yield)}
+                  </span>
+                </div>
               </div>
-              <div className={styles.metric}>
-                <span className={styles.label}>基準価額</span>
-                <span className={styles.value}>{formatPrice(data.nav)}</span>
+
+              <div className={styles.metricGroup}>
+                <h4 className={styles.groupTitle}>コスト効率</h4>
+                <div className={styles.metric}>
+                  <span className={styles.label}>信託報酬</span>
+                  <span className={styles.value}>
+                    {formatPercent(data.expense_ratio)}
+                  </span>
+                </div>
               </div>
-              <div className={styles.metric}>
-                <span className={styles.label}>配当利回り</span>
-                <span className={styles.value}>
-                  {formatPercent(data.dividend_yield)}
-                </span>
+
+              <div className={styles.metricGroup}>
+                <h4 className={styles.groupTitle}>安定性</h4>
+                <div className={styles.metric}>
+                  <span className={styles.label}>純資産総額</span>
+                  <span className={styles.value}>
+                    {formatAssets(data.total_assets)}
+                  </span>
+                </div>
               </div>
-              <div className={styles.metric}>
-                <span className={styles.label}>信託報酬</span>
-                <span className={styles.value}>
-                  {formatPercent(data.expense_ratio)}
-                </span>
+
+              <div className={styles.metricGroup}>
+                <h4 className={styles.groupTitle}>取引規模</h4>
+                <div className={styles.metric}>
+                  <span className={styles.label}>売買代金</span>
+                  <span className={styles.value}>
+                    {formatTradingValue(data.trading_value)}
+                  </span>
+                </div>
+                <div className={styles.metric}>
+                  <span className={styles.label}>30日出来高平均</span>
+                  <span className={styles.value}>
+                    {formatVolume(data.average_volume)}
+                  </span>
+                </div>
               </div>
-              <div className={styles.metric}>
-                <span className={styles.label}>乖離率</span>
-                <span className={styles.value}>
-                  {formatPercent(data.deviation_rate)}
-                </span>
-              </div>
-              <div className={styles.metric}>
-                <span className={styles.label}>純資産総額</span>
-                <span className={styles.value}>
-                  {formatAssets(data.total_assets)}
-                </span>
+
+              <div className={styles.metricGroup}>
+                <h4 className={styles.groupTitle}>リターン実績</h4>
+                <div className={styles.metric}>
+                  <span className={styles.label}>1年リターン</span>
+                  <span className={styles.value}>
+                    {formatPercent(data.return_1y)}
+                  </span>
+                </div>
+                <div className={styles.metric}>
+                  <span className={styles.label}>3年リターン</span>
+                  <span className={styles.value}>
+                    {formatPercent(data.return_3y)}
+                  </span>
+                </div>
               </div>
             </div>
 

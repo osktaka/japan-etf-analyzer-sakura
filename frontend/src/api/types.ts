@@ -40,6 +40,10 @@ export interface ETFDetail {
   score?: number | null
   score_full?: number | null
   axis_scores?: AxisScores | null
+  average_volume?: number | null
+  trading_value?: number | null
+  return_1y?: number | null
+  return_3y?: number | null
 }
 
 export interface ChartDataPoint {

@@ -37,3 +37,14 @@ export function formatDate(dateString: string | null | undefined): string {
     day: 'numeric',
   }).format(date)
 }
+
+export function formatVolume(value: number | null | undefined): string {
+  if (value == null) return '-'
+  return `${formatNumber(Math.round(value))}口`
+}
+
+export function formatTradingValue(value: number | null | undefined): string {
+  if (value == null) return '-'
+  const million = value / 1000000
+  return `${million.toFixed(1)}百万円`
+}
