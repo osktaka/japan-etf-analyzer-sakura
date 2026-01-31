@@ -22,6 +22,11 @@ class RecommendService:
 
     PERSPECTIVES = [
         {
+            "id": "balance",
+            "name": "バランス",
+            "description": "複数の観点でバランス良く評価された銘柄",
+        },
+        {
             "id": "dividend",
             "name": "配当収入",
             "description": "配当利回りが高く、定期的な配当収入を期待できる銘柄",
@@ -45,11 +50,6 @@ class RecommendService:
             "id": "growth",
             "name": "成長性",
             "description": "過去の値上がり実績が良好な銘柄",
-        },
-        {
-            "id": "balance",
-            "name": "バランス",
-            "description": "複数の観点でバランス良く評価された銘柄",
         },
     ]
 

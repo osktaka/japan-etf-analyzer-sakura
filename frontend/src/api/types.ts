@@ -256,3 +256,15 @@ export interface BatchPeriodsChartData {
 
 /** Multiple ETFs, single period response */
 export type BatchCodesChartData = Record<string, ChartData>
+
+/** Batch score API types */
+export interface ScoreData {
+  balance: number
+  dividend: number
+  'low-cost': number
+  stability: number
+  volume: number
+  growth: number
+}
+
+export type BatchScoreData = Record<string, ScoreData>

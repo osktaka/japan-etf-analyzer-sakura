@@ -30,7 +30,7 @@ export function RecommendSection({
 }: RecommendSectionProps) {
   const [perspectives, setPerspectives] = useState<Perspective[]>([])
   // 制御/非制御ハイブリッド: propsがあれば使用、なければ内部state（既存互換）
-  const [internalSelected, setInternalSelected] = useState('popular')
+  const [internalSelected, setInternalSelected] = useState('balance')
 
   const selected = selectedPerspective ?? internalSelected
   const handleSelect = (p: string) => {

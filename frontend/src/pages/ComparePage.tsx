@@ -228,220 +228,224 @@ export function ComparePage() {
           {isLoading && <Loading />}
 
           {!isLoading && etfs.length > 0 && (
-        <>
-          <div className={styles.chartSection}>
-            <div className={styles.chartHeader}>
-              <h2>価格チャート比較</h2>
-              <div className={styles.chartControls}>
-                <div className={styles.modeToggle}>
-                  <button
-                    className={`${styles.modeBtn} ${chartMode === 'overlay' ? styles.active : ''}`}
-                    onClick={() => setChartMode('overlay')}
-                  >
-                    相対比較
-                  </button>
-                  <button
-                    className={`${styles.modeBtn} ${chartMode === 'individual' ? styles.active : ''}`}
-                    onClick={() => setChartMode('individual')}
-                  >
-                    個別
-                  </button>
-                </div>
-                <div className={styles.periods}>
-                  {CHART_PERIODS.map((p) => (
-                    <button
-                      key={p.id}
-                      className={`${styles.periodBtn} ${chartPeriod === p.id ? styles.active : ''}`}
-                      onClick={() => setChartPeriod(p.id as ChartPeriod)}
-                    >
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            {isChartLoading && <Loading />}
-            {!isChartLoading && chartMode === 'overlay' && (
-              <OverlayChart datasets={chartDatasets} height={400} />
-            )}
-            {!isChartLoading && chartMode === 'individual' && (
-              <div className={styles.charts}>
-                {etfs.map((etf) => (
-                  <CompareChart
-                    key={etf.code}
-                    code={etf.code}
-                    name={etf.name}
-                    period={chartPeriod}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className={styles.tableWrapper}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>項目</th>
-                  {etfs.map((etf) => (
-                    <th
-                      key={etf.code}
-                      className={styles.clickableCell}
-                      onClick={() => setSelectedCode(etf.code)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault()
-                          setSelectedCode(etf.code)
-                        }
-                      }}
-                      tabIndex={0}
-                    >
-                      <div className={styles.etfHeader}>
-                        <span className={styles.codeRow}>
-                          <FavoriteButton
-                            isFavorite={isFavorite(etf.code)}
-                            onClick={() => handleFavoriteToggle(etf.code)}
-                            size="sm"
-                            isHolding={holdingCodes.has(etf.code)}
-                          />
-                          <span className={styles.code}>{etf.code}</span>
-                        </span>
-                        <span className={styles.name}>{etf.name}</span>
+            <>
+              <div className={styles.chartSection}>
+                <div className={styles.chartHeader}>
+                  <h2>価格チャート比較</h2>
+                  <div className={styles.chartControls}>
+                    <div className={styles.modeToggle}>
+                      <button
+                        className={`${styles.modeBtn} ${chartMode === 'overlay' ? styles.active : ''}`}
+                        onClick={() => setChartMode('overlay')}
+                      >
+                        相対比較
+                      </button>
+                      <button
+                        className={`${styles.modeBtn} ${chartMode === 'individual' ? styles.active : ''}`}
+                        onClick={() => setChartMode('individual')}
+                      >
+                        個別
+                      </button>
+                    </div>
+                    <div className={styles.periods}>
+                      {CHART_PERIODS.map((p) => (
                         <button
-                          className={styles.removeBtn}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleRemove(etf.code)
-                          }}
+                          key={p.id}
+                          className={`${styles.periodBtn} ${chartPeriod === p.id ? styles.active : ''}`}
+                          onClick={() => setChartPeriod(p.id as ChartPeriod)}
                         >
-                          &times;
+                          {p.label}
                         </button>
-                      </div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>カテゴリ</td>
-                  {etfs.map((etf) => (
-                    <td key={etf.code}>{etf.category?.name || '-'}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td>市場価格</td>
-                  {etfs.map((etf) => (
-                    <td key={etf.code}>{formatPrice(etf.market_price)}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td>配当利回り</td>
-                  {etfs.map((etf) => (
-                    <td key={etf.code}>{formatPercent(etf.dividend_yield)}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td>信託報酬</td>
-                  {etfs.map((etf) => (
-                    <td key={etf.code}>{formatPercent(etf.expense_ratio)}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td>純資産総額</td>
-                  {etfs.map((etf) => (
-                    <td key={etf.code}>{formatAssets(etf.total_assets)}</td>
-                  ))}
-                </tr>
-                <tr>
-                  <td>タグ</td>
-                  {etfs.map((etf) => (
-                    <td key={etf.code}>
-                      <div className={styles.tags}>
-                        {etf.tags.map((tag) => (
-                          <TagBadge key={tag.id} tag={tag} size="sm" />
-                        ))}
-                      </div>
-                    </td>
-                  ))}
-                </tr>
-                {performance && (
-                  <>
-                    <tr className={styles.sectionHeader}>
-                      <td colSpan={etfs.length + 1}>パフォーマンス</td>
-                    </tr>
-                    <tr>
-                      <td>1ヶ月リターン</td>
-                      {etfs.map((etf) => {
-                        const perf = performance.items.find(
-                          (p) => p.code === etf.code
-                        )
-                        return (
-                          <td key={etf.code}>
-                            <ReturnValue value={perf?.returns['1m']} />
-                          </td>
-                        )
-                      })}
-                    </tr>
-                    <tr>
-                      <td>3ヶ月リターン</td>
-                      {etfs.map((etf) => {
-                        const perf = performance.items.find(
-                          (p) => p.code === etf.code
-                        )
-                        return (
-                          <td key={etf.code}>
-                            <ReturnValue value={perf?.returns['3m']} />
-                          </td>
-                        )
-                      })}
-                    </tr>
-                    <tr>
-                      <td>6ヶ月リターン</td>
-                      {etfs.map((etf) => {
-                        const perf = performance.items.find(
-                          (p) => p.code === etf.code
-                        )
-                        return (
-                          <td key={etf.code}>
-                            <ReturnValue value={perf?.returns['6m']} />
-                          </td>
-                        )
-                      })}
-                    </tr>
-                    <tr>
-                      <td>1年リターン</td>
-                      {etfs.map((etf) => {
-                        const perf = performance.items.find(
-                          (p) => p.code === etf.code
-                        )
-                        return (
-                          <td key={etf.code}>
-                            <ReturnValue value={perf?.returns['1y']} />
-                          </td>
-                        )
-                      })}
-                    </tr>
-                    <tr>
-                      <td>ボラティリティ</td>
-                      {etfs.map((etf) => {
-                        const perf = performance.items.find(
-                          (p) => p.code === etf.code
-                        )
-                        return (
-                          <td key={etf.code}>
-                            {perf?.volatility != null
-                              ? `${perf.volatility.toFixed(2)}%`
-                              : '-'}
-                          </td>
-                        )
-                      })}
-                    </tr>
-                  </>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                {isChartLoading && <Loading />}
+                {!isChartLoading && chartMode === 'overlay' && (
+                  <OverlayChart datasets={chartDatasets} height={400} />
                 )}
-              </tbody>
-            </table>
-          </div>
-        </>
+                {!isChartLoading && chartMode === 'individual' && (
+                  <div className={styles.charts}>
+                    {etfs.map((etf) => (
+                      <CompareChart
+                        key={etf.code}
+                        code={etf.code}
+                        name={etf.name}
+                        period={chartPeriod}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className={styles.tableWrapper}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>項目</th>
+                      {etfs.map((etf) => (
+                        <th
+                          key={etf.code}
+                          className={styles.clickableCell}
+                          onClick={() => setSelectedCode(etf.code)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              setSelectedCode(etf.code)
+                            }
+                          }}
+                          tabIndex={0}
+                        >
+                          <div className={styles.etfHeader}>
+                            <span className={styles.codeRow}>
+                              <FavoriteButton
+                                isFavorite={isFavorite(etf.code)}
+                                onClick={() => handleFavoriteToggle(etf.code)}
+                                size="sm"
+                                isHolding={holdingCodes.has(etf.code)}
+                              />
+                              <span className={styles.code}>{etf.code}</span>
+                            </span>
+                            <span className={styles.name}>{etf.name}</span>
+                            <button
+                              className={styles.removeBtn}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleRemove(etf.code)
+                              }}
+                            >
+                              &times;
+                            </button>
+                          </div>
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>カテゴリ</td>
+                      {etfs.map((etf) => (
+                        <td key={etf.code}>{etf.category?.name || '-'}</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td>市場価格</td>
+                      {etfs.map((etf) => (
+                        <td key={etf.code}>{formatPrice(etf.market_price)}</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td>配当利回り</td>
+                      {etfs.map((etf) => (
+                        <td key={etf.code}>
+                          {formatPercent(etf.dividend_yield)}
+                        </td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td>信託報酬</td>
+                      {etfs.map((etf) => (
+                        <td key={etf.code}>
+                          {formatPercent(etf.expense_ratio)}
+                        </td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td>純資産総額</td>
+                      {etfs.map((etf) => (
+                        <td key={etf.code}>{formatAssets(etf.total_assets)}</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td>タグ</td>
+                      {etfs.map((etf) => (
+                        <td key={etf.code}>
+                          <div className={styles.tags}>
+                            {etf.tags.map((tag) => (
+                              <TagBadge key={tag.id} tag={tag} size="sm" />
+                            ))}
+                          </div>
+                        </td>
+                      ))}
+                    </tr>
+                    {performance && (
+                      <>
+                        <tr className={styles.sectionHeader}>
+                          <td colSpan={etfs.length + 1}>パフォーマンス</td>
+                        </tr>
+                        <tr>
+                          <td>1ヶ月リターン</td>
+                          {etfs.map((etf) => {
+                            const perf = performance.items.find(
+                              (p) => p.code === etf.code
+                            )
+                            return (
+                              <td key={etf.code}>
+                                <ReturnValue value={perf?.returns['1m']} />
+                              </td>
+                            )
+                          })}
+                        </tr>
+                        <tr>
+                          <td>3ヶ月リターン</td>
+                          {etfs.map((etf) => {
+                            const perf = performance.items.find(
+                              (p) => p.code === etf.code
+                            )
+                            return (
+                              <td key={etf.code}>
+                                <ReturnValue value={perf?.returns['3m']} />
+                              </td>
+                            )
+                          })}
+                        </tr>
+                        <tr>
+                          <td>6ヶ月リターン</td>
+                          {etfs.map((etf) => {
+                            const perf = performance.items.find(
+                              (p) => p.code === etf.code
+                            )
+                            return (
+                              <td key={etf.code}>
+                                <ReturnValue value={perf?.returns['6m']} />
+                              </td>
+                            )
+                          })}
+                        </tr>
+                        <tr>
+                          <td>1年リターン</td>
+                          {etfs.map((etf) => {
+                            const perf = performance.items.find(
+                              (p) => p.code === etf.code
+                            )
+                            return (
+                              <td key={etf.code}>
+                                <ReturnValue value={perf?.returns['1y']} />
+                              </td>
+                            )
+                          })}
+                        </tr>
+                        <tr>
+                          <td>ボラティリティ</td>
+                          {etfs.map((etf) => {
+                            const perf = performance.items.find(
+                              (p) => p.code === etf.code
+                            )
+                            return (
+                              <td key={etf.code}>
+                                {perf?.volatility != null
+                                  ? `${perf.volatility.toFixed(2)}%`
+                                  : '-'}
+                              </td>
+                            )
+                          })}
+                        </tr>
+                      </>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </>
       )}

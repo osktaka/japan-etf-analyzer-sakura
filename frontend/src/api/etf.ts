@@ -5,6 +5,7 @@ import {
   BatchCodesChartData,
   BatchPerformanceData,
   BatchPeriodsChartData,
+  BatchScoreData,
   Category,
   ChartData,
   ChartPeriod,
@@ -28,6 +29,12 @@ export type SortField =
   | 'return_5y'
   | 'return_10y'
   | 'return_20y'
+  | 'score_balance'
+  | 'score_dividend'
+  | 'score_low_cost'
+  | 'score_stability'
+  | 'score_volume'
+  | 'score_growth'
 export type SortOrder = 'asc' | 'desc'
 
 export interface SearchParams {
@@ -160,6 +167,22 @@ export async function getETFsChartBatch(
   try {
     const response = await apiClient.get<ApiResponse<BatchCodesChartData>>(
       `/etfs/chart/batch?codes=${codes.join(',')}&period=${period}`
+    )
+    return response.data.data
+  } catch {
+    return {}
+  }
+}
+
+/**
+ * Get all 6 perspective scores for multiple ETFs (batch).
+ * Reduces N API calls to 1 call for score display.
+ */
+export async function getBatchScores(codes: string[]): Promise<BatchScoreData> {
+  if (codes.length === 0) return {}
+  try {
+    const response = await apiClient.get<ApiResponse<BatchScoreData>>(
+      `/etfs/scores/batch?codes=${codes.join(',')}`
     )
     return response.data.data
   } catch {

@@ -269,4 +269,38 @@ def create_etf_bp():
 
         return api_response(data=result)
 
+    @bp.route("/scores/batch", methods=["GET"])
+    def get_batch_scores():
+        """Get all 6 perspective scores for multiple ETFs.
+
+        GET /api/v1/etfs/scores/batch
+
+        Query Parameters:
+            codes: Comma-separated ETF codes (max 100)
+
+        Returns:
+            Scores for each requested ETF
+        """
+        codes_param = request.args.get("codes", "")
+        if not codes_param:
+            return error_response("codes parameter is required", 400)
+
+        codes = [c.strip() for c in codes_param.split(",") if c.strip()]
+        if not codes:
+            return error_response("At least one valid code is required", 400)
+
+        if len(codes) > 100:
+            return error_response("Maximum 100 codes allowed", 400)
+
+        # Validate each code
+        for code in codes:
+            is_valid, error = validate_etf_code(code)
+            if not is_valid:
+                return error_response(f"Invalid code '{code}': {error}", 400)
+
+        service = ETFService()
+        result = service.get_batch_scores(codes)
+
+        return api_response(data=result)
+
     return bp

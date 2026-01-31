@@ -16,15 +16,18 @@ import {
   ViewModeToggle,
   PeriodSelector,
   ReturnTypeToggle,
+  TableDisplayToggle,
 } from '../components/search'
-import type { ViewMode, ReturnType } from '../components/search'
+import type { ViewMode, ReturnType, DisplayMode } from '../components/search'
 import {
   SearchParams,
   SortField,
   SortOrder,
   getBatchPerformance,
+  getBatchScores,
   PerformancePeriod,
   BatchPerformanceData,
+  BatchScoreData,
 } from '../api'
 import { RecommendSection } from '../components/recommend'
 import { ETFDetailModal, LoginPromptModal } from '../components/modal'
@@ -36,7 +39,9 @@ const PAGE_SIZE = 50
 const PERIODS_STORAGE_KEY = 'etf-table-view-periods'
 const RETURN_TYPE_STORAGE_KEY = 'etf-return-type'
 const VIEW_MODE_STORAGE_KEY = 'etf-view-mode'
-const SORT_STORAGE_KEY = 'etf-sort-state'
+const SCORE_SORT_STORAGE_KEY = 'etf-score-sort-state'
+const TREND_SORT_STORAGE_KEY = 'etf-trend-sort-state'
+const DISPLAY_MODE_STORAGE_KEY = 'etf-table-display-mode'
 
 // ローカルストレージから表示期間を復元
 const getStoredPeriods = (): PerformancePeriod[] => {
@@ -80,10 +85,30 @@ const getStoredViewMode = (): ViewMode | null => {
   return null
 }
 
-// ローカルストレージからソート状態を復元
-const getStoredSort = (): { sort: SortField; order: SortOrder } | null => {
+// ローカルストレージから銘柄スコア表示用のソート状態を復元
+const getStoredScoreSort = (): { sort: SortField; order: SortOrder } => {
   try {
-    const stored = localStorage.getItem(SORT_STORAGE_KEY)
+    const stored = localStorage.getItem(SCORE_SORT_STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      if (
+        parsed &&
+        typeof parsed.sort === 'string' &&
+        typeof parsed.order === 'string'
+      ) {
+        return parsed
+      }
+    }
+  } catch {
+    // パースエラー時はデフォルト値を返す
+  }
+  return { sort: 'score_balance', order: 'desc' }
+}
+
+// ローカルストレージから株価傾向表示用のソート状態を復元
+const getStoredTrendSort = (): { sort: SortField; order: SortOrder } | null => {
+  try {
+    const stored = localStorage.getItem(TREND_SORT_STORAGE_KEY)
     if (stored) {
       const parsed = JSON.parse(stored)
       if (
@@ -98,6 +123,19 @@ const getStoredSort = (): { sort: SortField; order: SortOrder } | null => {
     // パースエラー時はnullを返す
   }
   return null
+}
+
+// ローカルストレージから表示モードを復元
+const getStoredDisplayMode = (): DisplayMode => {
+  try {
+    const stored = localStorage.getItem(DISPLAY_MODE_STORAGE_KEY)
+    if (stored === 'score' || stored === 'trend') {
+      return stored
+    }
+  } catch {
+    // エラー時はデフォルト値を返す
+  }
+  return 'trend'
 }
 
 export function TopPage() {
@@ -133,13 +171,16 @@ export function TopPage() {
   // 表示モード（URL優先 → localStorage → デフォルト）
   const [viewMode, setViewMode] = useState<ViewMode>(getInitialViewMode)
   const [performance, setPerformance] = useState<BatchPerformanceData>({})
+  const [scores, setScores] = useState<BatchScoreData>({})
   const [selectedPeriods, setSelectedPeriods] =
     useState<PerformancePeriod[]>(getStoredPeriods)
   const [returnType, setReturnType] = useState<ReturnType>(getStoredReturnType)
+  const [displayMode, setDisplayMode] =
+    useState<DisplayMode>(getStoredDisplayMode)
 
   // おすすめタブの状態
   const [recommendTab, setRecommendTab] = useState(
-    searchParams.get('tab') || 'popular'
+    searchParams.get('tab') || 'balance'
   )
 
   const [currentKeyword, setCurrentKeyword] = useState(
@@ -149,22 +190,46 @@ export function TopPage() {
     useState<SearchParams>(getInitialFilters())
 
   // ソート状態（URL優先 → localStorage → デフォルト）
-  // 表形式: 1年降順、カード形式: 銘柄コード昇順
+  // 表形式かつスコア表示: 銘柄コード昇順（ETFTableView側でbalance降順にローカルソート）
+  // 表形式かつ傾向表示: 1年降順
+  // カード形式: 銘柄コード昇順
   const [currentSort, setCurrentSort] = useState<SortField>(() => {
     const urlSort = searchParams.get('sort') as SortField
     if (urlSort) return urlSort
-    const storedSort = getStoredSort()
     const initialViewMode = getInitialViewMode()
-    const defaultSort = initialViewMode === 'table' ? 'return_1y' : 'code'
-    return storedSort?.sort || defaultSort
+    const initialDisplayMode = getStoredDisplayMode()
+    // 表形式かつスコア表示の場合はスコア用のソート状態を使用
+    if (initialViewMode === 'table' && initialDisplayMode === 'score') {
+      const storedSort = getStoredScoreSort()
+      return storedSort?.sort || 'code'
+    }
+    // 表形式かつ傾向表示の場合は傾向用のソート状態を使用
+    if (initialViewMode === 'table' && initialDisplayMode === 'trend') {
+      const storedSort = getStoredTrendSort()
+      return storedSort?.sort || 'return_1y'
+    }
+    // カード形式の場合は傾向用のソート状態を使用
+    const storedSort = getStoredTrendSort()
+    return storedSort?.sort || 'code'
   })
   const [currentOrder, setCurrentOrder] = useState<SortOrder>(() => {
     const urlOrder = searchParams.get('order') as SortOrder
     if (urlOrder) return urlOrder
-    const storedSort = getStoredSort()
     const initialViewMode = getInitialViewMode()
-    const defaultOrder = initialViewMode === 'table' ? 'desc' : 'asc'
-    return storedSort?.order || defaultOrder
+    const initialDisplayMode = getStoredDisplayMode()
+    // 表形式かつスコア表示の場合はスコア用のソート状態を使用
+    if (initialViewMode === 'table' && initialDisplayMode === 'score') {
+      const storedSort = getStoredScoreSort()
+      return storedSort?.order || 'asc'
+    }
+    // 表形式かつ傾向表示の場合は傾向用のソート状態を使用
+    if (initialViewMode === 'table' && initialDisplayMode === 'trend') {
+      const storedSort = getStoredTrendSort()
+      return storedSort?.order || 'desc'
+    }
+    // カード形式の場合は傾向用のソート状態を使用
+    const storedSort = getStoredTrendSort()
+    return storedSort?.order || 'asc'
   })
   const [currentPage, setCurrentPage] = useState(
     Number(searchParams.get('page')) || 1
@@ -172,6 +237,7 @@ export function TopPage() {
 
   const etfListRef = useRef<HTMLElement>(null)
   const isInitialMount = useRef(true)
+  const prevDisplayModeRef = useRef<DisplayMode>(displayMode)
   const { items, total, isLoading, error, search } = useETFSearch()
   const {
     isInList,
@@ -197,15 +263,21 @@ export function TopPage() {
   // isHolding関数 - ETFCard/ETFTableViewに渡すために使用
   const isHolding = (code: string): boolean => holdingCodes.has(code)
 
-  // 表形式表示時にパフォーマンスデータを取得
+  // 表形式表示時にパフォーマンスデータまたはスコアデータを取得
   useEffect(() => {
     if (viewMode === 'table' && items.length > 0) {
       const codes = items.map((item) => item.code)
-      getBatchPerformance(codes).then((data) => {
-        setPerformance(data)
-      })
+      if (displayMode === 'trend') {
+        getBatchPerformance(codes).then((data) => {
+          setPerformance(data)
+        })
+      } else if (displayMode === 'score') {
+        getBatchScores(codes).then((data) => {
+          setScores(data)
+        })
+      }
     }
-  }, [viewMode, items])
+  }, [viewMode, items, displayMode])
 
   // 表示期間をローカルストレージに保存
   useEffect(() => {
@@ -222,13 +294,90 @@ export function TopPage() {
     localStorage.setItem(VIEW_MODE_STORAGE_KEY, viewMode)
   }, [viewMode])
 
-  // ソート状態をローカルストレージに保存
+  // ソート状態をローカルストレージに保存（displayModeに応じて保存先を切り替え）
+  // 注: displayModeは依存配列から除外（displayMode切り替え時の保存は別のuseEffectで実施）
   useEffect(() => {
+    const storageKey =
+      displayMode === 'score' ? SCORE_SORT_STORAGE_KEY : TREND_SORT_STORAGE_KEY
     localStorage.setItem(
-      SORT_STORAGE_KEY,
+      storageKey,
       JSON.stringify({ sort: currentSort, order: currentOrder })
     )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentSort, currentOrder])
+
+  // 表示モードをローカルストレージに保存
+  useEffect(() => {
+    localStorage.setItem(DISPLAY_MODE_STORAGE_KEY, displayMode)
+  }, [displayMode])
+
+  // displayMode変更時にソート状態を復元
+  useEffect(() => {
+    // 初回マウント時はスキップ
+    if (isInitialMount.current) {
+      return
+    }
+
+    // 前回のモードのソート状態を保存
+    const prevStorageKey =
+      prevDisplayModeRef.current === 'score'
+        ? SCORE_SORT_STORAGE_KEY
+        : TREND_SORT_STORAGE_KEY
+    localStorage.setItem(
+      prevStorageKey,
+      JSON.stringify({ sort: currentSort, order: currentOrder })
+    )
+
+    // URLパラメータでソートが指定されている場合は復元スキップ（保存はする）
+    if (searchParams.get('sort') || searchParams.get('order')) {
+      prevDisplayModeRef.current = displayMode
+      return
+    }
+
+    // 新しいdisplayModeに応じたソート状態を復元
+    const storedSort =
+      displayMode === 'score' ? getStoredScoreSort() : getStoredTrendSort()
+    const defaultSort = displayMode === 'score' ? 'code' : 'return_1y'
+    const defaultOrder = displayMode === 'score' ? 'asc' : 'desc'
+
+    const newSort = storedSort?.sort || defaultSort
+    const newOrder = storedSort?.order || defaultOrder
+
+    setCurrentSort(newSort)
+    setCurrentOrder(newOrder)
+
+    // 前回のdisplayModeを更新
+    prevDisplayModeRef.current = displayMode
+
+    // ソート状態が変わった場合は検索を実行
+    if (newSort !== currentSort || newOrder !== currentOrder) {
+      const searchParams: SearchParams = {
+        ...currentFilters,
+        keyword: currentKeyword || undefined,
+        sort: newSort,
+        order: newOrder,
+        return_type: returnType,
+        limit: PAGE_SIZE,
+        offset: (currentPage - 1) * PAGE_SIZE,
+      }
+
+      if (favoritesOnly) {
+        searchParams.favorite_codes = Array.from(favoriteCodes)
+      }
+
+      if (holdingsOnly) {
+        searchParams.holding_codes = Array.from(holdingCodes)
+      }
+
+      if (compareOnly) {
+        searchParams.favorite_codes = compareCodes
+      }
+
+      search(searchParams)
+    }
+    // displayMode変更時のみ実行（他の依存は意図的に除外）
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [displayMode])
 
   // URLパラメータ更新ヘルパー
   const updateURL = useCallback(
@@ -601,14 +750,22 @@ export function TopPage() {
               />
             ) : (
               <>
-                <ReturnTypeToggle
-                  returnType={returnType}
-                  onChange={setReturnType}
+                <TableDisplayToggle
+                  displayMode={displayMode}
+                  onChange={setDisplayMode}
                 />
-                <PeriodSelector
-                  selectedPeriods={selectedPeriods}
-                  onChange={setSelectedPeriods}
-                />
+                {displayMode === 'trend' && (
+                  <>
+                    <ReturnTypeToggle
+                      returnType={returnType}
+                      onChange={setReturnType}
+                    />
+                    <PeriodSelector
+                      selectedPeriods={selectedPeriods}
+                      onChange={setSelectedPeriods}
+                    />
+                  </>
+                )}
               </>
             )}
             <ViewModeToggle mode={viewMode} onChange={handleViewModeChange} />
@@ -633,6 +790,8 @@ export function TopPage() {
           <ETFTableView
             items={items}
             performance={performance}
+            scores={scores}
+            displayMode={displayMode}
             selectedPeriods={selectedPeriods}
             returnType={returnType}
             onETFClick={setSelectedCode}

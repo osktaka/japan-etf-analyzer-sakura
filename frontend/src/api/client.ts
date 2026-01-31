@@ -3,7 +3,9 @@ import axios, { AxiosInstance, AxiosError } from 'axios'
 import { ApiError } from './types'
 
 const isProd = import.meta.env.PROD
-const API_BASE_URL = isProd ? '/japan-etf-analyzer' : (import.meta.env.VITE_API_URL || 'http://localhost:8902')
+const API_BASE_URL = isProd
+  ? '/japan-etf-analyzer'
+  : import.meta.env.VITE_API_URL || 'http://localhost:8902'
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: `${API_BASE_URL}/api/v1`,

@@ -124,6 +124,35 @@ class TestETFEndpoints:
         assert data["period"] == "1m"
         assert len(data["data"]) > 0
 
+    def test_get_batch_scores(self, client, db_session):
+        """Test getting batch scores for multiple ETFs."""
+        db_session.add(ETF(code="1306", name="TOPIX連動型"))
+        db_session.add(ETF(code="1321", name="日経225連動型"))
+        db_session.commit()
+
+        response = client.get("/api/v1/etfs/scores/batch?codes=1306,1321")
+        assert response.status_code == 200
+        data = response.json["data"]
+        assert "1306" in data
+        assert "1321" in data
+        assert "balance" in data["1306"]
+        assert "dividend" in data["1306"]
+        assert "low-cost" in data["1306"]
+        assert "stability" in data["1306"]
+        assert "volume" in data["1306"]
+        assert "growth" in data["1306"]
+
+    def test_get_batch_scores_missing_codes(self, client, db_session):
+        """Test batch scores with missing codes parameter."""
+        response = client.get("/api/v1/etfs/scores/batch")
+        assert response.status_code == 400
+
+    def test_get_batch_scores_too_many_codes(self, client, db_session):
+        """Test batch scores with too many codes."""
+        codes = ",".join([str(i) for i in range(101)])
+        response = client.get(f"/api/v1/etfs/scores/batch?codes={codes}")
+        assert response.status_code == 400
+
 
 class TestRecommendEndpoints:
     """Tests for recommendation endpoints."""

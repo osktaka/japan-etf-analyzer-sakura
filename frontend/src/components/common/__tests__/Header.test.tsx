@@ -184,7 +184,9 @@ describe('Header', () => {
     // デスクトップnavとモバイルメニューの両方に存在
     const compareLinks = screen.getAllByText('比較')
     // 少なくとも1つがactiveクラスを持つ
-    const hasActive = compareLinks.some((link) => link.className.includes('active'))
+    const hasActive = compareLinks.some((link) =>
+      link.className.includes('active')
+    )
     expect(hasActive).toBe(true)
   })
 
@@ -195,7 +197,9 @@ describe('Header', () => {
           <Header />
         </BrowserRouter>
       )
-      const hamburgerButton = screen.getByRole('button', { name: 'メニューを開く' })
+      const hamburgerButton = screen.getByRole('button', {
+        name: 'メニューを開く',
+      })
       expect(hamburgerButton).toBeInTheDocument()
     })
 
@@ -205,7 +209,9 @@ describe('Header', () => {
           <Header />
         </BrowserRouter>
       )
-      const hamburgerButton = screen.getByRole('button', { name: 'メニューを開く' })
+      const hamburgerButton = screen.getByRole('button', {
+        name: 'メニューを開く',
+      })
       expect(hamburgerButton).toHaveAttribute('aria-expanded', 'false')
     })
 
@@ -215,7 +221,9 @@ describe('Header', () => {
           <Header />
         </BrowserRouter>
       )
-      const hamburgerButton = screen.getByRole('button', { name: 'メニューを開く' })
+      const hamburgerButton = screen.getByRole('button', {
+        name: 'メニューを開く',
+      })
       fireEvent.click(hamburgerButton)
       expect(hamburgerButton).toHaveAttribute('aria-expanded', 'true')
       expect(hamburgerButton).toHaveAttribute('aria-label', 'メニューを閉じる')
@@ -227,7 +235,9 @@ describe('Header', () => {
           <Header />
         </BrowserRouter>
       )
-      const mobileMenu = screen.getByRole('menu', { name: 'モバイルナビゲーション' })
+      const mobileMenu = screen.getByRole('menu', {
+        name: 'モバイルナビゲーション',
+      })
       expect(mobileMenu).toBeInTheDocument()
     })
 
@@ -247,7 +257,9 @@ describe('Header', () => {
           <Header />
         </BrowserRouter>
       )
-      const hamburgerButton = screen.getByRole('button', { name: 'メニューを開く' })
+      const hamburgerButton = screen.getByRole('button', {
+        name: 'メニューを開く',
+      })
       fireEvent.click(hamburgerButton)
       expect(hamburgerButton).toHaveAttribute('aria-expanded', 'true')
 

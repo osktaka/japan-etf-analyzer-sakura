@@ -5,9 +5,21 @@ import { PerspectiveTabs } from '../PerspectiveTabs'
 import { Perspective } from '../../../api'
 
 const mockPerspectives: Perspective[] = [
-  { id: 'dividend', name: '配当収入', description: '配当利回りが高く、定期的な配当収入を期待できる銘柄' },
-  { id: 'low-cost', name: '低コスト', description: '信託報酬が低く、長期保有でコストを抑えられる銘柄' },
-  { id: 'balance', name: 'バランス', description: '複数の観点でバランス良く評価された銘柄' },
+  {
+    id: 'dividend',
+    name: '配当収入',
+    description: '配当利回りが高く、定期的な配当収入を期待できる銘柄',
+  },
+  {
+    id: 'low-cost',
+    name: '低コスト',
+    description: '信託報酬が低く、長期保有でコストを抑えられる銘柄',
+  },
+  {
+    id: 'balance',
+    name: 'バランス',
+    description: '複数の観点でバランス良く評価された銘柄',
+  },
 ]
 
 describe('PerspectiveTabs', () => {

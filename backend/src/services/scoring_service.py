@@ -323,6 +323,43 @@ class ScoringService:
         scored.sort(key=lambda x: x["score"], reverse=True)
         return scored[:limit]
 
+    def get_all_scores_batch(self, etf_codes: List[str]) -> Dict[str, Dict[str, float]]:
+        """Get all 6 perspective scores for multiple ETFs.
+
+        Args:
+            etf_codes: List of ETF codes
+
+        Returns:
+            Dict mapping ETF code to dict of perspective scores
+            Example: {"1489": {"balance": 78.5, "dividend": 85.2, ...}}
+        """
+        etfs = [self.etf_repository.get_by_code(code) for code in etf_codes]
+        etfs = [etf for etf in etfs if etf]
+
+        if not etfs:
+            return {}
+
+        # Batch fetch data
+        self._avg_volumes_cache = self.etf_repository.get_average_volumes_batch(etf_codes)
+        self._return_rates_cache = self.etf_repository.get_return_rates_batch(etf_codes)
+        self._collect_percentile_data(etfs)
+
+        result = {}
+        perspectives = ["balance", "dividend", "low-cost", "stability", "volume", "growth"]
+
+        for etf in etfs:
+            scores = {}
+            for perspective in perspectives:
+                score = self.calculate_score(etf, perspective)
+                scores[perspective] = round(score, 1)
+            result[etf.code] = scores
+
+        # Clear cache
+        self._avg_volumes_cache = {}
+        self._return_rates_cache = {}
+
+        return result
+
     def _collect_percentile_data(self, etfs: List[ETF]) -> None:
         """Collect values from all ETFs for percentile calculation.
 

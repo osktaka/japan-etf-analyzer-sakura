@@ -1,13 +1,14 @@
 /** ETF Table view component */
 import {
+  BatchPerformanceData,
+  BatchScoreData,
   ETFSummary,
   PerformancePeriod,
   PerformanceReturns,
-  BatchPerformanceData,
 } from '../../api/types'
 import { SortField, SortOrder } from '../../api/etf'
-import { FavoriteButton } from '../favorite'
 import { CompareCheckbox } from '../actions'
+import { FavoriteButton } from '../favorite'
 import type { ReturnType } from './ReturnTypeToggle'
 import styles from './ETFTableView.module.css'
 
@@ -26,6 +27,29 @@ const SORT_FIELD_MAP: Record<string, SortField> = {
   '5y': 'return_5y',
   '10y': 'return_10y',
   '20y': 'return_20y',
+  balance: 'score_balance',
+  dividend_score: 'score_dividend',
+  'low-cost': 'score_low_cost',
+  stability: 'score_stability',
+  volume: 'score_volume',
+  growth: 'score_growth',
+}
+
+type ScoreKey =
+  | 'balance'
+  | 'dividend_score'
+  | 'low-cost'
+  | 'stability'
+  | 'volume'
+  | 'growth'
+
+const SCORE_LABELS: Record<ScoreKey, string> = {
+  balance: 'バランス',
+  dividend_score: '配当収入',
+  'low-cost': '低コスト',
+  stability: '安定性',
+  volume: '取引規模',
+  growth: '成長性',
 }
 
 type SortKey = keyof typeof SORT_FIELD_MAP | 'category' | 'price'
@@ -34,6 +58,8 @@ type SortDirection = 'asc' | 'desc'
 interface ETFTableViewProps {
   items: ETFSummary[]
   performance: BatchPerformanceData
+  scores?: BatchScoreData
+  displayMode?: 'score' | 'trend'
   selectedPeriods: PerformancePeriod[]
   returnType?: ReturnType
   onETFClick: (code: string) => void
@@ -50,6 +76,8 @@ interface ETFTableViewProps {
 export function ETFTableView({
   items,
   performance,
+  scores,
+  displayMode = 'trend',
   selectedPeriods,
   returnType = 'price',
   onETFClick,
@@ -93,12 +121,14 @@ export function ETFTableView({
       newDirection = currentSortDirection === 'asc' ? 'desc' : 'asc'
     } else {
       // New column: determine default direction
-      // Desc (higher is better): performance, dividend, price
+      // Desc (higher is better): performance, dividend, price, scores
       // Asc (lower is better): expense_ratio
       // Asc (alphabetical): code, name
       const isPerformanceSort = apiField.startsWith('return_')
+      const isScoreSort = apiField.startsWith('score_')
       const isDescSort =
         isPerformanceSort ||
+        isScoreSort ||
         apiField === 'dividend_yield' ||
         apiField === 'price'
       const isAscSort = apiField === 'expense_ratio'
@@ -106,9 +136,6 @@ export function ETFTableView({
     }
     onSortChange(apiField, newDirection)
   }
-
-  // Items are already sorted by the API, just use them directly
-  const sortedItems = items
 
   const renderSortIcon = (key: SortKey) => {
     if (currentSortKey !== key) return null
@@ -125,6 +152,27 @@ export function ETFTableView({
     if (value === null || value === undefined) return ''
     return value >= 0 ? styles.positive : styles.negative
   }
+
+  const formatScore = (value: number | null | undefined) => {
+    if (value === null || value === undefined) return '-'
+    return value.toFixed(1)
+  }
+
+  const getScoreClass = (value: number | null | undefined) => {
+    if (value === null || value === undefined) return ''
+    if (value >= 70) return styles.positive
+    if (value >= 50) return ''
+    return styles.negative
+  }
+
+  const scoreKeys: ScoreKey[] = [
+    'balance',
+    'dividend_score',
+    'low-cost',
+    'stability',
+    'volume',
+    'growth',
+  ]
 
   return (
     <div className={styles.container}>
@@ -169,21 +217,33 @@ export function ETFTableView({
               >
                 信託報酬{renderSortIcon('expense')}
               </th>
-              {selectedPeriods.map((period) => (
-                <th
-                  key={period}
-                  onClick={() => handleSort(period)}
-                  className={`${styles.sortable} ${styles.numeric}`}
-                >
-                  {period.toUpperCase()}
-                  {renderSortIcon(period)}
-                </th>
-              ))}
+              {displayMode === 'trend' &&
+                selectedPeriods.map((period) => (
+                  <th
+                    key={period}
+                    onClick={() => handleSort(period)}
+                    className={`${styles.sortable} ${styles.numeric}`}
+                  >
+                    {period.toUpperCase()}
+                    {renderSortIcon(period)}
+                  </th>
+                ))}
+              {displayMode === 'score' &&
+                scoreKeys.map((scoreKey) => (
+                  <th
+                    key={scoreKey}
+                    onClick={() => handleSort(scoreKey)}
+                    className={`${styles.sortable} ${styles.numeric}`}
+                  >
+                    {SCORE_LABELS[scoreKey]}
+                    {renderSortIcon(scoreKey)}
+                  </th>
+                ))}
               {onCompareToggle && <th className={styles.compareCol}>比較</th>}
             </tr>
           </thead>
           <tbody>
-            {sortedItems.map((etf) => (
+            {items.map((etf) => (
               <tr
                 key={etf.code}
                 onClick={() => onETFClick(etf.code)}
@@ -218,17 +278,34 @@ export function ETFTableView({
                 <td className={styles.numeric}>
                   {etf.expense_ratio ? `${etf.expense_ratio.toFixed(2)}%` : '-'}
                 </td>
-                {selectedPeriods.map((period) => {
-                  const returnsData = getReturnsData(etf.code)
-                  return (
-                    <td
-                      key={period}
-                      className={`${styles.numeric} ${getPerformanceClass(returnsData[period])}`}
-                    >
-                      {formatPerformance(returnsData[period])}
-                    </td>
-                  )
-                })}
+                {displayMode === 'trend' &&
+                  selectedPeriods.map((period) => {
+                    const returnsData = getReturnsData(etf.code)
+                    return (
+                      <td
+                        key={period}
+                        className={`${styles.numeric} ${getPerformanceClass(returnsData[period])}`}
+                      >
+                        {formatPerformance(returnsData[period])}
+                      </td>
+                    )
+                  })}
+                {displayMode === 'score' &&
+                  scoreKeys.map((scoreKey) => {
+                    const scoreData = scores?.[etf.code]
+                    const actualKey =
+                      scoreKey === 'dividend_score' ? 'dividend' : scoreKey
+                    const scoreValue =
+                      scoreData?.[actualKey as keyof typeof scoreData]
+                    return (
+                      <td
+                        key={scoreKey}
+                        className={`${styles.numeric} ${getScoreClass(scoreValue)}`}
+                      >
+                        {formatScore(scoreValue)}
+                      </td>
+                    )
+                  })}
                 {onCompareToggle && (
                   <td
                     className={styles.compareCol}
