@@ -111,3 +111,9 @@
   color: white;
   border-color: var(--color-primary);
 }
+
+@media (max-width: 768px) {
+  .scoringModeToggle {
+    flex-wrap: wrap;
+  }
+}

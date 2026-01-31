@@ -31,3 +31,14 @@
 .button:hover {
   background-color: var(--color-primary-dark);
 }
+
+@media (max-width: 768px) {
+  .input {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--text-sm);
+  }
+  .button {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--text-sm);
+  }
+}

@@ -47,6 +47,14 @@
   align-items: center;
   gap: var(--spacing-lg);
   margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .tabsAndToggle {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 .scoringModeToggle {
