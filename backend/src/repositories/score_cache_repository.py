@@ -44,24 +44,34 @@ class ScoreCacheRepository(BaseRepository):
         return ScoreCache.query.filter_by(etf_code=etf_code).all()
 
     def get_scores_for_perspective(
-        self, perspective: str, limit: int = 10
+        self, perspective: str, limit: int = 10, scoring_mode: str = "full"
     ) -> List[ScoreCache]:
         """Get top scores for a perspective.
 
         Args:
             perspective: Scoring perspective
             limit: Maximum number of results
+            scoring_mode: Scoring mode - "full" (default) or "partial"
 
         Returns:
-            List of ScoreCache objects sorted by total_score descending
+            List of ScoreCache objects sorted by appropriate score descending
         """
-        return (
-            ScoreCache.query.filter_by(perspective=perspective)
-            .filter(ScoreCache.total_score.isnot(None))
-            .order_by(ScoreCache.total_score.desc())
-            .limit(limit)
-            .all()
-        )
+        if scoring_mode == "full":
+            return (
+                ScoreCache.query.filter_by(perspective=perspective)
+                .filter(ScoreCache.total_score_full.isnot(None))
+                .order_by(ScoreCache.total_score_full.desc())
+                .limit(limit)
+                .all()
+            )
+        else:
+            return (
+                ScoreCache.query.filter_by(perspective=perspective)
+                .filter(ScoreCache.total_score.isnot(None))
+                .order_by(ScoreCache.total_score.desc())
+                .limit(limit)
+                .all()
+            )
 
     def upsert(
         self,

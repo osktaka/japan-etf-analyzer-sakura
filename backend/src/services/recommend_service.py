@@ -130,7 +130,7 @@ class RecommendService:
         """
         # Get top scored ETFs from cache (with buffer for exclusion filtering)
         cached_scores = self.score_cache_repository.get_scores_for_perspective(
-            perspective, limit=limit * 3
+            perspective, limit=limit * 3, scoring_mode=scoring_mode
         )
 
         # Get ETF details for cached scores
