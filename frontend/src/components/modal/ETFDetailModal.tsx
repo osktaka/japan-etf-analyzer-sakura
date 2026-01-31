@@ -98,6 +98,58 @@ export function ETFDetailModal({
               <p className={styles.description}>{data.description}</p>
             )}
 
+            {data.score !== undefined && data.score !== null && (
+              <div className={styles.scoreSection}>
+                <span className={styles.scoreLabel}>評価スコア</span>
+                <span className={styles.scoreValue}>{Math.round(data.score)}点</span>
+              </div>
+            )}
+
+            {data.axis_scores && (
+              <div className={styles.axisScores}>
+                <div className={styles.axisScore}>
+                  <span className={styles.axisLabel}>配当力</span>
+                  <span className={styles.axisValue}>
+                    {data.axis_scores.dividend_power !== null
+                      ? Math.round(data.axis_scores.dividend_power)
+                      : '-'}
+                  </span>
+                </div>
+                <div className={styles.axisScore}>
+                  <span className={styles.axisLabel}>コスト</span>
+                  <span className={styles.axisValue}>
+                    {data.axis_scores.cost_efficiency !== null
+                      ? Math.round(data.axis_scores.cost_efficiency)
+                      : '-'}
+                  </span>
+                </div>
+                <div className={styles.axisScore}>
+                  <span className={styles.axisLabel}>安定</span>
+                  <span className={styles.axisValue}>
+                    {data.axis_scores.scale_reliability !== null
+                      ? Math.round(data.axis_scores.scale_reliability)
+                      : '-'}
+                  </span>
+                </div>
+                <div className={styles.axisScore}>
+                  <span className={styles.axisLabel}>規模</span>
+                  <span className={styles.axisValue}>
+                    {data.axis_scores.trading_quality !== null
+                      ? Math.round(data.axis_scores.trading_quality)
+                      : '-'}
+                  </span>
+                </div>
+                <div className={styles.axisScore}>
+                  <span className={styles.axisLabel}>リターン</span>
+                  <span className={styles.axisValue}>
+                    {data.axis_scores.return_performance !== null
+                      ? Math.round(data.axis_scores.return_performance)
+                      : '-'}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <div className={styles.metrics}>
               <div className={styles.metric}>
                 <span className={styles.label}>市場価格</span>

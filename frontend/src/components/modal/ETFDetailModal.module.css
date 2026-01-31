@@ -119,6 +119,57 @@
   margin-bottom: var(--spacing-md);
 }
 
+.scoreSection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.scoreLabel {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: white;
+}
+
+.scoreValue {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: white;
+}
+
+.axisScores {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+  padding: var(--spacing-sm);
+  background-color: var(--color-bg-hover);
+  border-radius: var(--radius-md);
+}
+
+.axisScore {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.axisLabel {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.axisValue {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
 .chart {
   margin-bottom: var(--spacing-md);
 }
@@ -139,5 +190,9 @@
 @media (max-width: 600px) {
   .metrics {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .axisScores {
+    grid-template-columns: repeat(3, 1fr);
   }
 }

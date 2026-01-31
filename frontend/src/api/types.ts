@@ -37,6 +37,8 @@ export interface ETFDetail {
   total_assets: number | null
   listing_date: string | null
   tags: Tag[]
+  score?: number | null
+  axis_scores?: AxisScores | null
 }
 
 export interface ChartDataPoint {

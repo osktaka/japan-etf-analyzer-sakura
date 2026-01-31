@@ -112,9 +112,33 @@ class ETFService:
     def get_by_code(self, code: str) -> Optional[dict]:
         """Get ETF details by code."""
         etf = self.repository.get_by_code(code)
-        if etf:
-            return etf.to_dict()
-        return None
+        if not etf:
+            return None
+
+        # Get basic ETF data
+        result = etf.to_dict()
+
+        # Get score from cache (balance perspective for detail view)
+        score_caches = self.score_cache_repository.get_by_code(code)
+        balance_cache = next(
+            (cache for cache in score_caches if cache.perspective == 'balance'),
+            None
+        )
+
+        if balance_cache:
+            result['score'] = balance_cache.total_score
+            result['axis_scores'] = {
+                'dividend_power': balance_cache.dividend_power,
+                'cost_efficiency': balance_cache.cost_efficiency,
+                'scale_reliability': balance_cache.scale_reliability,
+                'trading_quality': balance_cache.trading_quality,
+                'return_performance': balance_cache.return_performance,
+            }
+        else:
+            result['score'] = None
+            result['axis_scores'] = None
+
+        return result
 
     def get_all(self, limit: int = 50, offset: int = 0) -> Dict:
         """Get all ETFs with pagination."""
