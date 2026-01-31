@@ -27,33 +27,47 @@ const SORT_FIELD_MAP: Record<string, SortField> = {
   '5y': 'return_5y',
   '10y': 'return_10y',
   '20y': 'return_20y',
-  balance: 'score_balance',
-  dividend_score: 'score_dividend',
-  'low-cost': 'score_low_cost',
-  stability: 'score_stability',
-  volume: 'score_volume',
-  growth: 'score_growth',
+  evaluation_score: 'evaluation_score',
+  score_balance: 'score_balance',
+  score_dividend: 'score_dividend',
+  score_low_cost: 'score_low_cost',
+  score_stability: 'score_stability',
+  score_volume: 'score_volume',
+  score_growth: 'score_growth',
+  axis_dividend_power: 'axis_dividend_power',
+  axis_cost_efficiency: 'axis_cost_efficiency',
+  axis_scale_reliability: 'axis_scale_reliability',
+  axis_trading_quality: 'axis_trading_quality',
+  axis_return_performance: 'axis_return_performance',
 }
 
-type ScoreKey =
-  | 'balance'
-  | 'dividend_score'
-  | 'low-cost'
-  | 'stability'
-  | 'volume'
-  | 'growth'
+type AxisKey =
+  | 'evaluation_score'
+  | 'axis_dividend_power'
+  | 'axis_cost_efficiency'
+  | 'axis_scale_reliability'
+  | 'axis_trading_quality'
+  | 'axis_return_performance'
 
-const SCORE_LABELS: Record<ScoreKey, string> = {
-  balance: 'バランス',
-  dividend_score: '配当収入',
-  'low-cost': '低コスト',
-  stability: '安定性',
-  volume: '取引規模',
-  growth: '成長性',
+const AXIS_LABELS: Record<AxisKey, string> = {
+  evaluation_score: '評価スコア',
+  axis_dividend_power: '配当力',
+  axis_cost_efficiency: 'コスト',
+  axis_scale_reliability: '安定性',
+  axis_trading_quality: '取引規模',
+  axis_return_performance: 'リターン',
 }
 
 type SortKey = keyof typeof SORT_FIELD_MAP | 'category' | 'price'
 type SortDirection = 'asc' | 'desc'
+
+export type PerspectiveKey =
+  | 'balance'
+  | 'dividend'
+  | 'low-cost'
+  | 'stability'
+  | 'volume'
+  | 'growth'
 
 interface ETFTableViewProps {
   items: ETFSummary[]
@@ -61,6 +75,7 @@ interface ETFTableViewProps {
   scores?: BatchScoreData
   displayMode?: 'score' | 'trend'
   selectedPeriods: PerformancePeriod[]
+  selectedPerspective?: PerspectiveKey
   returnType?: ReturnType
   onETFClick: (code: string) => void
   isInCompare?: (code: string) => boolean
@@ -79,6 +94,7 @@ export function ETFTableView({
   scores,
   displayMode = 'trend',
   selectedPeriods,
+  selectedPerspective = 'balance',
   returnType = 'price',
   onETFClick,
   isInCompare,
@@ -99,6 +115,8 @@ export function ETFTableView({
   // Derive current sort key from sortField prop
   const getCurrentSortKey = (): SortKey => {
     if (!sortField) return 'code'
+    // score_* フィールドは evaluation_score 列にマッピング
+    if (sortField.startsWith('score_')) return 'evaluation_score'
     for (const [key, field] of Object.entries(SORT_FIELD_MAP)) {
       if (field === sortField) return key as SortKey
     }
@@ -121,14 +139,18 @@ export function ETFTableView({
       newDirection = currentSortDirection === 'asc' ? 'desc' : 'asc'
     } else {
       // New column: determine default direction
-      // Desc (higher is better): performance, dividend, price, scores
+      // Desc (higher is better): performance, dividend, price, scores, evaluation_score, axis_*
       // Asc (lower is better): expense_ratio
       // Asc (alphabetical): code, name
       const isPerformanceSort = apiField.startsWith('return_')
       const isScoreSort = apiField.startsWith('score_')
+      const isAxisSort = apiField.startsWith('axis_')
+      const isEvaluationSort = apiField === 'evaluation_score'
       const isDescSort =
         isPerformanceSort ||
         isScoreSort ||
+        isAxisSort ||
+        isEvaluationSort ||
         apiField === 'dividend_yield' ||
         apiField === 'price'
       const isAscSort = apiField === 'expense_ratio'
@@ -165,14 +187,49 @@ export function ETFTableView({
     return styles.negative
   }
 
-  const scoreKeys: ScoreKey[] = [
-    'balance',
-    'dividend_score',
-    'low-cost',
-    'stability',
-    'volume',
-    'growth',
+  const axisKeys: AxisKey[] = [
+    'evaluation_score',
+    'axis_dividend_power',
+    'axis_cost_efficiency',
+    'axis_scale_reliability',
+    'axis_trading_quality',
+    'axis_return_performance',
   ]
+
+  // Get evaluation score value based on selected perspective
+  const getEvaluationScore = (code: string): number | null | undefined => {
+    const scoreData = scores?.[code]
+    if (!scoreData) return undefined
+    return scoreData[selectedPerspective]
+  }
+
+  // Get axis score value
+  const getAxisScore = (
+    code: string,
+    axisKey: AxisKey
+  ): number | null | undefined => {
+    const scoreData = scores?.[code]
+    if (!scoreData) return undefined
+
+    if (axisKey === 'evaluation_score') {
+      return getEvaluationScore(code)
+    }
+
+    const axisScores = scoreData.axis_scores
+    if (!axisScores) return undefined
+
+    // Map axisKey to axis_scores field
+    const axisMap: Record<string, keyof typeof axisScores> = {
+      axis_dividend_power: 'dividend_power',
+      axis_cost_efficiency: 'cost_efficiency',
+      axis_scale_reliability: 'scale_reliability',
+      axis_trading_quality: 'trading_quality',
+      axis_return_performance: 'return_performance',
+    }
+
+    const field = axisMap[axisKey]
+    return field ? axisScores[field] : undefined
+  }
 
   return (
     <div className={styles.container}>
@@ -229,14 +286,14 @@ export function ETFTableView({
                   </th>
                 ))}
               {displayMode === 'score' &&
-                scoreKeys.map((scoreKey) => (
+                axisKeys.map((axisKey) => (
                   <th
-                    key={scoreKey}
-                    onClick={() => handleSort(scoreKey)}
+                    key={axisKey}
+                    onClick={() => handleSort(axisKey)}
                     className={`${styles.sortable} ${styles.numeric}`}
                   >
-                    {SCORE_LABELS[scoreKey]}
-                    {renderSortIcon(scoreKey)}
+                    {AXIS_LABELS[axisKey]}
+                    {renderSortIcon(axisKey)}
                   </th>
                 ))}
               {onCompareToggle && <th className={styles.compareCol}>比較</th>}
@@ -263,7 +320,9 @@ export function ETFTableView({
                   </td>
                 )}
                 <td className={styles.code}>{etf.code}</td>
-                <td className={styles.name} title={etf.name}>{etf.name}</td>
+                <td className={styles.name} title={etf.name}>
+                  {etf.name}
+                </td>
                 <td className={styles.category}>{etf.category || '-'}</td>
                 <td className={styles.numeric}>
                   {etf.market_price
@@ -291,15 +350,11 @@ export function ETFTableView({
                     )
                   })}
                 {displayMode === 'score' &&
-                  scoreKeys.map((scoreKey) => {
-                    const scoreData = scores?.[etf.code]
-                    const actualKey =
-                      scoreKey === 'dividend_score' ? 'dividend' : scoreKey
-                    const scoreValue =
-                      scoreData?.[actualKey as keyof typeof scoreData]
+                  axisKeys.map((axisKey) => {
+                    const scoreValue = getAxisScore(etf.code, axisKey)
                     return (
                       <td
-                        key={scoreKey}
+                        key={axisKey}
                         className={`${styles.numeric} ${getScoreClass(scoreValue)}`}
                       >
                         {formatScore(scoreValue)}

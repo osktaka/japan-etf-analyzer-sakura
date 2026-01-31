@@ -18,7 +18,12 @@ import {
   ReturnTypeToggle,
   TableDisplayToggle,
 } from '../components/search'
-import type { ViewMode, ReturnType, DisplayMode } from '../components/search'
+import type {
+  ViewMode,
+  ReturnType,
+  DisplayMode,
+  PerspectiveKey,
+} from '../components/search'
 import {
   SearchParams,
   SortField,
@@ -43,6 +48,17 @@ const SCORE_SORT_STORAGE_KEY = 'etf-score-sort-state'
 const TREND_SORT_STORAGE_KEY = 'etf-trend-sort-state'
 const CARD_SORT_STORAGE_KEY = 'etf-card-sort-state'
 const DISPLAY_MODE_STORAGE_KEY = 'etf-table-display-mode'
+const PERSPECTIVE_STORAGE_KEY = 'etf-perspective'
+
+// 切り口からソートフィールドへのマッピング（共通定義）
+const PERSPECTIVE_TO_SORT_FIELD: Record<PerspectiveKey, SortField> = {
+  balance: 'score_balance',
+  dividend: 'score_dividend',
+  'low-cost': 'score_low_cost',
+  stability: 'score_stability',
+  volume: 'score_volume',
+  growth: 'score_growth',
+}
 
 // ローカルストレージから表示期間を復元
 const getStoredPeriods = (): PerformancePeriod[] => {
@@ -159,6 +175,27 @@ const getStoredDisplayMode = (): DisplayMode => {
   return 'trend'
 }
 
+// ローカルストレージから切り口を復元
+const getStoredPerspective = (): PerspectiveKey => {
+  try {
+    const stored = localStorage.getItem(PERSPECTIVE_STORAGE_KEY)
+    const validPerspectives: PerspectiveKey[] = [
+      'balance',
+      'dividend',
+      'low-cost',
+      'stability',
+      'volume',
+      'growth',
+    ]
+    if (stored && validPerspectives.includes(stored as PerspectiveKey)) {
+      return stored as PerspectiveKey
+    }
+  } catch {
+    // エラー時はデフォルト値を返す
+  }
+  return 'balance'
+}
+
 // ソート状態をローカルストレージに保存するヘルパー関数
 const saveSortState = (
   viewMode: ViewMode,
@@ -167,10 +204,7 @@ const saveSortState = (
   order: SortOrder
 ): void => {
   if (viewMode === 'card') {
-    localStorage.setItem(
-      CARD_SORT_STORAGE_KEY,
-      JSON.stringify({ sort, order })
-    )
+    localStorage.setItem(CARD_SORT_STORAGE_KEY, JSON.stringify({ sort, order }))
   } else if (viewMode === 'table') {
     const storageKey =
       displayMode === 'score' ? SCORE_SORT_STORAGE_KEY : TREND_SORT_STORAGE_KEY
@@ -221,6 +255,8 @@ export function TopPage() {
     const saved = localStorage.getItem('scoringMode')
     return (saved === 'partial' ? 'partial' : 'full') as 'full' | 'partial'
   })
+  const [selectedPerspective, setSelectedPerspective] =
+    useState<PerspectiveKey>(getStoredPerspective)
 
   // おすすめタブの状態
   const [recommendTab, setRecommendTab] = useState(
@@ -250,6 +286,14 @@ export function TopPage() {
     // 表形式かつスコア表示の場合
     if (initialDisplayMode === 'score') {
       const storedSort = getStoredScoreSort()
+      const initialPerspective = getStoredPerspective()
+      // evaluation_score または score_*ソート時は選択中の切り口を反映
+      if (
+        storedSort.sort === 'evaluation_score' ||
+        storedSort.sort.startsWith('score_')
+      ) {
+        return PERSPECTIVE_TO_SORT_FIELD[initialPerspective]
+      }
       return storedSort.sort
     }
     // 表形式かつ傾向表示の場合
@@ -283,6 +327,7 @@ export function TopPage() {
   const isInitialMount = useRef(true)
   const isScoringModeInitialMount = useRef(true)
   const isReturnTypeInitialMount = useRef(true)
+  const isPerspectiveInitialMount = useRef(true)
   const prevDisplayModeRef = useRef<DisplayMode>(displayMode)
   const prevViewModeRef = useRef<ViewMode>(viewMode)
   const { items, total, isLoading, error, search } = useETFSearch()
@@ -331,6 +376,11 @@ export function TopPage() {
     localStorage.setItem(PERIODS_STORAGE_KEY, JSON.stringify(selectedPeriods))
   }, [selectedPeriods])
 
+  // 切り口をローカルストレージに保存
+  useEffect(() => {
+    localStorage.setItem(PERSPECTIVE_STORAGE_KEY, selectedPerspective)
+  }, [selectedPerspective])
+
   // 上昇率タイプをローカルストレージに保存
   useEffect(() => {
     localStorage.setItem(RETURN_TYPE_STORAGE_KEY, returnType)
@@ -349,7 +399,12 @@ export function TopPage() {
     }
 
     // 前回のviewModeのソート状態を保存（prevViewModeRef.currentは前のviewModeを指している）
-    saveSortState(prevViewModeRef.current, displayMode, currentSort, currentOrder)
+    saveSortState(
+      prevViewModeRef.current,
+      displayMode,
+      currentSort,
+      currentOrder
+    )
 
     // URLのsort/orderをクリア（localStorage復元を優先）
     setSearchParams(
@@ -508,6 +563,52 @@ export function TopPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scoringMode])
 
+  // selectedPerspective変更時にevaluation_scoreソート中なら対応する切り口でソート
+  useEffect(() => {
+    // 初回マウント時はスキップ
+    if (isPerspectiveInitialMount.current) {
+      isPerspectiveInitialMount.current = false
+      return
+    }
+
+    // evaluation_score または score_*でソート中なら対応するperspectiveソートに変更してAPI再取得
+    const isScoreSort =
+      currentSort === 'evaluation_score' || currentSort.startsWith('score_')
+
+    if (isScoreSort) {
+      const newSort = PERSPECTIVE_TO_SORT_FIELD[selectedPerspective]
+      setCurrentSort(newSort)
+
+      // ソート変更でsearch()を実行
+      const searchParams: SearchParams = {
+        ...currentFilters,
+        keyword: currentKeyword || undefined,
+        sort: newSort,
+        order: currentOrder,
+        return_type: returnType,
+        scoring_mode: scoringMode,
+        limit: PAGE_SIZE,
+        offset: (currentPage - 1) * PAGE_SIZE,
+      }
+
+      if (favoritesOnly) {
+        searchParams.favorite_codes = Array.from(favoriteCodes)
+      }
+
+      if (holdingsOnly) {
+        searchParams.holding_codes = Array.from(holdingCodes)
+      }
+
+      if (compareOnly) {
+        searchParams.favorite_codes = compareCodes
+      }
+
+      search(searchParams)
+    }
+    // selectedPerspective変更時のみ実行
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPerspective])
+
   // displayMode変更時にソート状態を保存・復元
   useEffect(() => {
     // 初回マウント時はスキップ
@@ -516,7 +617,12 @@ export function TopPage() {
     }
 
     // 前回のモードのソート状態を保存（prevDisplayModeRef.currentは前のdisplayModeを指している）
-    saveSortState(viewMode, prevDisplayModeRef.current, currentSort, currentOrder)
+    saveSortState(
+      viewMode,
+      prevDisplayModeRef.current,
+      currentSort,
+      currentOrder
+    )
 
     // URLのsort/orderをクリア（localStorage復元を優先）
     setSearchParams(
@@ -612,10 +718,38 @@ export function TopPage() {
     const filters = getInitialFilters()
     const keyword = searchParams.get('q') || undefined
     const initialViewMode = getInitialViewMode()
-    const defaultSort = initialViewMode === 'table' ? 'return_1y' : 'code'
-    const defaultOrder = initialViewMode === 'table' ? 'desc' : 'asc'
-    const sort = (searchParams.get('sort') as SortField) || defaultSort
-    const order = (searchParams.get('order') as SortOrder) || defaultOrder
+    const initialDisplayMode = getStoredDisplayMode()
+
+    // URLパラメータ優先、なければviewMode/displayModeに応じたデフォルト
+    let sort: SortField
+    let order: SortOrder
+
+    if (searchParams.get('sort')) {
+      sort = searchParams.get('sort') as SortField
+      order = (searchParams.get('order') as SortOrder) || 'desc'
+    } else if (initialViewMode === 'card') {
+      const storedSort = getStoredCardSort()
+      sort = storedSort.sort
+      order = storedSort.order
+    } else if (initialDisplayMode === 'score') {
+      const storedSort = getStoredScoreSort()
+      const initialPerspective = getStoredPerspective()
+      // evaluation_score または score_*ソート時は選択中の切り口を反映
+      if (
+        storedSort.sort === 'evaluation_score' ||
+        storedSort.sort.startsWith('score_')
+      ) {
+        sort = PERSPECTIVE_TO_SORT_FIELD[initialPerspective]
+      } else {
+        sort = storedSort.sort
+      }
+      order = storedSort.order
+    } else {
+      const storedSort = getStoredTrendSort()
+      sort = storedSort.sort
+      order = storedSort.order
+    }
+
     const page = Number(searchParams.get('page')) || 1
 
     // フィルタ条件があるか判定
@@ -960,26 +1094,66 @@ export function TopPage() {
                   onChange={setDisplayMode}
                 />
                 {displayMode === 'score' && (
-                  <div className={styles.scoringModeToggle}>
-                    <button
-                      className={`${styles.toggleButton} ${scoringMode === 'full' ? styles.active : ''}`}
-                      onClick={() => {
-                        setScoringMode('full')
-                        localStorage.setItem('scoringMode', 'full')
-                      }}
-                    >
-                      総合評価
-                    </button>
-                    <button
-                      className={`${styles.toggleButton} ${scoringMode === 'partial' ? styles.active : ''}`}
-                      onClick={() => {
-                        setScoringMode('partial')
-                        localStorage.setItem('scoringMode', 'partial')
-                      }}
-                    >
-                      軸別評価
-                    </button>
-                  </div>
+                  <>
+                    <div className={styles.scoringModeToggle}>
+                      <button
+                        className={`${styles.toggleButton} ${scoringMode === 'full' ? styles.active : ''}`}
+                        onClick={() => {
+                          setScoringMode('full')
+                          localStorage.setItem('scoringMode', 'full')
+                        }}
+                      >
+                        総合評価
+                      </button>
+                      <button
+                        className={`${styles.toggleButton} ${scoringMode === 'partial' ? styles.active : ''}`}
+                        onClick={() => {
+                          setScoringMode('partial')
+                          localStorage.setItem('scoringMode', 'partial')
+                        }}
+                      >
+                        軸別評価
+                      </button>
+                    </div>
+                    <div className={styles.scoringModeToggle}>
+                      <button
+                        className={`${styles.toggleButton} ${selectedPerspective === 'balance' ? styles.active : ''}`}
+                        onClick={() => setSelectedPerspective('balance')}
+                      >
+                        バランス
+                      </button>
+                      <button
+                        className={`${styles.toggleButton} ${selectedPerspective === 'dividend' ? styles.active : ''}`}
+                        onClick={() => setSelectedPerspective('dividend')}
+                      >
+                        配当収入
+                      </button>
+                      <button
+                        className={`${styles.toggleButton} ${selectedPerspective === 'low-cost' ? styles.active : ''}`}
+                        onClick={() => setSelectedPerspective('low-cost')}
+                      >
+                        低コスト
+                      </button>
+                      <button
+                        className={`${styles.toggleButton} ${selectedPerspective === 'stability' ? styles.active : ''}`}
+                        onClick={() => setSelectedPerspective('stability')}
+                      >
+                        安定性
+                      </button>
+                      <button
+                        className={`${styles.toggleButton} ${selectedPerspective === 'volume' ? styles.active : ''}`}
+                        onClick={() => setSelectedPerspective('volume')}
+                      >
+                        取引規模
+                      </button>
+                      <button
+                        className={`${styles.toggleButton} ${selectedPerspective === 'growth' ? styles.active : ''}`}
+                        onClick={() => setSelectedPerspective('growth')}
+                      >
+                        成長性
+                      </button>
+                    </div>
+                  </>
                 )}
                 {displayMode === 'trend' && (
                   <>
@@ -1019,6 +1193,7 @@ export function TopPage() {
             scores={scores}
             displayMode={displayMode}
             selectedPeriods={selectedPeriods}
+            selectedPerspective={selectedPerspective}
             returnType={returnType}
             onETFClick={setSelectedCode}
             isInCompare={isInList}

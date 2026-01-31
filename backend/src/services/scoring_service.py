@@ -403,3 +403,25 @@ class ScoringService:
                 self._return_1y.append(return_rates["1y"])
             if return_rates.get("3y") is not None:
                 self._return_3y.append(return_rates["3y"])
+
+    def calculate_axis_scores(self, etf: ETF) -> Dict[str, Optional[float]]:
+        """Calculate normalized axis scores (0-100) for an ETF.
+
+        Args:
+            etf: ETF object to score
+
+        Returns:
+            Dict of axis scores: dividend_power, cost_efficiency, scale_reliability, trading_quality, return_performance
+        """
+        axes = [
+            "dividend_power",
+            "cost_efficiency",
+            "scale_reliability",
+            "trading_quality",
+            "return_performance",
+        ]
+        scores = {}
+        for axis in axes:
+            raw_score = self._get_axis_score(etf, axis)
+            scores[axis] = round(raw_score * 100, 1) if raw_score is not None else None
+        return scores

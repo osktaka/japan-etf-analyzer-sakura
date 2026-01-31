@@ -35,6 +35,12 @@ export type SortField =
   | 'score_stability'
   | 'score_volume'
   | 'score_growth'
+  | 'evaluation_score'
+  | 'axis_dividend_power'
+  | 'axis_cost_efficiency'
+  | 'axis_scale_reliability'
+  | 'axis_trading_quality'
+  | 'axis_return_performance'
 export type SortOrder = 'asc' | 'desc'
 
 export interface SearchParams {

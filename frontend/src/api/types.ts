@@ -281,6 +281,8 @@ export interface ScoreData {
   stability: number
   volume: number
   growth: number
+  axis_scores: AxisScores | null
+  score: number | null
 }
 
 export type BatchScoreData = Record<string, ScoreData>
