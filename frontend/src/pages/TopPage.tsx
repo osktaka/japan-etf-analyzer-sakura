@@ -41,6 +41,7 @@ const RETURN_TYPE_STORAGE_KEY = 'etf-return-type'
 const VIEW_MODE_STORAGE_KEY = 'etf-view-mode'
 const SCORE_SORT_STORAGE_KEY = 'etf-score-sort-state'
 const TREND_SORT_STORAGE_KEY = 'etf-trend-sort-state'
+const CARD_SORT_STORAGE_KEY = 'etf-card-sort-state'
 const DISPLAY_MODE_STORAGE_KEY = 'etf-table-display-mode'
 
 // ローカルストレージから表示期間を復元
@@ -106,7 +107,7 @@ const getStoredScoreSort = (): { sort: SortField; order: SortOrder } => {
 }
 
 // ローカルストレージから株価傾向表示用のソート状態を復元
-const getStoredTrendSort = (): { sort: SortField; order: SortOrder } | null => {
+const getStoredTrendSort = (): { sort: SortField; order: SortOrder } => {
   try {
     const stored = localStorage.getItem(TREND_SORT_STORAGE_KEY)
     if (stored) {
@@ -120,9 +121,29 @@ const getStoredTrendSort = (): { sort: SortField; order: SortOrder } | null => {
       }
     }
   } catch {
-    // パースエラー時はnullを返す
+    // パースエラー時はデフォルト値を返す
   }
-  return null
+  return { sort: 'return_1y', order: 'desc' }
+}
+
+// ローカルストレージからカード形式用のソート状態を復元
+const getStoredCardSort = (): { sort: SortField; order: SortOrder } => {
+  try {
+    const stored = localStorage.getItem(CARD_SORT_STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      if (
+        parsed &&
+        typeof parsed.sort === 'string' &&
+        typeof parsed.order === 'string'
+      ) {
+        return parsed
+      }
+    }
+  } catch {
+    // パースエラー時はデフォルト値を返す
+  }
+  return { sort: 'return_1y', order: 'desc' }
 }
 
 // ローカルストレージから表示モードを復元
@@ -136,6 +157,25 @@ const getStoredDisplayMode = (): DisplayMode => {
     // エラー時はデフォルト値を返す
   }
   return 'trend'
+}
+
+// ソート状態をローカルストレージに保存するヘルパー関数
+const saveSortState = (
+  viewMode: ViewMode,
+  displayMode: DisplayMode,
+  sort: SortField,
+  order: SortOrder
+): void => {
+  if (viewMode === 'card') {
+    localStorage.setItem(
+      CARD_SORT_STORAGE_KEY,
+      JSON.stringify({ sort, order })
+    )
+  } else if (viewMode === 'table') {
+    const storageKey =
+      displayMode === 'score' ? SCORE_SORT_STORAGE_KEY : TREND_SORT_STORAGE_KEY
+    localStorage.setItem(storageKey, JSON.stringify({ sort, order }))
+  }
 }
 
 export function TopPage() {
@@ -194,46 +234,46 @@ export function TopPage() {
     useState<SearchParams>(getInitialFilters())
 
   // ソート状態（URL優先 → localStorage → デフォルト）
-  // 表形式かつスコア表示: バランススコア降順
-  // 表形式かつ傾向表示: 1年降順
-  // カード形式: 銘柄コード昇順
+  // 表形式かつスコア表示: score_balance desc
+  // 表形式かつ傾向表示: return_1y desc
+  // カード形式: return_1y desc
   const [currentSort, setCurrentSort] = useState<SortField>(() => {
     const urlSort = searchParams.get('sort') as SortField
     if (urlSort) return urlSort
     const initialViewMode = getInitialViewMode()
     const initialDisplayMode = getStoredDisplayMode()
-    // 表形式かつスコア表示の場合はスコア用のソート状態を使用
-    if (initialViewMode === 'table' && initialDisplayMode === 'score') {
+    // カード形式の場合
+    if (initialViewMode === 'card') {
+      const storedSort = getStoredCardSort()
+      return storedSort.sort
+    }
+    // 表形式かつスコア表示の場合
+    if (initialDisplayMode === 'score') {
       const storedSort = getStoredScoreSort()
-      return storedSort?.sort || 'score_balance'
+      return storedSort.sort
     }
-    // 表形式かつ傾向表示の場合は傾向用のソート状態を使用
-    if (initialViewMode === 'table' && initialDisplayMode === 'trend') {
-      const storedSort = getStoredTrendSort()
-      return storedSort?.sort || 'return_1y'
-    }
-    // カード形式の場合は傾向用のソート状態を使用
+    // 表形式かつ傾向表示の場合
     const storedSort = getStoredTrendSort()
-    return storedSort?.sort || 'code'
+    return storedSort.sort
   })
   const [currentOrder, setCurrentOrder] = useState<SortOrder>(() => {
     const urlOrder = searchParams.get('order') as SortOrder
     if (urlOrder) return urlOrder
     const initialViewMode = getInitialViewMode()
     const initialDisplayMode = getStoredDisplayMode()
-    // 表形式かつスコア表示の場合はスコア用のソート状態を使用
-    if (initialViewMode === 'table' && initialDisplayMode === 'score') {
+    // カード形式の場合
+    if (initialViewMode === 'card') {
+      const storedSort = getStoredCardSort()
+      return storedSort.order
+    }
+    // 表形式かつスコア表示の場合
+    if (initialDisplayMode === 'score') {
       const storedSort = getStoredScoreSort()
-      return storedSort?.order || 'desc'
+      return storedSort.order
     }
-    // 表形式かつ傾向表示の場合は傾向用のソート状態を使用
-    if (initialViewMode === 'table' && initialDisplayMode === 'trend') {
-      const storedSort = getStoredTrendSort()
-      return storedSort?.order || 'desc'
-    }
-    // カード形式の場合は傾向用のソート状態を使用
+    // 表形式かつ傾向表示の場合
     const storedSort = getStoredTrendSort()
-    return storedSort?.order || 'asc'
+    return storedSort.order
   })
   const [currentPage, setCurrentPage] = useState(
     Number(searchParams.get('page')) || 1
@@ -242,7 +282,9 @@ export function TopPage() {
   const etfListRef = useRef<HTMLElement>(null)
   const isInitialMount = useRef(true)
   const isScoringModeInitialMount = useRef(true)
+  const isReturnTypeInitialMount = useRef(true)
   const prevDisplayModeRef = useRef<DisplayMode>(displayMode)
+  const prevViewModeRef = useRef<ViewMode>(viewMode)
   const { items, total, isLoading, error, search } = useETFSearch()
   const {
     isInList,
@@ -299,17 +341,126 @@ export function TopPage() {
     localStorage.setItem(VIEW_MODE_STORAGE_KEY, viewMode)
   }, [viewMode])
 
-  // ソート状態をローカルストレージに保存（displayModeに応じて保存先を切り替え）
-  // 注: displayModeは依存配列から除外（displayMode切り替え時の保存は別のuseEffectで実施）
+  // viewMode変更時にソート状態を保存・復元
   useEffect(() => {
-    const storageKey =
-      displayMode === 'score' ? SCORE_SORT_STORAGE_KEY : TREND_SORT_STORAGE_KEY
-    localStorage.setItem(
-      storageKey,
-      JSON.stringify({ sort: currentSort, order: currentOrder })
+    // 初回マウント時はスキップ
+    if (isInitialMount.current) {
+      return
+    }
+
+    // 前回のviewModeのソート状態を保存（prevViewModeRef.currentは前のviewModeを指している）
+    saveSortState(prevViewModeRef.current, displayMode, currentSort, currentOrder)
+
+    // URLのsort/orderをクリア（localStorage復元を優先）
+    setSearchParams(
+      (prev) => {
+        const newParams = new URLSearchParams(prev)
+        newParams.delete('sort')
+        newParams.delete('order')
+        return newParams
+      },
+      { replace: true }
     )
+
+    // 前回のviewModeを新しい値で更新（次回の保存に備える）
+    prevViewModeRef.current = viewMode
+
+    // 新しいviewModeのソート状態を復元
+    let storedSort: { sort: SortField; order: SortOrder }
+    if (viewMode === 'card') {
+      storedSort = getStoredCardSort()
+    } else if (displayMode === 'score') {
+      storedSort = getStoredScoreSort()
+    } else {
+      storedSort = getStoredTrendSort()
+    }
+
+    const newSort = storedSort.sort
+    const newOrder = storedSort.order
+
+    setCurrentSort(newSort)
+    setCurrentOrder(newOrder)
+
+    // ソート状態が変わった場合は検索を実行
+    if (newSort !== currentSort || newOrder !== currentOrder) {
+      const searchParams: SearchParams = {
+        ...currentFilters,
+        keyword: currentKeyword || undefined,
+        sort: newSort,
+        order: newOrder,
+        return_type: returnType,
+        scoring_mode: scoringMode,
+        limit: PAGE_SIZE,
+        offset: (currentPage - 1) * PAGE_SIZE,
+      }
+
+      if (favoritesOnly) {
+        searchParams.favorite_codes = Array.from(favoriteCodes)
+      }
+
+      if (holdingsOnly) {
+        searchParams.holding_codes = Array.from(holdingCodes)
+      }
+
+      if (compareOnly) {
+        searchParams.favorite_codes = compareCodes
+      }
+
+      search(searchParams)
+    }
+    // viewMode変更時のみ実行（他の依存は意図的に除外）
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSort, currentOrder])
+  }, [viewMode])
+
+  // returnType変更時にパフォーマンスソート中なら一覧を再取得
+  useEffect(() => {
+    // 初回マウント時はスキップ
+    if (isReturnTypeInitialMount.current) {
+      isReturnTypeInitialMount.current = false
+      return
+    }
+
+    // パフォーマンスソートのフィールドか判定
+    const isPerformanceSort = [
+      'return_1m',
+      'return_3m',
+      'return_6m',
+      'return_1y',
+      'return_3y',
+      'return_5y',
+      'return_10y',
+      'return_20y',
+    ].includes(currentSort)
+
+    if (isPerformanceSort) {
+      const searchParams: SearchParams = {
+        ...currentFilters,
+        keyword: currentKeyword || undefined,
+        sort: currentSort,
+        order: currentOrder,
+        return_type: returnType,
+        scoring_mode: scoringMode,
+        limit: PAGE_SIZE,
+        offset: (currentPage - 1) * PAGE_SIZE,
+      }
+
+      if (favoritesOnly) {
+        searchParams.favorite_codes = Array.from(favoriteCodes)
+      }
+
+      if (holdingsOnly) {
+        searchParams.holding_codes = Array.from(holdingCodes)
+      }
+
+      if (compareOnly) {
+        searchParams.favorite_codes = compareCodes
+      }
+
+      search(searchParams)
+    }
+    // returnType変更時のみ実行
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [returnType])
 
   // 表示モードをローカルストレージに保存
   useEffect(() => {
@@ -357,43 +508,39 @@ export function TopPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scoringMode])
 
-  // displayMode変更時にソート状態を復元
+  // displayMode変更時にソート状態を保存・復元
   useEffect(() => {
     // 初回マウント時はスキップ
     if (isInitialMount.current) {
       return
     }
 
-    // 前回のモードのソート状態を保存
-    const prevStorageKey =
-      prevDisplayModeRef.current === 'score'
-        ? SCORE_SORT_STORAGE_KEY
-        : TREND_SORT_STORAGE_KEY
-    localStorage.setItem(
-      prevStorageKey,
-      JSON.stringify({ sort: currentSort, order: currentOrder })
+    // 前回のモードのソート状態を保存（prevDisplayModeRef.currentは前のdisplayModeを指している）
+    saveSortState(viewMode, prevDisplayModeRef.current, currentSort, currentOrder)
+
+    // URLのsort/orderをクリア（localStorage復元を優先）
+    setSearchParams(
+      (prev) => {
+        const newParams = new URLSearchParams(prev)
+        newParams.delete('sort')
+        newParams.delete('order')
+        return newParams
+      },
+      { replace: true }
     )
 
-    // URLパラメータでソートが指定されている場合は復元スキップ（保存はする）
-    if (searchParams.get('sort') || searchParams.get('order')) {
-      prevDisplayModeRef.current = displayMode
-      return
-    }
+    // 前回のdisplayModeを新しい値で更新（次回の保存に備える）
+    prevDisplayModeRef.current = displayMode
 
     // 新しいdisplayModeに応じたソート状態を復元
     const storedSort =
       displayMode === 'score' ? getStoredScoreSort() : getStoredTrendSort()
-    const defaultSort = displayMode === 'score' ? 'score_balance' : 'return_1y'
-    const defaultOrder = displayMode === 'score' ? 'desc' : 'desc'
 
-    const newSort = storedSort?.sort || defaultSort
-    const newOrder = storedSort?.order || defaultOrder
+    const newSort = storedSort.sort
+    const newOrder = storedSort.order
 
     setCurrentSort(newSort)
     setCurrentOrder(newOrder)
-
-    // 前回のdisplayModeを更新
-    prevDisplayModeRef.current = displayMode
 
     // ソート状態が変わった場合は検索を実行
     if (newSort !== currentSort || newOrder !== currentOrder) {
@@ -614,6 +761,9 @@ export function TopPage() {
     setCurrentSort(sort)
     setCurrentOrder(order)
     setCurrentPage(1)
+
+    // ソート状態をローカルストレージに保存
+    saveSortState(viewMode, displayMode, sort, order)
 
     updateURL({
       sort,
