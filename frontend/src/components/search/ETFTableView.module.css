@@ -143,11 +143,10 @@
 
 .favoriteCol {
   text-align: center;
+  vertical-align: middle;
   width: 40px;
   padding: var(--spacing-xs) !important;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  line-height: 0;
 }
 
 .compareCol {
