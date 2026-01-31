@@ -95,15 +95,16 @@ class ScoringService:
         # Invert if needed (for cost metrics where lower is better)
         return 1 - score if inverted else score
 
-    def calculate_score(self, etf: ETF, perspective: str) -> float:
+    def calculate_score(self, etf: ETF, perspective: str, mode: str = "partial") -> float:
         """Calculate composite score for an ETF based on perspective.
 
         Args:
             etf: ETF object to score
             perspective: Scoring perspective (dividend, low-cost, stability, volume, growth, balance)
+            mode: Scoring mode - "partial" (data-available axes only) or "full" (all 5 axes, missing=0)
 
         Returns:
-            Composite score (0-100), or 0 if insufficient data (< 3 axes)
+            Composite score (0-100), or 0 if insufficient data (< 3 axes in partial mode)
         """
         if perspective not in self.WEIGHTS:
             return 0.0
@@ -119,9 +120,12 @@ class ScoringService:
                 score += axis_score * weight
                 total_weight += weight
                 available_axes += 1
+            elif mode == "full":
+                # Full mode: missing axis counts as 0 points, but weight is included
+                total_weight += weight
 
-        # Require minimum number of axes for scoring
-        if available_axes < self.MIN_REQUIRED_AXES:
+        # Require minimum number of axes for scoring (partial mode only)
+        if mode == "partial" and available_axes < self.MIN_REQUIRED_AXES:
             return 0.0
 
         if total_weight == 0:

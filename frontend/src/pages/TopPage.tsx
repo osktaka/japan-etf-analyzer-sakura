@@ -177,6 +177,10 @@ export function TopPage() {
   const [returnType, setReturnType] = useState<ReturnType>(getStoredReturnType)
   const [displayMode, setDisplayMode] =
     useState<DisplayMode>(getStoredDisplayMode)
+  const [scoringMode, setScoringMode] = useState<'full' | 'partial'>(() => {
+    const saved = localStorage.getItem('scoringMode')
+    return (saved === 'partial' ? 'partial' : 'full') as 'full' | 'partial'
+  })
 
   // おすすめタブの状態
   const [recommendTab, setRecommendTab] = useState(
@@ -272,12 +276,12 @@ export function TopPage() {
           setPerformance(data)
         })
       } else if (displayMode === 'score') {
-        getBatchScores(codes).then((data) => {
+        getBatchScores(codes, scoringMode).then((data) => {
           setScores(data)
         })
       }
     }
-  }, [viewMode, items, displayMode])
+  }, [viewMode, items, displayMode, scoringMode])
 
   // 表示期間をローカルストレージに保存
   useEffect(() => {
@@ -794,6 +798,11 @@ export function TopPage() {
             displayMode={displayMode}
             selectedPeriods={selectedPeriods}
             returnType={returnType}
+            scoringMode={scoringMode}
+            onScoringModeChange={(mode) => {
+              setScoringMode(mode)
+              localStorage.setItem('scoringMode', mode)
+            }}
             onETFClick={setSelectedCode}
             isInCompare={isInList}
             onCompareToggle={handleCompareToggle}

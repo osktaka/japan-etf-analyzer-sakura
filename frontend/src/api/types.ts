@@ -38,6 +38,7 @@ export interface ETFDetail {
   listing_date: string | null
   tags: Tag[]
   score?: number | null
+  score_full?: number | null
   axis_scores?: AxisScores | null
 }
 

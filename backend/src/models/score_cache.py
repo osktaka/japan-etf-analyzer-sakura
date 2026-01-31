@@ -15,6 +15,7 @@ class ScoreCache(db.Model):
         db.String(20), nullable=False
     )  # 'dividend', 'low-cost', 'stability', 'volume', 'growth', 'balance'
     total_score = db.Column(db.Float, nullable=True)
+    total_score_full = db.Column(db.Float, nullable=True)
     dividend_power = db.Column(db.Float, nullable=True)
     cost_efficiency = db.Column(db.Float, nullable=True)
     scale_reliability = db.Column(db.Float, nullable=True)
@@ -32,6 +33,7 @@ class ScoreCache(db.Model):
             "etf_code": self.etf_code,
             "perspective": self.perspective,
             "total_score": self.total_score,
+            "total_score_full": self.total_score_full,
             "axis_scores": {
                 "dividend_power": self.dividend_power,
                 "cost_efficiency": self.cost_efficiency,

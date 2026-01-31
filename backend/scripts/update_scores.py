@@ -112,8 +112,11 @@ def update_scores(limit: int = None, dry_run: bool = False) -> dict:
                 try:
                     # Calculate scores for all perspectives
                     for perspective in PERSPECTIVES:
-                        # Calculate total score
-                        total_score = scoring_service.calculate_score(etf, perspective)
+                        # Calculate total score (partial mode - default)
+                        total_score = scoring_service.calculate_score(etf, perspective, mode="partial")
+
+                        # Calculate total score (full mode - all 5 axes)
+                        total_score_full = scoring_service.calculate_score(etf, perspective, mode="full")
 
                         # Get individual axis scores
                         axis_scores = {}
@@ -132,11 +135,12 @@ def update_scores(limit: int = None, dry_run: bool = False) -> dict:
                                 etf_code=etf.code,
                                 perspective=perspective,
                                 total_score=round(total_score, 1),
+                                total_score_full=round(total_score_full, 1),
                                 axis_scores=axis_scores,
                             )
                         else:
                             logger.info(
-                                f"  {perspective}: {total_score:.1f} (dry-run, not saved)"
+                                f"  {perspective}: partial={total_score:.1f}, full={total_score_full:.1f} (dry-run)"
                             )
 
                     updated_count += 1

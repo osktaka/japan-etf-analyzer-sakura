@@ -86,12 +86,14 @@ class RecommendService:
         self,
         perspective: str = "balance",
         limit: int = 5,
+        scoring_mode: str = "full",
     ) -> Dict:
         """Get recommended ETFs based on perspective.
 
         Args:
             perspective: Recommendation perspective ID
             limit: Maximum number of recommendations
+            scoring_mode: Scoring mode - "full" (default) or "partial"
 
         Returns:
             Dictionary with perspective info and recommended ETFs with scores
@@ -101,7 +103,7 @@ class RecommendService:
             self.PERSPECTIVES[5],  # Default to balance
         )
 
-        scored_items = self._get_scored_etfs_cached(perspective, limit)
+        scored_items = self._get_scored_etfs_cached(perspective, limit, scoring_mode)
 
         return {
             "perspective": perspective_info,
@@ -115,12 +117,13 @@ class RecommendService:
             ],
         }
 
-    def _get_scored_etfs_cached(self, perspective: str, limit: int) -> List[Dict]:
+    def _get_scored_etfs_cached(self, perspective: str, limit: int, scoring_mode: str = "full") -> List[Dict]:
         """Get ETFs ranked by cached composite score.
 
         Args:
             perspective: Scoring perspective
             limit: Maximum number of results
+            scoring_mode: Scoring mode - "full" (default) or "partial"
 
         Returns:
             List of dicts with ETF, score, and axis_scores, sorted by composite score
@@ -141,10 +144,13 @@ class RecommendService:
             if self._is_excluded(etf):
                 continue
 
+            # Select score based on mode
+            score = cache.total_score_full if scoring_mode == "full" else cache.total_score
+
             result.append(
                 {
                     "etf": etf,
-                    "score": cache.total_score,
+                    "score": score,
                     "axis_scores": {
                         "dividend_power": cache.dividend_power,
                         "cost_efficiency": cache.cost_efficiency,

@@ -277,6 +277,7 @@ def create_etf_bp():
 
         Query Parameters:
             codes: Comma-separated ETF codes (max 100)
+            scoring_mode: Scoring mode - "full" (default) or "partial"
 
         Returns:
             Scores for each requested ETF
@@ -292,6 +293,10 @@ def create_etf_bp():
         if len(codes) > 100:
             return error_response("Maximum 100 codes allowed", 400)
 
+        scoring_mode = request.args.get("scoring_mode", "full")
+        if scoring_mode not in ["full", "partial"]:
+            scoring_mode = "full"
+
         # Validate each code
         for code in codes:
             is_valid, error = validate_etf_code(code)
@@ -299,7 +304,7 @@ def create_etf_bp():
                 return error_response(f"Invalid code '{code}': {error}", 400)
 
         service = ETFService()
-        result = service.get_batch_scores(codes)
+        result = service.get_batch_scores(codes, scoring_mode)
 
         return api_response(data=result)
 

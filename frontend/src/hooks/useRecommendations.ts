@@ -8,7 +8,10 @@ interface UseRecommendationsState {
   error: Error | null
 }
 
-export function useRecommendations(perspective: string = 'popular') {
+export function useRecommendations(
+  perspective: string = 'popular',
+  scoringMode: 'full' | 'partial' = 'full'
+) {
   const [state, setState] = useState<UseRecommendationsState>({
     data: null,
     isLoading: true,
@@ -18,7 +21,7 @@ export function useRecommendations(perspective: string = 'popular') {
   const fetchData = useCallback(async () => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }))
     try {
-      const data = await getRecommendations(perspective)
+      const data = await getRecommendations(perspective, 5, scoringMode)
       setState({ data, isLoading: false, error: null })
     } catch (err) {
       setState({
@@ -27,7 +30,7 @@ export function useRecommendations(perspective: string = 'popular') {
         error: err instanceof Error ? err : new Error('Unknown error'),
       })
     }
-  }, [perspective])
+  }, [perspective, scoringMode])
 
   useEffect(() => {
     fetchData()

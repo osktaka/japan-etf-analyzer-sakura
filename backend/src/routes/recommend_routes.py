@@ -33,20 +33,29 @@ def create_recommend_bp():
             perspective: Perspective ID (dividend, low-cost, stability,
                          volume, growth, balance). Default: balance
             limit: Number of recommendations (default: 5, max: 20)
+            scoring_mode: Scoring mode - "full" (default, all 5 axes) or "partial" (data-available axes only)
 
         Returns:
             Recommended ETFs with perspective info
         """
         perspective = request.args.get("perspective", "balance")
         limit = request.args.get("limit", 5, type=int)
+        scoring_mode = request.args.get("scoring_mode", "full")
 
         if limit < 1:
             limit = 5
         if limit > 20:
             limit = 20
 
+        if scoring_mode not in ["full", "partial"]:
+            scoring_mode = "full"
+
         service = RecommendService()
-        result = service.get_recommendations(perspective=perspective, limit=limit)
+        result = service.get_recommendations(
+            perspective=perspective,
+            limit=limit,
+            scoring_mode=scoring_mode
+        )
 
         return api_response(data=result)
 

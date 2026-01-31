@@ -127,6 +127,7 @@ class ETFService:
 
         if balance_cache:
             result['score'] = balance_cache.total_score
+            result['score_full'] = balance_cache.total_score_full
             result['axis_scores'] = {
                 'dividend_power': balance_cache.dividend_power,
                 'cost_efficiency': balance_cache.cost_efficiency,
@@ -136,6 +137,7 @@ class ETFService:
             }
         else:
             result['score'] = None
+            result['score_full'] = None
             result['axis_scores'] = None
 
         return result
@@ -150,11 +152,12 @@ class ETFService:
             "offset": offset,
         }
 
-    def get_batch_scores(self, codes: List[str]) -> Dict[str, Dict[str, float]]:
+    def get_batch_scores(self, codes: List[str], scoring_mode: str = 'full') -> Dict[str, Dict[str, float]]:
         """Get all 6 perspective scores for multiple ETFs.
 
         Args:
             codes: List of ETF codes
+            scoring_mode: Scoring mode - "full" (default) or "partial"
 
         Returns:
             Dict mapping ETF code to dict of perspective scores
@@ -167,11 +170,17 @@ class ETFService:
 
         for code in codes:
             if code in cached_data and cached_data[code]:
-                # Convert cached data to score dict
-                result[code] = {
-                    perspective: cache.total_score
-                    for perspective, cache in cached_data[code].items()
-                }
+                # Convert cached data to score dict based on scoring_mode
+                if scoring_mode == 'partial':
+                    result[code] = {
+                        perspective: cache.total_score
+                        for perspective, cache in cached_data[code].items()
+                    }
+                else:  # full mode (default)
+                    result[code] = {
+                        perspective: cache.total_score_full if cache.total_score_full is not None else cache.total_score
+                        for perspective, cache in cached_data[code].items()
+                    }
             else:
                 missing_codes.append(code)
 

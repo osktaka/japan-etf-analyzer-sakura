@@ -10,10 +10,11 @@ export async function getPerspectives(): Promise<Perspective[]> {
 
 export async function getRecommendations(
   perspective: string = 'popular',
-  limit: number = 5
+  limit: number = 5,
+  scoringMode: 'full' | 'partial' = 'full'
 ): Promise<Recommendation> {
   const response = await apiClient.get<ApiResponse<Recommendation>>(
-    `/recommendations?perspective=${perspective}&limit=${limit}`
+    `/recommendations?perspective=${perspective}&limit=${limit}&scoring_mode=${scoringMode}`
   )
   return response.data.data
 }

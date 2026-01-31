@@ -69,14 +69,16 @@ class ScoreCacheRepository(BaseRepository):
         perspective: str,
         total_score: float,
         axis_scores: Dict[str, Optional[float]],
+        total_score_full: Optional[float] = None,
     ) -> ScoreCache:
         """Insert or update score cache.
 
         Args:
             etf_code: ETF code
             perspective: Scoring perspective
-            total_score: Total composite score
+            total_score: Total composite score (partial mode)
             axis_scores: Dictionary of axis scores (dividend_power, cost_efficiency, etc.)
+            total_score_full: Total composite score (full mode)
 
         Returns:
             ScoreCache object
@@ -85,6 +87,7 @@ class ScoreCacheRepository(BaseRepository):
 
         if existing:
             existing.total_score = total_score
+            existing.total_score_full = total_score_full
             existing.dividend_power = axis_scores.get("dividend_power")
             existing.cost_efficiency = axis_scores.get("cost_efficiency")
             existing.scale_reliability = axis_scores.get("scale_reliability")
@@ -96,6 +99,7 @@ class ScoreCacheRepository(BaseRepository):
                 etf_code=etf_code,
                 perspective=perspective,
                 total_score=total_score,
+                total_score_full=total_score_full,
                 dividend_power=axis_scores.get("dividend_power"),
                 cost_efficiency=axis_scores.get("cost_efficiency"),
                 scale_reliability=axis_scores.get("scale_reliability"),

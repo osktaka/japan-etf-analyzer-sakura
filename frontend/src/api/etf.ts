@@ -178,11 +178,14 @@ export async function getETFsChartBatch(
  * Get all 6 perspective scores for multiple ETFs (batch).
  * Reduces N API calls to 1 call for score display.
  */
-export async function getBatchScores(codes: string[]): Promise<BatchScoreData> {
+export async function getBatchScores(
+  codes: string[],
+  scoringMode: 'full' | 'partial' = 'full'
+): Promise<BatchScoreData> {
   if (codes.length === 0) return {}
   try {
     const response = await apiClient.get<ApiResponse<BatchScoreData>>(
-      `/etfs/scores/batch?codes=${codes.join(',')}`
+      `/etfs/scores/batch?codes=${codes.join(',')}&scoring_mode=${scoringMode}`
     )
     return response.data.data
   } catch {
