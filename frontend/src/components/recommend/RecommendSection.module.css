@@ -11,6 +11,7 @@
 
 .description {
   color: var(--color-text-secondary);
+  margin-top: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
 }
 
@@ -40,54 +41,4 @@
 .showAllLink:hover {
   opacity: 0.8;
   text-decoration: underline;
-}
-
-.tabsAndToggle {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-lg);
-  margin-bottom: var(--spacing-lg);
-  flex-wrap: wrap;
-}
-
-@media (max-width: 768px) {
-  .tabsAndToggle {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-
-.scoringModeToggle {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-}
-
-.toggleLabel {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  font-weight: 500;
-}
-
-.toggleButton {
-  padding: var(--spacing-xs) var(--spacing-md);
-  border: 1px solid var(--color-border-dark);
-  background: var(--color-bg);
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  border-radius: 4px;
-}
-
-.toggleButton:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
-.toggleButton.active {
-  background: var(--color-primary);
-  color: white;
-  border-color: var(--color-primary);
 }

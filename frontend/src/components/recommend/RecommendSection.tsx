@@ -31,10 +31,6 @@ export function RecommendSection({
   const [perspectives, setPerspectives] = useState<Perspective[]>([])
   // 制御/非制御ハイブリッド: propsがあれば使用、なければ内部state（既存互換）
   const [internalSelected, setInternalSelected] = useState('balance')
-  const [scoringMode, setScoringMode] = useState<'full' | 'partial'>(() => {
-    const saved = localStorage.getItem('scoringMode')
-    return (saved === 'partial' ? 'partial' : 'full') as 'full' | 'partial'
-  })
 
   const selected = selectedPerspective ?? internalSelected
   const handleSelect = (p: string) => {
@@ -45,12 +41,7 @@ export function RecommendSection({
     }
   }
 
-  const handleScoringModeChange = (mode: 'full' | 'partial') => {
-    setScoringMode(mode)
-    localStorage.setItem('scoringMode', mode)
-  }
-
-  const { data, isLoading, error } = useRecommendations(selected, scoringMode)
+  const { data, isLoading, error } = useRecommendations(selected, 'full')
 
   useEffect(() => {
     getPerspectives().then(setPerspectives)
@@ -60,27 +51,11 @@ export function RecommendSection({
     <section className={styles.section}>
       <h2 className={styles.title}>おすすめ銘柄</h2>
       {perspectives.length > 0 && (
-        <div className={styles.tabsAndToggle}>
-          <PerspectiveTabs
-            perspectives={perspectives}
-            selected={selected}
-            onSelect={handleSelect}
-          />
-          <div className={styles.scoringModeToggle}>
-            <button
-              className={`${styles.toggleButton} ${scoringMode === 'full' ? styles.active : ''}`}
-              onClick={() => handleScoringModeChange('full')}
-            >
-              総合評価
-            </button>
-            <button
-              className={`${styles.toggleButton} ${scoringMode === 'partial' ? styles.active : ''}`}
-              onClick={() => handleScoringModeChange('partial')}
-            >
-              軸別評価
-            </button>
-          </div>
-        </div>
+        <PerspectiveTabs
+          perspectives={perspectives}
+          selected={selected}
+          onSelect={handleSelect}
+        />
       )}
       {data && (
         <p className={styles.description}>{data.perspective.description}</p>
