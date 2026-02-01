@@ -45,6 +45,7 @@ export interface SearchOverrides {
   order?: SortOrder
   page?: number
   keyword?: string
+  perspective?: string
 }
 
 export interface UseTopPageDisplayModeOptions {
@@ -280,7 +281,7 @@ export function useTopPageDisplayMode(
       if (viewMode === 'card' || displayMode === 'score') {
         const newSort = PERSPECTIVE_TO_SORT_FIELD[selectedPerspective]
         onSortUpdate(newSort, 'desc')
-        onSearchRequest({ sort: newSort, order: 'desc' })
+        onSearchRequest({ sort: newSort, order: 'desc', perspective: selectedPerspective })
       }
     }
     // selectedPerspective変更時のみ実行

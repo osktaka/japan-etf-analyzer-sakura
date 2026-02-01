@@ -69,6 +69,7 @@ interface SearchOverrides {
   page?: number
   keyword?: string
   filters?: SearchParams
+  perspective?: string
 }
 
 interface URLParams {
@@ -221,7 +222,7 @@ export function useTopPageSearch(
         currentPage: overrides?.page ?? currentPage,
         returnType,
         scoringMode,
-        perspective: selectedPerspective,
+        perspective: overrides?.perspective ?? selectedPerspective,
         pageSize: PAGE_SIZE,
         favoritesOnly,
         holdingsOnly,
