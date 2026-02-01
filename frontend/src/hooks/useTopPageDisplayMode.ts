@@ -122,6 +122,9 @@ export function useTopPageDisplayMode(
   const isScoringModeInitialMount = useRef(true)
   const isReturnTypeInitialMount = useRef(true)
   const isPerspectiveInitialMount = useRef(true)
+  const isPeriodsInitialMount = useRef(true)
+  const isDisplayModeInitialMount = useRef(true)
+  const isViewModeInitialMount = useRef(true)
   const prevDisplayModeRef = useRef<DisplayMode>(displayMode)
   const prevViewModeRef = useRef<ViewMode>(viewMode)
 
@@ -132,6 +135,19 @@ export function useTopPageDisplayMode(
       JSON.stringify(selectedPeriods)
     )
   }, [selectedPeriods, storage.keys.PERIODS_STORAGE_KEY])
+
+  // selectedPeriods変更時に一覧を再取得
+  useEffect(() => {
+    // 初回マウント時はスキップ
+    if (isPeriodsInitialMount.current) {
+      isPeriodsInitialMount.current = false
+      return
+    }
+
+    onSearchRequest()
+    // selectedPeriods変更時のみ実行
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPeriods])
 
   // 切り口をローカルストレージに保存
   useEffect(() => {
@@ -154,7 +170,8 @@ export function useTopPageDisplayMode(
   // viewMode変更時にソート状態を保存・復元
   useEffect(() => {
     // 初回マウント時はスキップ
-    if (isInitialMount.current) {
+    if (isViewModeInitialMount.current) {
+      isViewModeInitialMount.current = false
       return
     }
 
@@ -186,26 +203,29 @@ export function useTopPageDisplayMode(
       setDisplayMode('score')
     }
 
-    // 新しいviewModeのソート状態を復元
-    let storedSort: { sort: SortField; order: SortOrder }
-    if (viewMode === 'card') {
-      storedSort = storage.getStoredCardSort()
-    } else if (displayMode === 'score') {
-      storedSort = storage.getStoredScoreSort()
-    } else {
-      storedSort = storage.getStoredTrendSort()
-    }
+    // 新しいソート状態を決定
+    let newSort: SortField
+    let newOrder: SortOrder
 
-    const newSort = storedSort.sort
-    const newOrder = storedSort.order
+    if (viewMode === 'card') {
+      // カード表示時は現在の切り口に対応するスコアで降順ソート
+      newSort = PERSPECTIVE_TO_SORT_FIELD[selectedPerspective]
+      newOrder = 'desc'
+    } else {
+      // テーブル表示時はlocalStorageから復元
+      const storedSort =
+        displayMode === 'score'
+          ? storage.getStoredScoreSort()
+          : storage.getStoredTrendSort()
+      newSort = storedSort.sort
+      newOrder = storedSort.order
+    }
 
     // ソート更新をコールバックで通知
     onSortUpdate(newSort, newOrder)
 
-    // ソート状態が変わった場合は検索を実行
-    if (newSort !== prevSort || newOrder !== currentOrder) {
-      onSearchRequest({ sort: newSort, order: newOrder })
-    }
+    // 検索を実行
+    onSearchRequest({ sort: newSort, order: newOrder })
     // viewMode変更時のみ実行（他の依存は意図的に除外）
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode])
@@ -243,7 +263,7 @@ export function useTopPageDisplayMode(
     localStorage.setItem(storage.keys.DISPLAY_MODE_STORAGE_KEY, displayMode)
   }, [displayMode, storage.keys.DISPLAY_MODE_STORAGE_KEY])
 
-  // scoringMode変更時にスコアソート中なら一覧を再取得
+  // scoringMode変更時に一覧を再取得
   useEffect(() => {
     // 初回マウント時はスキップ
     if (isScoringModeInitialMount.current) {
@@ -251,13 +271,7 @@ export function useTopPageDisplayMode(
       return
     }
 
-    // スコアソートのフィールドか判定
-    const sortField = getCurrentSort()
-    const isScoreSort = sortField.startsWith('score_')
-
-    if (isScoreSort) {
-      onSearchRequest()
-    }
+    onSearchRequest()
     // scoringMode変更時のみ実行
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scoringMode])
@@ -280,27 +294,11 @@ export function useTopPageDisplayMode(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPerspective])
 
-  // viewMode変更時にカード表示に切り替えたら現在の切り口でソート
-  useEffect(() => {
-    // 初回マウント時はスキップ
-    if (isInitialMount.current) {
-      return
-    }
-
-    // カード表示に切り替えたら、現在の切り口に対応するスコアで降順ソート
-    if (viewMode === 'card') {
-      const newSort = PERSPECTIVE_TO_SORT_FIELD[selectedPerspective]
-      onSortUpdate(newSort, 'desc')
-      onSearchRequest({ sort: newSort, order: 'desc' })
-    }
-    // viewMode変更時のみ実行
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewMode])
-
   // displayMode変更時にソート状態を保存・復元
   useEffect(() => {
     // 初回マウント時はスキップ
-    if (isInitialMount.current) {
+    if (isDisplayModeInitialMount.current) {
+      isDisplayModeInitialMount.current = false
       return
     }
 
@@ -339,10 +337,8 @@ export function useTopPageDisplayMode(
     // ソート更新をコールバックで通知
     onSortUpdate(newSort, newOrder)
 
-    // ソート状態が変わった場合は検索を実行
-    if (newSort !== prevSort || newOrder !== currentOrder) {
-      onSearchRequest({ sort: newSort, order: newOrder })
-    }
+    // 検索を実行
+    onSearchRequest({ sort: newSort, order: newOrder })
     // displayMode変更時のみ実行（他の依存は意図的に除外）
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayMode])
