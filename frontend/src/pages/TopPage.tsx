@@ -275,6 +275,11 @@ export function TopPage() {
     // 前回のviewModeを新しい値で更新（次回の保存に備える）
     prevViewModeRef.current = viewMode
 
+    // カード形式に切り替えた時は displayMode を 'score' にリセット
+    if (viewMode === 'card') {
+      setDisplayMode('score')
+    }
+
     // 新しいviewModeのソート状態を復元
     let storedSort: { sort: SortField; order: SortOrder }
     if (viewMode === 'card') {
@@ -890,25 +895,34 @@ export function TopPage() {
           </h2>
           <div className={styles.sectionControls}>
             <ViewModeToggle mode={viewMode} onChange={handleViewModeChange} />
+            <TableDisplayToggle
+              displayMode={displayMode}
+              onChange={viewMode === 'card' ? () => {} : setDisplayMode}
+              disabled={viewMode === 'card'}
+            />
             {viewMode === 'card' ? (
               <>
-                <SortSelector
-                  sort={currentSort}
-                  order={currentOrder}
-                  onSortChange={handleSortChange}
+                <ScoringModeToggle
+                  scoringMode={scoringMode}
+                  onChange={(mode) => {
+                    setScoringMode(mode)
+                    localStorage.setItem('scoringMode', mode)
+                  }}
+                  className={styles.scoringModeToggle}
                 />
                 <PerspectiveSelector
                   selectedPerspective={selectedPerspective}
                   onChange={setSelectedPerspective}
                   className={styles.scoringModeToggle}
                 />
+                <SortSelector
+                  sort={currentSort}
+                  order={currentOrder}
+                  onSortChange={handleSortChange}
+                />
               </>
             ) : (
               <>
-                <TableDisplayToggle
-                  displayMode={displayMode}
-                  onChange={setDisplayMode}
-                />
                 {displayMode === 'score' && (
                   <>
                     <ScoringModeToggle

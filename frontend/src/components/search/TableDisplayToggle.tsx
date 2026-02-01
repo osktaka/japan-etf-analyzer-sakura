@@ -6,11 +6,13 @@ export type DisplayMode = 'score' | 'trend'
 interface TableDisplayToggleProps {
   displayMode: DisplayMode
   onChange: (mode: DisplayMode) => void
+  disabled?: boolean
 }
 
 export function TableDisplayToggle({
   displayMode,
   onChange,
+  disabled = false,
 }: TableDisplayToggleProps) {
   return (
     <div className={styles.viewModeToggle}>
@@ -25,6 +27,7 @@ export function TableDisplayToggle({
         className={`${styles.periodButton} ${displayMode === 'trend' ? styles.periodButtonActive : ''}`}
         onClick={() => onChange('trend')}
         type="button"
+        disabled={disabled}
       >
         株価傾向
       </button>
