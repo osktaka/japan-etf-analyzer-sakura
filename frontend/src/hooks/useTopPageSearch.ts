@@ -132,7 +132,16 @@ export function useTopPageSearch(
 
     // カード形式の場合
     if (initialViewMode === 'card') {
-      return storage.getStoredCardSort()
+      const storedSort = storage.getStoredCardSort()
+      const initialPerspective = storage.getStoredPerspective()
+      // score_*ソート時は選択中の切り口を反映
+      if (storedSort.sort.startsWith('score_')) {
+        return {
+          sort: PERSPECTIVE_TO_SORT_FIELD[initialPerspective],
+          order: storedSort.order,
+        }
+      }
+      return storedSort
     }
     // 表形式かつスコア表示の場合
     if (initialDisplayMode === 'score') {
