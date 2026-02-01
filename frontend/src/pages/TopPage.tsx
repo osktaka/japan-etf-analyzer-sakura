@@ -243,15 +243,12 @@ export function TopPage() {
             selectedPerspective={selectedPerspective}
             selectedPeriods={selectedPeriods}
             returnType={returnType}
-            currentSort={currentSort}
-            currentOrder={currentOrder}
             onViewModeChange={handleViewModeChange}
             onDisplayModeChange={setDisplayMode}
             onScoringModeChange={handleScoringModeChange}
             onPerspectiveChange={setSelectedPerspective}
             onPeriodsChange={setSelectedPeriods}
             onReturnTypeChange={setReturnType}
-            onSortChange={handleSortChange}
           />
         </div>
         <div className={styles.resultCount}>

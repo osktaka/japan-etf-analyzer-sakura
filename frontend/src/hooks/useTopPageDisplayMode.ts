@@ -262,7 +262,7 @@ export function useTopPageDisplayMode(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scoringMode])
 
-  // selectedPerspective変更時にevaluation_scoreソート中なら対応する切り口でソート
+  // selectedPerspective変更時に対応する切り口でソート（カード表示時は常に連動）
   useEffect(() => {
     // 初回マウント時はスキップ
     if (isPerspectiveInitialMount.current) {
@@ -270,19 +270,32 @@ export function useTopPageDisplayMode(
       return
     }
 
-    // evaluation_score または score_*でソート中なら対応するperspectiveソートに変更してAPI再取得
-    const sortField = getCurrentSort()
-    const isScoreSort =
-      sortField === 'evaluation_score' || sortField.startsWith('score_')
-
-    if (isScoreSort) {
+    // カード表示時は常に対応するperspectiveソートに変更してAPI再取得
+    if (viewMode === 'card') {
       const newSort = PERSPECTIVE_TO_SORT_FIELD[selectedPerspective]
-      onSortUpdate(newSort, currentOrder)
-      onSearchRequest({ sort: newSort, order: currentOrder })
+      onSortUpdate(newSort, 'desc')
+      onSearchRequest({ sort: newSort, order: 'desc' })
     }
     // selectedPerspective変更時のみ実行
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPerspective])
+
+  // viewMode変更時にカード表示に切り替えたら現在の切り口でソート
+  useEffect(() => {
+    // 初回マウント時はスキップ
+    if (isInitialMount.current) {
+      return
+    }
+
+    // カード表示に切り替えたら、現在の切り口に対応するスコアで降順ソート
+    if (viewMode === 'card') {
+      const newSort = PERSPECTIVE_TO_SORT_FIELD[selectedPerspective]
+      onSortUpdate(newSort, 'desc')
+      onSearchRequest({ sort: newSort, order: 'desc' })
+    }
+    // viewMode変更時のみ実行
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode])
 
   // displayMode変更時にソート状態を保存・復元
   useEffect(() => {

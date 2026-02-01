@@ -1,11 +1,9 @@
 /** Section controls component for TopPage */
-import { SortField, SortOrder } from '../../api'
 import { PerformancePeriod } from '../../api/types'
 import { ViewModeToggle, ViewMode } from './ViewModeToggle'
 import { TableDisplayToggle, DisplayMode } from './TableDisplayToggle'
 import { ScoringModeToggle, ScoringMode } from './ScoringModeToggle'
 import { PerspectiveSelector } from './PerspectiveSelector'
-import { SortSelector } from './SortSelector'
 import { ReturnTypeToggle, ReturnType } from './ReturnTypeToggle'
 import { PeriodSelector } from './PeriodSelector'
 import type { PerspectiveKey } from './ETFTableView'
@@ -18,15 +16,12 @@ interface SectionControlsProps {
   selectedPerspective: PerspectiveKey
   selectedPeriods: PerformancePeriod[]
   returnType: ReturnType
-  currentSort: SortField
-  currentOrder: SortOrder
   onViewModeChange: (mode: ViewMode) => void
   onDisplayModeChange: (mode: DisplayMode) => void
   onScoringModeChange: (mode: ScoringMode) => void
   onPerspectiveChange: (perspective: PerspectiveKey) => void
   onPeriodsChange: (periods: PerformancePeriod[]) => void
   onReturnTypeChange: (returnType: ReturnType) => void
-  onSortChange: (sort: SortField, order: SortOrder) => void
 }
 
 export function SectionControls({
@@ -36,15 +31,12 @@ export function SectionControls({
   selectedPerspective,
   selectedPeriods,
   returnType,
-  currentSort,
-  currentOrder,
   onViewModeChange,
   onDisplayModeChange,
   onScoringModeChange,
   onPerspectiveChange,
   onPeriodsChange,
   onReturnTypeChange,
-  onSortChange,
 }: SectionControlsProps) {
   return (
     <div className={styles.sectionControls}>
@@ -65,11 +57,6 @@ export function SectionControls({
             selectedPerspective={selectedPerspective}
             onChange={onPerspectiveChange}
             className={styles.scoringModeToggle}
-          />
-          <SortSelector
-            sort={currentSort}
-            order={currentOrder}
-            onSortChange={onSortChange}
           />
         </>
       ) : (
