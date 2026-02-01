@@ -10,3 +10,20 @@ export { useTrades } from './useTrades'
 export { usePortfolio } from './usePortfolio'
 export { useMultiPeriodChartData } from './useMultiPeriodChartData'
 export { useTopPageStorage } from './useTopPageStorage'
+export { useTopPagePerformanceData } from './useTopPagePerformanceData'
+export {
+  useTopPageDisplayMode,
+  PERSPECTIVE_TO_SORT_FIELD,
+} from './useTopPageDisplayMode'
+export type {
+  DisplayModeState,
+  DisplayModeActions,
+  UseTopPageDisplayModeOptions,
+  UseTopPageDisplayModeResult,
+  SearchOverrides,
+} from './useTopPageDisplayMode'
+export { useTopPageSearch, PAGE_SIZE } from './useTopPageSearch'
+export type {
+  UseTopPageSearchOptions,
+  UseTopPageSearchResult,
+} from './useTopPageSearch'
