@@ -19,7 +19,6 @@ export interface UseTopPageSearchOptions {
   getInitialViewMode: () => 'card' | 'table'
   viewMode: 'card' | 'table'
   displayMode: 'score' | 'trend'
-  isInitialMount: React.MutableRefObject<boolean>
 }
 
 export interface UseTopPageSearchResult {
@@ -98,7 +97,6 @@ export function useTopPageSearch(
     getInitialViewMode,
     viewMode,
     displayMode,
-    isInitialMount,
   } = options
 
   const [searchParams, setSearchParams] = useSearchParams()
@@ -185,6 +183,9 @@ export function useTopPageSearch(
 
   const etfListRef = useRef<HTMLElement>(null)
   const searchRequestRef = useRef<() => void>(() => {})
+
+  // 独立した初回マウント判定フラグ（favoritesOnly/holdingsOnly/compareOnly用）
+  const isFilterInitialMount = useRef(true)
 
   const { items, total, isLoading, error, search } = useETFSearch()
 
@@ -332,8 +333,8 @@ export function useTopPageSearch(
   // お気に入り/保有中/比較フィルター状態が変わったときに検索を実行
   useEffect(() => {
     // 初回マウント時はスキップ（初回検索は別のuseEffectで実行済み）
-    if (isInitialMount.current) {
-      isInitialMount.current = false
+    if (isFilterInitialMount.current) {
+      isFilterInitialMount.current = false
       return
     }
 

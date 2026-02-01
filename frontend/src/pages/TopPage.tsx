@@ -81,7 +81,6 @@ export function TopPage() {
     handleViewModeChange,
     handleScoringModeChange,
     getInitialViewMode,
-    isInitialMount,
   } = displayModeHook
 
   // 検索関連のフック
@@ -95,7 +94,6 @@ export function TopPage() {
     getInitialViewMode,
     viewMode,
     displayMode,
-    isInitialMount,
   })
 
   const {

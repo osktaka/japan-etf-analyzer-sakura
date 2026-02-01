@@ -60,8 +60,6 @@ export interface UseTopPageDisplayModeOptions {
 export interface UseTopPageDisplayModeResult extends DisplayModeState, DisplayModeActions {
   /** 初期viewModeを取得（ソート初期化用） */
   getInitialViewMode: () => ViewMode
-  /** viewMode変更時のソート保存・復元用ref */
-  isInitialMount: React.MutableRefObject<boolean>
   /** displayModeの前回値ref */
   prevDisplayModeRef: React.MutableRefObject<DisplayMode>
   /** viewModeの前回値ref */
@@ -118,7 +116,6 @@ export function useTopPageDisplayMode(
     useState<PerspectiveKey>(storage.getStoredPerspective())
 
   // refs for mode change detection
-  const isInitialMount = useRef(true)
   const isScoringModeInitialMount = useRef(true)
   const isReturnTypeInitialMount = useRef(true)
   const isPerspectiveInitialMount = useRef(true)
@@ -141,10 +138,14 @@ export function useTopPageDisplayMode(
     // 初回マウント時はスキップ
     if (isPeriodsInitialMount.current) {
       isPeriodsInitialMount.current = false
-      return
+    } else {
+      onSearchRequest()
     }
 
-    onSearchRequest()
+    // StrictMode対応：アンマウント時にフラグをリセット
+    return () => {
+      isPeriodsInitialMount.current = true
+    }
     // selectedPeriods変更時のみ実行
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPeriods])
@@ -172,60 +173,65 @@ export function useTopPageDisplayMode(
     // 初回マウント時はスキップ
     if (isViewModeInitialMount.current) {
       isViewModeInitialMount.current = false
-      return
-    }
-
-    // 前回のviewModeのソート状態を保存（prevViewModeRef.currentは前のviewModeを指している）
-    const prevSort = getCurrentSort()
-    storage.saveSortState(
-      prevViewModeRef.current,
-      displayMode,
-      prevSort,
-      currentOrder
-    )
-
-    // URLのsort/orderをクリア（localStorage復元を優先）
-    setSearchParams(
-      (prev) => {
-        const newParams = new URLSearchParams(prev)
-        newParams.delete('sort')
-        newParams.delete('order')
-        return newParams
-      },
-      { replace: true }
-    )
-
-    // 前回のviewModeを新しい値で更新（次回の保存に備える）
-    prevViewModeRef.current = viewMode
-
-    // カード形式に切り替えた時は displayMode を 'score' にリセット
-    if (viewMode === 'card') {
-      setDisplayMode('score')
-    }
-
-    // 新しいソート状態を決定
-    let newSort: SortField
-    let newOrder: SortOrder
-
-    if (viewMode === 'card') {
-      // カード表示時は現在の切り口に対応するスコアで降順ソート
-      newSort = PERSPECTIVE_TO_SORT_FIELD[selectedPerspective]
-      newOrder = 'desc'
     } else {
-      // テーブル表示時はlocalStorageから復元
-      const storedSort =
-        displayMode === 'score'
-          ? storage.getStoredScoreSort()
-          : storage.getStoredTrendSort()
-      newSort = storedSort.sort
-      newOrder = storedSort.order
+      // 前回のviewModeのソート状態を保存（prevViewModeRef.currentは前のviewModeを指している）
+      const prevSort = getCurrentSort()
+      storage.saveSortState(
+        prevViewModeRef.current,
+        displayMode,
+        prevSort,
+        currentOrder
+      )
+
+      // URLのsort/orderをクリア（localStorage復元を優先）
+      setSearchParams(
+        (prev) => {
+          const newParams = new URLSearchParams(prev)
+          newParams.delete('sort')
+          newParams.delete('order')
+          return newParams
+        },
+        { replace: true }
+      )
+
+      // 前回のviewModeを新しい値で更新（次回の保存に備える）
+      prevViewModeRef.current = viewMode
+
+      // カード形式に切り替えた時は displayMode を 'score' にリセット
+      // （既に'score'の場合は状態変更を避けてuseEffect連鎖を防止）
+      if (viewMode === 'card' && displayMode !== 'score') {
+        setDisplayMode('score')
+      }
+
+      // 新しいソート状態を決定
+      let newSort: SortField
+      let newOrder: SortOrder
+
+      if (viewMode === 'card') {
+        // カード表示時は現在の切り口に対応するスコアで降順ソート
+        newSort = PERSPECTIVE_TO_SORT_FIELD[selectedPerspective]
+        newOrder = 'desc'
+      } else {
+        // テーブル表示時はlocalStorageから復元
+        const storedSort =
+          displayMode === 'score'
+            ? storage.getStoredScoreSort()
+            : storage.getStoredTrendSort()
+        newSort = storedSort.sort
+        newOrder = storedSort.order
+      }
+
+      // ソート更新をコールバックで通知
+      onSortUpdate(newSort, newOrder)
+
+      // 検索を実行
+      onSearchRequest({ sort: newSort, order: newOrder })
     }
 
-    // ソート更新をコールバックで通知
-    onSortUpdate(newSort, newOrder)
-
-    // 検索を実行
-    onSearchRequest({ sort: newSort, order: newOrder })
+    // StrictMode対応：アンマウント時にフラグをリセット
+    return () => {
+      isViewModeInitialMount.current = true
+    }
     // viewMode変更時のみ実行（他の依存は意図的に除外）
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode])
@@ -235,24 +241,28 @@ export function useTopPageDisplayMode(
     // 初回マウント時はスキップ
     if (isReturnTypeInitialMount.current) {
       isReturnTypeInitialMount.current = false
-      return
+    } else {
+      // パフォーマンスソートのフィールドか判定
+      const sortField = getCurrentSort()
+      const isPerformanceSort = [
+        'return_1m',
+        'return_3m',
+        'return_6m',
+        'return_1y',
+        'return_3y',
+        'return_5y',
+        'return_10y',
+        'return_20y',
+      ].includes(sortField)
+
+      if (isPerformanceSort) {
+        onSearchRequest()
+      }
     }
 
-    // パフォーマンスソートのフィールドか判定
-    const sortField = getCurrentSort()
-    const isPerformanceSort = [
-      'return_1m',
-      'return_3m',
-      'return_6m',
-      'return_1y',
-      'return_3y',
-      'return_5y',
-      'return_10y',
-      'return_20y',
-    ].includes(sortField)
-
-    if (isPerformanceSort) {
-      onSearchRequest()
+    // StrictMode対応：アンマウント時にフラグをリセット
+    return () => {
+      isReturnTypeInitialMount.current = true
     }
     // returnType変更時のみ実行
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -268,10 +278,14 @@ export function useTopPageDisplayMode(
     // 初回マウント時はスキップ
     if (isScoringModeInitialMount.current) {
       isScoringModeInitialMount.current = false
-      return
+    } else {
+      onSearchRequest()
     }
 
-    onSearchRequest()
+    // StrictMode対応：アンマウント時にフラグをリセット
+    return () => {
+      isScoringModeInitialMount.current = true
+    }
     // scoringMode変更時のみ実行
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scoringMode])
@@ -281,14 +295,18 @@ export function useTopPageDisplayMode(
     // 初回マウント時はスキップ
     if (isPerspectiveInitialMount.current) {
       isPerspectiveInitialMount.current = false
-      return
+    } else {
+      // カード表示時は常に対応するperspectiveソートに変更してAPI再取得
+      if (viewMode === 'card') {
+        const newSort = PERSPECTIVE_TO_SORT_FIELD[selectedPerspective]
+        onSortUpdate(newSort, 'desc')
+        onSearchRequest({ sort: newSort, order: 'desc' })
+      }
     }
 
-    // カード表示時は常に対応するperspectiveソートに変更してAPI再取得
-    if (viewMode === 'card') {
-      const newSort = PERSPECTIVE_TO_SORT_FIELD[selectedPerspective]
-      onSortUpdate(newSort, 'desc')
-      onSearchRequest({ sort: newSort, order: 'desc' })
+    // StrictMode対応：アンマウント時にフラグをリセット
+    return () => {
+      isPerspectiveInitialMount.current = true
     }
     // selectedPerspective変更時のみ実行
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -299,46 +317,50 @@ export function useTopPageDisplayMode(
     // 初回マウント時はスキップ
     if (isDisplayModeInitialMount.current) {
       isDisplayModeInitialMount.current = false
-      return
+    } else {
+      // 前回のモードのソート状態を保存（prevDisplayModeRef.currentは前のdisplayModeを指している）
+      const prevSort = getCurrentSort()
+      storage.saveSortState(
+        viewMode,
+        prevDisplayModeRef.current,
+        prevSort,
+        currentOrder
+      )
+
+      // URLのsort/orderをクリア（localStorage復元を優先）
+      setSearchParams(
+        (prev) => {
+          const newParams = new URLSearchParams(prev)
+          newParams.delete('sort')
+          newParams.delete('order')
+          return newParams
+        },
+        { replace: true }
+      )
+
+      // 前回のdisplayModeを新しい値で更新（次回の保存に備える）
+      prevDisplayModeRef.current = displayMode
+
+      // 新しいdisplayModeに応じたソート状態を復元
+      const storedSort =
+        displayMode === 'score'
+          ? storage.getStoredScoreSort()
+          : storage.getStoredTrendSort()
+
+      const newSort = storedSort.sort
+      const newOrder = storedSort.order
+
+      // ソート更新をコールバックで通知
+      onSortUpdate(newSort, newOrder)
+
+      // 検索を実行
+      onSearchRequest({ sort: newSort, order: newOrder })
     }
 
-    // 前回のモードのソート状態を保存（prevDisplayModeRef.currentは前のdisplayModeを指している）
-    const prevSort = getCurrentSort()
-    storage.saveSortState(
-      viewMode,
-      prevDisplayModeRef.current,
-      prevSort,
-      currentOrder
-    )
-
-    // URLのsort/orderをクリア（localStorage復元を優先）
-    setSearchParams(
-      (prev) => {
-        const newParams = new URLSearchParams(prev)
-        newParams.delete('sort')
-        newParams.delete('order')
-        return newParams
-      },
-      { replace: true }
-    )
-
-    // 前回のdisplayModeを新しい値で更新（次回の保存に備える）
-    prevDisplayModeRef.current = displayMode
-
-    // 新しいdisplayModeに応じたソート状態を復元
-    const storedSort =
-      displayMode === 'score'
-        ? storage.getStoredScoreSort()
-        : storage.getStoredTrendSort()
-
-    const newSort = storedSort.sort
-    const newOrder = storedSort.order
-
-    // ソート更新をコールバックで通知
-    onSortUpdate(newSort, newOrder)
-
-    // 検索を実行
-    onSearchRequest({ sort: newSort, order: newOrder })
+    // StrictMode対応：アンマウント時にフラグをリセット
+    return () => {
+      isDisplayModeInitialMount.current = true
+    }
     // displayMode変更時のみ実行（他の依存は意図的に除外）
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayMode])
@@ -388,7 +410,6 @@ export function useTopPageDisplayMode(
     handleScoringModeChange,
     // Utilities
     getInitialViewMode,
-    isInitialMount,
     prevDisplayModeRef,
     prevViewModeRef,
   }
