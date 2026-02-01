@@ -1,5 +1,5 @@
 /** My page component */
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { ETFCard } from '../components/etf/ETFCard'
 import {
   ETFDetailModal,
@@ -11,15 +11,20 @@ import {
   HoldingsList,
   PortfolioValueChart,
 } from '../components/portfolio'
+import { PerspectiveTabs } from '../components/recommend'
 import { useFavorites } from '../hooks/useFavorites'
 import { useCompareList } from '../hooks/useCompareList'
 import { usePortfolio } from '../hooks/usePortfolio'
-import { ETFSummary } from '../api/types'
+import { ETFSummary, Perspective } from '../api/types'
+import { recommendApi } from '../api/recommend'
 import styles from './MyPage.module.css'
 
 export function MyPage() {
-  const { favorites, isLoading, error, toggleFavorite, isFavorite } =
-    useFavorites()
+  const [perspective, setPerspective] = useState<string>('balance')
+  const [perspectives, setPerspectives] = useState<Perspective[]>([])
+
+  const { favorites, isLoading, error, toggleFavorite, isFavorite, refresh } =
+    useFavorites(perspective, 'full')
   const { isInList: isInCompare, toggleCode: toggleCompare } = useCompareList()
   const {
     holdings,
@@ -33,6 +38,24 @@ export function MyPage() {
   const [showTradeFormModal, setShowTradeFormModal] = useState(false)
   const [showTradeHistoryModal, setShowTradeHistoryModal] = useState(false)
   const [tradeHistoryCode, setTradeHistoryCode] = useState<string>('')
+
+  // Fetch perspectives on mount
+  useEffect(() => {
+    const fetchPerspectives = async () => {
+      try {
+        const data = await recommendApi.getPerspectives()
+        setPerspectives(data)
+      } catch (err) {
+        console.error('Failed to fetch perspectives:', err)
+      }
+    }
+    fetchPerspectives()
+  }, [])
+
+  // Refresh favorites when perspective changes
+  useEffect(() => {
+    refresh(perspective, 'full')
+  }, [perspective, refresh])
 
   // 保有中銘柄のコードSetを作成（お気に入りカードの保有中表示用）
   const holdingCodes = useMemo(
@@ -113,6 +136,14 @@ export function MyPage() {
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>お気に入り一覧</h2>
 
+        {perspectives.length > 0 && (
+          <PerspectiveTabs
+            perspectives={perspectives}
+            selected={perspective}
+            onSelect={setPerspective}
+          />
+        )}
+
         {isLoading ? (
           <div className={styles.loading}>読み込み中...</div>
         ) : error ? (
@@ -137,7 +168,7 @@ export function MyPage() {
                 isSelected={isInCompare(favorite.etf_code)}
                 onCompareToggle={() => toggleCompare(favorite.etf_code)}
                 isHolding={isHolding(favorite.etf_code)}
-                perspective="balance"
+                perspective={perspective}
               />
             ))}
           </div>

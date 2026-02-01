@@ -32,6 +32,7 @@ def create_etf_bp():
             order: Sort order (asc, desc). Default: asc
             return_type: Return type for performance sorting (price, regression). Default: price
             scoring_mode: Scoring mode - "full" (default) or "partial"
+            perspective: Perspective ID for score calculation (balance, dividend, etc.). Default: balance
             limit: Number of results (default: 50, max: 100)
             offset: Pagination offset (default: 0)
 
@@ -49,6 +50,7 @@ def create_etf_bp():
         order = request.args.get("order", "asc")
         return_type = request.args.get("return_type", "price")
         scoring_mode = request.args.get("scoring_mode", "full")
+        perspective = request.args.get("perspective", "balance")
 
         if order not in ("asc", "desc"):
             return error_response("Invalid order parameter. Use 'asc' or 'desc'", 400)
@@ -102,6 +104,7 @@ def create_etf_bp():
             order=order,
             return_type=return_type,
             scoring_mode=scoring_mode,
+            perspective=perspective,
             limit=limit,
             offset=offset,
         )

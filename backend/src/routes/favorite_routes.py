@@ -18,10 +18,22 @@ def create_favorite_bp():
 
         GET /api/v1/favorites
 
+        Query Parameters:
+            perspective: Perspective ID for score calculation (balance, dividend, etc.). Default: balance
+            scoring_mode: Scoring mode - "full" (default) or "partial"
+
         Returns:
-            List of user's favorite ETFs
+            List of user's favorite ETFs with scores
         """
-        favorites = favorite_service.get_user_favorites(current_user.id)
+        perspective = request.args.get("perspective", "balance")
+        scoring_mode = request.args.get("scoring_mode", "full")
+
+        if scoring_mode not in ("full", "partial"):
+            scoring_mode = "full"
+
+        favorites = favorite_service.get_user_favorites(
+            current_user.id, perspective=perspective, scoring_mode=scoring_mode
+        )
         return api_response(data=favorites)
 
     @bp.route("", methods=["POST"])

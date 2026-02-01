@@ -55,6 +55,7 @@ export interface SearchParams {
   order?: SortOrder
   return_type?: 'price' | 'regression'
   scoring_mode?: 'full' | 'partial'
+  perspective?: string
   limit?: number
   offset?: number
 }
@@ -94,6 +95,7 @@ export async function searchETFs(params: SearchParams = {}): Promise<{
   if (params.return_type) queryParams.append('return_type', params.return_type)
   if (params.scoring_mode)
     queryParams.append('scoring_mode', params.scoring_mode)
+  if (params.perspective) queryParams.append('perspective', params.perspective)
   if (params.limit) queryParams.append('limit', String(params.limit))
   if (params.offset) queryParams.append('offset', String(params.offset))
 

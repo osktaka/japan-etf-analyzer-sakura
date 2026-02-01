@@ -55,6 +55,7 @@ class ETFService:
         order: str = "asc",
         return_type: str = "price",
         scoring_mode: str = "full",
+        perspective: str = "balance",
         limit: int = 50,
         offset: int = 0,
     ) -> Dict:
@@ -137,8 +138,25 @@ class ETFService:
                 holding_codes=holding_codes,
             )
 
+        # Get scores for all ETFs with the specified perspective
+        codes = [etf.code for etf in etfs]
+        all_scores = self._get_scores_for_perspective(codes, perspective, scoring_mode)
+
+        # Merge scores into items
+        items = []
+        for etf in etfs:
+            item = etf.to_summary_dict()
+            score_data = all_scores.get(etf.code)
+            if score_data:
+                item['score'] = score_data['score']
+                item['axis_scores'] = score_data['axis_scores']
+            else:
+                item['score'] = None
+                item['axis_scores'] = None
+            items.append(item)
+
         return {
-            "items": [etf.to_summary_dict() for etf in etfs],
+            "items": items,
             "total": total,
             "limit": limit,
             "offset": offset,
@@ -287,3 +305,20 @@ class ETFService:
                 }
 
         return result
+
+    def _get_scores_for_perspective(
+        self, codes: List[str], perspective: str, scoring_mode: str = 'full'
+    ) -> Dict[str, Dict]:
+        """Get scores for a specific perspective.
+
+        Args:
+            codes: List of ETF codes
+            perspective: Perspective ID (balance, dividend, low-cost, etc.)
+            scoring_mode: Scoring mode - "full" (default) or "partial"
+
+        Returns:
+            Dict mapping ETF code to dict with score and axis_scores
+        """
+        return self.score_cache_repository.get_scores_with_axes(
+            codes, perspective, scoring_mode
+        )

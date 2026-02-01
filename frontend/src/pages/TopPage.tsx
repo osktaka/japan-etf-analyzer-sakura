@@ -301,6 +301,7 @@ export function TopPage() {
         currentPage,
         returnType,
         scoringMode,
+        perspective: selectedPerspective,
         pageSize: PAGE_SIZE,
         favoritesOnly,
         holdingsOnly,
@@ -344,6 +345,7 @@ export function TopPage() {
         currentPage,
         returnType,
         scoringMode,
+        perspective: selectedPerspective,
         pageSize: PAGE_SIZE,
         favoritesOnly,
         holdingsOnly,
@@ -383,6 +385,7 @@ export function TopPage() {
         currentPage,
         returnType,
         scoringMode,
+        perspective: selectedPerspective,
         pageSize: PAGE_SIZE,
         favoritesOnly,
         holdingsOnly,
@@ -422,6 +425,7 @@ export function TopPage() {
         currentPage,
         returnType,
         scoringMode,
+        perspective: selectedPerspective,
         pageSize: PAGE_SIZE,
         favoritesOnly,
         holdingsOnly,
@@ -487,6 +491,7 @@ export function TopPage() {
         currentPage,
         returnType,
         scoringMode,
+        perspective: selectedPerspective,
         pageSize: PAGE_SIZE,
         favoritesOnly,
         holdingsOnly,
@@ -593,6 +598,7 @@ export function TopPage() {
       order,
       return_type: returnType,
       scoring_mode: scoringMode,
+        perspective: selectedPerspective,
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
     })
@@ -628,6 +634,7 @@ export function TopPage() {
       currentPage: 1,
       returnType,
       scoringMode,
+        perspective: selectedPerspective,
       pageSize: PAGE_SIZE,
       favoritesOnly,
       holdingsOnly,
@@ -670,6 +677,7 @@ export function TopPage() {
         currentPage: 1,
         returnType,
         scoringMode,
+        perspective: selectedPerspective,
         pageSize: PAGE_SIZE,
         favoritesOnly,
         holdingsOnly,
@@ -687,6 +695,7 @@ export function TopPage() {
       currentOrder,
       returnType,
       scoringMode,
+      selectedPerspective,
       search,
       updateURL,
       favoritesOnly,
@@ -720,6 +729,7 @@ export function TopPage() {
       currentPage: 1,
       returnType,
       scoringMode,
+        perspective: selectedPerspective,
       pageSize: PAGE_SIZE,
       favoritesOnly,
       holdingsOnly,
@@ -747,6 +757,7 @@ export function TopPage() {
       currentPage: page,
       returnType,
       scoringMode,
+        perspective: selectedPerspective,
       pageSize: PAGE_SIZE,
       favoritesOnly,
       holdingsOnly,
@@ -778,6 +789,7 @@ export function TopPage() {
       currentPage: 1,
       returnType,
       scoringMode,
+        perspective: selectedPerspective,
       pageSize: PAGE_SIZE,
       favoritesOnly,
       holdingsOnly,
@@ -879,11 +891,18 @@ export function TopPage() {
           <div className={styles.sectionControls}>
             <ViewModeToggle mode={viewMode} onChange={handleViewModeChange} />
             {viewMode === 'card' ? (
-              <SortSelector
-                sort={currentSort}
-                order={currentOrder}
-                onSortChange={handleSortChange}
-              />
+              <>
+                <SortSelector
+                  sort={currentSort}
+                  order={currentOrder}
+                  onSortChange={handleSortChange}
+                />
+                <PerspectiveSelector
+                  selectedPerspective={selectedPerspective}
+                  onChange={setSelectedPerspective}
+                  className={styles.scoringModeToggle}
+                />
+              </>
             ) : (
               <>
                 <TableDisplayToggle

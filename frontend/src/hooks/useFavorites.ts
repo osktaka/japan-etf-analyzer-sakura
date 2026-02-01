@@ -13,40 +13,49 @@ interface UseFavoritesReturn {
   removeFavorite: (etfCode: string) => Promise<boolean>
   toggleFavorite: (etfCode: string) => Promise<boolean>
   isFavorite: (etfCode: string) => boolean
-  refresh: () => Promise<void>
+  refresh: (perspective?: string, scoringMode?: 'full' | 'partial') => Promise<void>
 }
 
-export function useFavorites(): UseFavoritesReturn {
+export function useFavorites(
+  initialPerspective: string = 'balance',
+  initialScoringMode: 'full' | 'partial' = 'full'
+): UseFavoritesReturn {
   const { isAuthenticated } = useAuth()
   const [favorites, setFavorites] = useState<Favorite[]>([])
   const [favoriteCodes, setFavoriteCodes] = useState<Set<string>>(new Set())
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchFavorites = useCallback(async () => {
-    if (!isAuthenticated) {
-      setFavorites([])
-      setFavoriteCodes(new Set())
-      return
-    }
+  const fetchFavorites = useCallback(
+    async (
+      perspective: string = initialPerspective,
+      scoringMode: 'full' | 'partial' = initialScoringMode
+    ) => {
+      if (!isAuthenticated) {
+        setFavorites([])
+        setFavoriteCodes(new Set())
+        return
+      }
 
-    setIsLoading(true)
-    setError(null)
+      setIsLoading(true)
+      setError(null)
 
-    try {
-      const [favoritesData, codesData] = await Promise.all([
-        favoritesApi.getAll(),
-        favoritesApi.getCodes(),
-      ])
-      setFavorites(favoritesData)
-      setFavoriteCodes(new Set(codesData))
-    } catch (err) {
-      setError('お気に入りの取得に失敗しました')
-      console.error('Failed to fetch favorites:', err)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [isAuthenticated])
+      try {
+        const [favoritesData, codesData] = await Promise.all([
+          favoritesApi.getAll(perspective, scoringMode),
+          favoritesApi.getCodes(),
+        ])
+        setFavorites(favoritesData)
+        setFavoriteCodes(new Set(codesData))
+      } catch (err) {
+        setError('お気に入りの取得に失敗しました')
+        console.error('Failed to fetch favorites:', err)
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [isAuthenticated, initialPerspective, initialScoringMode]
+  )
 
   useEffect(() => {
     fetchFavorites()

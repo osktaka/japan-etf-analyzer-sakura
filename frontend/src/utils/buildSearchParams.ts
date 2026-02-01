@@ -9,6 +9,7 @@ export interface BuildSearchParamsOptions {
   currentPage: number
   returnType: 'price' | 'regression'
   scoringMode: 'full' | 'partial'
+  perspective?: string
   pageSize: number
   favoritesOnly: boolean
   holdingsOnly: boolean
@@ -35,6 +36,7 @@ export function buildSearchParams(
     currentPage,
     returnType,
     scoringMode,
+    perspective,
     pageSize,
     favoritesOnly,
     holdingsOnly,
@@ -51,6 +53,7 @@ export function buildSearchParams(
     order: currentOrder,
     return_type: returnType,
     scoring_mode: scoringMode,
+    perspective: perspective,
     limit: pageSize,
     offset: (currentPage - 1) * pageSize,
   }

@@ -3,8 +3,17 @@ import { apiClient } from './client'
 import { ApiResponse, Favorite } from './types'
 
 export const favoritesApi = {
-  async getAll(): Promise<Favorite[]> {
-    const response = await apiClient.get<ApiResponse<Favorite[]>>('/favorites')
+  async getAll(
+    perspective: string = 'balance',
+    scoringMode: 'full' | 'partial' = 'full'
+  ): Promise<Favorite[]> {
+    const queryParams = new URLSearchParams()
+    if (perspective) queryParams.append('perspective', perspective)
+    if (scoringMode) queryParams.append('scoring_mode', scoringMode)
+
+    const response = await apiClient.get<ApiResponse<Favorite[]>>(
+      `/favorites?${queryParams.toString()}`
+    )
     return response.data.data
   },
 

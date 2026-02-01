@@ -18,3 +18,8 @@ export async function getRecommendations(
   )
   return response.data.data
 }
+
+export const recommendApi = {
+  getPerspectives,
+  getRecommendations,
+}
