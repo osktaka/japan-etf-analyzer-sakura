@@ -92,7 +92,7 @@ const getStoredTrendSort = (): { sort: SortField; order: SortOrder } =>
 
 // ローカルストレージからカード形式用のソート状態を復元
 const getStoredCardSort = (): { sort: SortField; order: SortOrder } =>
-  getStoredSort(CARD_SORT_STORAGE_KEY, 'return_1y', 'desc')
+  getStoredSort(CARD_SORT_STORAGE_KEY, 'evaluation_score', 'desc')
 
 // ローカルストレージから表示モードを復元
 const getStoredDisplayMode = (): DisplayMode => {

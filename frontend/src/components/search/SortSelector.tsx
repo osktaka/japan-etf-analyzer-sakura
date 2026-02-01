@@ -13,6 +13,12 @@ const SORT_OPTIONS: SortOption[] = [
   { value: 'dividend_yield', label: '配当利回り' },
   { value: 'expense_ratio', label: '信託報酬' },
   { value: 'total_assets', label: '純資産総額' },
+  { value: 'evaluation_score', label: '評価スコア' },
+  { value: 'axis_dividend_power', label: '配当力' },
+  { value: 'axis_cost_efficiency', label: 'コスト' },
+  { value: 'axis_scale_reliability', label: '安定性' },
+  { value: 'axis_trading_quality', label: '取引規模' },
+  { value: 'axis_return_performance', label: 'リターン' },
 ]
 
 interface SortSelectorProps {
@@ -21,9 +27,21 @@ interface SortSelectorProps {
   onSortChange: (sort: SortField, order: SortOrder) => void
 }
 
+// 低い値が良い項目（これ以外は降順がデフォルト）
+const LOW_IS_BETTER: SortField[] = ['expense_ratio']
+const NEUTRAL: SortField[] = ['code', 'name']
+
 export function SortSelector({ sort, order, onSortChange }: SortSelectorProps) {
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onSortChange(e.target.value as SortField, order)
+    const newSort = e.target.value as SortField
+    // コード・名前は現在のorder維持、信託報酬は昇順、それ以外は降順
+    let newOrder: SortOrder = order
+    if (LOW_IS_BETTER.includes(newSort)) {
+      newOrder = 'asc'
+    } else if (!NEUTRAL.includes(newSort)) {
+      newOrder = 'desc'
+    }
+    onSortChange(newSort, newOrder)
   }
 
   const handleOrderToggle = () => {
