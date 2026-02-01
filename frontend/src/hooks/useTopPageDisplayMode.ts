@@ -141,11 +141,6 @@ export function useTopPageDisplayMode(
     } else {
       onSearchRequest()
     }
-
-    // StrictMode対応：アンマウント時にフラグをリセット
-    return () => {
-      isPeriodsInitialMount.current = true
-    }
     // selectedPeriods変更時のみ実行
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPeriods])
@@ -227,11 +222,6 @@ export function useTopPageDisplayMode(
       // 検索を実行
       onSearchRequest({ sort: newSort, order: newOrder })
     }
-
-    // StrictMode対応：アンマウント時にフラグをリセット
-    return () => {
-      isViewModeInitialMount.current = true
-    }
     // viewMode変更時のみ実行（他の依存は意図的に除外）
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode])
@@ -259,11 +249,6 @@ export function useTopPageDisplayMode(
         onSearchRequest()
       }
     }
-
-    // StrictMode対応：アンマウント時にフラグをリセット
-    return () => {
-      isReturnTypeInitialMount.current = true
-    }
     // returnType変更時のみ実行
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [returnType])
@@ -281,32 +266,22 @@ export function useTopPageDisplayMode(
     } else {
       onSearchRequest()
     }
-
-    // StrictMode対応：アンマウント時にフラグをリセット
-    return () => {
-      isScoringModeInitialMount.current = true
-    }
     // scoringMode変更時のみ実行
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scoringMode])
 
-  // selectedPerspective変更時に対応する切り口でソート（カード表示時は常に連動）
+  // selectedPerspective変更時に対応する切り口でソート（カード表示時またはテーブル＋スコア表示時に連動）
   useEffect(() => {
     // 初回マウント時はスキップ
     if (isPerspectiveInitialMount.current) {
       isPerspectiveInitialMount.current = false
     } else {
-      // カード表示時は常に対応するperspectiveソートに変更してAPI再取得
-      if (viewMode === 'card') {
+      // カード表示時、またはテーブル＋スコア表示時は対応するperspectiveソートに変更してAPI再取得
+      if (viewMode === 'card' || displayMode === 'score') {
         const newSort = PERSPECTIVE_TO_SORT_FIELD[selectedPerspective]
         onSortUpdate(newSort, 'desc')
         onSearchRequest({ sort: newSort, order: 'desc' })
       }
-    }
-
-    // StrictMode対応：アンマウント時にフラグをリセット
-    return () => {
-      isPerspectiveInitialMount.current = true
     }
     // selectedPerspective変更時のみ実行
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -356,11 +331,6 @@ export function useTopPageDisplayMode(
       // 検索を実行
       onSearchRequest({ sort: newSort, order: newOrder })
     }
-
-    // StrictMode対応：アンマウント時にフラグをリセット
-    return () => {
-      isDisplayModeInitialMount.current = true
-    }
     // displayMode変更時のみ実行（他の依存は意図的に除外）
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayMode])
@@ -389,6 +359,18 @@ export function useTopPageDisplayMode(
   const handleScoringModeChange = useCallback((mode: ScoringMode) => {
     setScoringMode(mode)
     localStorage.setItem('scoringMode', mode)
+  }, [])
+
+  // コンポーネントのアンマウント時に初期マウントフラグをリセット
+  useEffect(() => {
+    return () => {
+      isPerspectiveInitialMount.current = true
+      isViewModeInitialMount.current = true
+      isDisplayModeInitialMount.current = true
+      isScoringModeInitialMount.current = true
+      isPeriodsInitialMount.current = true
+      isReturnTypeInitialMount.current = true
+    }
   }, [])
 
   return {
