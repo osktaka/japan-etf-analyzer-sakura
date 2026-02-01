@@ -14,11 +14,11 @@ const SORT_OPTIONS: SortOption[] = [
   { value: 'expense_ratio', label: '信託報酬' },
   { value: 'total_assets', label: '純資産総額' },
   { value: 'evaluation_score', label: '評価スコア' },
-  { value: 'axis_dividend_power', label: '配当力' },
-  { value: 'axis_cost_efficiency', label: 'コスト' },
-  { value: 'axis_scale_reliability', label: '安定性' },
-  { value: 'axis_trading_quality', label: '取引規模' },
-  { value: 'axis_return_performance', label: 'リターン' },
+  { value: 'axis_dividend_power', label: '- 配当力' },
+  { value: 'axis_cost_efficiency', label: '- コスト' },
+  { value: 'axis_scale_reliability', label: '- 安定性' },
+  { value: 'axis_trading_quality', label: '- 取引規模' },
+  { value: 'axis_return_performance', label: '- リターン' },
 ]
 
 interface SortSelectorProps {
