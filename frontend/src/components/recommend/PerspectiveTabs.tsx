@@ -155,11 +155,11 @@ export function PerspectiveTabs({
                 {isAuthenticated && (
                   <tr>
                     <td>カスタム</td>
-                    <td>{customWeights?.dividend_power ?? '--'}</td>
-                    <td>{customWeights?.cost_efficiency ?? '--'}</td>
-                    <td>{customWeights?.scale_reliability ?? '--'}</td>
-                    <td>{customWeights?.trading_quality ?? '--'}</td>
-                    <td>{customWeights?.return_performance ?? '--'}</td>
+                    <td>{customWeights?.dividend_power != null ? Math.round(customWeights.dividend_power * 100) : '--'}</td>
+                    <td>{customWeights?.cost_efficiency != null ? Math.round(customWeights.cost_efficiency * 100) : '--'}</td>
+                    <td>{customWeights?.scale_reliability != null ? Math.round(customWeights.scale_reliability * 100) : '--'}</td>
+                    <td>{customWeights?.trading_quality != null ? Math.round(customWeights.trading_quality * 100) : '--'}</td>
+                    <td>{customWeights?.return_performance != null ? Math.round(customWeights.return_performance * 100) : '--'}</td>
                   </tr>
                 )}
               </tbody>

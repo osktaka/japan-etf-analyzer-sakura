@@ -41,7 +41,18 @@ export function CustomWeightsModal({
   // currentWeightsが変更されたら内部状態を更新
   useEffect(() => {
     if (isOpen) {
-      setWeights(currentWeights || DEFAULT_WEIGHTS)
+      if (currentWeights) {
+        // バックエンドから受け取った0-1形式を0-100形式に変換
+        setWeights({
+          dividend_power: Math.round(currentWeights.dividend_power * 100),
+          cost_efficiency: Math.round(currentWeights.cost_efficiency * 100),
+          scale_reliability: Math.round(currentWeights.scale_reliability * 100),
+          trading_quality: Math.round(currentWeights.trading_quality * 100),
+          return_performance: Math.round(currentWeights.return_performance * 100),
+        })
+      } else {
+        setWeights(DEFAULT_WEIGHTS)
+      }
       setError(null)
     }
   }, [isOpen, currentWeights])
@@ -66,6 +77,7 @@ export function CustomWeightsModal({
     setIsSaving(true)
     setError(null)
     try {
+      // バックエンドAPIは0-100形式を期待しているのでそのまま送信
       await onSave(weights)
       onClose()
     } catch (err) {
@@ -94,15 +106,25 @@ export function CustomWeightsModal({
                   <label htmlFor={key} className={styles.label}>
                     {AXIS_LABELS[key]}
                   </label>
-                  <div className={styles.inputGroup}>
+                  <div className={styles.sliderGroup}>
                     <input
-                      type="number"
+                      type="range"
                       id={key}
                       min="0"
                       max="100"
+                      step="5"
                       value={weights[key]}
                       onChange={(e) => handleChange(key, e.target.value)}
-                      className={styles.input}
+                      className={styles.slider}
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={weights[key]}
+                      onChange={(e) => handleChange(key, e.target.value)}
+                      className={styles.valueInput}
                     />
                     <span className={styles.unit}>%</span>
                   </div>
