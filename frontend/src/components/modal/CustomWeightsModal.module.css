@@ -81,7 +81,7 @@
 .labelWrapper {
   position: relative;
   display: inline-block;
-  min-width: 120px;
+  min-width: 80px;
 }
 
 .labelClickable {
