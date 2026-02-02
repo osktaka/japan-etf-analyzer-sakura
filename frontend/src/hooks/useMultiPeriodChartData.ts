@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { getETFChartBatchPeriods, ChartData, ChartPeriod } from '../api'
 
-const MULTI_PERIODS: ChartPeriod[] = ['3m', '6m', '1y', '3y', '5y', '10y']
+const DEFAULT_PERIODS: ChartPeriod[] = ['3m', '6m', '1y', '3y', '5y', '10y']
 
 type MultiPeriodChartData = Record<ChartPeriod, ChartData | null>
 
@@ -23,7 +23,10 @@ const initialData: MultiPeriodChartData = {
   '20y': null,
 }
 
-export function useMultiPeriodChartData(code: string | null) {
+export function useMultiPeriodChartData(
+  code: string | null,
+  periods: ChartPeriod[] = DEFAULT_PERIODS
+) {
   const [state, setState] = useState<UseMultiPeriodChartDataState>({
     data: initialData,
     isLoading: false,
@@ -38,12 +41,12 @@ export function useMultiPeriodChartData(code: string | null) {
 
     setState((prev) => ({ ...prev, isLoading: true, error: null }))
     try {
-      // Single batch API call instead of 6 parallel calls
-      const batchResult = await getETFChartBatchPeriods(code, MULTI_PERIODS)
+      // Single batch API call with specified periods
+      const batchResult = await getETFChartBatchPeriods(code, periods)
 
       const newData: MultiPeriodChartData = { ...initialData }
       if (batchResult) {
-        MULTI_PERIODS.forEach((period) => {
+        periods.forEach((period) => {
           const chartPoints = batchResult.charts[period]
           if (chartPoints) {
             newData[period] = {
@@ -64,11 +67,11 @@ export function useMultiPeriodChartData(code: string | null) {
         error: err instanceof Error ? err : new Error('Unknown error'),
       })
     }
-  }, [code])
+  }, [code, periods])
 
   useEffect(() => {
     fetchData()
   }, [fetchData])
 
-  return { ...state, refetch: fetchData, periods: MULTI_PERIODS }
+  return { ...state, refetch: fetchData, periods }
 }

@@ -15,10 +15,11 @@ import overlayStyles from './ChartOverlay.module.css'
 
 interface MultiPeriodChartProps {
   code: string
+  periods?: ChartPeriod[]
 }
 
-export function MultiPeriodChart({ code }: MultiPeriodChartProps) {
-  const { data, isLoading, error, periods } = useMultiPeriodChartData(code)
+export function MultiPeriodChart({ code, periods: propsPeriods }: MultiPeriodChartProps) {
+  const { data, isLoading, error, periods } = useMultiPeriodChartData(code, propsPeriods)
 
   if (isLoading) {
     return (

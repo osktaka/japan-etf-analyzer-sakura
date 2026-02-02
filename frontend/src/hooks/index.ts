@@ -9,6 +9,7 @@ export { useFavorites } from './useFavorites'
 export { useTrades } from './useTrades'
 export { usePortfolio } from './usePortfolio'
 export { useMultiPeriodChartData } from './useMultiPeriodChartData'
+export { useChartPeriodStorage } from './useChartPeriodStorage'
 export { useTopPageStorage } from './useTopPageStorage'
 export { useTopPagePerformanceData } from './useTopPagePerformanceData'
 export {

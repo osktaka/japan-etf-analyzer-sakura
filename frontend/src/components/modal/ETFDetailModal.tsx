@@ -1,6 +1,6 @@
 /** ETF detail modal component */
 import { useMemo, useState } from 'react'
-import { useETFDetail, usePortfolio } from '../../hooks'
+import { useETFDetail, usePortfolio, useChartPeriodStorage } from '../../hooks'
 import {
   formatPercent,
   formatAssets,
@@ -14,7 +14,7 @@ import { Loading, ErrorMessage } from '../common'
 import { TagBadge } from '../etf'
 import { FavoriteButton } from '../favorite'
 import { CompareCheckbox } from '../actions'
-import { MultiPeriodChart } from '../chart'
+import { MultiPeriodChart, ChartPeriodSelector } from '../chart'
 import styles from './ETFDetailModal.module.css'
 
 type PerspectiveKey =
@@ -64,6 +64,7 @@ export function ETFDetailModal({
 }: ETFDetailModalProps) {
   const { data, isLoading, error, refetch } = useETFDetail(code)
   const { holdings } = usePortfolio()
+  const { chartPeriods, setChartPeriods } = useChartPeriodStorage()
   const [selectedPerspective, setSelectedPerspective] =
     useState<PerspectiveKey>(initialPerspective ?? 'balance')
 
@@ -301,7 +302,11 @@ export function ETFDetailModal({
             </div>
 
             <div className={styles.chart}>
-              <MultiPeriodChart code={data.code} />
+              <ChartPeriodSelector
+                selectedPeriods={chartPeriods}
+                onChange={setChartPeriods}
+              />
+              <MultiPeriodChart code={data.code} periods={chartPeriods} />
             </div>
 
             <div className={styles.footer}>
