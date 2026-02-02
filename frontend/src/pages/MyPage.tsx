@@ -7,6 +7,7 @@ import {
   TradeHistoryModal,
   CustomWeightsPromptModal,
   CustomWeightsModal,
+  WeightsHelpModal,
 } from '../components/modal'
 import {
   PortfolioSummary,
@@ -35,6 +36,7 @@ export function MyPage() {
   const [showCustomWeightsPromptModal, setShowCustomWeightsPromptModal] =
     useState(false)
   const [showCustomWeightsModal, setShowCustomWeightsModal] = useState(false)
+  const [showWeightsHelp, setShowWeightsHelp] = useState(false)
   const [customWeights, setCustomWeights] = useState<CustomWeights | null>(null)
 
   const { isAuthenticated } = useAuth()
@@ -213,10 +215,8 @@ export function MyPage() {
               perspectives={perspectives}
               selected={perspective}
               onSelect={setPerspective}
-              isAuthenticated={isAuthenticated}
-              customWeights={customWeights}
               onCustomClick={handleCustomClick}
-              onEditCustom={handleEditCustom}
+              onHelpClick={() => setShowWeightsHelp(true)}
             />
             <div className={styles.buttonGroup}>
               {isAuthenticated && (
@@ -311,6 +311,14 @@ export function MyPage() {
         onClose={() => setShowCustomWeightsModal(false)}
         currentWeights={customWeights}
         onSave={handleSaveCustomWeights}
+      />
+
+      <WeightsHelpModal
+        isOpen={showWeightsHelp}
+        onClose={() => setShowWeightsHelp(false)}
+        isAuthenticated={isAuthenticated}
+        customWeights={customWeights}
+        onEditCustom={handleEditCustom}
       />
     </div>
   )

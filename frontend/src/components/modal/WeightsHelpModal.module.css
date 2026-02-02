@@ -1,0 +1,117 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-md);
+  z-index: 1000;
+}
+
+.modal {
+  background-color: var(--color-bg-card);
+  border-radius: var(--radius-lg);
+  max-width: 500px;
+  width: 100%;
+  padding: var(--spacing-xl);
+  position: relative;
+}
+
+.closeBtn {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--color-bg-hover);
+  font-size: var(--text-xl);
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.title {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.description {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.helpTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.helpTable th,
+.helpTable td {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  text-align: center;
+  border: 1px solid var(--color-border-light);
+}
+
+.helpTable th {
+  background-color: var(--color-bg-secondary, #f5f5f5);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.helpTable td:first-child {
+  text-align: left;
+  font-weight: 500;
+}
+
+.helpTable .highlight {
+  background-color: #dbeafe;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.editLink {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: var(--text-xs);
+  padding: 0;
+  text-decoration: underline;
+}
+
+.editLink:hover {
+  color: var(--color-primary-dark, #2563eb);
+}
+
+.editLinkWrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--spacing-sm);
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+  .modal {
+    max-width: calc(100vw - var(--spacing-lg) * 2);
+  }
+
+  .helpTable {
+    font-size: 11px;
+  }
+
+  .helpTable th,
+  .helpTable td {
+    padding: 4px 6px;
+  }
+}

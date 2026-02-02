@@ -4,6 +4,7 @@ import { getPerspectives, Perspective, CustomWeights } from '../../api'
 import { useRecommendations } from '../../hooks'
 import { Loading, ErrorMessage } from '../common'
 import { ETFCard } from '../etf'
+import { WeightsHelpModal } from '../modal'
 import { PerspectiveTabs } from './PerspectiveTabs'
 import styles from './RecommendSection.module.css'
 
@@ -39,6 +40,7 @@ export function RecommendSection({
   const [perspectives, setPerspectives] = useState<Perspective[]>([])
   // 制御/非制御ハイブリッド: propsがあれば使用、なければ内部state（既存互換）
   const [internalSelected, setInternalSelected] = useState('balance')
+  const [showWeightsHelp, setShowWeightsHelp] = useState(false)
 
   const selected = selectedPerspective ?? internalSelected
   const handleSelect = (p: string) => {
@@ -63,10 +65,8 @@ export function RecommendSection({
           perspectives={perspectives}
           selected={selected}
           onSelect={handleSelect}
-          isAuthenticated={isAuthenticated}
-          customWeights={customWeights}
           onCustomClick={onCustomClick}
-          onEditCustom={onEditCustom}
+          onHelpClick={() => setShowWeightsHelp(true)}
         />
       )}
       {data && (
@@ -104,6 +104,14 @@ export function RecommendSection({
           </button>
         </div>
       )}
+
+      <WeightsHelpModal
+        isOpen={showWeightsHelp}
+        onClose={() => setShowWeightsHelp(false)}
+        isAuthenticated={isAuthenticated}
+        customWeights={customWeights}
+        onEditCustom={onEditCustom}
+      />
     </section>
   )
 }
