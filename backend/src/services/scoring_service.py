@@ -180,7 +180,7 @@ class ScoringService:
         )
 
     def _score_scale_reliability(self, etf: ETF) -> Optional[float]:
-        """Score scale and reliability (規模・信頼性).
+        """Score scale and reliability (安定性).
 
         Metric: total_assets
         Normalization: Percentile-based (higher is better)
@@ -192,7 +192,7 @@ class ScoringService:
         )
 
     def _score_trading_quality(self, etf: ETF) -> Optional[float]:
-        """Score trading quality (取引品質).
+        """Score trading quality (取引規模).
 
         Metrics:
         - trading_value (price * average_volume) - 50%

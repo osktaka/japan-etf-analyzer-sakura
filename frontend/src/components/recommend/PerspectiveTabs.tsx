@@ -75,8 +75,8 @@ export function PerspectiveTabs({
                   <th>切り口</th>
                   <th>配当</th>
                   <th>コスト</th>
+                  <th>安定</th>
                   <th>規模</th>
-                  <th>取引</th>
                   <th>リターン</th>
                 </tr>
               </thead>

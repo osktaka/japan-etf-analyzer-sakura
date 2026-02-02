@@ -30,6 +30,7 @@
 .helpWrapper {
   position: relative;
   margin-left: var(--spacing-xs);
+  margin-top: 7px;
 }
 
 .helpButton {
