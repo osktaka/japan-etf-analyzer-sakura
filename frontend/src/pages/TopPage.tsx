@@ -31,16 +31,21 @@ import styles from './TopPage.module.css'
 
 export function TopPage() {
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
-  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  const [loginPromptConfig, setLoginPromptConfig] = useState<{
+    title: string
+    description: string
+  } | null>(null)
   const [showCustomWeightsPromptModal, setShowCustomWeightsPromptModal] =
     useState(false)
   const [showCustomWeightsModal, setShowCustomWeightsModal] = useState(false)
   const [customWeights, setCustomWeights] = useState<CustomWeights | null>(null)
 
-  // おすすめタブの状態（URLから復元）
+  // おすすめタブの状態（URLとlocalStorageから復元）
   const [recommendTab, setRecommendTab] = useState(() => {
     const params = new URLSearchParams(window.location.search)
-    return params.get('tab') || 'balance'
+    const tabFromUrl = params.get('tab')
+    if (tabFromUrl) return tabFromUrl
+    return localStorage.getItem('recommend-perspective') || 'balance'
   })
 
   const {
@@ -50,7 +55,7 @@ export function TopPage() {
     codes: compareCodes,
     count: compareCount,
   } = useCompareList()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
   const { isFavorite, toggleFavorite, favoriteCodes } = useFavorites()
   const { holdings } = usePortfolio()
 
@@ -163,6 +168,16 @@ export function TopPage() {
     fetchCustomWeights()
   }, [isAuthenticated])
 
+  // 未ログイン時にcustomが選択されていたらbalanceにフォールバック
+  useEffect(() => {
+    // 認証状態の確認中は何もしない
+    if (isAuthLoading) return
+    if (!isAuthenticated && recommendTab === 'custom') {
+      setRecommendTab('balance')
+      localStorage.setItem('recommend-perspective', 'balance')
+    }
+  }, [isAuthLoading, isAuthenticated, recommendTab])
+
   // パフォーマンスデータとスコアデータの取得
   const { performance, scores } = useTopPagePerformanceData({
     viewMode,
@@ -173,6 +188,7 @@ export function TopPage() {
 
   const handleRecommendTabChange = (tab: string) => {
     setRecommendTab(tab)
+    localStorage.setItem('recommend-perspective', tab)
     updateURL({ tab })
   }
 
@@ -186,7 +202,10 @@ export function TopPage() {
 
   const handleFavoriteToggle = (code: string) => {
     if (!isAuthenticated) {
-      setShowLoginPrompt(true)
+      setLoginPromptConfig({
+        title: 'お気に入り機能',
+        description: 'お気に入り機能はログイン後にご利用いただけます。',
+      })
       return
     }
     toggleFavorite(code)
@@ -195,7 +214,10 @@ export function TopPage() {
   // お気に入りフィルター変更ハンドラ（未ログイン時はログイン促進）
   const handleFavoritesOnlyChange = (value: boolean) => {
     if (!isAuthenticated) {
-      setShowLoginPrompt(true)
+      setLoginPromptConfig({
+        title: 'お気に入り機能',
+        description: 'お気に入り機能はログイン後にご利用いただけます。',
+      })
       return
     }
     setFavoritesOnly(value)
@@ -204,19 +226,29 @@ export function TopPage() {
   // 保有中フィルター変更ハンドラ（未ログイン時はログイン促進）
   const handleHoldingsOnlyChange = (value: boolean) => {
     if (!isAuthenticated) {
-      setShowLoginPrompt(true)
+      setLoginPromptConfig({
+        title: '保有銘柄機能',
+        description: '保有銘柄機能はログイン後にご利用いただけます。',
+      })
       return
     }
     setHoldingsOnly(value)
   }
 
   const handleCustomClick = () => {
+    if (!isAuthenticated) {
+      setLoginPromptConfig({
+        title: 'カスタム機能',
+        description: 'カスタム重みづけ機能はログイン後にご利用いただけます。',
+      })
+      return
+    }
     if (!customWeights) {
       // 未設定時はプロンプトモーダルを表示
       setShowCustomWeightsPromptModal(true)
     } else {
       // 設定済み時はカスタム切り口に切り替え
-      setRecommendTab('custom')
+      handleRecommendTabChange('custom')
     }
   }
 
@@ -227,7 +259,7 @@ export function TopPage() {
   const handleSaveCustomWeights = async (weights: CustomWeights) => {
     await userSettingsApi.saveCustomWeights(weights)
     setCustomWeights(weights)
-    setRecommendTab('custom')
+    handleRecommendTabChange('custom')
   }
 
   return (
@@ -355,8 +387,10 @@ export function TopPage() {
       />
 
       <LoginPromptModal
-        isOpen={showLoginPrompt}
-        onClose={() => setShowLoginPrompt(false)}
+        isOpen={loginPromptConfig !== null}
+        onClose={() => setLoginPromptConfig(null)}
+        title={loginPromptConfig?.title}
+        description={loginPromptConfig?.description}
       />
 
       <CustomWeightsPromptModal

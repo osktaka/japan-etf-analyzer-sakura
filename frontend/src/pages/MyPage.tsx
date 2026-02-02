@@ -24,7 +24,9 @@ import { userSettingsApi } from '../api/userSettings'
 import styles from './MyPage.module.css'
 
 export function MyPage() {
-  const [perspective, setPerspective] = useState<string>('balance')
+  const [perspective, setPerspective] = useState<string>(() => {
+    return localStorage.getItem('mypage-perspective') || 'balance'
+  })
   const [perspectives, setPerspectives] = useState<Perspective[]>([])
   const [sortEnabled, setSortEnabled] = useState(() => {
     const stored = localStorage.getItem('mypage-sort-enabled')
@@ -52,6 +54,11 @@ export function MyPage() {
   const [showTradeFormModal, setShowTradeFormModal] = useState(false)
   const [showTradeHistoryModal, setShowTradeHistoryModal] = useState(false)
   const [tradeHistoryCode, setTradeHistoryCode] = useState<string>('')
+
+  // Save perspective to localStorage
+  useEffect(() => {
+    localStorage.setItem('mypage-perspective', perspective)
+  }, [perspective])
 
   // Save sort enabled state to localStorage
   useEffect(() => {

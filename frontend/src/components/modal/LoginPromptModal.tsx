@@ -6,9 +6,16 @@ import styles from './LoginPromptModal.module.css'
 interface LoginPromptModalProps {
   isOpen: boolean
   onClose: () => void
+  title?: string
+  description?: string
 }
 
-export function LoginPromptModal({ isOpen, onClose }: LoginPromptModalProps) {
+export function LoginPromptModal({
+  isOpen,
+  onClose,
+  title = '会員限定機能',
+  description = 'この機能はログイン後にご利用いただけます。',
+}: LoginPromptModalProps) {
   const navigate = useNavigate()
 
   if (!isOpen) return null
@@ -30,11 +37,9 @@ export function LoginPromptModal({ isOpen, onClose }: LoginPromptModalProps) {
           &times;
         </button>
         <div className={styles.content}>
-          <div className={styles.icon}>&#9829;</div>
-          <h2 className={styles.title}>お気に入り機能</h2>
-          <p className={styles.description}>
-            お気に入り機能はログイン後にご利用いただけます。
-          </p>
+          <div className={styles.icon}>&#9733;</div>
+          <h2 className={styles.title}>{title}</h2>
+          <p className={styles.description}>{description}</p>
           <div className={styles.buttons}>
             <button className="btn btn-primary" onClick={handleLogin}>
               ログイン
@@ -43,9 +48,6 @@ export function LoginPromptModal({ isOpen, onClose }: LoginPromptModalProps) {
               新規登録
             </button>
           </div>
-          <button className={styles.closeLink} onClick={onClose}>
-            閉じる
-          </button>
         </div>
       </div>
     </div>

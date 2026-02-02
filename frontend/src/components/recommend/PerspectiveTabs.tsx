@@ -60,8 +60,8 @@ export function PerspectiveTabs({
         </button>
       ))}
 
-      {/* カスタムボタン（ログイン時のみ） */}
-      {isAuthenticated && onCustomClick && (
+      {/* カスタムボタン */}
+      {onCustomClick && (
         <button
           className={`${styles.tab} ${selected === 'custom' ? styles.active : ''}`}
           onClick={onCustomClick}

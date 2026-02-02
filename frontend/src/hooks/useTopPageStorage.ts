@@ -111,15 +111,16 @@ const getStoredDisplayMode = (): DisplayMode => {
 const getStoredPerspective = (): PerspectiveKey => {
   try {
     const stored = localStorage.getItem(PERSPECTIVE_STORAGE_KEY)
-    const validPerspectives: PerspectiveKey[] = [
+    const validPerspectives: string[] = [
       'balance',
       'dividend',
       'low-cost',
       'stability',
       'volume',
       'growth',
+      'custom',
     ]
-    if (stored && validPerspectives.includes(stored as PerspectiveKey)) {
+    if (stored && validPerspectives.includes(stored)) {
       return stored as PerspectiveKey
     }
   } catch {
