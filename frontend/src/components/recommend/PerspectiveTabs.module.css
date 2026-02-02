@@ -25,3 +25,106 @@
   border-color: var(--tab-color);
   color: white;
 }
+
+/* ヘルプアイコン */
+.helpWrapper {
+  position: relative;
+  margin-left: var(--spacing-xs);
+}
+
+.helpButton {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border-dark);
+  background-color: var(--color-bg-card);
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.helpButton:hover {
+  background-color: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+/* ツールチップ */
+.helpTooltip {
+  position: absolute;
+  bottom: calc(100% + var(--spacing-sm));
+  right: 0;
+  background-color: white;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--spacing-md);
+  min-width: 360px;
+  max-width: 400px;
+  z-index: 110;
+}
+
+.helpHeader {
+  font-weight: 600;
+  font-size: var(--text-base);
+  color: var(--color-text);
+  margin-bottom: var(--spacing-xs);
+}
+
+.helpDescription {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-md);
+}
+
+.helpTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+
+.helpTable th,
+.helpTable td {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  text-align: center;
+  border: 1px solid var(--color-border-light);
+}
+
+.helpTable th {
+  background-color: var(--color-bg-secondary, #f5f5f5);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.helpTable td:first-child {
+  text-align: left;
+  font-weight: 500;
+}
+
+.helpTable .highlight {
+  background-color: #dbeafe;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+  .helpTooltip {
+    min-width: 300px;
+    max-width: calc(100vw - var(--spacing-lg) * 2);
+  }
+
+  .helpTable {
+    font-size: 11px;
+  }
+
+  .helpTable th,
+  .helpTable td {
+    padding: 4px 6px;
+  }
+}
