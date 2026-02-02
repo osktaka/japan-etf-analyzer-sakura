@@ -35,6 +35,7 @@ export type SortField =
   | 'score_stability'
   | 'score_volume'
   | 'score_growth'
+  | 'score_custom'
   | 'evaluation_score'
   | 'axis_dividend_power'
   | 'axis_cost_efficiency'
@@ -56,6 +57,7 @@ export interface SearchParams {
   return_type?: 'price' | 'regression'
   scoring_mode?: 'full' | 'partial'
   perspective?: string
+  custom_weights?: string
   limit?: number
   offset?: number
 }
@@ -96,6 +98,8 @@ export async function searchETFs(params: SearchParams = {}): Promise<{
   if (params.scoring_mode)
     queryParams.append('scoring_mode', params.scoring_mode)
   if (params.perspective) queryParams.append('perspective', params.perspective)
+  if (params.custom_weights)
+    queryParams.append('custom_weights', params.custom_weights)
   if (params.limit) queryParams.append('limit', String(params.limit))
   if (params.offset) queryParams.append('offset', String(params.offset))
 

@@ -94,7 +94,11 @@ const mockPerspectives = [
 ]
 
 const mockRecommendation = {
-  perspective: { id: 'balance', name: 'バランス', description: 'バランスの取れたETF' },
+  perspective: {
+    id: 'balance',
+    name: 'バランス',
+    description: 'バランスの取れたETF',
+  },
   items: mockETFItems.map((item) => ({ ...item, score: 85 })),
 }
 
@@ -270,14 +274,24 @@ describe('TopPage', () => {
 
     // Setup hooks mocks
     vi.mocked(hooks.useETFSearch).mockReturnValue(mockHooksDefault.useETFSearch)
-    vi.mocked(hooks.useCompareList).mockReturnValue(mockHooksDefault.useCompareList)
+    vi.mocked(hooks.useCompareList).mockReturnValue(
+      mockHooksDefault.useCompareList
+    )
     vi.mocked(hooks.useFavorites).mockReturnValue(mockHooksDefault.useFavorites)
     vi.mocked(hooks.useAuth).mockReturnValue(mockHooksDefault.useAuth)
     vi.mocked(hooks.usePortfolio).mockReturnValue(mockHooksDefault.usePortfolio)
-    vi.mocked(hooks.useTopPageStorage).mockReturnValue(mockHooksDefault.useTopPageStorage)
-    vi.mocked(hooks.useRecommendations).mockReturnValue(mockHooksDefault.useRecommendations)
-    vi.mocked(hooks.useTopPageDisplayMode).mockReturnValue(mockHooksDefault.useTopPageDisplayMode)
-    vi.mocked(hooks.useTopPageSearch).mockReturnValue(mockHooksDefault.useTopPageSearch)
+    vi.mocked(hooks.useTopPageStorage).mockReturnValue(
+      mockHooksDefault.useTopPageStorage
+    )
+    vi.mocked(hooks.useRecommendations).mockReturnValue(
+      mockHooksDefault.useRecommendations
+    )
+    vi.mocked(hooks.useTopPageDisplayMode).mockReturnValue(
+      mockHooksDefault.useTopPageDisplayMode
+    )
+    vi.mocked(hooks.useTopPageSearch).mockReturnValue(
+      mockHooksDefault.useTopPageSearch
+    )
   })
 
   afterEach(() => {
@@ -304,7 +318,9 @@ describe('TopPage', () => {
       renderTopPage()
 
       await waitFor(() => {
-        expect(screen.getByPlaceholderText(/銘柄コード|名前/)).toBeInTheDocument()
+        expect(
+          screen.getByPlaceholderText(/銘柄コード|名前/)
+        ).toBeInTheDocument()
       })
 
       // 検索入力フィールドに値を入力
@@ -363,18 +379,23 @@ describe('TopPage', () => {
 
       await waitFor(() => {
         // FilterPanel内のカテゴリボタンを取得（カテゴリセクション内のボタン）
-        const categoryButtons = screen.getAllByRole('button', { name: '国内株式' })
+        const categoryButtons = screen.getAllByRole('button', {
+          name: '国内株式',
+        })
         expect(categoryButtons.length).toBeGreaterThan(0)
       })
 
       // FilterPanel内のカテゴリボタンをクリック
-      const categoryButtons = screen.getAllByRole('button', { name: '国内株式' })
+      const categoryButtons = screen.getAllByRole('button', {
+        name: '国内株式',
+      })
       fireEvent.click(categoryButtons[0])
 
       await waitFor(() => {
         // handleFilterが呼ばれたことを確認
         expect(mockHandleFilter).toHaveBeenCalled()
-        const lastCall = mockHandleFilter.mock.calls[mockHandleFilter.mock.calls.length - 1][0]
+        const lastCall =
+          mockHandleFilter.mock.calls[mockHandleFilter.mock.calls.length - 1][0]
         expect(lastCall.category_id).toBe(1)
       })
     })
@@ -393,7 +414,9 @@ describe('TopPage', () => {
 
       await waitFor(() => {
         // 高配当タグボタンを探す（おすすめタブにも「高配当」があるためgetAllを使用）
-        const dividendButtons = screen.getAllByRole('button', { name: '高配当' })
+        const dividendButtons = screen.getAllByRole('button', {
+          name: '高配当',
+        })
         expect(dividendButtons.length).toBeGreaterThan(0)
       })
 
@@ -404,7 +427,8 @@ describe('TopPage', () => {
 
       await waitFor(() => {
         expect(mockHandleFilter).toHaveBeenCalled()
-        const lastCall = mockHandleFilter.mock.calls[mockHandleFilter.mock.calls.length - 1][0]
+        const lastCall =
+          mockHandleFilter.mock.calls[mockHandleFilter.mock.calls.length - 1][0]
         expect(lastCall.tag_ids).toContain(2) // 高配当タグのID
       })
     })
@@ -421,7 +445,9 @@ describe('TopPage', () => {
       renderTopPage()
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: 'TOPIX連動' })).toBeInTheDocument()
+        expect(
+          screen.getByRole('button', { name: 'TOPIX連動' })
+        ).toBeInTheDocument()
       })
 
       // TOPIX連動タグをクリック（タグフィルタとして動作確認）
@@ -430,7 +456,8 @@ describe('TopPage', () => {
 
       await waitFor(() => {
         expect(mockHandleFilter).toHaveBeenCalled()
-        const lastCall = mockHandleFilter.mock.calls[mockHandleFilter.mock.calls.length - 1][0]
+        const lastCall =
+          mockHandleFilter.mock.calls[mockHandleFilter.mock.calls.length - 1][0]
         expect(lastCall.tag_ids).toContain(1)
       })
     })
@@ -508,18 +535,25 @@ describe('TopPage', () => {
       renderTopPage()
 
       await waitFor(() => {
-        const categoryButtons = screen.getAllByRole('button', { name: '国内株式' })
+        const categoryButtons = screen.getAllByRole('button', {
+          name: '国内株式',
+        })
         expect(categoryButtons.length).toBeGreaterThan(0)
-        expect(screen.getByRole('button', { name: 'TOPIX連動' })).toBeInTheDocument()
+        expect(
+          screen.getByRole('button', { name: 'TOPIX連動' })
+        ).toBeInTheDocument()
       })
 
       // カテゴリを選択
-      const categoryButtons = screen.getAllByRole('button', { name: '国内株式' })
+      const categoryButtons = screen.getAllByRole('button', {
+        name: '国内株式',
+      })
       fireEvent.click(categoryButtons[0])
 
       await waitFor(() => {
         expect(mockHandleFilter).toHaveBeenCalled()
-        const lastCall = mockHandleFilter.mock.calls[mockHandleFilter.mock.calls.length - 1][0]
+        const lastCall =
+          mockHandleFilter.mock.calls[mockHandleFilter.mock.calls.length - 1][0]
         expect(lastCall.category_id).toBe(1)
       })
 
@@ -530,8 +564,11 @@ describe('TopPage', () => {
       fireEvent.click(tagButton)
 
       await waitFor(() => {
-        expect(mockHandleFilter.mock.calls.length).toBeGreaterThan(callCountAfterCategory)
-        const lastCall = mockHandleFilter.mock.calls[mockHandleFilter.mock.calls.length - 1][0]
+        expect(mockHandleFilter.mock.calls.length).toBeGreaterThan(
+          callCountAfterCategory
+        )
+        const lastCall =
+          mockHandleFilter.mock.calls[mockHandleFilter.mock.calls.length - 1][0]
         expect(lastCall.category_id).toBe(1)
         expect(lastCall.tag_ids).toContain(1)
       })
@@ -547,17 +584,22 @@ describe('TopPage', () => {
       renderTopPage()
 
       await waitFor(() => {
-        const categoryButtons = screen.getAllByRole('button', { name: '国内株式' })
+        const categoryButtons = screen.getAllByRole('button', {
+          name: '国内株式',
+        })
         expect(categoryButtons.length).toBeGreaterThan(0)
       })
 
       // まずカテゴリを選択
-      const categoryButtons = screen.getAllByRole('button', { name: '国内株式' })
+      const categoryButtons = screen.getAllByRole('button', {
+        name: '国内株式',
+      })
       fireEvent.click(categoryButtons[0])
 
       await waitFor(() => {
         expect(mockHandleFilter).toHaveBeenCalled()
-        const lastCall = mockHandleFilter.mock.calls[mockHandleFilter.mock.calls.length - 1][0]
+        const lastCall =
+          mockHandleFilter.mock.calls[mockHandleFilter.mock.calls.length - 1][0]
         expect(lastCall.category_id).toBe(1)
       })
 
@@ -568,8 +610,11 @@ describe('TopPage', () => {
       fireEvent.click(clearButton)
 
       await waitFor(() => {
-        expect(mockHandleFilter.mock.calls.length).toBeGreaterThan(callCountAfterSelect)
-        const lastCall = mockHandleFilter.mock.calls[mockHandleFilter.mock.calls.length - 1][0]
+        expect(mockHandleFilter.mock.calls.length).toBeGreaterThan(
+          callCountAfterSelect
+        )
+        const lastCall =
+          mockHandleFilter.mock.calls[mockHandleFilter.mock.calls.length - 1][0]
         expect(lastCall.category_id).toBeUndefined()
       })
     })
@@ -733,7 +778,9 @@ describe('TopPage', () => {
       })
 
       // 配当収入ボタンをクリック（切り口切替）
-      const dividendButtons = screen.getAllByRole('button', { name: '配当収入' })
+      const dividendButtons = screen.getAllByRole('button', {
+        name: '配当収入',
+      })
       fireEvent.click(dividendButtons[0])
 
       // setSelectedPerspectiveが呼ばれたことを確認

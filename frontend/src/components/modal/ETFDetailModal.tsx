@@ -24,6 +24,7 @@ type PerspectiveKey =
   | 'stability'
   | 'volume'
   | 'growth'
+  | 'custom'
 
 const PERSPECTIVES: { key: PerspectiveKey; label: string }[] = [
   { key: 'balance', label: 'バランス' },
@@ -41,6 +42,7 @@ const PERSPECTIVE_TO_SCORE_KEY: Record<PerspectiveKey, string> = {
   stability: 'score_stability',
   volume: 'score_volume',
   growth: 'score_growth',
+  custom: 'score_custom',
 }
 
 interface ETFDetailModalProps {
@@ -85,7 +87,10 @@ export function ETFDetailModal({
       return scoreValue
     }
     // フォールバック: data.scoreを使用
-    const dataWithScore = data as unknown as Record<string, number | null | undefined>
+    const dataWithScore = data as unknown as Record<
+      string,
+      number | null | undefined
+    >
     return dataWithScore.score !== undefined && dataWithScore.score !== null
       ? dataWithScore.score
       : null
@@ -157,7 +162,8 @@ export function ETFDetailModal({
             <div className={styles.perspectiveTabs}>
               {PERSPECTIVES.map(({ key, label }) => {
                 const isActive = selectedPerspective === key
-                const activeColor = PERSPECTIVE_COLORS[key] || PERSPECTIVE_COLORS.balance
+                const activeColor =
+                  PERSPECTIVE_COLORS[key] || PERSPECTIVE_COLORS.balance
                 return (
                   <button
                     key={key}

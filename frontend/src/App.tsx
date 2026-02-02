@@ -18,7 +18,8 @@ import './styles/global.css'
 
 export default function App() {
   // 開発環境では basename なし、本番環境では /japan-etf-analyzer
-  const basename = import.meta.env.MODE === 'production' ? '/japan-etf-analyzer' : ''
+  const basename =
+    import.meta.env.MODE === 'production' ? '/japan-etf-analyzer' : ''
 
   return (
     <BrowserRouter basename={basename}>

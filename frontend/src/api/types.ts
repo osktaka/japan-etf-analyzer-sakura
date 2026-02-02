@@ -288,6 +288,7 @@ export interface ScoreData {
   stability: number
   volume: number
   growth: number
+  custom?: number
   axis_scores: AxisScores | null
   score: number | null
 }

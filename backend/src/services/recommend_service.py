@@ -90,6 +90,7 @@ class RecommendService:
         limit: int = 5,
         scoring_mode: str = "full",
         user_id: Optional[int] = None,
+        custom_weights: Optional[Dict] = None,
     ) -> Dict:
         """Get recommended ETFs based on perspective.
 
@@ -98,18 +99,21 @@ class RecommendService:
             limit: Maximum number of recommendations
             scoring_mode: Scoring mode - "full" (default) or "partial"
             user_id: Optional user ID for custom perspective
+            custom_weights: Optional custom weights dict (overrides user_id lookup)
 
         Returns:
             Dictionary with perspective info and recommended ETFs with scores
         """
         # Handle custom perspective
         if perspective == "custom":
-            if not user_id:
-                raise ValueError("user_id is required for custom perspective")
-
-            custom_weights = self.user_settings_service.get_custom_weights(user_id)
+            # Use provided custom_weights or fetch from user settings
             if not custom_weights:
-                raise ValueError("Custom weights not configured for this user")
+                if not user_id:
+                    raise ValueError("user_id is required for custom perspective")
+
+                custom_weights = self.user_settings_service.get_custom_weights(user_id)
+                if not custom_weights:
+                    raise ValueError("Custom weights not configured for this user")
 
             perspective_info = {
                 "id": "custom",

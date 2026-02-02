@@ -12,6 +12,7 @@ SCORE_SORT_FIELDS = {
     'score_stability': 'stability',
     'score_volume': 'volume',
     'score_growth': 'growth',
+    'score_custom': 'custom',
     # Axis scores
     'axis_dividend_power': 'axis_scores.dividend_power',
     'axis_cost_efficiency': 'axis_scores.cost_efficiency',
@@ -56,12 +57,18 @@ class ETFService:
         return_type: str = "price",
         scoring_mode: str = "full",
         perspective: str = "balance",
+        custom_weights: Optional[Dict] = None,
         limit: int = 50,
         offset: int = 0,
     ) -> Dict:
         """Search ETFs with filters."""
         # Check if this is a score sort
         is_score_sort = sort in SCORE_SORT_FIELDS
+
+        # For custom score sort, we need custom_weights
+        if sort == 'score_custom' and not custom_weights:
+            # Fallback to balance if custom_weights not provided
+            sort = 'score_balance'
 
         if is_score_sort:
             # Score sort: get all matching ETFs, compute scores, sort, then paginate
@@ -82,7 +89,11 @@ class ETFService:
 
             # Get scores from cache (with fallback to calculation)
             codes = [etf.code for etf in all_etfs]
-            all_scores = self.get_batch_scores(codes, scoring_mode)
+            # For custom sort, calculate on-the-fly with custom_weights
+            if sort == 'score_custom':
+                all_scores = self._get_batch_custom_scores(codes, scoring_mode, custom_weights)
+            else:
+                all_scores = self.get_batch_scores(codes, scoring_mode)
 
             # Get the score key to sort by
             score_key = SCORE_SORT_FIELDS[sort]
@@ -99,6 +110,9 @@ class ETFService:
                         if value is None:
                             return -1
                     return value if value is not None else -1
+                elif score_key == 'custom':
+                    # Custom score (uses 'score' field from custom calculation)
+                    return scores_data.get('score', -1)
                 else:
                     # Top-level key (e.g., "balance", "score")
                     return scores_data.get(score_key, -1)
@@ -140,7 +154,11 @@ class ETFService:
 
         # Get scores for all ETFs with the specified perspective
         codes = [etf.code for etf in etfs]
-        all_scores = self._get_scores_for_perspective(codes, perspective, scoring_mode)
+        # カスタムの場合は計算、それ以外はキャッシュから取得
+        if perspective == 'custom' and custom_weights:
+            all_scores = self._get_batch_custom_scores(codes, scoring_mode, custom_weights)
+        else:
+            all_scores = self._get_scores_for_perspective(codes, perspective, scoring_mode)
 
         # Merge scores into items
         items = []
@@ -322,3 +340,51 @@ class ETFService:
         return self.score_cache_repository.get_scores_with_axes(
             codes, perspective, scoring_mode
         )
+
+    def _get_batch_custom_scores(
+        self, codes: List[str], scoring_mode: str, custom_weights: Dict
+    ) -> Dict[str, Dict]:
+        """Calculate custom scores for multiple ETFs.
+
+        Args:
+            codes: List of ETF codes
+            scoring_mode: Scoring mode - "full" or "partial"
+            custom_weights: Custom weights dict
+
+        Returns:
+            Dict mapping ETF code to dict with score and axis_scores
+        """
+        result = {}
+        etfs = [self.repository.get_by_code(code) for code in codes]
+        etf_map = {etf.code: etf for etf in etfs if etf}
+
+        # Get all ETFs for percentile calculation
+        all_etfs = self.repository.search(limit=None, offset=0)
+
+        # Pre-load return rates and average volumes
+        for etf in all_etfs:
+            return_rates = self.repository.get_return_rates(etf.code)
+            self.scoring_service._return_rates_cache[etf.code] = return_rates
+            avg_volume = self.repository.get_average_volume(etf.code, days=30)
+            self.scoring_service._avg_volumes_cache[etf.code] = avg_volume
+
+        # Collect percentile data
+        self.scoring_service._collect_percentile_data(all_etfs)
+
+        for code in codes:
+            etf = etf_map.get(code)
+            if not etf:
+                continue
+
+            # Calculate custom score
+            score = self.scoring_service.calculate_score(
+                etf, perspective='balance', mode=scoring_mode, custom_weights=custom_weights
+            )
+            axis_scores = self.scoring_service.calculate_axis_scores(etf)
+
+            result[code] = {
+                'score': score,
+                'axis_scores': axis_scores,
+            }
+
+        return result

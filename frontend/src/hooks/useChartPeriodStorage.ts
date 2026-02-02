@@ -3,7 +3,14 @@ import { useState, useEffect } from 'react'
 import type { ChartPeriod } from '../api'
 
 const CHART_PERIODS_STORAGE_KEY = 'etf-chart-periods'
-const DEFAULT_CHART_PERIODS: ChartPeriod[] = ['3m', '6m', '1y', '3y', '5y', '10y']
+const DEFAULT_CHART_PERIODS: ChartPeriod[] = [
+  '3m',
+  '6m',
+  '1y',
+  '3y',
+  '5y',
+  '10y',
+]
 
 // ローカルストレージからチャート期間を復元
 const getStoredChartPeriods = (): ChartPeriod[] => {

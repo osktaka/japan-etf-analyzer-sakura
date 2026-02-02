@@ -23,6 +23,7 @@ import {
   LoginPromptModal,
   CustomWeightsPromptModal,
   CustomWeightsModal,
+  WeightsHelpModal,
 } from '../components/modal'
 import { Pagination } from '../components/common'
 import { MAX_COMPARE_ITEMS } from '../utils'
@@ -38,6 +39,7 @@ export function TopPage() {
   const [showCustomWeightsPromptModal, setShowCustomWeightsPromptModal] =
     useState(false)
   const [showCustomWeightsModal, setShowCustomWeightsModal] = useState(false)
+  const [showWeightsHelpModal, setShowWeightsHelpModal] = useState(false)
   const [customWeights, setCustomWeights] = useState<CustomWeights | null>(null)
 
   // おすすめタブの状態（URLとlocalStorageから復元）
@@ -72,13 +74,16 @@ export function TopPage() {
   // コールバック用のref（循環依存を解決）
   const currentSortRef = useRef<SortField>('score_balance') // 初期perspective=balanceに対応
   const sortUpdateRef = useRef<(sort: never, order: never) => void>(() => {})
-  const searchRequestRef = useRef<(overrides?: SearchOverrides) => void>(() => {})
+  const searchRequestRef = useRef<(overrides?: SearchOverrides) => void>(
+    () => {}
+  )
 
   // 表示モード関連のフック
   const displayModeHook = useTopPageDisplayMode({
     getCurrentSort: () => currentSortRef.current,
     currentOrder: 'desc',
-    onSortUpdate: (sort, order) => sortUpdateRef.current(sort as never, order as never),
+    onSortUpdate: (sort, order) =>
+      sortUpdateRef.current(sort as never, order as never),
     onSearchRequest: (overrides) => searchRequestRef.current(overrides),
   })
 
@@ -103,6 +108,7 @@ export function TopPage() {
     returnType,
     scoringMode,
     selectedPerspective,
+    customWeights,
     favoriteCodes,
     holdingCodes,
     compareCodes,
@@ -252,6 +258,25 @@ export function TopPage() {
     }
   }
 
+  const handleSearchCustomClick = () => {
+    if (!isAuthenticated) {
+      setLoginPromptConfig({
+        title: 'カスタム機能',
+        description: 'カスタム重みづけ機能はログイン後にご利用いただけます。',
+      })
+      return
+    }
+    if (!customWeights) {
+      setShowCustomWeightsPromptModal(true)
+    } else {
+      setSelectedPerspective('custom')
+    }
+  }
+
+  const handleHelpClick = () => {
+    setShowWeightsHelpModal(true)
+  }
+
   const handleEditCustom = () => {
     setShowCustomWeightsModal(true)
   }
@@ -327,6 +352,10 @@ export function TopPage() {
             onPerspectiveChange={setSelectedPerspective}
             onPeriodsChange={setSelectedPeriods}
             onReturnTypeChange={setReturnType}
+            isAuthenticated={isAuthenticated}
+            customWeights={customWeights}
+            onCustomClick={handleSearchCustomClick}
+            onHelpClick={handleHelpClick}
           />
         </div>
         <div className={styles.resultCount}>
@@ -407,6 +436,13 @@ export function TopPage() {
         onClose={() => setShowCustomWeightsModal(false)}
         currentWeights={customWeights}
         onSave={handleSaveCustomWeights}
+      />
+
+      <WeightsHelpModal
+        isOpen={showWeightsHelpModal}
+        onClose={() => setShowWeightsHelpModal(false)}
+        isAuthenticated={isAuthenticated}
+        customWeights={customWeights}
       />
     </div>
   )

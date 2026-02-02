@@ -1,6 +1,6 @@
 /** Recommendation API functions */
 import apiClient from './client'
-import { ApiResponse, Perspective, Recommendation } from './types'
+import { ApiResponse, Perspective, Recommendation, CustomWeights } from './types'
 
 export async function getPerspectives(): Promise<Perspective[]> {
   const response =
@@ -11,11 +11,14 @@ export async function getPerspectives(): Promise<Perspective[]> {
 export async function getRecommendations(
   perspective: string = 'popular',
   limit: number = 5,
-  scoringMode: 'full' | 'partial' = 'full'
+  scoringMode: 'full' | 'partial' = 'full',
+  customWeights?: CustomWeights | null
 ): Promise<Recommendation> {
-  const response = await apiClient.get<ApiResponse<Recommendation>>(
-    `/recommendations?perspective=${perspective}&limit=${limit}&scoring_mode=${scoringMode}`
-  )
+  let url = `/recommendations?perspective=${perspective}&limit=${limit}&scoring_mode=${scoringMode}`
+  if (customWeights) {
+    url += `&custom_weights=${encodeURIComponent(JSON.stringify(customWeights))}`
+  }
+  const response = await apiClient.get<ApiResponse<Recommendation>>(url)
   return response.data.data
 }
 

@@ -42,6 +42,7 @@ def create_recommend_bp():
         perspective = request.args.get("perspective", "balance")
         limit = request.args.get("limit", 5, type=int)
         scoring_mode = request.args.get("scoring_mode", "full")
+        custom_weights_param = request.args.get("custom_weights")
 
         if limit < 1:
             limit = 5
@@ -54,13 +55,23 @@ def create_recommend_bp():
         # Get user_id if authenticated (required for custom perspective)
         user_id = current_user.id if current_user.is_authenticated else None
 
+        # Parse custom_weights if provided
+        custom_weights = None
+        if custom_weights_param:
+            try:
+                import json
+                custom_weights = json.loads(custom_weights_param)
+            except (ValueError, json.JSONDecodeError):
+                return error_response("Invalid custom_weights format", 400)
+
         service = RecommendService()
         try:
             result = service.get_recommendations(
                 perspective=perspective,
                 limit=limit,
                 scoring_mode=scoring_mode,
-                user_id=user_id
+                user_id=user_id,
+                custom_weights=custom_weights
             )
             return api_response(data=result)
         except ValueError as e:

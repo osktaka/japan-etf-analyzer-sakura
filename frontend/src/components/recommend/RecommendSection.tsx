@@ -51,7 +51,11 @@ export function RecommendSection({
     }
   }
 
-  const { data, isLoading, error } = useRecommendations(selected, 'full')
+  const { data, isLoading, error } = useRecommendations(
+    selected,
+    'full',
+    customWeights
+  )
 
   useEffect(() => {
     getPerspectives().then(setPerspectives)

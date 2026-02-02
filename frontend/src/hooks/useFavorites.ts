@@ -13,7 +13,10 @@ interface UseFavoritesReturn {
   removeFavorite: (etfCode: string) => Promise<boolean>
   toggleFavorite: (etfCode: string) => Promise<boolean>
   isFavorite: (etfCode: string) => boolean
-  refresh: (perspective?: string, scoringMode?: 'full' | 'partial') => Promise<void>
+  refresh: (
+    perspective?: string,
+    scoringMode?: 'full' | 'partial'
+  ) => Promise<void>
 }
 
 export function useFavorites(

@@ -7,6 +7,7 @@ import { PerspectiveSelector } from './PerspectiveSelector'
 import { ReturnTypeToggle, ReturnType } from './ReturnTypeToggle'
 import { PeriodSelector } from './PeriodSelector'
 import type { PerspectiveKey } from './ETFTableView'
+import type { CustomWeights } from '../../api'
 import styles from '../../pages/TopPage.module.css'
 
 interface SectionControlsProps {
@@ -22,6 +23,10 @@ interface SectionControlsProps {
   onPerspectiveChange: (perspective: PerspectiveKey) => void
   onPeriodsChange: (periods: PerformancePeriod[]) => void
   onReturnTypeChange: (returnType: ReturnType) => void
+  isAuthenticated?: boolean
+  customWeights?: CustomWeights | null
+  onCustomClick?: () => void
+  onHelpClick?: () => void
 }
 
 export function SectionControls({
@@ -37,6 +42,10 @@ export function SectionControls({
   onPerspectiveChange,
   onPeriodsChange,
   onReturnTypeChange,
+  isAuthenticated,
+  customWeights,
+  onCustomClick,
+  onHelpClick,
 }: SectionControlsProps) {
   return (
     <div className={styles.sectionControls}>
@@ -57,6 +66,10 @@ export function SectionControls({
             selectedPerspective={selectedPerspective}
             onChange={onPerspectiveChange}
             className={styles.scoringModeToggle}
+            isAuthenticated={isAuthenticated}
+            customWeights={customWeights}
+            onCustomClick={onCustomClick}
+            onHelpClick={onHelpClick}
           />
         </>
       ) : (
@@ -72,6 +85,10 @@ export function SectionControls({
                 selectedPerspective={selectedPerspective}
                 onChange={onPerspectiveChange}
                 className={styles.scoringModeToggle}
+                isAuthenticated={isAuthenticated}
+                customWeights={customWeights}
+                onCustomClick={onCustomClick}
+                onHelpClick={onHelpClick}
               />
             </>
           )}

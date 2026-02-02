@@ -45,8 +45,12 @@ export function CustomWeightsModal({
   )
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [activeTooltip, setActiveTooltip] = useState<keyof CustomWeights | null>(null)
-  const tooltipRefs = useRef<{ [key in keyof CustomWeights]?: HTMLDivElement | null }>({})
+  const [activeTooltip, setActiveTooltip] = useState<
+    keyof CustomWeights | null
+  >(null)
+  const tooltipRefs = useRef<{
+    [key in keyof CustomWeights]?: HTMLDivElement | null
+  }>({})
 
   // currentWeightsが変更されたら内部状態を更新
   useEffect(() => {
@@ -58,7 +62,9 @@ export function CustomWeightsModal({
           cost_efficiency: Math.round(currentWeights.cost_efficiency * 100),
           scale_reliability: Math.round(currentWeights.scale_reliability * 100),
           trading_quality: Math.round(currentWeights.trading_quality * 100),
-          return_performance: Math.round(currentWeights.return_performance * 100),
+          return_performance: Math.round(
+            currentWeights.return_performance * 100
+          ),
         })
       } else {
         setWeights(DEFAULT_WEIGHTS)

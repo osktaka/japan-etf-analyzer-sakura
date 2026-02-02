@@ -33,6 +33,7 @@ def create_etf_bp():
             return_type: Return type for performance sorting (price, regression). Default: price
             scoring_mode: Scoring mode - "full" (default) or "partial"
             perspective: Perspective ID for score calculation (balance, dividend, etc.). Default: balance
+            custom_weights: JSON string of custom weights (e.g., {"dividend_power": 0.3, ...})
             limit: Number of results (default: 50, max: 100)
             offset: Pagination offset (default: 0)
 
@@ -51,6 +52,7 @@ def create_etf_bp():
         return_type = request.args.get("return_type", "price")
         scoring_mode = request.args.get("scoring_mode", "full")
         perspective = request.args.get("perspective", "balance")
+        custom_weights_param = request.args.get("custom_weights")
 
         if order not in ("asc", "desc"):
             return error_response("Invalid order parameter. Use 'asc' or 'desc'", 400)
@@ -91,6 +93,14 @@ def create_etf_bp():
                 code.strip() for code in holding_codes_param.split(",") if code.strip()
             ]
 
+        custom_weights = None
+        if custom_weights_param:
+            try:
+                import json
+                custom_weights = json.loads(custom_weights_param)
+            except (ValueError, json.JSONDecodeError):
+                return error_response("Invalid custom_weights format", 400)
+
         service = ETFService()
         result = service.search(
             keyword=keyword,
@@ -105,6 +115,7 @@ def create_etf_bp():
             return_type=return_type,
             scoring_mode=scoring_mode,
             perspective=perspective,
+            custom_weights=custom_weights,
             limit=limit,
             offset=offset,
         )

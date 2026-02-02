@@ -18,6 +18,7 @@ export const PERSPECTIVE_TO_SORT_FIELD: Record<PerspectiveKey, SortField> = {
   stability: 'score_stability',
   volume: 'score_volume',
   growth: 'score_growth',
+  custom: 'score_custom',
 }
 
 export interface DisplayModeState {
@@ -58,7 +59,8 @@ export interface UseTopPageDisplayModeOptions {
   onSearchRequest: (overrides?: SearchOverrides) => void
 }
 
-export interface UseTopPageDisplayModeResult extends DisplayModeState, DisplayModeActions {
+export interface UseTopPageDisplayModeResult
+  extends DisplayModeState, DisplayModeActions {
   /** 初期viewModeを取得（ソート初期化用） */
   getInitialViewMode: () => ViewMode
   /** displayModeの前回値ref */
@@ -86,7 +88,8 @@ export interface UseTopPageDisplayModeResult extends DisplayModeState, DisplayMo
 export function useTopPageDisplayMode(
   options: UseTopPageDisplayModeOptions
 ): UseTopPageDisplayModeResult {
-  const { getCurrentSort, currentOrder, onSortUpdate, onSearchRequest } = options
+  const { getCurrentSort, currentOrder, onSortUpdate, onSearchRequest } =
+    options
   const [searchParams, setSearchParams] = useSearchParams()
   const storage = useTopPageStorage()
 
@@ -281,7 +284,11 @@ export function useTopPageDisplayMode(
       if (viewMode === 'card' || displayMode === 'score') {
         const newSort = PERSPECTIVE_TO_SORT_FIELD[selectedPerspective]
         onSortUpdate(newSort, 'desc')
-        onSearchRequest({ sort: newSort, order: 'desc', perspective: selectedPerspective })
+        onSearchRequest({
+          sort: newSort,
+          order: 'desc',
+          perspective: selectedPerspective,
+        })
       }
     }
     // selectedPerspective変更時のみ実行

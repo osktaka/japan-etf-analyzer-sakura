@@ -1,5 +1,6 @@
 /** SearchParams construction helper */
 import type { SearchParams, SortField, SortOrder } from '../api'
+import type { CustomWeights } from '../api'
 
 export interface BuildSearchParamsOptions {
   currentFilters: SearchParams
@@ -10,6 +11,7 @@ export interface BuildSearchParamsOptions {
   returnType: 'price' | 'regression'
   scoringMode: 'full' | 'partial'
   perspective?: string
+  customWeights?: CustomWeights | null
   pageSize: number
   favoritesOnly: boolean
   holdingsOnly: boolean
@@ -37,6 +39,7 @@ export function buildSearchParams(
     returnType,
     scoringMode,
     perspective,
+    customWeights,
     pageSize,
     favoritesOnly,
     holdingsOnly,
@@ -56,6 +59,11 @@ export function buildSearchParams(
     perspective: perspective,
     limit: pageSize,
     offset: (currentPage - 1) * pageSize,
+  }
+
+  // Add custom_weights as JSON string if provided and sorting by custom score
+  if (currentSort === 'score_custom' && customWeights) {
+    searchParams.custom_weights = JSON.stringify(customWeights)
   }
 
   // 優先順位: compareOnly > holdingsOnly > favoritesOnly（排他的に適用）

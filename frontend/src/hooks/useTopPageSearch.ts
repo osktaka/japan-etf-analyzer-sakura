@@ -1,7 +1,7 @@
 /** TopPage search state management hook */
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { SearchParams, SortField, SortOrder } from '../api'
+import { SearchParams, SortField, SortOrder, CustomWeights } from '../api'
 import { useETFSearch } from './useETFSearch'
 import { useTopPageStorage } from './useTopPageStorage'
 import { PERSPECTIVE_TO_SORT_FIELD } from './useTopPageDisplayMode'
@@ -13,6 +13,7 @@ export interface UseTopPageSearchOptions {
   returnType: 'price' | 'regression'
   scoringMode: 'full' | 'partial'
   selectedPerspective: string
+  customWeights: CustomWeights | null
   favoriteCodes: Set<string>
   holdingCodes: Set<string>
   compareCodes: string[]
@@ -92,6 +93,7 @@ export function useTopPageSearch(
     returnType,
     scoringMode,
     selectedPerspective,
+    customWeights,
     favoriteCodes,
     holdingCodes,
     compareCodes,
@@ -119,7 +121,10 @@ export function useTopPageSearch(
   }, [searchParams])
 
   // 初期ソート状態を取得
-  const getInitialSort = useCallback((): { sort: SortField; order: SortOrder } => {
+  const getInitialSort = useCallback((): {
+    sort: SortField
+    order: SortOrder
+  } => {
     const urlSort = searchParams.get('sort') as SortField
     const urlOrder = searchParams.get('order') as SortOrder
     if (urlSort) return { sort: urlSort, order: urlOrder || 'desc' }
@@ -167,9 +172,8 @@ export function useTopPageSearch(
   const [currentKeyword, setCurrentKeyword] = useState(
     searchParams.get('q') || ''
   )
-  const [currentFilters, setCurrentFilters] = useState<SearchParams>(
-    getInitialFilters()
-  )
+  const [currentFilters, setCurrentFilters] =
+    useState<SearchParams>(getInitialFilters())
 
   const initialSort = useMemo(() => getInitialSort(), [getInitialSort])
   const [currentSort, setCurrentSort] = useState<SortField>(initialSort.sort)
@@ -223,6 +227,7 @@ export function useTopPageSearch(
         returnType,
         scoringMode,
         perspective: overrides?.perspective ?? selectedPerspective,
+        customWeights,
         pageSize: PAGE_SIZE,
         favoritesOnly,
         holdingsOnly,
@@ -242,6 +247,7 @@ export function useTopPageSearch(
       returnType,
       scoringMode,
       selectedPerspective,
+      customWeights,
       favoritesOnly,
       holdingsOnly,
       compareOnly,
@@ -317,7 +323,7 @@ export function useTopPageSearch(
       setHasSearched(true)
     }
 
-    search({
+    const initialParams: SearchParams = {
       ...filters,
       keyword,
       sort,
@@ -327,7 +333,14 @@ export function useTopPageSearch(
       perspective: selectedPerspective,
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
-    })
+    }
+
+    // Add custom_weights if sorting by custom score
+    if (sort === 'score_custom' && customWeights) {
+      initialParams.custom_weights = JSON.stringify(customWeights)
+    }
+
+    search(initialParams)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // 初回のみ実行
 

@@ -68,6 +68,7 @@ export type PerspectiveKey =
   | 'stability'
   | 'volume'
   | 'growth'
+  | 'custom'
 
 interface ETFTableViewProps {
   items: ETFSummary[]
@@ -143,6 +144,7 @@ export function ETFTableView({
         stability: 'score_stability',
         volume: 'score_volume',
         growth: 'score_growth',
+        custom: 'score_custom',
       }
       finalApiField = perspectiveToField[selectedPerspective]
     }
@@ -212,6 +214,11 @@ export function ETFTableView({
 
   // Get evaluation score value based on selected perspective
   const getEvaluationScore = (code: string): number | null | undefined => {
+    // カスタムの場合はitemsから直接scoreを取得
+    if (selectedPerspective === 'custom') {
+      const item = items.find((i) => i.code === code)
+      return item?.score
+    }
     const scoreData = scores?.[code]
     if (!scoreData) return undefined
     return scoreData[selectedPerspective]

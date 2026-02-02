@@ -18,8 +18,14 @@ interface MultiPeriodChartProps {
   periods?: ChartPeriod[]
 }
 
-export function MultiPeriodChart({ code, periods: propsPeriods }: MultiPeriodChartProps) {
-  const { data, isLoading, error, periods } = useMultiPeriodChartData(code, propsPeriods)
+export function MultiPeriodChart({
+  code,
+  periods: propsPeriods,
+}: MultiPeriodChartProps) {
+  const { data, isLoading, error, periods } = useMultiPeriodChartData(
+    code,
+    propsPeriods
+  )
 
   if (isLoading) {
     return (

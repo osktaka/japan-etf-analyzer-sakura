@@ -4,9 +4,8 @@ import { ApiResponse, UserSettings, CustomWeights } from './types'
 
 export const userSettingsApi = {
   async getSettings(): Promise<UserSettings> {
-    const response = await apiClient.get<ApiResponse<UserSettings>>(
-      '/user/settings'
-    )
+    const response =
+      await apiClient.get<ApiResponse<UserSettings>>('/user/settings')
     return response.data.data
   },
 
