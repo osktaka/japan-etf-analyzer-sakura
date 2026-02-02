@@ -1,13 +1,16 @@
 # ETF Analyzer Scheduled Tasks
 # Timezone: Asia/Tokyo (set in Dockerfile.scheduler)
 
-# 毎日朝6時: ETFマスタ更新(JPXから直接DB登録)→評価スコア更新
-0 6 * * * cd /app && /usr/local/bin/python3 scripts/sync_etf_from_jpx.py >> /var/log/cron.log 2>&1 && /usr/local/bin/python3 scripts/update_scores.py >> /var/log/cron.log 2>&1
+# NAME: 銘柄マスター更新（毎週月曜 6:00）
+0 6 * * 1 cd /app && /usr/local/bin/python3 scripts/sync_etf_from_jpx.py >> /app/logs/master_sync.log 2>&1 && /usr/local/bin/python3 scripts/update_scores.py >> /app/logs/score_update.log 2>&1
 
-# 平日16時: 株価データ更新(東証閉場後、スマートモード)→評価スコア更新
-0 16 * * 1-5 cd /app && /usr/local/bin/python3 scripts/update_etf_data.py --smart >> /var/log/cron.log 2>&1 && /usr/local/bin/python3 scripts/update_scores.py >> /var/log/cron.log 2>&1
+# NAME: 株価データ更新（平日 20:00）
+0 20 * * 1-5 cd /app && /usr/local/bin/python3 scripts/update_etf_data.py --smart --rate-limit 3.0 >> /app/logs/etf_update.log 2>&1 && /usr/local/bin/python3 scripts/update_scores.py >> /app/logs/score_update.log 2>&1
 
-# 毎週日曜朝5時: ログローテーション
+# NAME: 株式分割データ更新（毎週日曜 2:00）
+0 2 * * 0 cd /app && /usr/local/bin/python3 scripts/sync_historical_splits.py --all --rate-limit 5.0 >> /app/logs/split_sync.log 2>&1
+
+# NAME: ログローテーション（毎週日曜 5:00）
 0 5 * * 0 cd /app && /usr/local/bin/python3 scripts/rotate_logs.py >> /app/logs/rotate.log 2>&1
 
 # 空行が必要(cronの仕様)

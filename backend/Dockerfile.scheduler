@@ -1,4 +1,4 @@
-FROM python:3.8-slim
+FROM python:3.9-slim
 
 WORKDIR /app
 
@@ -19,10 +19,7 @@ COPY . .
 COPY crontab /etc/cron.d/etf-scheduler
 RUN chmod 0644 /etc/cron.d/etf-scheduler && crontab /etc/cron.d/etf-scheduler
 
-# ログファイル作成
-RUN touch /var/log/cron.log
-
-# 環境変数をcronに渡すためのラッパースクリプト
-RUN echo '#!/bin/bash\nenv >> /etc/environment\ncron && tail -f /var/log/cron.log' > /entrypoint.sh && chmod +x /entrypoint.sh
+# ログディレクトリ作成と環境変数をcronに渡すためのラッパースクリプト
+RUN echo '#!/bin/bash\nenv >> /etc/environment\nmkdir -p /app/logs\ncron\nwhile true; do sleep 60; done' > /entrypoint.sh && chmod +x /entrypoint.sh
 
 CMD ["/entrypoint.sh"]
