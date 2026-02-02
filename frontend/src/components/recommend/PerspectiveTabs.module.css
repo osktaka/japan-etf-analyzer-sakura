@@ -113,6 +113,31 @@
   color: var(--color-primary);
 }
 
+.editLink {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: var(--text-xs);
+  padding: 0;
+  text-decoration: underline;
+}
+
+.editLink:hover {
+  color: var(--color-primary-dark, #2563eb);
+}
+
+.customWeights {
+  text-align: center !important;
+  font-family: 'Courier New', monospace;
+}
+
+.editLinkWrapper {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--spacing-sm);
+}
+
 /* モバイル対応 */
 @media (max-width: 768px) {
   .helpTooltip {

@@ -1,6 +1,6 @@
 /** Recommend section component */
 import { useState, useEffect } from 'react'
-import { getPerspectives, Perspective } from '../../api'
+import { getPerspectives, Perspective, CustomWeights } from '../../api'
 import { useRecommendations } from '../../hooks'
 import { Loading, ErrorMessage } from '../common'
 import { ETFCard } from '../etf'
@@ -16,6 +16,10 @@ interface RecommendSectionProps {
   onShowAll?: () => void
   selectedPerspective?: string
   onSelectPerspective?: (perspective: string) => void
+  isAuthenticated?: boolean
+  customWeights?: CustomWeights | null
+  onCustomClick?: () => void
+  onEditCustom?: () => void
 }
 
 export function RecommendSection({
@@ -27,6 +31,10 @@ export function RecommendSection({
   onShowAll,
   selectedPerspective,
   onSelectPerspective,
+  isAuthenticated = false,
+  customWeights = null,
+  onCustomClick,
+  onEditCustom,
 }: RecommendSectionProps) {
   const [perspectives, setPerspectives] = useState<Perspective[]>([])
   // 制御/非制御ハイブリッド: propsがあれば使用、なければ内部state（既存互換）
@@ -55,6 +63,10 @@ export function RecommendSection({
           perspectives={perspectives}
           selected={selected}
           onSelect={handleSelect}
+          isAuthenticated={isAuthenticated}
+          customWeights={customWeights}
+          onCustomClick={onCustomClick}
+          onEditCustom={onEditCustom}
         />
       )}
       {data && (

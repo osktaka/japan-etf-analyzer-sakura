@@ -293,3 +293,16 @@ export interface ScoreData {
 }
 
 export type BatchScoreData = Record<string, ScoreData>
+
+/** User settings types */
+export interface CustomWeights {
+  dividend_power: number
+  cost_efficiency: number
+  scale_reliability: number
+  trading_quality: number
+  return_performance: number
+}
+
+export interface UserSettings {
+  custom_weights: CustomWeights | null
+}

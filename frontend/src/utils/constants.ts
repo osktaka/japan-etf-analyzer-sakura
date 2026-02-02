@@ -20,6 +20,7 @@ export const PERSPECTIVE_COLORS: Record<string, string> = {
   volume: '#F97316', // 取引規模: Orange
   growth: '#8B5CF6', // 成長性: Violet
   balance: '#6366F1', // バランス: Indigo
+  custom: '#EC4899', // カスタム: Pink
 }
 
 export const PERSPECTIVE_GRADIENTS: Record<string, string> = {
@@ -29,6 +30,7 @@ export const PERSPECTIVE_GRADIENTS: Record<string, string> = {
   volume: 'linear-gradient(135deg, #F97316, #C2410C)',
   growth: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
   balance: 'linear-gradient(135deg, #6366F1, #4F46E5)',
+  custom: 'linear-gradient(135deg, #EC4899, #BE185D)',
 }
 
 export const ROUTES = {

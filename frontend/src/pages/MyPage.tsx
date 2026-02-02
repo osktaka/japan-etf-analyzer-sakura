@@ -5,6 +5,8 @@ import {
   ETFDetailModal,
   TradeFormModal,
   TradeHistoryModal,
+  CustomWeightsPromptModal,
+  CustomWeightsModal,
 } from '../components/modal'
 import {
   PortfolioSummary,
@@ -15,8 +17,10 @@ import { PerspectiveTabs } from '../components/recommend'
 import { useFavorites } from '../hooks/useFavorites'
 import { useCompareList } from '../hooks/useCompareList'
 import { usePortfolio } from '../hooks/usePortfolio'
-import { ETFSummary, Perspective } from '../api/types'
+import { useAuth } from '../hooks/useAuth'
+import { ETFSummary, Perspective, CustomWeights } from '../api/types'
 import { recommendApi } from '../api/recommend'
+import { userSettingsApi } from '../api/userSettings'
 import styles from './MyPage.module.css'
 
 export function MyPage() {
@@ -26,6 +30,12 @@ export function MyPage() {
     const stored = localStorage.getItem('mypage-sort-enabled')
     return stored === 'true'
   })
+  const [showCustomWeightsPromptModal, setShowCustomWeightsPromptModal] =
+    useState(false)
+  const [showCustomWeightsModal, setShowCustomWeightsModal] = useState(false)
+  const [customWeights, setCustomWeights] = useState<CustomWeights | null>(null)
+
+  const { isAuthenticated } = useAuth()
 
   const { favorites, isLoading, error, toggleFavorite, isFavorite, refresh } =
     useFavorites(perspective, 'full')
@@ -60,6 +70,20 @@ export function MyPage() {
     }
     fetchPerspectives()
   }, [])
+
+  // Fetch custom weights on mount
+  useEffect(() => {
+    const fetchCustomWeights = async () => {
+      if (!isAuthenticated) return
+      try {
+        const settings = await userSettingsApi.getSettings()
+        setCustomWeights(settings.custom_weights)
+      } catch (err) {
+        console.error('Failed to fetch custom weights:', err)
+      }
+    }
+    fetchCustomWeights()
+  }, [isAuthenticated])
 
   // Refresh favorites when perspective changes
   useEffect(() => {
@@ -108,6 +132,27 @@ export function MyPage() {
   const handleCloseTradeHistory = () => {
     setShowTradeHistoryModal(false)
     setTradeHistoryCode('')
+  }
+
+  const handleCustomClick = () => {
+    if (!customWeights) {
+      // 未設定時はプロンプトモーダルを表示
+      setShowCustomWeightsPromptModal(true)
+    } else {
+      // 設定済み時はカスタム切り口に切り替え
+      setPerspective('custom')
+    }
+  }
+
+  const handleEditCustom = () => {
+    setShowCustomWeightsModal(true)
+  }
+
+  const handleSaveCustomWeights = async (weights: CustomWeights) => {
+    await userSettingsApi.saveCustomWeights(weights)
+    setCustomWeights(weights)
+    setPerspective('custom')
+    refresh('custom', 'full')
   }
 
   return (
@@ -161,14 +206,29 @@ export function MyPage() {
               perspectives={perspectives}
               selected={perspective}
               onSelect={setPerspective}
+              isAuthenticated={isAuthenticated}
+              customWeights={customWeights}
+              onCustomClick={handleCustomClick}
+              onEditCustom={handleEditCustom}
             />
-            <button
-              className={`${styles.sortToggle} ${sortEnabled ? styles.sortActive : ''}`}
-              onClick={() => setSortEnabled(!sortEnabled)}
-              type="button"
-            >
-              ソート{sortEnabled ? 'ON' : 'OFF'}
-            </button>
+            <div className={styles.buttonGroup}>
+              {isAuthenticated && (
+                <button
+                  className={styles.secondaryBtn}
+                  onClick={handleEditCustom}
+                  type="button"
+                >
+                  カスタムを編集
+                </button>
+              )}
+              <button
+                className={`${styles.sortToggle} ${sortEnabled ? styles.sortActive : ''}`}
+                onClick={() => setSortEnabled(!sortEnabled)}
+                type="button"
+              >
+                ソート{sortEnabled ? 'ON' : 'OFF'}
+              </button>
+            </div>
           </div>
         )}
 
@@ -228,6 +288,22 @@ export function MyPage() {
         isOpen={showTradeHistoryModal}
         onClose={handleCloseTradeHistory}
         initialSearch={tradeHistoryCode}
+      />
+
+      <CustomWeightsPromptModal
+        isOpen={showCustomWeightsPromptModal}
+        onClose={() => setShowCustomWeightsPromptModal(false)}
+        onRegister={() => {
+          setShowCustomWeightsPromptModal(false)
+          setShowCustomWeightsModal(true)
+        }}
+      />
+
+      <CustomWeightsModal
+        isOpen={showCustomWeightsModal}
+        onClose={() => setShowCustomWeightsModal(false)}
+        currentWeights={customWeights}
+        onSave={handleSaveCustomWeights}
       />
     </div>
   )

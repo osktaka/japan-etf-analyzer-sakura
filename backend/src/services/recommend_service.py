@@ -1,9 +1,10 @@
 """Recommendation service for ETF recommendations."""
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from src.repositories import ETFRepository, ScoreCacheRepository
 
 from .scoring_service import ScoringService
+from .user_settings_service import UserSettingsService
 
 
 class RecommendService:
@@ -58,6 +59,7 @@ class RecommendService:
         self.etf_repository = ETFRepository()
         self.score_cache_repository = ScoreCacheRepository()
         self.scoring_service = ScoringService()
+        self.user_settings_service = UserSettingsService()
 
     def _is_excluded(self, etf) -> bool:
         """Check if ETF should be excluded from recommendations.
@@ -87,6 +89,7 @@ class RecommendService:
         perspective: str = "balance",
         limit: int = 5,
         scoring_mode: str = "full",
+        user_id: Optional[int] = None,
     ) -> Dict:
         """Get recommended ETFs based on perspective.
 
@@ -94,16 +97,34 @@ class RecommendService:
             perspective: Recommendation perspective ID
             limit: Maximum number of recommendations
             scoring_mode: Scoring mode - "full" (default) or "partial"
+            user_id: Optional user ID for custom perspective
 
         Returns:
             Dictionary with perspective info and recommended ETFs with scores
         """
-        perspective_info = next(
-            (p for p in self.PERSPECTIVES if p["id"] == perspective),
-            self.PERSPECTIVES[5],  # Default to balance
-        )
+        # Handle custom perspective
+        if perspective == "custom":
+            if not user_id:
+                raise ValueError("user_id is required for custom perspective")
 
-        scored_items = self._get_scored_etfs_cached(perspective, limit, scoring_mode)
+            custom_weights = self.user_settings_service.get_custom_weights(user_id)
+            if not custom_weights:
+                raise ValueError("Custom weights not configured for this user")
+
+            perspective_info = {
+                "id": "custom",
+                "name": "カスタム",
+                "description": "あなたが設定した重みで評価された銘柄",
+            }
+
+            scored_items = self._get_scored_etfs_custom(custom_weights, limit, scoring_mode)
+        else:
+            perspective_info = next(
+                (p for p in self.PERSPECTIVES if p["id"] == perspective),
+                self.PERSPECTIVES[0],  # Default to balance
+            )
+
+            scored_items = self._get_scored_etfs_cached(perspective, limit, scoring_mode)
 
         return {
             "perspective": perspective_info,
@@ -185,6 +206,51 @@ class RecommendService:
             return scored
 
         return result
+
+    def _get_scored_etfs_custom(self, custom_weights: Dict[str, float], limit: int, scoring_mode: str = "full") -> List[Dict]:
+        """Get ETFs ranked by custom composite score.
+
+        Args:
+            custom_weights: Custom weights dict (0-1 format)
+            limit: Maximum number of results
+            scoring_mode: Scoring mode - "full" (default) or "partial"
+
+        Returns:
+            List of dicts with ETF, score, and axis_scores, sorted by composite score
+        """
+        # Get all ETFs for percentile calculation
+        all_etfs = self.etf_repository.get_all()
+
+        # Apply exclusion filters
+        filtered_candidates = [etf for etf in all_etfs if not self._is_excluded(etf)]
+
+        # Batch fetch data and cache
+        etf_codes = [etf.code for etf in all_etfs]
+        self.scoring_service._avg_volumes_cache = self.etf_repository.get_average_volumes_batch(etf_codes)
+        self.scoring_service._return_rates_cache = self.etf_repository.get_return_rates_batch(etf_codes)
+
+        # Collect values for percentile calculation
+        self.scoring_service._collect_percentile_data(all_etfs)
+
+        # Score each ETF with custom weights
+        scored = []
+        for etf in filtered_candidates:
+            score = self.scoring_service.calculate_score(etf, perspective="custom", mode=scoring_mode, custom_weights=custom_weights)
+            if score > 0:
+                axis_scores = self.scoring_service.calculate_axis_scores(etf)
+                scored.append({
+                    "etf": etf,
+                    "score": score,
+                    "axis_scores": axis_scores,
+                })
+
+        # Clear cache
+        self.scoring_service._avg_volumes_cache = {}
+        self.scoring_service._return_rates_cache = {}
+
+        # Sort by score descending
+        scored.sort(key=lambda x: x["score"], reverse=True)
+        return scored[:limit]
 
     def _get_scored_etfs(self, perspective: str, limit: int) -> List[Dict]:
         """Get ETFs ranked by composite score (legacy method for backward compatibility).

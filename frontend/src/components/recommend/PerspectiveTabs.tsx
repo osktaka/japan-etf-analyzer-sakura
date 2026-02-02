@@ -1,6 +1,6 @@
 /** Perspective tabs component */
 import { useState, useEffect, useRef } from 'react'
-import { Perspective } from '../../api'
+import { Perspective, CustomWeights } from '../../api'
 import { PERSPECTIVE_COLORS } from '../../utils'
 import styles from './PerspectiveTabs.module.css'
 
@@ -8,12 +8,20 @@ interface PerspectiveTabsProps {
   perspectives: Perspective[]
   selected: string
   onSelect: (id: string) => void
+  isAuthenticated?: boolean
+  customWeights?: CustomWeights | null
+  onCustomClick?: () => void
+  onEditCustom?: () => void
 }
 
 export function PerspectiveTabs({
   perspectives,
   selected,
   onSelect,
+  isAuthenticated = false,
+  customWeights = null,
+  onCustomClick,
+  onEditCustom,
 }: PerspectiveTabsProps) {
   const [showHelp, setShowHelp] = useState(false)
   const helpRef = useRef<HTMLDivElement>(null)
@@ -51,6 +59,21 @@ export function PerspectiveTabs({
           {p.name}
         </button>
       ))}
+
+      {/* カスタムボタン（ログイン時のみ） */}
+      {isAuthenticated && onCustomClick && (
+        <button
+          className={`${styles.tab} ${selected === 'custom' ? styles.active : ''}`}
+          onClick={onCustomClick}
+          style={
+            {
+              '--tab-color': PERSPECTIVE_COLORS['custom'] || '#EC4899',
+            } as React.CSSProperties
+          }
+        >
+          カスタム
+        </button>
+      )}
 
       {/* ヘルプアイコン */}
       <div className={styles.helpWrapper} ref={helpRef}>
@@ -129,8 +152,32 @@ export function PerspectiveTabs({
                   <td>10</td>
                   <td className={styles.highlight}>50</td>
                 </tr>
+                {isAuthenticated && (
+                  <tr>
+                    <td>カスタム</td>
+                    <td>{customWeights?.dividend_power ?? '--'}</td>
+                    <td>{customWeights?.cost_efficiency ?? '--'}</td>
+                    <td>{customWeights?.scale_reliability ?? '--'}</td>
+                    <td>{customWeights?.trading_quality ?? '--'}</td>
+                    <td>{customWeights?.return_performance ?? '--'}</td>
+                  </tr>
+                )}
               </tbody>
             </table>
+            {isAuthenticated && onEditCustom && (
+              <div className={styles.editLinkWrapper}>
+                <button
+                  className={styles.editLink}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowHelp(false)
+                    onEditCustom()
+                  }}
+                >
+                  カスタムを編集
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

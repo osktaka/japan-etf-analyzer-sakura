@@ -1,8 +1,9 @@
 """Recommendation API routes."""
 from flask import Blueprint, request
+from flask_login import current_user
 
 from src.services import RecommendService
-from src.utils import api_response
+from src.utils import api_response, error_response
 
 
 def create_recommend_bp():
@@ -31,7 +32,7 @@ def create_recommend_bp():
 
         Query Parameters:
             perspective: Perspective ID (dividend, low-cost, stability,
-                         volume, growth, balance). Default: balance
+                         volume, growth, balance, custom). Default: balance
             limit: Number of recommendations (default: 5, max: 20)
             scoring_mode: Scoring mode - "full" (default, all 5 axes) or "partial" (data-available axes only)
 
@@ -50,13 +51,19 @@ def create_recommend_bp():
         if scoring_mode not in ["full", "partial"]:
             scoring_mode = "full"
 
-        service = RecommendService()
-        result = service.get_recommendations(
-            perspective=perspective,
-            limit=limit,
-            scoring_mode=scoring_mode
-        )
+        # Get user_id if authenticated (required for custom perspective)
+        user_id = current_user.id if current_user.is_authenticated else None
 
-        return api_response(data=result)
+        service = RecommendService()
+        try:
+            result = service.get_recommendations(
+                perspective=perspective,
+                limit=limit,
+                scoring_mode=scoring_mode,
+                user_id=user_id
+            )
+            return api_response(data=result)
+        except ValueError as e:
+            return error_response(str(e), 400)
 
     return bp

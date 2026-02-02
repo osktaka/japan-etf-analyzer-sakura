@@ -18,14 +18,24 @@ import {
   SectionControls,
 } from '../components/search'
 import { RecommendSection } from '../components/recommend'
-import { ETFDetailModal, LoginPromptModal } from '../components/modal'
+import {
+  ETFDetailModal,
+  LoginPromptModal,
+  CustomWeightsPromptModal,
+  CustomWeightsModal,
+} from '../components/modal'
 import { Pagination } from '../components/common'
 import { MAX_COMPARE_ITEMS } from '../utils'
+import { userSettingsApi, CustomWeights } from '../api'
 import styles from './TopPage.module.css'
 
 export function TopPage() {
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  const [showCustomWeightsPromptModal, setShowCustomWeightsPromptModal] =
+    useState(false)
+  const [showCustomWeightsModal, setShowCustomWeightsModal] = useState(false)
+  const [customWeights, setCustomWeights] = useState<CustomWeights | null>(null)
 
   // おすすめタブの状態（URLから復元）
   const [recommendTab, setRecommendTab] = useState(() => {
@@ -139,6 +149,20 @@ export function TopPage() {
     currentSortRef.current = currentSort
   }, [currentSort])
 
+  // Fetch custom weights on mount
+  useEffect(() => {
+    const fetchCustomWeights = async () => {
+      if (!isAuthenticated) return
+      try {
+        const settings = await userSettingsApi.getSettings()
+        setCustomWeights(settings.custom_weights)
+      } catch (err) {
+        console.error('Failed to fetch custom weights:', err)
+      }
+    }
+    fetchCustomWeights()
+  }, [isAuthenticated])
+
   // パフォーマンスデータとスコアデータの取得
   const { performance, scores } = useTopPagePerformanceData({
     viewMode,
@@ -186,6 +210,26 @@ export function TopPage() {
     setHoldingsOnly(value)
   }
 
+  const handleCustomClick = () => {
+    if (!customWeights) {
+      // 未設定時はプロンプトモーダルを表示
+      setShowCustomWeightsPromptModal(true)
+    } else {
+      // 設定済み時はカスタム切り口に切り替え
+      setRecommendTab('custom')
+    }
+  }
+
+  const handleEditCustom = () => {
+    setShowCustomWeightsModal(true)
+  }
+
+  const handleSaveCustomWeights = async (weights: CustomWeights) => {
+    await userSettingsApi.saveCustomWeights(weights)
+    setCustomWeights(weights)
+    setRecommendTab('custom')
+  }
+
   return (
     <div className={styles.page}>
       <section className={styles.hero}>
@@ -204,6 +248,10 @@ export function TopPage() {
         onFavoriteToggle={handleFavoriteToggle}
         selectedPerspective={recommendTab}
         onSelectPerspective={handleRecommendTabChange}
+        isAuthenticated={isAuthenticated}
+        customWeights={customWeights}
+        onCustomClick={handleCustomClick}
+        onEditCustom={handleEditCustom}
       />
 
       {/* 検索・一覧セクション */}
@@ -309,6 +357,22 @@ export function TopPage() {
       <LoginPromptModal
         isOpen={showLoginPrompt}
         onClose={() => setShowLoginPrompt(false)}
+      />
+
+      <CustomWeightsPromptModal
+        isOpen={showCustomWeightsPromptModal}
+        onClose={() => setShowCustomWeightsPromptModal(false)}
+        onRegister={() => {
+          setShowCustomWeightsPromptModal(false)
+          setShowCustomWeightsModal(true)
+        }}
+      />
+
+      <CustomWeightsModal
+        isOpen={showCustomWeightsModal}
+        onClose={() => setShowCustomWeightsModal(false)}
+        currentWeights={customWeights}
+        onSave={handleSaveCustomWeights}
       />
     </div>
   )

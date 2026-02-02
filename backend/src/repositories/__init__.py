@@ -6,6 +6,7 @@ from .etf_repository import ETFRepository
 from .score_cache_repository import ScoreCacheRepository
 from .tag_repository import TagRepository
 from .stock_split_repository import StockSplitRepository
+from .user_settings_repository import UserSettingsRepository
 
 __all__ = [
     "BaseRepository",
@@ -15,4 +16,5 @@ __all__ = [
     "ScoreCacheRepository",
     "TagRepository",
     "StockSplitRepository",
+    "UserSettingsRepository",
 ]
