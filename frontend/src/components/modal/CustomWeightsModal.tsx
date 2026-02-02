@@ -1,5 +1,5 @@
 /** Custom weights modal component */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { CustomWeights } from '../../api/types'
 import styles from './CustomWeightsModal.module.css'
 
@@ -16,6 +16,14 @@ const AXIS_LABELS = {
   scale_reliability: '安定性',
   trading_quality: '取引規模',
   return_performance: 'リターン実績',
+} as const
+
+const AXIS_DESCRIPTIONS = {
+  dividend_power: '配当利回りの高さ',
+  cost_efficiency: '信託報酬の低さ',
+  scale_reliability: '純資産総額の大きさ',
+  trading_quality: '売買代金・出来高の多さ',
+  return_performance: '1年・3年リターンの高さ',
 } as const
 
 const DEFAULT_WEIGHTS: CustomWeights = {
@@ -37,6 +45,8 @@ export function CustomWeightsModal({
   )
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [activeTooltip, setActiveTooltip] = useState<keyof CustomWeights | null>(null)
+  const tooltipRefs = useRef<{ [key in keyof CustomWeights]?: HTMLDivElement | null }>({})
 
   // currentWeightsが変更されたら内部状態を更新
   useEffect(() => {
@@ -57,6 +67,26 @@ export function CustomWeightsModal({
     }
   }, [isOpen, currentWeights])
 
+  // 枠外クリックでツールチップを閉じる
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (activeTooltip) {
+        const tooltipElement = tooltipRefs.current[activeTooltip]
+        if (tooltipElement && !tooltipElement.contains(event.target as Node)) {
+          setActiveTooltip(null)
+        }
+      }
+    }
+
+    if (activeTooltip) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [activeTooltip])
+
   if (!isOpen) return null
 
   const total = Object.values(weights).reduce((sum, val) => sum + val, 0)
@@ -66,6 +96,10 @@ export function CustomWeightsModal({
     const numValue = parseInt(value, 10)
     if (isNaN(numValue) || numValue < 0 || numValue > 100) return
     setWeights((prev) => ({ ...prev, [key]: numValue }))
+  }
+
+  const handleLabelClick = (key: keyof CustomWeights) => {
+    setActiveTooltip((prev) => (prev === key ? null : key))
   }
 
   const handleSave = async () => {
@@ -103,9 +137,37 @@ export function CustomWeightsModal({
             {(Object.keys(AXIS_LABELS) as Array<keyof CustomWeights>).map(
               (key) => (
                 <div key={key} className={styles.field}>
-                  <label htmlFor={key} className={styles.label}>
-                    {AXIS_LABELS[key]}
-                  </label>
+                  <div className={styles.labelWrapper}>
+                    <span
+                      className={styles.labelClickable}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleLabelClick(key)
+                      }}
+                      aria-label={`${AXIS_LABELS[key]}の詳細を表示`}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handleLabelClick(key)
+                        }
+                      }}
+                    >
+                      {AXIS_LABELS[key]}
+                    </span>
+                    {activeTooltip === key && (
+                      <div
+                        ref={(el) => {
+                          tooltipRefs.current[key] = el
+                        }}
+                        className={styles.tooltip}
+                      >
+                        {AXIS_DESCRIPTIONS[key]}
+                      </div>
+                    )}
+                  </div>
                   <div className={styles.sliderGroup}>
                     <input
                       type="range"
@@ -128,6 +190,9 @@ export function CustomWeightsModal({
                     />
                     <span className={styles.unit}>%</span>
                   </div>
+                  <label htmlFor={key} className={styles.srOnly}>
+                    {AXIS_LABELS[key]}
+                  </label>
                 </div>
               )
             )}
