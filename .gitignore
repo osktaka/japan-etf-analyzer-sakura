@@ -47,6 +47,7 @@ coverage/
 # MySQL
 *.sql
 !scripts/*.sql
+!scripts/migrations/*.sql
 
 # SQLite
 *.db

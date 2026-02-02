@@ -38,7 +38,7 @@ make help
 |----------|----------|----------|
 | バックエンド | Flask (Python 3.9) | Flask (Python 3.9.18) |
 | フロントエンド | React + Vite | ビルド済み静的ファイル |
-| データベース | SQLite | SQLite |
+| データベース | SQLite | SQLite 3.37.2 (2022-01-06) |
 | 環境 | Docker Compose | さくらレンタルサーバー スタンダード |
 | OS | Debian (Docker) | FreeBSD 13.0 |
 | OpenSSL | - | 1.0.2-chacha（重要制約） |
@@ -108,9 +108,9 @@ frontend/
 ssh user@server
 cd ~/www/japan-etf-analyzer
 git pull
-./setup.sh  # venv構築、シンボリックリンク作成を自動実行
+./setup.sh     # venv構築、シンボリックリンク作成（初回のみ）
+./migrate.sh   # DBマイグレーション（スキーマ変更時）
 # .envファイルを編集（初回のみ）
-# DBを初期化（初回のみ）
 ```
 
 ### frontend/dist/ のGit管理ポリシー
@@ -214,20 +214,59 @@ rm -rf backend/venv && ./setup.sh
 
 **重要**: データ消失を防ぐため、以下のルールを厳守すること
 
-### 変更前の必須手順
-1. **バックアップ取得**: `docker compose exec backend cp /app/data/etf.db /app/data/etf.db.backup`
-2. **現状確認**: 変更対象テーブルのレコード数を確認
+### マイグレーション実行（本番デプロイ時）
 
-### カラム追加
-- `ALTER TABLE` を使用し、テーブル再作成を避ける
-- SQLite例: `ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT 0`
+```bash
+# 本番環境
+ssh user@server
+cd ~/www/japan-etf-analyzer
+git pull
+./migrate.sh  # バックアップ → マイグレーション → 結果表示
+```
+
+`migrate.sh` は以下を自動実行:
+1. DBバックアップ（`data/backups/etf.db.backup_YYYYMMDD_HHMMSS`）
+2. SQLマイグレーションファイル実行（`scripts/migrations/*.sql`）
+3. Flaskモデル同期（新規テーブル作成）
+
+### マイグレーションファイルの作成方法
+
+新しいDBスキーマ変更が必要な場合、`scripts/migrations/` にSQLファイルを追加:
+
+```bash
+# 命名規則: 連番_説明.sql
+scripts/migrations/001_create_user_settings.sql  # 既存
+scripts/migrations/002_add_is_admin_to_users.sql # 新規追加例
+```
+
+**SQLファイル例（カラム追加）**:
+```sql
+-- Migration: 002_add_is_admin_to_users
+-- Description: usersテーブルに管理者フラグを追加
+-- Date: 2026-02-XX
+
+ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT 0;
+```
+
+**ルール**:
+- `CREATE TABLE IF NOT EXISTS` / `CREATE INDEX IF NOT EXISTS` を使用（冪等性確保）
+- 番号は既存の最大値+1
+- 実行済みマイグレーションは `migrations_applied` テーブルで管理され、再実行時はスキップ
 
 ### 禁止事項
 - `db.drop_all()` の使用禁止（テスト環境を除く）
 - テーブルの DROP & CREATE による再作成禁止
 - 本番DBファイルの削除・上書き禁止
+- マイグレーションファイルの番号重複
 
 ### データ復旧手順
+
+マイグレーション失敗時:
+```bash
+# バックアップから復元
+cp data/backups/etf.db.backup_YYYYMMDD_HHMMSS data/etf.db
+```
+
 マスターデータが消失した場合:
 ```bash
 docker compose exec backend python scripts/seed_data.py
