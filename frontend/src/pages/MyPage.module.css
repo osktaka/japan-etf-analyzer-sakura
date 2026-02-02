@@ -207,15 +207,12 @@
 
   .buttonGroup {
     width: 100%;
+    justify-content: flex-end;
   }
 
   .favoritesControls {
     flex-direction: column;
     align-items: stretch;
-  }
-
-  .sortToggle {
-    width: 100%;
   }
 
   .grid {
