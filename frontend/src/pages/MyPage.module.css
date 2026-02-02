@@ -123,6 +123,53 @@
   color: var(--color-text-muted);
 }
 
+.favoritesControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.sortToggle {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background-color: var(--color-surface);
+  cursor: pointer;
+  transition:
+    all 0.2s,
+    background-color 0.2s,
+    border-color 0.2s;
+  white-space: nowrap;
+}
+
+.sortToggle:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.sortToggle:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.sortActive {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+.sortActive:hover {
+  background-color: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+  color: white;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -159,6 +206,15 @@
   }
 
   .buttonGroup {
+    width: 100%;
+  }
+
+  .favoritesControls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sortToggle {
     width: 100%;
   }
 

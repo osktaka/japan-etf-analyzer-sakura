@@ -21,6 +21,7 @@ export interface ETFSummary {
   dividend_yield: number | null
   market_price: number | null
   tags: Tag[]
+  score?: number | null
 }
 
 export interface ETFDetail {

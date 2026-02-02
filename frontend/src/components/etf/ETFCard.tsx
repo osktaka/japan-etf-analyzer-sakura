@@ -7,7 +7,7 @@ import { TagBadge } from './TagBadge'
 import styles from './ETFCard.module.css'
 
 interface ETFCardProps {
-  etf: ETFSummary & { score?: number; axis_scores?: AxisScores }
+  etf: ETFSummary & { score?: number | null; axis_scores?: AxisScores }
   onClick?: () => void
   isSelected?: boolean
   showCompareButton?: boolean
@@ -65,7 +65,7 @@ export function ETFCard({
       <h3 className={styles.name} title={etf.name}>
         {etf.name}
       </h3>
-      {etf.score !== undefined && (
+      {etf.score !== undefined && etf.score !== null && (
         <div
           className={styles.scoreSection}
           style={{ background: scoreGradient }}

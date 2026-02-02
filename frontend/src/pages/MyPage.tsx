@@ -22,6 +22,10 @@ import styles from './MyPage.module.css'
 export function MyPage() {
   const [perspective, setPerspective] = useState<string>('balance')
   const [perspectives, setPerspectives] = useState<Perspective[]>([])
+  const [sortEnabled, setSortEnabled] = useState(() => {
+    const stored = localStorage.getItem('mypage-sort-enabled')
+    return stored === 'true'
+  })
 
   const { favorites, isLoading, error, toggleFavorite, isFavorite, refresh } =
     useFavorites(perspective, 'full')
@@ -38,6 +42,11 @@ export function MyPage() {
   const [showTradeFormModal, setShowTradeFormModal] = useState(false)
   const [showTradeHistoryModal, setShowTradeHistoryModal] = useState(false)
   const [tradeHistoryCode, setTradeHistoryCode] = useState<string>('')
+
+  // Save sort enabled state to localStorage
+  useEffect(() => {
+    localStorage.setItem('mypage-sort-enabled', String(sortEnabled))
+  }, [sortEnabled])
 
   // Fetch perspectives on mount
   useEffect(() => {
@@ -63,6 +72,16 @@ export function MyPage() {
     [holdings]
   )
   const isHolding = (code: string): boolean => holdingCodes.has(code)
+
+  // Sort favorites by score if enabled
+  const sortedFavorites = useMemo(() => {
+    if (!sortEnabled) return favorites
+    return [...favorites].sort((a, b) => {
+      const scoreA = a.etf.score ?? 0
+      const scoreB = b.etf.score ?? 0
+      return scoreB - scoreA // 降順
+    })
+  }, [favorites, sortEnabled])
 
   const handleCardClick = (etf: ETFSummary) => {
     setSelectedETF(etf)
@@ -137,11 +156,20 @@ export function MyPage() {
         <h2 className={styles.sectionTitle}>お気に入り一覧</h2>
 
         {perspectives.length > 0 && (
-          <PerspectiveTabs
-            perspectives={perspectives}
-            selected={perspective}
-            onSelect={setPerspective}
-          />
+          <div className={styles.favoritesControls}>
+            <PerspectiveTabs
+              perspectives={perspectives}
+              selected={perspective}
+              onSelect={setPerspective}
+            />
+            <button
+              className={`${styles.sortToggle} ${sortEnabled ? styles.sortActive : ''}`}
+              onClick={() => setSortEnabled(!sortEnabled)}
+              type="button"
+            >
+              ソート{sortEnabled ? 'ON' : 'OFF'}
+            </button>
+          </div>
         )}
 
         {isLoading ? (
@@ -157,7 +185,7 @@ export function MyPage() {
           </div>
         ) : (
           <div className={styles.grid}>
-            {favorites.map((favorite) => (
+            {sortedFavorites.map((favorite) => (
               <ETFCard
                 key={favorite.id}
                 etf={favorite.etf}
