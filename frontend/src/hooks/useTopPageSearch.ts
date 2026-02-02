@@ -358,6 +358,16 @@ export function useTopPageSearch(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [favoritesOnly, holdingsOnly, compareOnly])
 
+  // customWeightsが取得完了したときにカスタムソートなら再検索
+  // （F5リロード時、初回検索ではcustomWeightsがまだnullのため）
+  useEffect(() => {
+    if (customWeights && currentSort === 'score_custom') {
+      executeSearch()
+    }
+    // customWeights取得完了時のみ発動
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customWeights])
+
   // Handlers
   const handleSearch = useCallback(
     (keyword: string) => {
