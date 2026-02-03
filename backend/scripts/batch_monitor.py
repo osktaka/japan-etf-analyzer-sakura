@@ -19,8 +19,8 @@ from datetime import datetime
 from pathlib import Path
 
 # プロジェクトルートをPythonパスに追加
-project_root = Path(__file__).parent.parent
-sys.path.insert(0, str(project_root))
+project_root = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # ログ設定
 logging.basicConfig(
