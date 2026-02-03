@@ -18,6 +18,9 @@ class BatchLogRepository(BaseRepository[BatchLog]):
         batch_name: str,
         status: str,
         started_at: datetime,
+        total_count: int = 0,
+        parent_batch_log_id: Optional[int] = None,
+        retry_count: int = 0,
     ) -> BatchLog:
         """
         Create a new batch log entry.
@@ -26,6 +29,9 @@ class BatchLogRepository(BaseRepository[BatchLog]):
             batch_name: Name of the batch job
             status: Initial status (e.g., 'running')
             started_at: When the batch started
+            total_count: Total number of items to process
+            parent_batch_log_id: ID of parent batch log (for retries)
+            retry_count: Retry count (inherited from parent + 1)
 
         Returns:
             Created BatchLog instance
@@ -34,6 +40,10 @@ class BatchLogRepository(BaseRepository[BatchLog]):
             batch_name=batch_name,
             status=status,
             started_at=started_at,
+            total_count=total_count,
+            parent_batch_log_id=parent_batch_log_id,
+            retry_count=retry_count,
+            last_heartbeat=started_at,
         )
         db.session.add(log)
         db.session.commit()
@@ -96,3 +106,106 @@ class BatchLogRepository(BaseRepository[BatchLog]):
         )
         db.session.commit()
         return deleted_count
+
+    def update_progress(
+        self,
+        log_id: int,
+        processed_count: int,
+        last_item_code: Optional[str] = None,
+    ) -> Optional[BatchLog]:
+        """
+        Update batch progress and heartbeat.
+
+        Args:
+            log_id: ID of the log to update
+            processed_count: Number of items processed so far
+            last_item_code: Code of the last processed item
+
+        Returns:
+            Updated BatchLog instance or None if not found
+        """
+        log = self.get_by_id(log_id)
+        if not log:
+            return None
+
+        log.processed_count = processed_count
+        log.last_heartbeat = datetime.utcnow()
+        if last_item_code:
+            log.last_item_code = last_item_code
+
+        db.session.commit()
+        return log
+
+    def get_retryable_jobs(self) -> List[BatchLog]:
+        """
+        Get failed jobs that are eligible for retry.
+
+        Returns jobs that:
+        - Status is 'failed'
+        - Failed between 10-20 minutes ago
+        - retry_count < 3
+
+        Returns:
+            List of BatchLog instances eligible for retry
+        """
+        now = datetime.utcnow()
+        min_time = now - timedelta(minutes=20)
+        max_time = now - timedelta(minutes=10)
+
+        return (
+            db.session.query(BatchLog)
+            .filter(
+                BatchLog.status == BatchLog.STATUS_FAILED,
+                BatchLog.finished_at.between(min_time, max_time),
+                BatchLog.retry_count < 3,
+            )
+            .all()
+        )
+
+    def get_timed_out_jobs(self) -> List[BatchLog]:
+        """
+        Get running jobs that have timed out (no heartbeat for 30+ minutes).
+
+        Returns:
+            List of BatchLog instances that have timed out
+        """
+        cutoff_time = datetime.utcnow() - timedelta(minutes=30)
+
+        return (
+            db.session.query(BatchLog)
+            .filter(
+                BatchLog.status == BatchLog.STATUS_RUNNING,
+                db.or_(
+                    BatchLog.last_heartbeat.is_(None),
+                    BatchLog.last_heartbeat < cutoff_time,
+                ),
+            )
+            .all()
+        )
+
+    def create_retry(self, parent_id: int) -> Optional[BatchLog]:
+        """
+        Create a retry batch log based on a failed parent job.
+
+        Args:
+            parent_id: ID of the parent batch log to retry
+
+        Returns:
+            Created BatchLog instance or None if parent not found
+        """
+        parent = self.get_by_id(parent_id)
+        if not parent:
+            return None
+
+        retry_log = BatchLog(
+            batch_name=parent.batch_name,
+            status=BatchLog.STATUS_RUNNING,
+            started_at=datetime.utcnow(),
+            total_count=parent.total_count,
+            parent_batch_log_id=parent_id,
+            retry_count=parent.retry_count + 1,
+            last_heartbeat=datetime.utcnow(),
+        )
+        db.session.add(retry_log)
+        db.session.commit()
+        return retry_log

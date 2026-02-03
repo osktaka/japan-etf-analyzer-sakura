@@ -6,7 +6,12 @@ and syncs directly to the database without using etf_master.json.
 
 Usage:
     python scripts/sync_etf_from_jpx.py
+    python scripts/sync_etf_from_jpx.py --resume BATCH_LOG_ID
+
+Options:
+    --resume ID         Resume from failed batch log ID (re-run from start)
 """
+import argparse
 import logging
 import os
 import re
@@ -287,11 +292,13 @@ def ensure_columns():
     conn.close()
 
 
-def sync_to_db(items: list) -> tuple:
+def sync_to_db(items: list, batch_log_repo=None, batch_log=None) -> tuple:
     """Sync ETF data to database.
 
     Args:
         items: List of ETF/ETN data dictionaries
+        batch_log_repo: BatchLogRepository instance
+        batch_log: BatchLog instance
 
     Returns:
         tuple: (created_count, updated_count)
@@ -304,8 +311,12 @@ def sync_to_db(items: list) -> tuple:
     category_map = {c.name: c.id for c in categories}
     logger.info(f"Categories: {list(category_map.keys())}")
 
+    # ETFリストをコードでソート（進捗管理の一貫性確保）
+    items = sorted(items, key=lambda x: x["code"])
+
     created = 0
     updated = 0
+    processed_count = 0
 
     for etf_data in items:
         code = etf_data.get("code")
@@ -342,20 +353,57 @@ def sync_to_db(items: list) -> tuple:
         else:
             created += 1
 
+        processed_count += 1
+
+        # 10件ごとに進捗更新
+        if batch_log_repo and batch_log and processed_count % 10 == 0:
+            batch_log_repo.update_progress(
+                batch_log.id,
+                processed_count=processed_count,
+                last_item_code=code,
+            )
+            logger.info(f"Progress updated: {processed_count}/{len(items)} processed")
+
+    # 最終進捗更新
+    if batch_log_repo and batch_log and processed_count % 10 != 0:
+        batch_log_repo.update_progress(
+            batch_log.id,
+            processed_count=processed_count,
+            last_item_code=items[-1]["code"] if items else None,
+        )
+
     return created, updated
 
 
 def main() -> int:
     """Main entry point."""
+    parser = argparse.ArgumentParser(description="Sync ETF master data from JPX")
+    parser.add_argument(
+        "--resume",
+        type=int,
+        help="Resume from failed batch log ID (re-run from start)",
+    )
+    args = parser.parse_args()
+
     app = create_app()
     with app.app_context():
         batch_log_repo = BatchLogRepository()
-        batch_log = batch_log_repo.create(
-            batch_name="sync_etf_from_jpx",
-            status="running",
-            started_at=datetime.utcnow(),
-        )
-        logger.info(f"Batch log created: id={batch_log.id}")
+
+        if args.resume:
+            # リトライレコード作成
+            batch_log = batch_log_repo.create_retry(args.resume)
+            if not batch_log:
+                logger.error(f"Parent batch log not found: id={args.resume}")
+                return 1
+            logger.info(f"Resuming from batch log {args.resume} (re-running from start)")
+        else:
+            # 新規バッチログ作成（total_countは後で更新）
+            batch_log = batch_log_repo.create(
+                batch_name="sync_etf_from_jpx",
+                status="running",
+                started_at=datetime.utcnow(),
+            )
+            logger.info(f"Batch log created: id={batch_log.id}")
 
         try:
             # Phase 1: Ensure DB schema
@@ -373,9 +421,12 @@ def main() -> int:
             if not items:
                 raise RuntimeError("No items fetched from JPX")
 
+            # Update total_count in batch log
+            batch_log_repo.update(batch_log.id, total_count=len(items))
+
             # Phase 3: Sync to DB
             logger.info("Syncing to database...")
-            created, updated = sync_to_db(items)
+            created, updated = sync_to_db(items, batch_log_repo, batch_log)
             logger.info(f"Created: {created}, Updated: {updated}")
 
             # Success

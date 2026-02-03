@@ -10,6 +10,13 @@ export interface BatchLog {
   finished_at: string | null
   error_message: string | null
   created_at: string
+  // 追加フィールド
+  last_heartbeat: string | null
+  total_count: number
+  processed_count: number
+  last_item_code: string | null
+  parent_batch_log_id: number | null
+  retry_count: number
 }
 
 export interface StockSplit {
@@ -90,6 +97,13 @@ export const adminApi = {
   ): Promise<RecalculateResponse> {
     const response = await apiClient.post<ApiResponse<RecalculateResponse>>(
       `/admin/stock-splits/${splitId}/recalculate`
+    )
+    return response.data.data
+  },
+
+  async resetBatchLog(logId: number): Promise<BatchLog> {
+    const response = await apiClient.post<ApiResponse<BatchLog>>(
+      `/admin/batch-logs/${logId}/reset`
     )
     return response.data.data
   },

@@ -4,6 +4,7 @@
 Usage:
     python scripts/update_etf_data.py [--limit N] [--dry-run] [--skip-performance] [--rate-limit N]
     python scripts/update_etf_data.py --smart [--limit N] [--dry-run] [--rate-limit N]
+    python scripts/update_etf_data.py --resume BATCH_LOG_ID [--dry-run] [--rate-limit N]
 
 Options:
     --limit N           Only update first N ETFs (for testing)
@@ -12,6 +13,7 @@ Options:
     --full              Fetch full history (period='max') instead of 1 year
     --smart             Smart update: full history for new ETFs, incremental for existing
     --rate-limit N      Rate limit in seconds between requests (default: 1.0)
+    --resume ID         Resume from failed batch log ID
 
 This script should be run via cron:
     0 19 * * 1-5 cd ~/app/backend && python3 scripts/update_etf_data.py --smart --rate-limit 3.0 >> ~/logs/etf_update.log 2>&1
@@ -554,6 +556,11 @@ def main() -> int:
         default=1.0,
         help="Rate limit in seconds between requests (default: 1.0)",
     )
+    parser.add_argument(
+        "--resume",
+        type=int,
+        help="Resume from failed batch log ID",
+    )
     args = parser.parse_args()
 
     # Validate mutually exclusive options
@@ -591,6 +598,50 @@ def main() -> int:
         logger.error("No ETFs found in database")
         return 1
 
+    # ETFリストをコードでソート（再開時の一貫性確保）
+    etfs = sorted(etfs, key=lambda x: x["code"])
+
+    # 全ETFリストを保存（パフォーマンスキャッシュ更新用）
+    all_etfs = etfs[:]
+
+    # バッチログ記録（dry-run以外）
+    batch_log = None
+    batch_log_repo = None
+    parent_last_item_code = None
+
+    if not args.dry_run:
+        from src.repositories import BatchLogRepository
+
+        batch_log_repo = BatchLogRepository()
+
+        if args.resume:
+            # リトライレコード作成
+            batch_log = batch_log_repo.create_retry(args.resume)
+            if not batch_log:
+                logger.error(f"Parent batch log not found: id={args.resume}")
+                return 1
+            parent = batch_log_repo.get_by_id(args.resume)
+            parent_last_item_code = parent.last_item_code if parent else None
+            logger.info(f"Resuming from batch log {args.resume}, last_item_code={parent_last_item_code}")
+        else:
+            # 新規バッチログ作成
+            batch_log = batch_log_repo.create(
+                batch_name="update_etf_data",
+                status="running",
+                started_at=datetime.utcnow(),
+                total_count=len(etfs),
+            )
+            logger.info(f"Batch log created: id={batch_log.id}")
+
+    # 再開処理（last_item_code以降のETFのみ処理）
+    if parent_last_item_code:
+        resume_index = next(
+            (i for i, e in enumerate(etfs) if e["code"] > parent_last_item_code),
+            len(etfs)
+        )
+        etfs = etfs[resume_index:]
+        logger.info(f"Resuming from index {resume_index}, {len(etfs)} ETFs remaining")
+
     if args.limit:
         etfs = etfs[: args.limit]
         logger.info(f"Limited to first {args.limit} ETFs")
@@ -599,20 +650,7 @@ def main() -> int:
 
     success_count = 0
     fail_count = 0
-
-    # バッチログ記録（dry-run以外）
-    batch_log = None
-    batch_log_repo = None
-    if not args.dry_run:
-        from src.repositories import BatchLogRepository
-
-        batch_log_repo = BatchLogRepository()
-        batch_log = batch_log_repo.create(
-            batch_name="update_etf_data",
-            status="running",
-            started_at=datetime.utcnow(),
-        )
-        logger.info(f"Batch log created: id={batch_log.id}")
+    processed_count = 0
 
     try:
         for i, etf in enumerate(etfs, 1):
@@ -626,15 +664,35 @@ def main() -> int:
             else:
                 fail_count += 1
 
+            processed_count += 1
+
+            # 10件ごとに進捗更新
+            if not args.dry_run and batch_log and processed_count % 10 == 0:
+                batch_log_repo.update_progress(
+                    batch_log.id,
+                    processed_count=processed_count,
+                    last_item_code=code,
+                )
+                logger.info(f"Progress updated: {processed_count} processed")
+
             # レート制限対策（最後の銘柄以外）
             if i < len(etfs) and not args.dry_run:
                 time_module.sleep(args.rate_limit)
+
+        # 最終進捗更新
+        if not args.dry_run and batch_log and processed_count % 10 != 0:
+            batch_log_repo.update_progress(
+                batch_log.id,
+                processed_count=processed_count,
+                last_item_code=etfs[-1]["code"] if etfs else None,
+            )
 
         # パフォーマンスキャッシュの更新
         if not args.dry_run and not args.skip_performance:
             logger.info("-" * 60)
             logger.info("Starting performance cache calculation...")
-            codes = [etf["code"] for etf in etfs]
+            # 全ETFを対象に更新（再開時も常に全件更新）
+            codes = [etf["code"] for etf in all_etfs]
             perf_success, perf_fail = update_performance_cache(codes, args.rate_limit)
             logger.info(
                 f"Performance cache: {perf_success} success, {perf_fail} failed"

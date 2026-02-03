@@ -16,6 +16,16 @@ class BatchLog(db.Model, TimestampMixin):
     finished_at = db.Column(db.DateTime, nullable=True)
     error_message = db.Column(db.Text, nullable=True)
 
+    # Progress tracking columns
+    last_heartbeat = db.Column(db.DateTime, nullable=True)
+    total_count = db.Column(db.Integer, default=0)
+    processed_count = db.Column(db.Integer, default=0)
+    last_item_code = db.Column(db.String(20), nullable=True)
+
+    # Retry tracking columns
+    parent_batch_log_id = db.Column(db.Integer, db.ForeignKey("batch_logs.id"), nullable=True)
+    retry_count = db.Column(db.Integer, default=0)
+
     # Status constants
     STATUS_RUNNING = "running"
     STATUS_SUCCESS = "success"
@@ -37,6 +47,14 @@ class BatchLog(db.Model, TimestampMixin):
             "created_at": (
                 self.created_at.isoformat() + "Z" if self.created_at else None
             ),
+            "last_heartbeat": (
+                self.last_heartbeat.isoformat() + "Z" if self.last_heartbeat else None
+            ),
+            "total_count": self.total_count,
+            "processed_count": self.processed_count,
+            "last_item_code": self.last_item_code,
+            "parent_batch_log_id": self.parent_batch_log_id,
+            "retry_count": self.retry_count,
         }
 
     def __repr__(self) -> str:

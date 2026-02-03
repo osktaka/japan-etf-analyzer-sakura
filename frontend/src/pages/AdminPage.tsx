@@ -263,15 +263,56 @@ export function AdminPage() {
     return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
   }
 
-  const renderStatusBadge = (status: BatchLog['status']) => {
+  const isTimedOut = (log: BatchLog): boolean => {
+    if (log.status !== 'running' || !log.last_heartbeat) {
+      return false
+    }
+    const heartbeatTime = new Date(log.last_heartbeat).getTime()
+    const now = Date.now()
+    const diffMinutes = (now - heartbeatTime) / (1000 * 60)
+    return diffMinutes > 30
+  }
+
+  const handleResetBatchLog = async (logId: number) => {
+    if (!window.confirm('このバッチを強制終了しますか？')) {
+      return
+    }
+    try {
+      await adminApi.resetBatchLog(logId)
+      await loadBatchLogs()
+      setToastMessage('バッチを強制終了しました')
+      setTimeout(() => setToastMessage(null), 3000)
+    } catch (err) {
+      console.error('Failed to reset batch log:', err)
+      setToastMessage('バッチの強制終了に失敗しました')
+      setTimeout(() => setToastMessage(null), 3000)
+    }
+  }
+
+  const renderStatusBadge = (log: BatchLog) => {
+    const timedOut = isTimedOut(log)
+
+    if (log.status === 'running') {
+      return (
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <span className={`${styles.badge} ${styles.badgeRunning}`}>
+            実行中
+          </span>
+          {timedOut && (
+            <span
+              className={`${styles.badge} ${styles.badgeFailed}`}
+              title="30分以上ハートビート更新なし"
+            >
+              タイムアウト
+            </span>
+          )}
+        </div>
+      )
+    }
+
     const badgeClass =
-      status === 'success'
-        ? styles.badgeSuccess
-        : status === 'failed'
-          ? styles.badgeFailed
-          : styles.badgeRunning
-    const label =
-      status === 'success' ? '成功' : status === 'failed' ? '失敗' : '実行中'
+      log.status === 'success' ? styles.badgeSuccess : styles.badgeFailed
+    const label = log.status === 'success' ? '成功' : '失敗'
     return <span className={`${styles.badge} ${badgeClass}`}>{label}</span>
   }
 
@@ -289,19 +330,92 @@ export function AdminPage() {
       <table className={styles.table}>
         <thead>
           <tr>
+            <th>ID</th>
             <th>バッチ名</th>
             <th>状態</th>
+            <th>進捗</th>
             <th>開始日時</th>
             <th>終了日時</th>
             <th>処理時間</th>
             <th>エラーメッセージ</th>
+            <th>アクション</th>
           </tr>
         </thead>
         <tbody>
           {batchLogs.map((log) => (
             <tr key={log.id}>
-              <td>{log.batch_name}</td>
-              <td>{renderStatusBadge(log.status)}</td>
+              <td>
+                <strong>{log.id}</strong>
+              </td>
+              <td>
+                <div>
+                  {log.batch_name}
+                  {log.parent_batch_log_id && (
+                    <div
+                      style={{
+                        fontSize: '12px',
+                        color: '#666',
+                        marginTop: '4px',
+                      }}
+                    >
+                      リトライ: {log.retry_count}回目（親ID:{' '}
+                      {log.parent_batch_log_id}）
+                    </div>
+                  )}
+                </div>
+              </td>
+              <td>{renderStatusBadge(log)}</td>
+              <td>
+                {log.total_count > 0 ? (
+                  <div>
+                    <div
+                      style={{
+                        position: 'relative',
+                        height: '24px',
+                        background: '#e0e0e0',
+                        borderRadius: '4px',
+                        overflow: 'hidden',
+                        marginBottom: '4px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: 'absolute',
+                          height: '100%',
+                          background: '#4caf50',
+                          width: `${(log.processed_count / log.total_count) * 100}%`,
+                          transition: 'width 0.3s ease',
+                        }}
+                      />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          width: '100%',
+                          height: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '13px',
+                          fontWeight: 'bold',
+                          color: '#333',
+                          textShadow: '0 0 2px rgba(255,255,255,0.8)',
+                        }}
+                      >
+                        {log.processed_count}/{log.total_count} (
+                        {Math.round((log.processed_count / log.total_count) * 100)}
+                        %)
+                      </div>
+                    </div>
+                    {log.last_item_code && (
+                      <small style={{ color: '#666', fontSize: '11px' }}>
+                        最終処理: {log.last_item_code}
+                      </small>
+                    )}
+                  </div>
+                ) : (
+                  <span>-</span>
+                )}
+              </td>
               <td>{formatDateTime(log.started_at)}</td>
               <td>{formatDateTime(log.finished_at)}</td>
               <td>{formatDuration(log.started_at, log.finished_at)}</td>
@@ -310,6 +424,20 @@ export function AdminPage() {
                   <span className={styles.errorMessage}>
                     {log.error_message}
                   </span>
+                )}
+              </td>
+              <td>
+                {log.status === 'running' && (
+                  <button
+                    className={styles.recalculateButton}
+                    style={{
+                      background: '#f44336',
+                      color: 'white',
+                    }}
+                    onClick={() => handleResetBatchLog(log.id)}
+                  >
+                    強制終了
+                  </button>
                 )}
               </td>
             </tr>

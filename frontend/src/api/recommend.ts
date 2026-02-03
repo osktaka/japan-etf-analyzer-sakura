@@ -1,6 +1,11 @@
 /** Recommendation API functions */
 import apiClient from './client'
-import { ApiResponse, Perspective, Recommendation, CustomWeights } from './types'
+import {
+  ApiResponse,
+  Perspective,
+  Recommendation,
+  CustomWeights,
+} from './types'
 
 export async function getPerspectives(): Promise<Perspective[]> {
   const response =

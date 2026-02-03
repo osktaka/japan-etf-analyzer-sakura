@@ -3,10 +3,12 @@
 
 Usage:
     python scripts/update_scores.py [--limit N] [--dry-run]
+    python scripts/update_scores.py --resume BATCH_LOG_ID [--dry-run]
 
 Options:
     --limit N           Only update first N ETFs (for testing)
     --dry-run           Show what would be updated without actually saving
+    --resume ID         Resume from failed batch log ID
 
 This script should be run via cron after update_etf_data.py:
     30 19 * * 1-5 cd ~/app/backend && python3 scripts/update_scores.py >> ~/logs/score_update.log 2>&1
@@ -52,12 +54,13 @@ logger = logging.getLogger(__name__)
 PERSPECTIVES = ["dividend", "low-cost", "stability", "volume", "growth", "balance"]
 
 
-def update_scores(limit: int = None, dry_run: bool = False) -> dict:
+def update_scores(limit: int = None, dry_run: bool = False, resume: int = None) -> dict:
     """Update score cache for all ETFs.
 
     Args:
         limit: Maximum number of ETFs to process
         dry_run: If True, don't save to database
+        resume: Batch log ID to resume from
 
     Returns:
         Statistics dictionary
@@ -69,25 +72,56 @@ def update_scores(limit: int = None, dry_run: bool = False) -> dict:
         scoring_service = ScoringService()
 
         # Get all ETFs
-        etfs = etf_repo.search(limit=limit, offset=0)
-        total_etfs = len(etfs)
-        logger.info(f"Processing {total_etfs} ETFs...")
-
-        # Get all ETF codes for percentile calculation
         all_etfs = etf_repo.search(limit=None, offset=0)
         all_etf_codes = [etf.code for etf in all_etfs]
+
+        # ETFリストをコードでソート（再開時の一貫性確保）
+        all_etfs = sorted(all_etfs, key=lambda x: x.code)
 
         # Batch log recording (non-dry-run only)
         batch_log = None
         batch_log_repo = None
+        parent_last_item_code = None
+
         if not dry_run:
             batch_log_repo = BatchLogRepository()
-            batch_log = batch_log_repo.create(
-                batch_name="update_scores",
-                status="running",
-                started_at=datetime.utcnow(),
+
+            if resume:
+                # リトライレコード作成
+                batch_log = batch_log_repo.create_retry(resume)
+                if not batch_log:
+                    logger.error(f"Parent batch log not found: id={resume}")
+                    raise ValueError(f"Parent batch log not found: id={resume}")
+                parent = batch_log_repo.get_by_id(resume)
+                parent_last_item_code = parent.last_item_code if parent else None
+                logger.info(f"Resuming from batch log {resume}, last_item_code={parent_last_item_code}")
+            else:
+                # 新規バッチログ作成
+                batch_log = batch_log_repo.create(
+                    batch_name="update_scores",
+                    status="running",
+                    started_at=datetime.utcnow(),
+                    total_count=len(all_etfs),
+                )
+                logger.info(f"Batch log created: id={batch_log.id}")
+
+        # 処理対象のETFリストを決定
+        if limit:
+            etfs = all_etfs[:limit]
+        else:
+            etfs = all_etfs
+
+        # 再開処理（last_item_code以降のETFのみ処理）
+        if parent_last_item_code:
+            resume_index = next(
+                (i for i, e in enumerate(etfs) if e.code > parent_last_item_code),
+                len(etfs)
             )
-            logger.info(f"Batch log created: id={batch_log.id}")
+            etfs = etfs[resume_index:]
+            logger.info(f"Resuming from index {resume_index}, {len(etfs)} ETFs remaining")
+
+        total_etfs = len(etfs)
+        logger.info(f"Processing {total_etfs} ETFs...")
 
         try:
             # Batch fetch data for ALL ETFs (for percentile calculation)
@@ -104,6 +138,7 @@ def update_scores(limit: int = None, dry_run: bool = False) -> dict:
 
             updated_count = 0
             skipped_count = 0
+            processed_count = 0
 
             # Calculate scores for each ETF
             for idx, etf in enumerate(etfs, 1):
@@ -144,11 +179,29 @@ def update_scores(limit: int = None, dry_run: bool = False) -> dict:
                             )
 
                     updated_count += 1
+                    processed_count += 1
+
+                    # 10件ごとに進捗更新
+                    if not dry_run and batch_log and processed_count % 10 == 0:
+                        batch_log_repo.update_progress(
+                            batch_log.id,
+                            processed_count=processed_count,
+                            last_item_code=etf.code,
+                        )
+                        logger.info(f"Progress updated: {processed_count} processed")
 
                 except Exception as e:
                     logger.error(f"Error processing {etf.code}: {e}")
                     skipped_count += 1
                     continue
+
+            # 最終進捗更新
+            if not dry_run and batch_log and processed_count % 10 != 0:
+                batch_log_repo.update_progress(
+                    batch_log.id,
+                    processed_count=processed_count,
+                    last_item_code=etfs[-1].code if etfs else None,
+                )
 
             # Update batch log to success
             if batch_log_repo and batch_log:
@@ -197,6 +250,11 @@ def main():
         action="store_true",
         help="Show what would be updated without actually saving",
     )
+    parser.add_argument(
+        "--resume",
+        type=int,
+        help="Resume from failed batch log ID",
+    )
 
     args = parser.parse_args()
 
@@ -208,7 +266,7 @@ def main():
         logger.info("DRY RUN MODE - No changes will be saved")
 
     try:
-        stats = update_scores(limit=args.limit, dry_run=args.dry_run)
+        stats = update_scores(limit=args.limit, dry_run=args.dry_run, resume=args.resume)
         logger.info("=" * 60)
         logger.info("Score Cache Update Completed Successfully")
         logger.info(f"Total ETFs: {stats['total_etfs']}")

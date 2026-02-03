@@ -87,6 +87,40 @@ def create_admin_bp():
         logs = batch_log_repo.get_all(limit=limit)
         return api_response(data=[log.to_dict() for log in logs])
 
+    @bp.route("/batch-logs/<int:log_id>/reset", methods=["POST"])
+    @login_required
+    @admin_required
+    def reset_batch_log(log_id: int):
+        """Force a running batch job to failed status.
+
+        POST /api/v1/admin/batch-logs/<log_id>/reset
+
+        Returns:
+            Updated batch log data
+        """
+        from datetime import datetime
+
+        log = batch_log_repo.get_by_id(log_id)
+        if not log:
+            return error_response("バッチログが見つかりません", 404)
+
+        if log.status != "running":
+            return error_response(
+                f"実行中のバッチのみリセット可能です（現在のステータス: {log.status}）", 400
+            )
+
+        updated_log = batch_log_repo.update(
+            log_id,
+            status="failed",
+            finished_at=datetime.utcnow(),
+            error_message="Manually reset by admin",
+        )
+
+        return api_response(
+            data=updated_log.to_dict(),
+            message="バッチを強制終了しました",
+        )
+
     @bp.route("/stock-splits", methods=["GET"])
     @login_required
     @admin_required
