@@ -15,12 +15,12 @@ export function PortfolioSummary({ summary }: PortfolioSummaryProps) {
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <span className={styles.label}>総評価額</span>
-        <span className={styles.value}>{formatPrice(summary.total_value)}</span>
-      </div>
-      <div className={styles.card}>
         <span className={styles.label}>総投資額</span>
         <span className={styles.value}>{formatPrice(summary.total_cost)}</span>
+      </div>
+      <div className={styles.card}>
+        <span className={styles.label}>総評価額</span>
+        <span className={styles.value}>{formatPrice(summary.total_value)}</span>
       </div>
       <div className={styles.card}>
         <span className={styles.label}>評価損益</span>
