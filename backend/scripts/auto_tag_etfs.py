@@ -8,10 +8,22 @@
     本番環境: cd ~/www/japan-etf-analyzer && python backend/scripts/auto_tag_etfs.py
 """
 
+import os
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# プロジェクトルートを特定（backend/scripts/ → backend/ → project root）
+SCRIPT_DIR = Path(__file__).resolve().parent
+BACKEND_DIR = SCRIPT_DIR.parent
+PROJECT_ROOT = BACKEND_DIR.parent
+
+# 環境変数設定（本番環境用）
+os.environ.setdefault("APP_BASE_DIR", str(PROJECT_ROOT))
+os.environ.setdefault("APP_DATA_DIR", str(PROJECT_ROOT / "data"))
+db_path = PROJECT_ROOT / "data" / "etf.db"
+os.environ.setdefault("DATABASE_URL", f"sqlite:///{db_path}")
+
+sys.path.insert(0, str(BACKEND_DIR))
 
 from src.app import create_app  # noqa: E402
 from src.models import db  # noqa: E402
