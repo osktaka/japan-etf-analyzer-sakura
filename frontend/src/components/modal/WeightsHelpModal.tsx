@@ -26,7 +26,7 @@ export function WeightsHelpModal({
           &times;
         </button>
         <div className={styles.content}>
-          <h2 className={styles.title}>おすすめ銘柄の選び方</h2>
+          <h2 className={styles.title}>評価スコアの重みづけ</h2>
           <p className={styles.description}>
             切り口ごとに評価の重みづけが異なります。
           </p>

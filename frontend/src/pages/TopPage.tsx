@@ -443,6 +443,7 @@ export function TopPage() {
         onClose={() => setShowWeightsHelpModal(false)}
         isAuthenticated={isAuthenticated}
         customWeights={customWeights}
+        onEditCustom={handleEditCustom}
       />
     </div>
   )
