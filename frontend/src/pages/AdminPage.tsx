@@ -82,6 +82,14 @@ export function AdminPage() {
     [setSearchParams]
   )
 
+  // URLパラメータの変更を監視（ブラウザの戻る/進むボタン対応）
+  useEffect(() => {
+    const tabFromUrl = (searchParams.get('tab') as Tab) || 'system'
+    if (tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl)
+    }
+  }, [searchParams, activeTab])
+
   // ソートヘッダークリックのハンドラ
   const handleSortClick = useCallback(
     (key: SortKey) => {
@@ -156,6 +164,17 @@ export function AdminPage() {
     }
     loadData()
   }, [activeTab, loadBatchLogs, loadUsers, loadStockSplits])
+
+  // systemタブでは10秒間隔でバッチログを自動更新
+  useEffect(() => {
+    if (activeTab !== 'system') return
+
+    const intervalId = setInterval(() => {
+      loadBatchLogs()
+    }, 10000)
+
+    return () => clearInterval(intervalId)
+  }, [activeTab, loadBatchLogs])
 
   const handleAdminToggle = async (userId: number, newValue: boolean) => {
     try {
@@ -248,9 +267,10 @@ export function AdminPage() {
     startedAt: string | null,
     finishedAt: string | null
   ): string => {
-    if (!startedAt || !finishedAt) return '-'
+    if (!startedAt) return '-'
     const start = new Date(startedAt)
-    const finish = new Date(finishedAt)
+    // finishedAtがnullの場合は現在時刻を使用（処理中の経過時間表示）
+    const finish = finishedAt ? new Date(finishedAt) : new Date()
     const durationMs = finish.getTime() - start.getTime()
 
     // 負の値の場合はエラー表示
@@ -271,22 +291,6 @@ export function AdminPage() {
     const now = Date.now()
     const diffMinutes = (now - heartbeatTime) / (1000 * 60)
     return diffMinutes > 30
-  }
-
-  const handleResetBatchLog = async (logId: number) => {
-    if (!window.confirm('このバッチを強制終了しますか？')) {
-      return
-    }
-    try {
-      await adminApi.resetBatchLog(logId)
-      await loadBatchLogs()
-      setToastMessage('バッチを強制終了しました')
-      setTimeout(() => setToastMessage(null), 3000)
-    } catch (err) {
-      console.error('Failed to reset batch log:', err)
-      setToastMessage('バッチの強制終了に失敗しました')
-      setTimeout(() => setToastMessage(null), 3000)
-    }
   }
 
   const renderStatusBadge = (log: BatchLog) => {
@@ -365,17 +369,25 @@ export function AdminPage() {
                 </div>
               </td>
               <td>{renderStatusBadge(log)}</td>
-              <td>
+              <td style={{ minWidth: '200px' }}>
                 {log.total_count > 0 ? (
-                  <div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
                     <div
                       style={{
                         position: 'relative',
-                        height: '24px',
+                        height: '20px',
+                        minWidth: '100px',
+                        flex: '0 0 100px',
                         background: '#e0e0e0',
                         borderRadius: '4px',
                         overflow: 'hidden',
-                        marginBottom: '4px',
                       }}
                     >
                       <div
@@ -387,28 +399,15 @@ export function AdminPage() {
                           transition: 'width 0.3s ease',
                         }}
                       />
-                      <div
-                        style={{
-                          position: 'absolute',
-                          width: '100%',
-                          height: '100%',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '13px',
-                          fontWeight: 'bold',
-                          color: '#333',
-                          textShadow: '0 0 2px rgba(255,255,255,0.8)',
-                        }}
-                      >
-                        {log.processed_count}/{log.total_count} (
-                        {Math.round((log.processed_count / log.total_count) * 100)}
-                        %)
-                      </div>
                     </div>
+                    <span style={{ fontSize: '13px', fontWeight: 'bold' }}>
+                      {log.processed_count}/{log.total_count} (
+                      {Math.round((log.processed_count / log.total_count) * 100)}
+                      %)
+                    </span>
                     {log.last_item_code && (
                       <small style={{ color: '#666', fontSize: '11px' }}>
-                        最終処理: {log.last_item_code}
+                        {log.last_item_code}
                       </small>
                     )}
                   </div>
@@ -426,20 +425,7 @@ export function AdminPage() {
                   </span>
                 )}
               </td>
-              <td>
-                {log.status === 'running' && (
-                  <button
-                    className={styles.recalculateButton}
-                    style={{
-                      background: '#f44336',
-                      color: 'white',
-                    }}
-                    onClick={() => handleResetBatchLog(log.id)}
-                  >
-                    強制終了
-                  </button>
-                )}
-              </td>
+              <td>-</td>
             </tr>
           ))}
         </tbody>
