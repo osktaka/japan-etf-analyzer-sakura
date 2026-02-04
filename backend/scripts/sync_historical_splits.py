@@ -1,27 +1,15 @@
 """Sync historical stock splits from yfinance to database."""
-import argparse
-import os
 import sys
 import time
 from pathlib import Path
 
-# Load .env file if it exists
-project_root = Path(__file__).resolve().parent.parent.parent
-env_file = project_root / ".env"
-if env_file.exists():
-    with open(env_file) as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                key, value = line.split("=", 1)
-                os.environ.setdefault(key, value)
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from datetime import datetime  # noqa: E402
-
-from src.app import create_app  # noqa: E402
-from src.repositories import BatchLogRepository, ETFRepository  # noqa: E402
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent))
+from base_batch import BaseBatchScript  # noqa: E402
+from src.repositories import ETFRepository  # noqa: E402
 from src.services.split_history_service import SplitHistoryService  # noqa: E402
 
 
@@ -56,104 +44,93 @@ def print_detail(results: list):
     print("-" * 60)
 
 
-def main():
-    """Run historical split sync."""
-    parser = argparse.ArgumentParser(
-        description="Sync historical stock splits from yfinance"
-    )
-    parser.add_argument(
-        "--code",
-        type=str,
-        help="ETF code to sync (e.g., 1306). If not specified, sync all ETFs.",
-    )
-    parser.add_argument(
-        "--all",
-        action="store_true",
-        help="Sync all ETFs in the master",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Preview target ETFs without syncing",
-    )
-    parser.add_argument(
-        "--rate-limit",
-        type=float,
-        default=1.0,
-        help="Rate limit in seconds between requests (default: 1.0)",
-    )
+class SyncHistoricalSplitsScript(BaseBatchScript):
+    """Historical stock splits sync batch script."""
 
-    args = parser.parse_args()
+    batch_name = "sync_historical_splits"
+    description = "Sync historical stock splits from yfinance"
+    enable_batch_log = True
+    enable_progress = False
+    enable_resume = False
 
-    app = create_app()
-    with app.app_context():
+    def add_custom_arguments(self, parser):
+        """カスタム引数を追加"""
+        parser.add_argument(
+            "--code",
+            type=str,
+            help="ETF code to sync (e.g., 1306). If not specified, sync all ETFs.",
+        )
+        parser.add_argument(
+            "--all",
+            action="store_true",
+            help="Sync all ETFs in the master",
+        )
+        parser.add_argument(
+            "--rate-limit",
+            type=float,
+            default=1.0,
+            help="Rate limit in seconds between requests (default: 1.0)",
+        )
+
+    def execute(self) -> int:
+        """メイン処理"""
         etf_repo = ETFRepository()
         service = SplitHistoryService()
 
         # Determine target ETF codes
-        if args.code:
-            etf_codes = [args.code]
-            print(f"Target: Single ETF ({args.code})")
-        elif args.all:
+        if self.args.code:
+            etf_codes = [self.args.code]
+            self.logger.info(f"Target: Single ETF ({self.args.code})")
+        elif self.args.all:
             etfs = etf_repo.get_all()
             etf_codes = [etf.code for etf in etfs]
-            print(f"Target: All ETFs ({len(etf_codes)} ETFs)")
+            self.logger.info(f"Target: All ETFs ({len(etf_codes)} ETFs)")
         else:
-            print("Error: Please specify --code or --all")
-            parser.print_help()
-            sys.exit(1)
+            self.logger.error("Error: Please specify --code or --all")
+            return 1
 
         # Dry run mode
-        if args.dry_run:
-            print("\nDRY RUN MODE - No data will be synced")
-            print("=" * 60)
-            print(f"Total ETFs to sync: {len(etf_codes)}")
-            print("\nETF Codes:")
+        if self.args.dry_run:
+            self.logger.info("\nDRY RUN MODE - No data will be synced")
+            self.logger.info("=" * 60)
+            self.logger.info(f"Total ETFs to sync: {len(etf_codes)}")
+            self.logger.info("\nETF Codes:")
             for i, code in enumerate(etf_codes, 1):
-                print(f"  {i:3d}. {code}")
-            print("=" * 60)
-            print("\nTo execute sync, run without --dry-run option")
-            return
+                self.logger.info(f"  {i:3d}. {code}")
+            self.logger.info("=" * 60)
+            self.logger.info("\nTo execute sync, run without --dry-run option")
+            return 0
 
-        # Batch log recording (non-dry-run only)
-        batch_log = None
-        batch_log_repo = None
-        if not args.dry_run:
-            batch_log_repo = BatchLogRepository()
-            batch_log = batch_log_repo.create(
-                batch_name="sync_historical_splits",
-                status="running",
-                started_at=datetime.utcnow(),
-            )
-            print(f"Batch log created: id={batch_log.id}")
+        # バッチログ開始
+        self._start_batch_log()
 
         try:
             # Execute sync
-            print(f"\nSyncing {len(etf_codes)} ETF(s)...")
-            print(f"Rate limit: {args.rate_limit} sec/request")
-            print("=" * 60)
+            self.logger.info(f"Syncing {len(etf_codes)} ETF(s)...")
+            self.logger.info(f"Rate limit: {self.args.rate_limit} sec/request")
+            self.logger.info("=" * 60)
 
             results = []
             for i, etf_code in enumerate(etf_codes, 1):
-                print(
-                    f"[{i}/{len(etf_codes)}] Processing {etf_code}...", end=" ", flush=True
+                self.logger.info(
+                    f"[{i}/{len(etf_codes)}] Processing {etf_code}..."
                 )
 
                 result = service.sync_splits_for_etf(etf_code)
                 results.append(result)
 
                 if result["error"] is None:
-                    print(
-                        f"✓ (fetched={result['fetched']}, "
+                    self.logger.info(
+                        f"  ✓ (fetched={result['fetched']}, "
                         f"registered={result['registered']}, "
                         f"skipped={result['skipped']})"
                     )
                 else:
-                    print(f"✗ Error: {result['error']}")
+                    self.logger.error(f"  ✗ Error: {result['error']}")
 
                 # Rate limiting (except for last item)
                 if i < len(etf_codes):
-                    time.sleep(args.rate_limit)
+                    time.sleep(self.args.rate_limit)
 
             # Summary
             summary = {
@@ -169,32 +146,21 @@ def main():
 
             # Detailed results if requested
             if summary["failed"] > 0:
-                print("\nFailed ETFs:")
+                self.logger.warning("\nFailed ETFs:")
                 for result in results:
                     if result["error"]:
-                        print(f"  - {result['etf_code']}: {result['error']}")
+                        self.logger.warning(f"  - {result['etf_code']}: {result['error']}")
 
-            # Update batch log to success
-            if batch_log_repo and batch_log:
-                batch_log_repo.update(
-                    batch_log.id,
-                    status="success",
-                    finished_at=datetime.utcnow(),
-                )
-                print(f"\nBatch log updated: id={batch_log.id}, status=success")
+            # バッチログ終了（成功）
+            self._finish_batch_log(success=True)
+            return 0
 
         except Exception as e:
-            # Update batch log to failed
-            if batch_log_repo and batch_log:
-                batch_log_repo.update(
-                    batch_log.id,
-                    status="failed",
-                    finished_at=datetime.utcnow(),
-                    error_message=str(e),
-                )
-                print(f"\nBatch log updated: id={batch_log.id}, status=failed")
+            # バッチログ終了（失敗）
+            self._finish_batch_log(success=False, error_message=str(e))
             raise
 
 
 if __name__ == "__main__":
-    main()
+    script = SyncHistoricalSplitsScript()
+    sys.exit(script.run())

@@ -5,15 +5,19 @@ Rotates log files exceeding size threshold and cleans up old logs.
 Must be run from project root directory.
 """
 
-import argparse
-import os
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import List, Tuple
+from typing import List
 
 # Add backend to path for imports
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent))
+from base_batch import BaseBatchScript  # noqa: E402
+from src.repositories.batch_log_repository import BatchLogRepository  # noqa: E402
 
 # Constants
 LOG_DIR = "./logs"
@@ -32,16 +36,6 @@ def get_log_files(log_dir: Path) -> List[Path]:
 def get_file_size_mb(file_path: Path) -> float:
     """Get file size in megabytes."""
     return file_path.stat().st_size / (1024 * 1024)
-
-
-def get_rotated_files(base_path: Path) -> List[Tuple[Path, int]]:
-    """Get existing rotated files with their generation numbers."""
-    rotated = []
-    for i in range(1, MAX_GENERATIONS + 1):
-        rotated_path = base_path.parent / f"{base_path.name}.{i}"
-        if rotated_path.exists():
-            rotated.append((rotated_path, i))
-    return rotated
 
 
 def rotate_file(file_path: Path, dry_run: bool = False) -> List[str]:
@@ -120,166 +114,107 @@ def cleanup_db_logs(days: int, dry_run: bool = False) -> str:
     if dry_run:
         return f"Would delete DB batch logs older than {days} days"
 
-    # Calculate paths relative to script location
-    # Script: backend/scripts/rotate_logs.py → backend_dir: backend/
-    script_dir = Path(__file__).resolve().parent
-    backend_dir = script_dir.parent
-
-    # Determine database path (differs between Docker and production)
-    # Docker:      /app/data/etf.db (backend_dir = /app)
-    # Production:  project_root/data/etf.db (backend_dir = project_root/backend)
-    db_path_docker = backend_dir / "data" / "etf.db"
-    db_path_prod = backend_dir.parent / "data" / "etf.db"
-
-    # Use Docker path if it exists, otherwise production path
-    db_path = db_path_docker if db_path_docker.exists() else db_path_prod
-    os.environ.setdefault("DATABASE_URL", f"sqlite:///{db_path}")
-
     try:
-        from src.app import create_app
-        from src.repositories.batch_log_repository import BatchLogRepository
-
-        app = create_app()
-        with app.app_context():
-            repo = BatchLogRepository()
-            deleted_count = repo.delete_old_logs(days=days)
-            return f"Deleted {deleted_count} DB batch logs older than {days} days"
+        repo = BatchLogRepository()
+        deleted_count = repo.delete_old_logs(days=days)
+        return f"Deleted {deleted_count} DB batch logs older than {days} days"
     except Exception as e:
         return f"Failed to cleanup DB logs: {e}"
 
 
-def main():
-    """Main entry point."""
-    parser = argparse.ArgumentParser(
-        description="Rotate log files and clean up old logs"
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Show what would be done without making changes",
-    )
-    parser.add_argument(
-        "--size-mb",
-        type=int,
-        default=SIZE_THRESHOLD_MB,
-        help=f"Size threshold in MB (default: {SIZE_THRESHOLD_MB})",
-    )
-    parser.add_argument(
-        "--retention-days",
-        type=int,
-        default=RETENTION_DAYS,
-        help=f"Days to retain logs (default: {RETENTION_DAYS})",
-    )
-    args = parser.parse_args()
+class RotateLogsScript(BaseBatchScript):
+    """Log rotation batch script."""
 
-    log_dir = Path(LOG_DIR)
+    batch_name = "rotate_logs"
+    description = "Rotate log files and clean up old logs"
+    enable_batch_log = True
+    enable_progress = False
+    enable_resume = False
 
-    # Create logs directory if it doesn't exist
-    if not log_dir.exists():
-        if args.dry_run:
-            print(f"Would create directory: {log_dir}")
-        else:
-            log_dir.mkdir(parents=True)
-            print(f"Created directory: {log_dir}")
-
-    print(f"Log rotation started at {datetime.now().isoformat()}")
-    print(f"Settings: size_threshold={args.size_mb}MB, retention={args.retention_days}days")
-    if args.dry_run:
-        print("** DRY RUN MODE - No changes will be made **")
-    print()
-
-    # Flask app context and batch log (non-dry-run only)
-    batch_log = None
-    batch_log_repo = None
-    app = None
-    ctx = None
-    if not args.dry_run:
-        # Calculate database path
-        script_dir = Path(__file__).resolve().parent
-        backend_dir = script_dir.parent
-        db_path_docker = backend_dir / "data" / "etf.db"
-        db_path_prod = backend_dir.parent / "data" / "etf.db"
-        db_path = db_path_docker if db_path_docker.exists() else db_path_prod
-        os.environ.setdefault("DATABASE_URL", f"sqlite:///{db_path}")
-
-        from src.app import create_app
-        from src.repositories import BatchLogRepository
-
-        app = create_app()
-        ctx = app.app_context()
-        ctx.push()
-
-        batch_log_repo = BatchLogRepository()
-        batch_log = batch_log_repo.create(
-            batch_name="rotate_logs",
-            status="running",
-            started_at=datetime.utcnow(),
+    def add_custom_arguments(self, parser):
+        """カスタム引数を追加"""
+        parser.add_argument(
+            "--size-mb",
+            type=int,
+            default=SIZE_THRESHOLD_MB,
+            help=f"Size threshold in MB (default: {SIZE_THRESHOLD_MB})",
         )
-        print(f"Batch log created: id={batch_log.id}\n")
+        parser.add_argument(
+            "--retention-days",
+            type=int,
+            default=RETENTION_DAYS,
+            help=f"Days to retain logs (default: {RETENTION_DAYS})",
+        )
 
-    try:
-        all_actions = []
+    def execute(self) -> int:
+        """メイン処理"""
+        log_dir = Path(LOG_DIR)
 
-        # Rotate large log files
-        log_files = get_log_files(log_dir)
-        for log_file in log_files:
-            size_mb = get_file_size_mb(log_file)
-            if size_mb >= args.size_mb:
-                print(f"Rotating {log_file} ({size_mb:.2f}MB >= {args.size_mb}MB)")
-                actions = rotate_file(log_file, dry_run=args.dry_run)
-                all_actions.extend(actions)
-                for action in actions:
-                    print(f"  {action}")
+        # Create logs directory if it doesn't exist
+        if not log_dir.exists():
+            if self.args.dry_run:
+                self.logger.info(f"Would create directory: {log_dir}")
             else:
-                print(f"Skipping {log_file} ({size_mb:.2f}MB < {args.size_mb}MB)")
+                log_dir.mkdir(parents=True)
+                self.logger.info(f"Created directory: {log_dir}")
 
-        print()
+        self.logger.info(
+            f"Settings: size_threshold={self.args.size_mb}MB, "
+            f"retention={self.args.retention_days}days"
+        )
 
-        # Delete old files
-        print(f"Checking for files older than {args.retention_days} days...")
-        actions = delete_old_files(log_dir, args.retention_days, dry_run=args.dry_run)
-        all_actions.extend(actions)
-        if actions:
-            for action in actions:
-                print(f"  {action}")
-        else:
-            print("  No old files to delete")
+        # バッチログ開始
+        self._start_batch_log()
 
-        print()
+        try:
+            all_actions = []
 
-        # Cleanup DB logs
-        print("Cleaning up database batch logs...")
-        db_action = cleanup_db_logs(args.retention_days, dry_run=args.dry_run)
-        print(f"  {db_action}")
+            # Rotate large log files
+            log_files = get_log_files(log_dir)
+            for log_file in log_files:
+                size_mb = get_file_size_mb(log_file)
+                if size_mb >= self.args.size_mb:
+                    self.logger.info(
+                        f"Rotating {log_file} ({size_mb:.2f}MB >= {self.args.size_mb}MB)"
+                    )
+                    actions = rotate_file(log_file, dry_run=self.args.dry_run)
+                    all_actions.extend(actions)
+                    for action in actions:
+                        self.logger.info(f"  {action}")
+                else:
+                    self.logger.info(
+                        f"Skipping {log_file} ({size_mb:.2f}MB < {self.args.size_mb}MB)"
+                    )
 
-        print()
-        print(f"Log rotation completed. Total actions: {len(all_actions)}")
-
-        # Update batch log to success
-        if batch_log_repo and batch_log:
-            batch_log_repo.update(
-                batch_log.id,
-                status="success",
-                finished_at=datetime.utcnow(),
+            # Delete old files
+            self.logger.info(f"Checking for files older than {self.args.retention_days} days...")
+            actions = delete_old_files(
+                log_dir, self.args.retention_days, dry_run=self.args.dry_run
             )
-            print(f"\nBatch log updated: id={batch_log.id}, status=success")
+            all_actions.extend(actions)
+            if actions:
+                for action in actions:
+                    self.logger.info(f"  {action}")
+            else:
+                self.logger.info("  No old files to delete")
 
-    except Exception as e:
-        # Update batch log to failed
-        if batch_log_repo and batch_log:
-            batch_log_repo.update(
-                batch_log.id,
-                status="failed",
-                finished_at=datetime.utcnow(),
-                error_message=str(e),
-            )
-            print(f"\nBatch log updated: id={batch_log.id}, status=failed")
-        raise
+            # Cleanup DB logs
+            self.logger.info("Cleaning up database batch logs...")
+            db_action = cleanup_db_logs(self.args.retention_days, dry_run=self.args.dry_run)
+            self.logger.info(f"  {db_action}")
 
-    finally:
-        if ctx:
-            ctx.pop()
+            self.logger.info(f"Log rotation completed. Total actions: {len(all_actions)}")
+
+            # バッチログ終了（成功）
+            self._finish_batch_log(success=True)
+            return 0
+
+        except Exception as e:
+            # バッチログ終了（失敗）
+            self._finish_batch_log(success=False, error_message=str(e))
+            raise
 
 
 if __name__ == "__main__":
-    main()
+    script = RotateLogsScript()
+    sys.exit(script.run())

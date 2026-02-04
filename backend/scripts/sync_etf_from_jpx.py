@@ -11,12 +11,8 @@ Usage:
 Options:
     --resume ID         Resume from failed batch log ID (re-run from start)
 """
-import argparse
-import logging
-import os
 import re
 import sys
-from datetime import datetime
 from pathlib import Path
 from typing import Optional, Set
 
@@ -24,29 +20,14 @@ import requests
 from bs4 import BeautifulSoup
 from sqlalchemy import text
 
-# Load .env file if it exists
-project_root = Path(__file__).resolve().parent.parent.parent
-env_file = project_root / ".env"
-if env_file.exists():
-    with open(env_file) as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                key, value = line.split("=", 1)
-                os.environ.setdefault(key, value)
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.app import create_app  # noqa: E402
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent))
+from base_batch import BaseBatchScript  # noqa: E402
 from src.models import db  # noqa: E402
-from src.repositories import BatchLogRepository, CategoryRepository, ETFRepository  # noqa: E402
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
-)
-logger = logging.getLogger(__name__)
+from src.repositories import CategoryRepository, ETFRepository  # noqa: E402
 
 # JPX ETF/ETN URLs
 JPX_ETF_URL = "https://www.jpx.co.jp/equities/products/etfs/issues/01.html"
@@ -80,7 +61,7 @@ def parse_expense_ratio(text: str) -> Optional[float]:
     return None
 
 
-def fetch_jpx_etf_page(url: str) -> list:
+def fetch_jpx_etf_page(url: str, logger) -> list:
     """Fetch ETF list from JPX website by scraping HTML table.
 
     ETF table columns: [連動対象指標, コード, 名称, 管理会社, 信託報酬]
@@ -142,7 +123,7 @@ def fetch_jpx_etf_page(url: str) -> list:
     return items
 
 
-def fetch_jpx_etn_page(url: str) -> list:
+def fetch_jpx_etn_page(url: str, logger) -> list:
     """Fetch ETN list from JPX website by scraping HTML table.
 
     ETN table columns: [上場日, 連動対象指標, コード, 名称, 発行者, 償還日, 管理費用, ...]
@@ -203,23 +184,23 @@ def fetch_jpx_etn_page(url: str) -> list:
     return items
 
 
-def fetch_all_from_jpx() -> tuple:
+def fetch_all_from_jpx(logger) -> tuple:
     """Fetch all ETF/ETN lists from JPX and remove duplicates.
 
     Returns:
         tuple: (unique_items, etf_count, etn_count, leveraged_count)
     """
     # Fetch ETFs
-    etfs = fetch_jpx_etf_page(JPX_ETF_URL)
+    etfs = fetch_jpx_etf_page(JPX_ETF_URL, logger)
     if not etfs:
         raise RuntimeError("No ETFs found")
 
     # Fetch ETNs
-    etns = fetch_jpx_etn_page(JPX_ETN_URL)
+    etns = fetch_jpx_etn_page(JPX_ETN_URL, logger)
     logger.info(f"Fetched {len(etns)} ETNs")
 
     # Fetch Leveraged/Inverse ETFs
-    leveraged = fetch_jpx_etf_page(JPX_LEVERAGED_URL)
+    leveraged = fetch_jpx_etf_page(JPX_LEVERAGED_URL, logger)
     logger.info(f"Fetched {len(leveraged)} Leveraged/Inverse ETFs")
 
     # Combine all lists
@@ -264,7 +245,7 @@ def estimate_category(index_name: str, etf_name: str) -> str:
     return "国内株式"  # Default
 
 
-def ensure_columns():
+def ensure_columns(logger):
     """Ensure index_name, manager, and type columns exist in etfs table."""
     conn = db.engine.connect()
 
@@ -292,11 +273,12 @@ def ensure_columns():
     conn.close()
 
 
-def sync_to_db(items: list, batch_log_repo=None, batch_log=None) -> tuple:
+def sync_to_db(items: list, logger, batch_log_repo=None, batch_log=None) -> tuple:
     """Sync ETF data to database.
 
     Args:
         items: List of ETF/ETN data dictionaries
+        logger: Logger instance
         batch_log_repo: BatchLogRepository instance
         batch_log: BatchLog instance
 
@@ -375,45 +357,30 @@ def sync_to_db(items: list, batch_log_repo=None, batch_log=None) -> tuple:
     return created, updated
 
 
-def main() -> int:
-    """Main entry point."""
-    parser = argparse.ArgumentParser(description="Sync ETF master data from JPX")
-    parser.add_argument(
-        "--resume",
-        type=int,
-        help="Resume from failed batch log ID (re-run from start)",
-    )
-    args = parser.parse_args()
+class SyncEtfFromJpxScript(BaseBatchScript):
+    """ETF master data sync from JPX batch script."""
 
-    app = create_app()
-    with app.app_context():
-        batch_log_repo = BatchLogRepository()
+    batch_name = "sync_etf_from_jpx"
+    description = "Sync ETF master data from JPX"
+    enable_batch_log = True
+    enable_progress = True
+    enable_resume = True
+    progress_interval = 10
 
-        if args.resume:
-            # リトライレコード作成
-            batch_log = batch_log_repo.create_retry(args.resume)
-            if not batch_log:
-                logger.error(f"Parent batch log not found: id={args.resume}")
-                return 1
-            logger.info(f"Resuming from batch log {args.resume} (re-running from start)")
-        else:
-            # 新規バッチログ作成（total_countは後で更新）
-            batch_log = batch_log_repo.create(
-                batch_name="sync_etf_from_jpx",
-                status="running",
-                started_at=datetime.utcnow(),
-            )
-            logger.info(f"Batch log created: id={batch_log.id}")
+    def execute(self) -> int:
+        """メイン処理"""
+        # バッチログ開始（total_countは後で更新）
+        self._start_batch_log()
 
         try:
             # Phase 1: Ensure DB schema
-            logger.info("Ensuring database columns...")
-            ensure_columns()
+            self.logger.info("Ensuring database columns...")
+            ensure_columns(self.logger)
 
             # Phase 2: Fetch from JPX
-            logger.info("Fetching ETF/ETN data from JPX...")
-            items, etf_count, etn_count, leveraged_count = fetch_all_from_jpx()
-            logger.info(
+            self.logger.info("Fetching ETF/ETN data from JPX...")
+            items, etf_count, etn_count, leveraged_count = fetch_all_from_jpx(self.logger)
+            self.logger.info(
                 f"Fetched {len(items)} items "
                 f"(ETF: {etf_count}, ETN: {etn_count}, Leveraged: {leveraged_count})"
             )
@@ -422,48 +389,40 @@ def main() -> int:
                 raise RuntimeError("No items fetched from JPX")
 
             # Update total_count in batch log
-            batch_log_repo.update(batch_log.id, total_count=len(items))
+            if self.batch_log_repo and self.batch_log:
+                self.batch_log_repo.update(self.batch_log.id, total_count=len(items))
 
             # Phase 3: Sync to DB
-            logger.info("Syncing to database...")
-            created, updated = sync_to_db(items, batch_log_repo, batch_log)
-            logger.info(f"Created: {created}, Updated: {updated}")
-
-            # Success
-            batch_log_repo.update(
-                batch_log.id,
-                status="success",
-                finished_at=datetime.utcnow(),
+            self.logger.info("Syncing to database...")
+            created, updated = sync_to_db(
+                items, self.logger, self.batch_log_repo, self.batch_log
             )
-            logger.info(f"Batch log updated: id={batch_log.id}, status=success")
-            logger.info("Sync complete!")
+            self.logger.info(f"Created: {created}, Updated: {updated}")
 
+            # 最終進捗更新
+            if items:
+                self._final_progress_update(last_item_code=items[-1]["code"])
+
+            # バッチログ終了（成功）
+            self._finish_batch_log(success=True)
+            self.logger.info("Sync complete!")
             return 0
 
         except requests.RequestException as e:
             # Network error
             error_msg = f"Network error: {e}"
-            logger.error(error_msg)
-            batch_log_repo.update(
-                batch_log.id,
-                status="failed",
-                finished_at=datetime.utcnow(),
-                error_message=error_msg,
-            )
+            self.logger.error(error_msg)
+            self._finish_batch_log(success=False, error_message=error_msg)
             return 1
 
         except Exception as e:
             # Other errors
             error_msg = str(e)
-            logger.error(f"Failed: {error_msg}")
-            batch_log_repo.update(
-                batch_log.id,
-                status="failed",
-                finished_at=datetime.utcnow(),
-                error_message=error_msg,
-            )
+            self.logger.error(f"Failed: {error_msg}")
+            self._finish_batch_log(success=False, error_message=error_msg)
             return 1
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    script = SyncEtfFromJpxScript()
+    sys.exit(script.run())

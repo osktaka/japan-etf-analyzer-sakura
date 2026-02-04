@@ -18,28 +18,13 @@ Options:
 This script should be run via cron:
     0 19 * * 1-5 cd ~/app/backend && python3 scripts/update_etf_data.py --smart --rate-limit 3.0 >> ~/logs/etf_update.log 2>&1
 """
-import argparse
 import logging
 import math
-import os
 import sys
 import time as time_module
 from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Optional, Tuple
-
-import jpholiday
-
-# Load .env file if it exists
-project_root = Path(__file__).resolve().parent.parent.parent
-env_file = project_root / ".env"
-if env_file.exists():
-    with open(env_file) as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                key, value = line.split("=", 1)
-                os.environ.setdefault(key, value)
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -55,13 +40,12 @@ def custom_prepare_request(self, request):
     return original_prepare_request(self, request)
 requests.Session.prepare_request = custom_prepare_request
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent))
+from base_batch import BaseBatchScript  # noqa: E402
+
 logging.getLogger("yfinance").setLevel(logging.WARNING)
-logger = logging.getLogger(__name__)
 
 RATE_LIMIT_SECONDS = 1.0  # Yahoo Finance API rate limit対策
 JST = timezone(timedelta(hours=9))  # Japan Standard Time
@@ -70,6 +54,8 @@ MARKET_DATA_AVAILABLE_TIME = time(16, 0)  # 16:00 JST（yfinance遅延考慮）
 
 def is_market_open_day(date) -> bool:
     """指定日が営業日（平日かつ非祝日）かどうか"""
+    import jpholiday
+
     if date.weekday() >= 5:  # 土日
         return False
     if jpholiday.is_holiday(date):  # 日本の祝日
@@ -155,6 +141,7 @@ def load_etf_list() -> list:
 
 def update_single_etf(
     code: str,
+    logger,
     dry_run: bool = False,
     full: bool = False,
     smart: bool = False,
@@ -163,6 +150,7 @@ def update_single_etf(
 
     Args:
         code: ETF code (e.g., "1306")
+        logger: Logger instance
         dry_run: If True, don't actually fetch data
         full: If True, fetch full history (period='max') instead of 1 year
         smart: If True, use smart update (full for new, incremental for existing)
@@ -545,11 +533,12 @@ def calculate_regression_return_from_df(df, days: int) -> Optional[float]:
     return round(((end_value - start_value) / start_value) * 100, 2)
 
 
-def update_performance_cache(codes: list, rate_limit: float = 1.0) -> tuple:
+def update_performance_cache(codes: list, logger, rate_limit: float = 1.0) -> tuple:
     """Update performance cache for given ETF codes using DB-first approach.
 
     Args:
         codes: List of ETF codes to update
+        logger: Logger instance
         rate_limit: Rate limit (deprecated - kept for backward compatibility)
 
     Returns:
@@ -587,208 +576,146 @@ def update_performance_cache(codes: list, rate_limit: float = 1.0) -> tuple:
     return success, fail
 
 
-def main() -> int:
-    """Main entry point."""
-    parser = argparse.ArgumentParser(description="Update ETF price data")
-    parser.add_argument("--limit", type=int, help="Limit number of ETFs to update")
-    parser.add_argument(
-        "--dry-run", action="store_true", help="Show what would be updated"
-    )
-    parser.add_argument(
-        "--skip-performance",
-        action="store_true",
-        help="Skip performance cache calculation",
-    )
-    parser.add_argument(
-        "--full",
-        action="store_true",
-        help="Fetch full history (period='max') instead of 1 year",
-    )
-    parser.add_argument(
-        "--smart",
-        action="store_true",
-        help="Smart update: full history for new ETFs, incremental for existing",
-    )
-    parser.add_argument(
-        "--rate-limit",
-        type=float,
-        default=1.0,
-        help="Rate limit in seconds between requests (default: 1.0)",
-    )
-    parser.add_argument(
-        "--resume",
-        type=int,
-        help="Resume from failed batch log ID",
-    )
-    args = parser.parse_args()
+class UpdateEtfDataScript(BaseBatchScript):
+    """ETF price data update batch script."""
 
-    # Validate mutually exclusive options
-    if args.full and args.smart:
-        logger.warning(
-            "--full and --smart are mutually exclusive. --smart takes precedence."
+    batch_name = "update_etf_data"
+    description = "Update ETF price data from Yahoo Finance"
+    enable_batch_log = True
+    enable_progress = True
+    enable_resume = True
+    progress_interval = 10
+
+    def add_custom_arguments(self, parser):
+        """カスタム引数を追加"""
+        parser.add_argument("--limit", type=int, help="Limit number of ETFs to update")
+        parser.add_argument(
+            "--skip-performance",
+            action="store_true",
+            help="Skip performance cache calculation",
         )
-        args.full = False
+        parser.add_argument(
+            "--full",
+            action="store_true",
+            help="Fetch full history (period='max') instead of 1 year",
+        )
+        parser.add_argument(
+            "--smart",
+            action="store_true",
+            help="Smart update: full history for new ETFs, incremental for existing",
+        )
+        parser.add_argument(
+            "--rate-limit",
+            type=float,
+            default=1.0,
+            help="Rate limit in seconds between requests (default: 1.0)",
+        )
 
-    logger.info("=" * 60)
-    logger.info(f"ETF Data Update Started at {datetime.now()}")
-    mode_info = []
-    if args.smart:
-        mode_info.append("smart")
-    elif args.full:
-        mode_info.append("full")
-    if args.dry_run:
-        mode_info.append("dry-run")
-    if args.skip_performance:
-        mode_info.append("skip-performance")
-    if mode_info:
-        logger.info(f"Mode: {', '.join(mode_info)}")
-    logger.info("=" * 60)
-
-    # Flask app contextが必要（ETFリスト読み込みのため）
-    os.environ["USE_MOCK_DATA"] = "false"
-    from src.app import create_app
-
-    app = create_app()
-    ctx = app.app_context()
-    ctx.push()
-
-    etfs = load_etf_list()
-    if not etfs:
-        logger.error("No ETFs found in database")
-        return 1
-
-    # ETFリストをコードでソート（再開時の一貫性確保）
-    etfs = sorted(etfs, key=lambda x: x["code"])
-
-    # 全ETFリストを保存（パフォーマンスキャッシュ更新用）
-    all_etfs = etfs[:]
-
-    # バッチログ記録（dry-run以外）
-    batch_log = None
-    batch_log_repo = None
-    parent_last_item_code = None
-
-    if not args.dry_run:
-        from src.repositories import BatchLogRepository
-
-        batch_log_repo = BatchLogRepository()
-
-        if args.resume:
-            # リトライレコード作成
-            batch_log = batch_log_repo.create_retry(args.resume)
-            if not batch_log:
-                logger.error(f"Parent batch log not found: id={args.resume}")
-                return 1
-            parent = batch_log_repo.get_by_id(args.resume)
-            parent_last_item_code = parent.last_item_code if parent else None
-            logger.info(f"Resuming from batch log {args.resume}, last_item_code={parent_last_item_code}")
-        else:
-            # 新規バッチログ作成
-            batch_log = batch_log_repo.create(
-                batch_name="update_etf_data",
-                status="running",
-                started_at=datetime.utcnow(),
-                total_count=len(etfs),
+    def execute(self) -> int:
+        """メイン処理"""
+        # Validate mutually exclusive options
+        if self.args.full and self.args.smart:
+            self.logger.warning(
+                "--full and --smart are mutually exclusive. --smart takes precedence."
             )
-            logger.info(f"Batch log created: id={batch_log.id}")
+            self.args.full = False
 
-    # 再開処理（last_item_code以降のETFのみ処理）
-    if parent_last_item_code:
-        resume_index = next(
-            (i for i, e in enumerate(etfs) if e["code"] > parent_last_item_code),
-            len(etfs)
-        )
-        etfs = etfs[resume_index:]
-        logger.info(f"Resuming from index {resume_index}, {len(etfs)} ETFs remaining")
+        # Mode info
+        mode_info = []
+        if self.args.smart:
+            mode_info.append("smart")
+        elif self.args.full:
+            mode_info.append("full")
+        if self.args.skip_performance:
+            mode_info.append("skip-performance")
+        if mode_info:
+            self.logger.info(f"Mode: {', '.join(mode_info)}")
 
-    if args.limit:
-        etfs = etfs[: args.limit]
-        logger.info(f"Limited to first {args.limit} ETFs")
+        # Load ETF list
+        etfs = load_etf_list()
+        if not etfs:
+            self.logger.error("No ETFs found in database")
+            return 1
 
-    logger.info(f"Updating {len(etfs)} ETFs...")
+        # ETFリストをコードでソート（再開時の一貫性確保）
+        etfs = sorted(etfs, key=lambda x: x["code"])
 
-    success_count = 0
-    fail_count = 0
-    processed_count = 0
+        # 全ETFリストを保存（パフォーマンスキャッシュ更新用）
+        all_etfs = etfs[:]
 
-    try:
-        for i, etf in enumerate(etfs, 1):
-            code = etf["code"]
-            logger.info(f"[{i}/{len(etfs)}] Processing {code} ({etf.get('name', '')})")
+        # バッチログ開始
+        self._start_batch_log(total_count=len(etfs))
 
-            if update_single_etf(
-                code, dry_run=args.dry_run, full=args.full, smart=args.smart
-            ):
-                success_count += 1
-            else:
-                fail_count += 1
+        # 再開処理（last_item_code以降のETFのみ処理）
+        parent_last_item_code = self.get_resume_start_code()
+        if parent_last_item_code:
+            resume_index = next(
+                (i for i, e in enumerate(etfs) if e["code"] > parent_last_item_code),
+                len(etfs)
+            )
+            etfs = etfs[resume_index:]
+            self.logger.info(f"Resuming from index {resume_index}, {len(etfs)} ETFs remaining")
 
-            processed_count += 1
+        if self.args.limit:
+            etfs = etfs[: self.args.limit]
+            self.logger.info(f"Limited to first {self.args.limit} ETFs")
 
-            # 10件ごとに進捗更新
-            if not args.dry_run and batch_log and processed_count % 10 == 0:
-                batch_log_repo.update_progress(
-                    batch_log.id,
-                    processed_count=processed_count,
-                    last_item_code=code,
+        self.logger.info(f"Updating {len(etfs)} ETFs...")
+
+        success_count = 0
+        fail_count = 0
+
+        try:
+            for i, etf in enumerate(etfs, 1):
+                code = etf["code"]
+                self.logger.info(f"[{i}/{len(etfs)}] Processing {code} ({etf.get('name', '')})")
+
+                if update_single_etf(
+                    code, self.logger, dry_run=self.args.dry_run, full=self.args.full, smart=self.args.smart
+                ):
+                    success_count += 1
+                else:
+                    fail_count += 1
+
+                # 進捗更新
+                self._update_progress(last_item_code=code)
+
+                # レート制限対策（最後の銘柄以外）
+                if i < len(etfs) and not self.args.dry_run:
+                    time_module.sleep(self.args.rate_limit)
+
+            # 最終進捗更新
+            if etfs:
+                self._final_progress_update(last_item_code=etfs[-1]["code"])
+
+            # パフォーマンスキャッシュの更新
+            if not self.args.dry_run and not self.args.skip_performance:
+                self.logger.info("-" * 60)
+                self.logger.info("Starting performance cache calculation...")
+                # 全ETFを対象に更新（再開時も常に全件更新）
+                codes = [etf["code"] for etf in all_etfs]
+                perf_success, perf_fail = update_performance_cache(
+                    codes, self.logger, self.args.rate_limit
                 )
-                logger.info(f"Progress updated: {processed_count} processed")
+                self.logger.info(
+                    f"Performance cache: {perf_success} success, {perf_fail} failed"
+                )
 
-            # レート制限対策（最後の銘柄以外）
-            if i < len(etfs) and not args.dry_run:
-                time_module.sleep(args.rate_limit)
+            # バッチログ終了（成功）
+            self._finish_batch_log(success=True)
 
-        # 最終進捗更新
-        if not args.dry_run and batch_log and processed_count % 10 != 0:
-            batch_log_repo.update_progress(
-                batch_log.id,
-                processed_count=processed_count,
-                last_item_code=etfs[-1]["code"] if etfs else None,
-            )
+            self.logger.info("=" * 60)
+            self.logger.info(f"Update completed: {success_count} success, {fail_count} failed")
+            self.logger.info("=" * 60)
 
-        # パフォーマンスキャッシュの更新
-        if not args.dry_run and not args.skip_performance:
-            logger.info("-" * 60)
-            logger.info("Starting performance cache calculation...")
-            # 全ETFを対象に更新（再開時も常に全件更新）
-            codes = [etf["code"] for etf in all_etfs]
-            perf_success, perf_fail = update_performance_cache(codes, args.rate_limit)
-            logger.info(
-                f"Performance cache: {perf_success} success, {perf_fail} failed"
-            )
+            return 0 if fail_count == 0 else 1
 
-        # バッチログを成功で更新
-        if batch_log_repo and batch_log:
-            batch_log_repo.update(
-                batch_log.id,
-                status="success",
-                finished_at=datetime.utcnow(),
-            )
-            logger.info(f"Batch log updated: id={batch_log.id}, status=success")
-
-    except Exception as e:
-        # バッチログを失敗で更新
-        if batch_log_repo and batch_log:
-            batch_log_repo.update(
-                batch_log.id,
-                status="failed",
-                finished_at=datetime.utcnow(),
-                error_message=str(e),
-            )
-            logger.info(f"Batch log updated: id={batch_log.id}, status=failed")
-        raise
-
-    finally:
-        if not args.dry_run:
-            ctx.pop()
-
-    logger.info("=" * 60)
-    logger.info(f"Update completed: {success_count} success, {fail_count} failed")
-    logger.info(f"Finished at {datetime.now()}")
-    logger.info("=" * 60)
-
-    return 0 if fail_count == 0 else 1
+        except Exception as e:
+            # バッチログ終了（失敗）
+            self._finish_batch_log(success=False, error_message=str(e))
+            raise
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    script = UpdateEtfDataScript()
+    sys.exit(script.run())
