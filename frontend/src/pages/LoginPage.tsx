@@ -16,7 +16,7 @@ export function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(ROUTES.HOME)
+      navigate(ROUTES.MYPAGE)
     }
   }, [isAuthenticated, navigate])
 
@@ -27,7 +27,7 @@ export function LoginPage() {
 
     try {
       await login({ user_id: userId, password, remember })
-      navigate(ROUTES.HOME)
+      navigate(ROUTES.MYPAGE)
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
         const axiosErr = err as {

@@ -120,7 +120,7 @@
 }
 
 .loginBtn:hover {
-  background-color: var(--color-primary-hover);
+  background-color: var(--color-primary-dark);
   text-decoration: none;
 }
 
@@ -233,7 +233,7 @@
 }
 
 .mobileLoginBtn:hover {
-  background-color: var(--color-primary-hover);
+  background-color: var(--color-primary-dark);
   text-decoration: none;
 }
 
