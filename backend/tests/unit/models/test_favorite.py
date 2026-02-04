@@ -10,7 +10,7 @@ class TestFavoriteModel:
     @pytest.fixture
     def user(self, db_session):
         """Create test user."""
-        user = User(email="test@example.com", username="Test User")
+        user = User(user_id="testuser", username="Test User")
         user.set_password("password123")
         db_session.add(user)
         db_session.commit()
@@ -79,7 +79,7 @@ class TestFavoriteModel:
         db_session.commit()
 
         assert favorite.user.id == user.id
-        assert favorite.user.email == user.email
+        assert favorite.user.user_id == user.user_id
 
     def test_etf_relationship(self, db_session, user, etf):
         """Test relationship with ETF."""

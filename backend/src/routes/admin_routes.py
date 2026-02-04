@@ -24,7 +24,7 @@ def create_admin_bp():
         GET /api/v1/admin/users
 
         Returns:
-            List of users with id, email, username, is_admin, last_login_at, created_at
+            List of users with id, user_id, username, is_admin, last_login_at, created_at
         """
         users = db.session.query(User).order_by(User.created_at.desc()).all()
         return api_response(data=[user.to_dict() for user in users])

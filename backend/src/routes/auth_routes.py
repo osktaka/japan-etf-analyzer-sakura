@@ -19,7 +19,7 @@ def create_auth_bp():
 
         Request Body:
             {
-                "email": "user@example.com",
+                "user_id": "user123",
                 "password": "password123",
                 "username": "User Name"
             }
@@ -32,11 +32,11 @@ def create_auth_bp():
         if not data:
             return error_response("リクエストボディが必要です", 400)
 
-        email = data.get("email", "").strip()
+        user_id = data.get("user_id", "").strip()
         password = data.get("password", "")
         username = data.get("username", "").strip()
 
-        user, error = auth_service.register(email, password, username)
+        user, error = auth_service.register(user_id, password, username)
 
         if error:
             return error_response(error, 400)
@@ -55,7 +55,7 @@ def create_auth_bp():
 
         Request Body:
             {
-                "email": "user@example.com",
+                "user_id": "user123",
                 "password": "password123",
                 "remember": false  // optional
             }
@@ -68,11 +68,11 @@ def create_auth_bp():
         if not data:
             return error_response("リクエストボディが必要です", 400)
 
-        email = data.get("email", "").strip()
+        user_id = data.get("user_id", "").strip()
         password = data.get("password", "")
         remember = data.get("remember", False)
 
-        user, error = auth_service.login(email, password, remember)
+        user, error = auth_service.login(user_id, password, remember)
 
         if error:
             return error_response(error, 401)

@@ -447,8 +447,8 @@ export function AdminPage() {
         <thead>
           <tr>
             <th>ID</th>
-            <th>メール</th>
-            <th>ユーザー名</th>
+            <th>ユーザーID</th>
+            <th>表示名</th>
             <th>管理者</th>
             <th>作成日時</th>
             <th>最終ログイン</th>
@@ -460,7 +460,7 @@ export function AdminPage() {
             return (
               <tr key={user.id}>
                 <td>{user.id}</td>
-                <td>{user.email}</td>
+                <td>{user.user_id}</td>
                 <td>{user.username}</td>
                 <td>
                   <label className={styles.toggle}>

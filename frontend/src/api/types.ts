@@ -125,7 +125,7 @@ export type ChartPeriod =
 
 export interface User {
   id: number
-  email: string
+  user_id: string
   username: string
   is_active: boolean
   is_admin: boolean
@@ -134,13 +134,13 @@ export interface User {
 }
 
 export interface LoginRequest {
-  email: string
+  user_id: string
   password: string
   remember?: boolean
 }
 
 export interface RegisterRequest {
-  email: string
+  user_id: string
   password: string
   username: string
 }

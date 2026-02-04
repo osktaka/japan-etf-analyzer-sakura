@@ -11,13 +11,13 @@ class UserRepository(BaseRepository[User]):
 
     model = User
 
-    def get_by_email(self, email: str) -> Optional[User]:
-        """Find user by email address."""
-        return db.session.query(User).filter(User.email == email).first()
+    def get_by_user_id(self, user_id: str) -> Optional[User]:
+        """Find user by user_id."""
+        return db.session.query(User).filter(User.user_id == user_id).first()
 
-    def email_exists(self, email: str) -> bool:
-        """Check if email already exists."""
-        return db.session.query(User).filter(User.email == email).first() is not None
+    def user_id_exists(self, user_id: str) -> bool:
+        """Check if user_id already exists."""
+        return db.session.query(User).filter(User.user_id == user_id).first() is not None
 
     def get_active_users(self) -> List[User]:
         """Get all active users."""

@@ -13,7 +13,7 @@ class User(db.Model, UserMixin, TimestampMixin):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    email = db.Column(db.String(255), nullable=False, unique=True, index=True)
+    user_id = db.Column(db.String(50), nullable=False, unique=True, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     username = db.Column(db.String(50), nullable=False)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
@@ -42,7 +42,7 @@ class User(db.Model, UserMixin, TimestampMixin):
         """Convert to dictionary representation."""
         return {
             "id": self.id,
-            "email": self.email,
+            "user_id": self.user_id,
             "username": self.username,
             "is_active": self.is_active,
             "is_admin": self.is_admin,
@@ -55,4 +55,4 @@ class User(db.Model, UserMixin, TimestampMixin):
         }
 
     def __repr__(self) -> str:
-        return f"<User {self.email}>"
+        return f"<User {self.user_id}>"

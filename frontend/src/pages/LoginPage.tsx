@@ -8,7 +8,7 @@ import styles from './AuthPage.module.css'
 export function LoginPage() {
   const navigate = useNavigate()
   const { login, isAuthenticated } = useAuth()
-  const [email, setEmail] = useState('')
+  const [userId, setUserId] = useState('')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(false)
   const [error, setError] = useState('')
@@ -26,7 +26,7 @@ export function LoginPage() {
     setIsSubmitting(true)
 
     try {
-      await login({ email, password, remember })
+      await login({ user_id: userId, password, remember })
       navigate(ROUTES.HOME)
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
@@ -53,17 +53,17 @@ export function LoginPage() {
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.field}>
-            <label htmlFor="email" className={styles.label}>
-              メールアドレス
+            <label htmlFor="userId" className={styles.label}>
+              ユーザーID
             </label>
             <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              id="userId"
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
               className={styles.input}
               required
-              autoComplete="email"
+              autoComplete="username"
             />
           </div>
 

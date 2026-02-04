@@ -8,7 +8,7 @@ import styles from './AuthPage.module.css'
 export function RegisterPage() {
   const navigate = useNavigate()
   const { register, isAuthenticated } = useAuth()
-  const [email, setEmail] = useState('')
+  const [userId, setUserId] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [username, setUsername] = useState('')
@@ -38,7 +38,7 @@ export function RegisterPage() {
     setIsSubmitting(true)
 
     try {
-      await register({ email, password, username })
+      await register({ user_id: userId, password, username })
       navigate(ROUTES.HOME)
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'response' in err) {
@@ -65,8 +65,28 @@ export function RegisterPage() {
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <div className={styles.field}>
+            <label htmlFor="userId" className={styles.label}>
+              ユーザーID
+            </label>
+            <input
+              type="text"
+              id="userId"
+              value={userId}
+              onChange={(e) => setUserId(e.target.value)}
+              className={styles.input}
+              required
+              minLength={3}
+              maxLength={50}
+              pattern="[a-zA-Z0-9_\-]+"
+              title="英数字、ハイフン、アンダースコアのみ使用可能（3〜50文字）"
+              autoComplete="username"
+            />
+            <span className={styles.hint}>英数字、ハイフン、アンダースコアのみ（3〜50文字）</span>
+          </div>
+
+          <div className={styles.field}>
             <label htmlFor="username" className={styles.label}>
-              ユーザー名
+              表示名
             </label>
             <input
               type="text"
@@ -77,21 +97,6 @@ export function RegisterPage() {
               required
               maxLength={50}
               autoComplete="name"
-            />
-          </div>
-
-          <div className={styles.field}>
-            <label htmlFor="email" className={styles.label}>
-              メールアドレス
-            </label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={styles.input}
-              required
-              autoComplete="email"
             />
           </div>
 

@@ -45,7 +45,7 @@ class TestFavoriteRoutes:
         client.post(
             "/api/v1/auth/register",
             json={
-                "email": "test@example.com",
+                "user_id": "testuser",
                 "password": "password123",
                 "username": "Test User",
             },
@@ -53,7 +53,7 @@ class TestFavoriteRoutes:
         client.post(
             "/api/v1/auth/login",
             json={
-                "email": "test@example.com",
+                "user_id": "testuser",
                 "password": "password123",
             },
         )

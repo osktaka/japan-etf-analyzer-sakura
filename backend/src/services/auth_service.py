@@ -14,18 +14,18 @@ class AuthService:
 
     MIN_PASSWORD_LENGTH = 8
     MAX_USERNAME_LENGTH = 50
-    EMAIL_PATTERN = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+    USER_ID_PATTERN = re.compile(r"^[a-zA-Z0-9_-]{3,50}$")
 
     def __init__(self, user_repository: Optional[UserRepository] = None):
         """Initialize auth service."""
         self.user_repository = user_repository or UserRepository()
 
-    def validate_email(self, email: str) -> Tuple[bool, Optional[str]]:
-        """Validate email format."""
-        if not email:
-            return False, "メールアドレスは必須です"
-        if not self.EMAIL_PATTERN.match(email):
-            return False, "メールアドレスの形式が正しくありません"
+    def validate_user_id(self, user_id: str) -> Tuple[bool, Optional[str]]:
+        """Validate user_id format."""
+        if not user_id:
+            return False, "ユーザーIDは必須です"
+        if not self.USER_ID_PATTERN.match(user_id):
+            return False, "ユーザーIDは3〜50文字の英数字、ハイフン、アンダースコアのみ使用可能です"
         return True, None
 
     def validate_password(self, password: str) -> Tuple[bool, Optional[str]]:
@@ -45,7 +45,7 @@ class AuthService:
         return True, None
 
     def register(
-        self, email: str, password: str, username: str
+        self, user_id: str, password: str, username: str
     ) -> Tuple[Optional[User], Optional[str]]:
         """
         Register a new user.
@@ -54,7 +54,7 @@ class AuthService:
             Tuple of (user, error_message). User is None if error occurred.
         """
         # Validate input
-        valid, error = self.validate_email(email)
+        valid, error = self.validate_user_id(user_id)
         if not valid:
             return None, error
 
@@ -66,23 +66,25 @@ class AuthService:
         if not valid:
             return None, error
 
-        # Check if email already exists
-        if self.user_repository.email_exists(email):
-            return None, "このメールアドレスは既に登録されています"
+        # Check if user_id already exists
+        if self.user_repository.user_id_exists(user_id):
+            return None, "このユーザーIDは既に登録されています"
 
         # Create user
-        user = User(email=email, username=username)
+        user = User(user_id=user_id, username=username)
         user.set_password(password)
 
         try:
             self.user_repository.create(user)
+            # Auto-login after registration
+            login_user(user)
             return user, None
         except Exception as e:
             self.user_repository.rollback()
             return None, f"ユーザー登録に失敗しました: {str(e)}"
 
     def login(
-        self, email: str, password: str, remember: bool = False
+        self, user_id: str, password: str, remember: bool = False
     ) -> Tuple[Optional[User], Optional[str]]:
         """
         Authenticate user and create session.
@@ -90,19 +92,19 @@ class AuthService:
         Returns:
             Tuple of (user, error_message). User is None if authentication failed.
         """
-        if not email or not password:
-            return None, "メールアドレスとパスワードは必須です"
+        if not user_id or not password:
+            return None, "ユーザーIDとパスワードは必須です"
 
-        user = self.user_repository.get_by_email(email)
+        user = self.user_repository.get_by_user_id(user_id)
 
         if user is None:
-            return None, "メールアドレスまたはパスワードが正しくありません"
+            return None, "ユーザーIDまたはパスワードが正しくありません"
 
         if not user.is_active:
             return None, "このアカウントは無効化されています"
 
         if not user.check_password(password):
-            return None, "メールアドレスまたはパスワードが正しくありません"
+            return None, "ユーザーIDまたはパスワードが正しくありません"
 
         # Update last login time
         user.last_login_at = datetime.utcnow()

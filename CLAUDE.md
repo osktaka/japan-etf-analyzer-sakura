@@ -62,9 +62,9 @@ make help
 
 ## テストユーザー
 
-| Email | Password | Username |
-|-------|----------|----------|
-| test@example.com | testpass123 | test |
+| User ID | Password | Username |
+|---------|----------|----------|
+| test | testpass123 | test |
 
 ## ディレクトリ構成
 

@@ -11,7 +11,7 @@ class TestAuthRegister:
         response = client.post(
             "/api/v1/auth/register",
             json={
-                "email": "newuser@example.com",
+                "user_id": "newuser123",
                 "password": "password123",
                 "username": "New User",
             },
@@ -20,7 +20,7 @@ class TestAuthRegister:
         assert response.status_code == 201
         data = response.get_json()
         assert data["success"] is True
-        assert data["data"]["email"] == "newuser@example.com"
+        assert data["data"]["user_id"] == "newuser123"
         assert data["data"]["username"] == "New User"
         assert "message" in data
 
@@ -28,19 +28,19 @@ class TestAuthRegister:
         """Test registration with missing fields."""
         response = client.post(
             "/api/v1/auth/register",
-            json={"email": "test@example.com"},
+            json={"user_id": "testuser"},
         )
 
         assert response.status_code == 400
         data = response.get_json()
         assert data["success"] is False
 
-    def test_register_invalid_email(self, client, db_session):
-        """Test registration with invalid email."""
+    def test_register_invalid_user_id(self, client, db_session):
+        """Test registration with invalid user_id."""
         response = client.post(
             "/api/v1/auth/register",
             json={
-                "email": "invalid-email",
+                "user_id": "ab",  # too short
                 "password": "password123",
                 "username": "Test User",
             },
@@ -50,23 +50,23 @@ class TestAuthRegister:
         data = response.get_json()
         assert data["success"] is False
 
-    def test_register_duplicate_email(self, client, db_session):
-        """Test registration with duplicate email."""
+    def test_register_duplicate_user_id(self, client, db_session):
+        """Test registration with duplicate user_id."""
         # First registration
         client.post(
             "/api/v1/auth/register",
             json={
-                "email": "test@example.com",
+                "user_id": "testuser",
                 "password": "password123",
                 "username": "User 1",
             },
         )
 
-        # Second registration with same email
+        # Second registration with same user_id
         response = client.post(
             "/api/v1/auth/register",
             json={
-                "email": "test@example.com",
+                "user_id": "testuser",
                 "password": "password456",
                 "username": "User 2",
             },
@@ -96,7 +96,7 @@ class TestAuthLogin:
         client.post(
             "/api/v1/auth/register",
             json={
-                "email": "test@example.com",
+                "user_id": "testuser",
                 "password": "password123",
                 "username": "Test User",
             },
@@ -107,7 +107,7 @@ class TestAuthLogin:
         response = client.post(
             "/api/v1/auth/login",
             json={
-                "email": "test@example.com",
+                "user_id": "testuser",
                 "password": "password123",
             },
         )
@@ -115,14 +115,14 @@ class TestAuthLogin:
         assert response.status_code == 200
         data = response.get_json()
         assert data["success"] is True
-        assert data["data"]["email"] == "test@example.com"
+        assert data["data"]["user_id"] == "testuser"
 
     def test_login_wrong_password(self, client, registered_user):
         """Test login with wrong password."""
         response = client.post(
             "/api/v1/auth/login",
             json={
-                "email": "test@example.com",
+                "user_id": "testuser",
                 "password": "wrongpassword",
             },
         )
@@ -136,7 +136,7 @@ class TestAuthLogin:
         response = client.post(
             "/api/v1/auth/login",
             json={
-                "email": "nonexistent@example.com",
+                "user_id": "nonexistent",
                 "password": "password123",
             },
         )
@@ -163,7 +163,7 @@ class TestAuthLogout:
         client.post(
             "/api/v1/auth/register",
             json={
-                "email": "test@example.com",
+                "user_id": "testuser",
                 "password": "password123",
                 "username": "Test User",
             },
@@ -172,7 +172,7 @@ class TestAuthLogout:
         client.post(
             "/api/v1/auth/login",
             json={
-                "email": "test@example.com",
+                "user_id": "testuser",
                 "password": "password123",
             },
         )
@@ -202,7 +202,7 @@ class TestAuthMe:
         client.post(
             "/api/v1/auth/register",
             json={
-                "email": "test@example.com",
+                "user_id": "testuser",
                 "password": "password123",
                 "username": "Test User",
             },
@@ -210,7 +210,7 @@ class TestAuthMe:
         client.post(
             "/api/v1/auth/login",
             json={
-                "email": "test@example.com",
+                "user_id": "testuser",
                 "password": "password123",
             },
         )
@@ -223,7 +223,7 @@ class TestAuthMe:
         assert response.status_code == 200
         data = response.get_json()
         assert data["success"] is True
-        assert data["data"]["email"] == "test@example.com"
+        assert data["data"]["user_id"] == "testuser"
         assert data["data"]["username"] == "Test User"
 
     def test_get_current_user_not_logged_in(self, client, db_session):

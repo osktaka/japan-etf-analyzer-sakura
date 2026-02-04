@@ -12,23 +12,23 @@ class TestAuthServiceValidation:
         """Create AuthService instance."""
         return AuthService()
 
-    def test_validate_email_valid(self, auth_service):
-        """Test valid email validation."""
-        valid, error = auth_service.validate_email("test@example.com")
+    def test_validate_user_id_valid(self, auth_service):
+        """Test valid user_id validation."""
+        valid, error = auth_service.validate_user_id("testuser123")
         assert valid is True
         assert error is None
 
-    def test_validate_email_empty(self, auth_service):
-        """Test empty email validation."""
-        valid, error = auth_service.validate_email("")
+    def test_validate_user_id_empty(self, auth_service):
+        """Test empty user_id validation."""
+        valid, error = auth_service.validate_user_id("")
         assert valid is False
-        assert error == "メールアドレスは必須です"
+        assert error == "ユーザーIDは必須です"
 
-    def test_validate_email_invalid_format(self, auth_service):
-        """Test invalid email format."""
-        valid, error = auth_service.validate_email("invalid-email")
+    def test_validate_user_id_invalid_format(self, auth_service):
+        """Test invalid user_id format."""
+        valid, error = auth_service.validate_user_id("ab")  # too short
         assert valid is False
-        assert error == "メールアドレスの形式が正しくありません"
+        assert "3〜50文字" in error
 
     def test_validate_password_valid(self, auth_service):
         """Test valid password."""
@@ -76,60 +76,64 @@ class TestAuthServiceRegister:
         """Create AuthService instance."""
         return AuthService()
 
-    def test_register_success(self, auth_service, db_session):
+    def test_register_success(self, auth_service, db_session, app):
         """Test successful user registration."""
-        user, error = auth_service.register(
-            email="newuser@example.com",
-            password="password123",
-            username="New User",
-        )
+        with app.test_request_context():
+            user, error = auth_service.register(
+                user_id="newuser123",
+                password="password123",
+                username="New User",
+            )
 
-        assert error is None
-        assert user is not None
-        assert user.email == "newuser@example.com"
-        assert user.username == "New User"
-        assert user.id is not None
+            assert error is None
+            assert user is not None
+            assert user.user_id == "newuser123"
+            assert user.username == "New User"
+            assert user.id is not None
 
-    def test_register_duplicate_email(self, auth_service, db_session):
-        """Test registration with duplicate email."""
-        # First registration
-        auth_service.register(
-            email="test@example.com",
-            password="password123",
-            username="User 1",
-        )
+    def test_register_duplicate_user_id(self, auth_service, db_session, app):
+        """Test registration with duplicate user_id."""
+        with app.test_request_context():
+            # First registration
+            auth_service.register(
+                user_id="testuser",
+                password="password123",
+                username="User 1",
+            )
 
-        # Second registration with same email
-        user, error = auth_service.register(
-            email="test@example.com",
-            password="password456",
-            username="User 2",
-        )
+            # Second registration with same user_id
+            user, error = auth_service.register(
+                user_id="testuser",
+                password="password456",
+                username="User 2",
+            )
 
-        assert user is None
-        assert error == "このメールアドレスは既に登録されています"
+            assert user is None
+            assert error == "このユーザーIDは既に登録されています"
 
-    def test_register_invalid_email(self, auth_service, db_session):
-        """Test registration with invalid email."""
-        user, error = auth_service.register(
-            email="invalid-email",
-            password="password123",
-            username="Test User",
-        )
+    def test_register_invalid_user_id(self, auth_service, db_session, app):
+        """Test registration with invalid user_id."""
+        with app.test_request_context():
+            user, error = auth_service.register(
+                user_id="ab",  # too short
+                password="password123",
+                username="Test User",
+            )
 
-        assert user is None
-        assert "メールアドレス" in error
+            assert user is None
+            assert "ユーザーID" in error
 
-    def test_register_invalid_password(self, auth_service, db_session):
+    def test_register_invalid_password(self, auth_service, db_session, app):
         """Test registration with invalid password."""
-        user, error = auth_service.register(
-            email="test@example.com",
-            password="short",
-            username="Test User",
-        )
+        with app.test_request_context():
+            user, error = auth_service.register(
+                user_id="testuser",
+                password="short",
+                username="Test User",
+            )
 
-        assert user is None
-        assert "パスワード" in error
+            assert user is None
+            assert "パスワード" in error
 
 
 class TestAuthServiceLogin:
@@ -141,28 +145,29 @@ class TestAuthServiceLogin:
         return AuthService()
 
     @pytest.fixture
-    def existing_user(self, auth_service, db_session):
+    def existing_user(self, auth_service, db_session, app):
         """Create existing user for login tests."""
-        user, _ = auth_service.register(
-            email="existing@example.com",
-            password="password123",
-            username="Existing User",
-        )
-        return user
+        with app.test_request_context():
+            user, _ = auth_service.register(
+                user_id="existinguser",
+                password="password123",
+                username="Existing User",
+            )
+            return user
 
     def test_login_success(self, auth_service, existing_user, app):
         """Test successful login."""
         with app.test_request_context():
-            user, error = auth_service.login("existing@example.com", "password123")
+            user, error = auth_service.login("existinguser", "password123")
 
             assert error is None
             assert user is not None
-            assert user.email == "existing@example.com"
+            assert user.user_id == "existinguser"
 
     def test_login_wrong_password(self, auth_service, existing_user, app):
         """Test login with wrong password."""
         with app.test_request_context():
-            user, error = auth_service.login("existing@example.com", "wrongpassword")
+            user, error = auth_service.login("existinguser", "wrongpassword")
 
             assert user is None
             assert "正しくありません" in error
@@ -170,7 +175,7 @@ class TestAuthServiceLogin:
     def test_login_nonexistent_user(self, auth_service, db_session, app):
         """Test login with nonexistent user."""
         with app.test_request_context():
-            user, error = auth_service.login("nonexistent@example.com", "password123")
+            user, error = auth_service.login("nonexistent", "password123")
 
             assert user is None
             assert "正しくありません" in error
@@ -189,7 +194,7 @@ class TestAuthServiceLogin:
         db_session.commit()
 
         with app.test_request_context():
-            user, error = auth_service.login("existing@example.com", "password123")
+            user, error = auth_service.login("existinguser", "password123")
 
             assert user is None
             assert "無効化" in error

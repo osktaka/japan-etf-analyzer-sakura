@@ -18,7 +18,7 @@ describe('useAuth', () => {
     const mockValue: AuthContextValue = {
       user: {
         id: 1,
-        email: 'test@example.com',
+        user_id: 'testuser',
         username: 'test',
         is_active: true,
         is_admin: false,
