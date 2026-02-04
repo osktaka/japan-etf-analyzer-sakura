@@ -1,4 +1,4 @@
--- Migration: 004_create_etf_metrics_history
+-- Migration: 005_create_etf_metrics_history
 -- Description: 評価スコア項目の日次履歴保存テーブルを作成
 -- Date: 2026-02-04
 
