@@ -6,7 +6,7 @@ Batch Monitor Script
 cronで10分間隔で実行することを想定（*/10 * * * *）。
 
 処理内容:
-1. 30分以上ハートビート更新がないrunningジョブをfailedに更新
+1. 10分以上ハートビート更新がないrunningジョブをfailedに更新
 2. 直近10-20分でfailedになったレコードを取得
 3. retry_count < 3 のジョブを自動リトライ
 """
@@ -44,7 +44,7 @@ class BatchMonitorScript(SimpleBatchScript):
 
     def _mark_timed_out_jobs_as_failed(self, repo: BatchLogRepository) -> int:
         """
-        30分以上ハートビート更新がないrunningジョブをfailedに更新する.
+        10分以上ハートビート更新がないrunningジョブをfailedに更新する.
 
         Args:
             repo: BatchLogRepository instance
@@ -66,7 +66,7 @@ class BatchMonitorScript(SimpleBatchScript):
                 job.id,
                 status="failed",
                 finished_at=datetime.utcnow(),
-                error_message="Timed out (no heartbeat for 30+ minutes)",
+                error_message="Timed out (no heartbeat for 10+ minutes)",
             )
             updated_count += 1
             self.logger.info(f"Marked as failed: batch_log_id={job.id}")
