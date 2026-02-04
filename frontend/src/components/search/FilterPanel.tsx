@@ -6,9 +6,9 @@ import styles from './FilterPanel.module.css'
 
 /** タググループの表示順序と日本語ラベル */
 const TAG_GROUP_ORDER = [
-  'theme',
   'region',
   'asset',
+  'theme',
   'sector',
   'economic',
   'policy',

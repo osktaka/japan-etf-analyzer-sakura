@@ -138,7 +138,7 @@ export function ETFCard({
       </div>
       {etf.tags.length > 0 && (
         <div className={styles.tags}>
-          {etf.tags.slice(0, 3).map((tag) => (
+          {etf.tags.map((tag) => (
             <TagBadge key={tag.id} tag={tag} size="sm" />
           ))}
         </div>
