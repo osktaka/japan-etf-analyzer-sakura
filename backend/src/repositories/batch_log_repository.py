@@ -164,12 +164,12 @@ class BatchLogRepository(BaseRepository[BatchLog]):
 
     def get_timed_out_jobs(self) -> List[BatchLog]:
         """
-        Get running jobs that have timed out (no heartbeat for 30+ minutes).
+        Get running jobs that have timed out (no heartbeat for 10+ minutes).
 
         Returns:
             List of BatchLog instances that have timed out
         """
-        cutoff_time = datetime.utcnow() - timedelta(minutes=30)
+        cutoff_time = datetime.utcnow() - timedelta(minutes=10)
 
         return (
             db.session.query(BatchLog)
