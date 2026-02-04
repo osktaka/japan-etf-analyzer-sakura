@@ -95,6 +95,14 @@ class BatchMonitorScript(SimpleBatchScript):
                 )
                 continue
 
+            # 同一batch_nameで既にrunningがあればスキップ
+            if repo.has_running_job(job.batch_name):
+                self.logger.info(
+                    f"Skip (already running): batch_log_id={job.id}, "
+                    f"batch_name={job.batch_name}"
+                )
+                continue
+
             # バッチスクリプトのパス取得
             script_path = BATCH_SCRIPTS.get(job.batch_name)
             if not script_path:

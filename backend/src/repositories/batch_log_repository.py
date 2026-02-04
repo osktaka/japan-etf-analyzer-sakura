@@ -209,3 +209,23 @@ class BatchLogRepository(BaseRepository[BatchLog]):
         db.session.add(retry_log)
         db.session.commit()
         return retry_log
+
+    def has_running_job(self, batch_name: str) -> bool:
+        """
+        指定されたbatch_nameで実行中のジョブがあるかチェック.
+
+        Args:
+            batch_name: バッチ名
+
+        Returns:
+            実行中のジョブがある場合True
+        """
+        return (
+            db.session.query(BatchLog)
+            .filter(
+                BatchLog.batch_name == batch_name,
+                BatchLog.status == BatchLog.STATUS_RUNNING,
+            )
+            .first()
+            is not None
+        )
