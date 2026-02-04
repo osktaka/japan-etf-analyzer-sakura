@@ -121,3 +121,30 @@ class AuthService:
     def get_user_by_id(self, user_id: int) -> Optional[User]:
         """Get user by ID for Flask-Login."""
         return self.user_repository.get_by_id(user_id)
+
+    def change_password(
+        self, user: User, current_password: str, new_password: str
+    ) -> Tuple[bool, Optional[str]]:
+        """
+        Change user password.
+
+        Returns:
+            Tuple of (success, error_message). success is False if error occurred.
+        """
+        # Verify current password
+        if not user.check_password(current_password):
+            return False, "現在のパスワードが正しくありません"
+
+        # Validate new password
+        valid, error = self.validate_password(new_password)
+        if not valid:
+            return False, error
+
+        # Update password
+        try:
+            user.set_password(new_password)
+            self.user_repository.update(user)
+            return True, None
+        except Exception as e:
+            self.user_repository.rollback()
+            return False, f"パスワード変更に失敗しました: {str(e)}"

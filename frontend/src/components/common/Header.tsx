@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 import { ROUTES } from '../../utils'
+import { PasswordChangeModal } from '../modal'
 import styles from './Header.module.css'
 
 export function Header() {
@@ -11,6 +12,7 @@ export function Header() {
   const { user, isAuthenticated, isAdmin, logout, isLoading } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const mobileMenuRef = useRef<HTMLDivElement>(null)
   const hamburgerButtonRef = useRef<HTMLButtonElement>(null)
@@ -157,6 +159,15 @@ export function Header() {
                       <div className={styles.userMenuDropdown}>
                         <button
                           className={styles.userMenuOption}
+                          onClick={() => {
+                            setIsPasswordModalOpen(true)
+                            setIsMenuOpen(false)
+                          }}
+                        >
+                          パスワード変更
+                        </button>
+                        <button
+                          className={styles.userMenuOption}
                           onClick={handleLogout}
                         >
                           ログアウト
@@ -263,6 +274,16 @@ export function Header() {
                     </div>
                   )}
                   <button
+                    className={styles.mobilePasswordBtn}
+                    onClick={() => {
+                      setIsPasswordModalOpen(true)
+                      closeMobileMenu()
+                    }}
+                    role="menuitem"
+                  >
+                    パスワード変更
+                  </button>
+                  <button
                     className={styles.mobileLogoutBtn}
                     onClick={handleLogout}
                     role="menuitem"
@@ -294,6 +315,10 @@ export function Header() {
           )}
         </nav>
       </div>
+      <PasswordChangeModal
+        isOpen={isPasswordModalOpen}
+        onClose={() => setIsPasswordModalOpen(false)}
+      />
     </header>
   )
 }

@@ -107,4 +107,37 @@ def create_auth_bp():
         """
         return api_response(data=current_user.to_dict())
 
+    @bp.route("/password", methods=["PUT"])
+    @login_required
+    def change_password():
+        """Change current user's password.
+
+        PUT /api/v1/auth/password
+
+        Request Body:
+            {
+                "current_password": "oldpass123",
+                "new_password": "newpass123"
+            }
+
+        Returns:
+            Success message on success, error on failure
+        """
+        data = request.get_json()
+
+        if not data:
+            return error_response("リクエストボディが必要です", 400)
+
+        current_password = data.get("current_password", "")
+        new_password = data.get("new_password", "")
+
+        success, error = auth_service.change_password(
+            current_user, current_password, new_password
+        )
+
+        if not success:
+            return error_response(error, 400)
+
+        return api_response(message="パスワードを変更しました")
+
     return bp

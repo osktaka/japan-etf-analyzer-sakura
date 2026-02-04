@@ -231,3 +231,95 @@ class TestAuthMe:
         response = client.get("/api/v1/auth/me")
 
         assert response.status_code == 401
+
+
+class TestAuthChangePassword:
+    """Test cases for PUT /api/v1/auth/password."""
+
+    @pytest.fixture
+    def logged_in_client(self, client, db_session):
+        """Create a logged-in client."""
+        client.post(
+            "/api/v1/auth/register",
+            json={
+                "user_id": "testuser",
+                "password": "password123",
+                "username": "Test User",
+            },
+        )
+        client.post(
+            "/api/v1/auth/login",
+            json={
+                "user_id": "testuser",
+                "password": "password123",
+            },
+        )
+        return client
+
+    def test_change_password_success(self, logged_in_client):
+        """Test successful password change."""
+        response = logged_in_client.put(
+            "/api/v1/auth/password",
+            json={
+                "current_password": "password123",
+                "new_password": "newpassword123",
+            },
+        )
+
+        assert response.status_code == 200
+        data = response.get_json()
+        assert data["success"] is True
+        assert "パスワードを変更しました" in data["message"]
+
+        # Verify new password works for login
+        logged_in_client.post("/api/v1/auth/logout")
+        login_response = logged_in_client.post(
+            "/api/v1/auth/login",
+            json={
+                "user_id": "testuser",
+                "password": "newpassword123",
+            },
+        )
+        assert login_response.status_code == 200
+
+    def test_change_password_wrong_current(self, logged_in_client):
+        """Test password change with wrong current password."""
+        response = logged_in_client.put(
+            "/api/v1/auth/password",
+            json={
+                "current_password": "wrongpassword",
+                "new_password": "newpassword123",
+            },
+        )
+
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data["success"] is False
+        assert "現在のパスワードが正しくありません" in data["error"]["message"]
+
+    def test_change_password_short_new(self, logged_in_client):
+        """Test password change with new password too short."""
+        response = logged_in_client.put(
+            "/api/v1/auth/password",
+            json={
+                "current_password": "password123",
+                "new_password": "short",
+            },
+        )
+
+        assert response.status_code == 400
+        data = response.get_json()
+        assert data["success"] is False
+        assert "8文字以上" in data["error"]["message"]
+
+    def test_change_password_unauthorized(self, client, db_session):
+        """Test password change when not logged in."""
+        response = client.put(
+            "/api/v1/auth/password",
+            json={
+                "current_password": "password123",
+                "new_password": "newpassword123",
+            },
+        )
+
+        assert response.status_code == 401

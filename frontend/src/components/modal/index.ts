@@ -2,6 +2,7 @@
 export { ETFDetailModal } from './ETFDetailModal'
 export { ETFListModal } from './ETFListModal'
 export { LoginPromptModal } from './LoginPromptModal'
+export { PasswordChangeModal } from './PasswordChangeModal'
 export { TradeFormModal } from './TradeFormModal'
 export { TradeHistoryModal } from './TradeHistoryModal'
 export { CustomWeightsPromptModal } from './CustomWeightsPromptModal'

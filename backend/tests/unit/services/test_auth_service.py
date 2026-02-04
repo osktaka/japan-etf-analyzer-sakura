@@ -198,3 +198,57 @@ class TestAuthServiceLogin:
 
             assert user is None
             assert "無効化" in error
+
+
+class TestAuthServiceChangePassword:
+    """Test cases for AuthService change_password."""
+
+    @pytest.fixture
+    def auth_service(self, db_session):
+        """Create AuthService instance."""
+        return AuthService()
+
+    @pytest.fixture
+    def existing_user(self, auth_service, db_session, app):
+        """Create existing user for change password tests."""
+        with app.test_request_context():
+            user, _ = auth_service.register(
+                user_id="passworduser",
+                password="password123",
+                username="Password User",
+            )
+            return user
+
+    def test_change_password_success(self, auth_service, existing_user, db_session, app):
+        """Test successful password change."""
+        with app.test_request_context():
+            success, error = auth_service.change_password(
+                existing_user, "password123", "newpassword123"
+            )
+
+            assert success is True
+            assert error is None
+            # Verify new password works
+            assert existing_user.check_password("newpassword123")
+            # Verify old password no longer works
+            assert not existing_user.check_password("password123")
+
+    def test_change_password_wrong_current(self, auth_service, existing_user, db_session, app):
+        """Test password change with wrong current password."""
+        with app.test_request_context():
+            success, error = auth_service.change_password(
+                existing_user, "wrongpassword", "newpassword123"
+            )
+
+            assert success is False
+            assert "現在のパスワードが正しくありません" in error
+
+    def test_change_password_short_new(self, auth_service, existing_user, db_session, app):
+        """Test password change with new password too short."""
+        with app.test_request_context():
+            success, error = auth_service.change_password(
+                existing_user, "password123", "short"
+            )
+
+            assert success is False
+            assert "8文字以上" in error

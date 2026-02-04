@@ -1,6 +1,12 @@
 /** Authentication API client */
 import { apiClient } from './client'
-import { ApiResponse, LoginRequest, RegisterRequest, User } from './types'
+import {
+  ApiResponse,
+  ChangePasswordRequest,
+  LoginRequest,
+  RegisterRequest,
+  User,
+} from './types'
 
 export const authApi = {
   async register(data: RegisterRequest): Promise<User> {
@@ -30,6 +36,10 @@ export const authApi = {
     } catch {
       return null
     }
+  },
+
+  async changePassword(data: ChangePasswordRequest): Promise<void> {
+    await apiClient.put('/auth/password', data)
   },
 }
 

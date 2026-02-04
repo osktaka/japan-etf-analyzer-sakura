@@ -307,3 +307,8 @@ export interface CustomWeights {
 export interface UserSettings {
   custom_weights: CustomWeights | null
 }
+
+export interface ChangePasswordRequest {
+  current_password: string
+  new_password: string
+}
