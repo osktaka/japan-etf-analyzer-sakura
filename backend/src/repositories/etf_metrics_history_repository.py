@@ -1,0 +1,152 @@
+"""Repository for EtfMetricsHistory model."""
+from datetime import date, datetime
+from typing import Dict, List, Optional
+
+from src.models import EtfMetricsHistory, db
+
+from .base_repository import BaseRepository
+
+
+class EtfMetricsHistoryRepository(BaseRepository):
+    """Repository for managing ETF metrics history data."""
+
+    model = EtfMetricsHistory
+
+    def __init__(self):
+        """Initialize repository with EtfMetricsHistory model."""
+        super().__init__()
+
+    def get_by_date(
+        self, etf_code: str, target_date: date
+    ) -> Optional[EtfMetricsHistory]:
+        """Get metrics history by ETF code and date.
+
+        Args:
+            etf_code: ETF code
+            target_date: Target date
+
+        Returns:
+            EtfMetricsHistory object or None
+        """
+        return EtfMetricsHistory.query.filter_by(
+            etf_code=etf_code, date=target_date
+        ).first()
+
+    def get_metrics_batch_for_date(
+        self, etf_codes: List[str], target_date: date
+    ) -> Dict[str, EtfMetricsHistory]:
+        """Get metrics history for multiple ETFs on a specific date.
+
+        Args:
+            etf_codes: List of ETF codes
+            target_date: Target date
+
+        Returns:
+            Dictionary mapping ETF code to EtfMetricsHistory object
+        """
+        records = EtfMetricsHistory.query.filter(
+            EtfMetricsHistory.etf_code.in_(etf_codes),
+            EtfMetricsHistory.date == target_date,
+        ).all()
+        return {record.etf_code: record for record in records}
+
+    def upsert(
+        self,
+        etf_code: str,
+        target_date: date,
+        dividend_yield: Optional[float] = None,
+        expense_ratio: Optional[float] = None,
+        total_assets: Optional[float] = None,
+        deviation_rate: Optional[float] = None,
+        return_1y: Optional[float] = None,
+        return_3y: Optional[float] = None,
+        volatility: Optional[float] = None,
+    ) -> EtfMetricsHistory:
+        """Insert or update metrics history.
+
+        Args:
+            etf_code: ETF code
+            target_date: Target date
+            dividend_yield: Dividend yield
+            expense_ratio: Expense ratio
+            total_assets: Total assets
+            deviation_rate: NAV deviation rate
+            return_1y: 1-year return rate
+            return_3y: 3-year return rate
+            volatility: Annualized volatility
+
+        Returns:
+            EtfMetricsHistory object
+        """
+        existing = self.get_by_date(etf_code, target_date)
+
+        if existing:
+            existing.dividend_yield = dividend_yield
+            existing.expense_ratio = expense_ratio
+            existing.total_assets = total_assets
+            existing.deviation_rate = deviation_rate
+            existing.return_1y = return_1y
+            existing.return_3y = return_3y
+            existing.volatility = volatility
+            existing.updated_at = datetime.utcnow()
+        else:
+            existing = EtfMetricsHistory(
+                etf_code=etf_code,
+                date=target_date,
+                dividend_yield=dividend_yield,
+                expense_ratio=expense_ratio,
+                total_assets=total_assets,
+                deviation_rate=deviation_rate,
+                return_1y=return_1y,
+                return_3y=return_3y,
+                volatility=volatility,
+            )
+            db.session.add(existing)
+
+        db.session.commit()
+        return existing
+
+    def bulk_upsert(self, records: List[Dict], target_date: date) -> int:
+        """Bulk insert or update metrics history.
+
+        Args:
+            records: List of dicts with keys: etf_code, dividend_yield,
+                     expense_ratio, total_assets, deviation_rate,
+                     return_1y, return_3y, volatility
+            target_date: Target date for all records
+
+        Returns:
+            Number of records processed
+        """
+        etf_codes = [r["etf_code"] for r in records]
+        existing_map = self.get_metrics_batch_for_date(etf_codes, target_date)
+
+        for record in records:
+            etf_code = record["etf_code"]
+            existing = existing_map.get(etf_code)
+
+            if existing:
+                existing.dividend_yield = record.get("dividend_yield")
+                existing.expense_ratio = record.get("expense_ratio")
+                existing.total_assets = record.get("total_assets")
+                existing.deviation_rate = record.get("deviation_rate")
+                existing.return_1y = record.get("return_1y")
+                existing.return_3y = record.get("return_3y")
+                existing.volatility = record.get("volatility")
+                existing.updated_at = datetime.utcnow()
+            else:
+                new_record = EtfMetricsHistory(
+                    etf_code=etf_code,
+                    date=target_date,
+                    dividend_yield=record.get("dividend_yield"),
+                    expense_ratio=record.get("expense_ratio"),
+                    total_assets=record.get("total_assets"),
+                    deviation_rate=record.get("deviation_rate"),
+                    return_1y=record.get("return_1y"),
+                    return_3y=record.get("return_3y"),
+                    volatility=record.get("volatility"),
+                )
+                db.session.add(new_record)
+
+        db.session.commit()
+        return len(records)

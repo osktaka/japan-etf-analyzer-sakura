@@ -1,0 +1,52 @@
+"""ETF metrics history model for tracking daily evaluation metrics."""
+from datetime import datetime
+
+from . import db
+
+
+class EtfMetricsHistory(db.Model):
+    """Historical daily metrics data for ETF evaluation scores."""
+
+    __tablename__ = "etf_metrics_history"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    etf_code = db.Column(db.String(10), nullable=False, index=True)
+    date = db.Column(db.Date, nullable=False, index=True)
+    dividend_yield = db.Column(db.Numeric(5, 2), nullable=True)
+    expense_ratio = db.Column(db.Numeric(5, 3), nullable=True)
+    total_assets = db.Column(db.Numeric(15, 0), nullable=True)
+    deviation_rate = db.Column(db.Numeric(5, 2), nullable=True)
+    return_1y = db.Column(db.Float, nullable=True)
+    return_3y = db.Column(db.Float, nullable=True)
+    volatility = db.Column(db.Float, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint("etf_code", "date", name="uq_metrics_etf_code_date"),
+    )
+
+    def to_dict(self):
+        """Convert to dictionary."""
+        return {
+            "id": self.id,
+            "etf_code": self.etf_code,
+            "date": self.date.strftime("%Y-%m-%d") if self.date else None,
+            "dividend_yield": (
+                float(self.dividend_yield) if self.dividend_yield else None
+            ),
+            "expense_ratio": (
+                float(self.expense_ratio) if self.expense_ratio else None
+            ),
+            "total_assets": float(self.total_assets) if self.total_assets else None,
+            "deviation_rate": (
+                float(self.deviation_rate) if self.deviation_rate else None
+            ),
+            "return_1y": self.return_1y,
+            "return_3y": self.return_3y,
+            "volatility": self.volatility,
+            "created_at": (self.created_at.isoformat() if self.created_at else None),
+            "updated_at": (self.updated_at.isoformat() if self.updated_at else None),
+        }

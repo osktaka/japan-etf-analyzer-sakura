@@ -15,13 +15,13 @@ This script should be run via cron after update_etf_data.py:
 """
 import argparse
 import sys
-
-import sys
+from datetime import date
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from base_batch import BaseBatchScript
 
-from src.repositories import ETFRepository, ScoreCacheRepository
+from src.models import PerformanceCache
+from src.repositories import ETFRepository, ScoreCacheRepository, EtfMetricsHistoryRepository
 from src.services.scoring_service import ScoringService
 
 
@@ -163,6 +163,10 @@ class UpdateScoresBatch(BaseBatchScript):
             # 最終進捗更新
             self._final_progress_update(last_item_code=etfs[-1].code if etfs else None)
 
+            # 評価スコア項目の履歴保存
+            if not self.args.dry_run:
+                self._save_metrics_history(all_etfs)
+
             # バッチログ終了（成功）
             self._finish_batch_log(success=True)
 
@@ -180,6 +184,52 @@ class UpdateScoresBatch(BaseBatchScript):
             # Clear cache
             scoring_service._avg_volumes_cache = {}
             scoring_service._return_rates_cache = {}
+
+
+    def _save_metrics_history(self, etfs) -> None:
+        """評価スコア項目の履歴を保存する。
+
+        Args:
+            etfs: ETFオブジェクトのリスト
+        """
+        self.logger.info("Saving metrics history...")
+        metrics_repo = EtfMetricsHistoryRepository()
+        today = date.today()
+
+        # performance_cacheからreturn_1y, return_3y, volatilityを取得
+        etf_codes = [etf.code for etf in etfs]
+        performance_data = {}
+        perf_records = PerformanceCache.query.filter(
+            PerformanceCache.etf_code.in_(etf_codes)
+        ).all()
+
+        for record in perf_records:
+            if record.etf_code not in performance_data:
+                performance_data[record.etf_code] = {}
+            if record.period == "1y":
+                performance_data[record.etf_code]["return_1y"] = record.return_rate
+                performance_data[record.etf_code]["volatility"] = record.volatility
+            elif record.period == "3y":
+                performance_data[record.etf_code]["return_3y"] = record.return_rate
+
+        # 一括保存用のレコードを作成
+        records = []
+        for etf in etfs:
+            perf = performance_data.get(etf.code, {})
+            records.append({
+                "etf_code": etf.code,
+                "dividend_yield": float(etf.dividend_yield) if etf.dividend_yield else None,
+                "expense_ratio": float(etf.expense_ratio) if etf.expense_ratio else None,
+                "total_assets": float(etf.total_assets) if etf.total_assets else None,
+                "deviation_rate": float(etf.deviation_rate) if etf.deviation_rate else None,
+                "return_1y": perf.get("return_1y"),
+                "return_3y": perf.get("return_3y"),
+                "volatility": perf.get("volatility"),
+            })
+
+        # バルクUPSERT
+        count = metrics_repo.bulk_upsert(records, today)
+        self.logger.info(f"Saved {count} metrics history records for {today}")
 
 
 if __name__ == "__main__":
