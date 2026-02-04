@@ -57,6 +57,12 @@ export const adminApi = {
     return response.data.data
   },
 
+  async resetPassword(userId: number): Promise<void> {
+    await apiClient.post<ApiResponse<void>>(
+      `/admin/users/${userId}/reset-password`
+    )
+  },
+
   async getBatchLogs(): Promise<BatchLog[]> {
     const response =
       await apiClient.get<ApiResponse<BatchLog[]>>('/admin/batch-logs')

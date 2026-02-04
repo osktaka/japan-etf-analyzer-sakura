@@ -69,6 +69,30 @@ def create_admin_bp():
             message="ユーザー情報を更新しました",
         )
 
+    @bp.route("/users/<int:user_id>/reset-password", methods=["POST"])
+    @login_required
+    @admin_required
+    def reset_user_password(user_id: int):
+        """Reset user password to default.
+
+        POST /api/v1/admin/users/<user_id>/reset-password
+
+        Returns:
+            Success message
+        """
+        # 自分自身のパスワードはリセット不可
+        if user_id == current_user.id:
+            return error_response("自分自身のパスワードはリセットできません", 400)
+
+        user = db.session.get(User, user_id)
+        if not user:
+            return error_response("ユーザーが見つかりません", 404)
+
+        user.set_password("password123456789")
+        db.session.commit()
+
+        return api_response(message="パスワードをリセットしました")
+
     @bp.route("/batch-logs", methods=["GET"])
     @login_required
     @admin_required

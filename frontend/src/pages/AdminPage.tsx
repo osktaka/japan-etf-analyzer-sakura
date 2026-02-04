@@ -186,6 +186,23 @@ export function AdminPage() {
     }
   }
 
+  const handleResetPassword = async (userId: number, userDisplayName: string) => {
+    const confirmed = window.confirm(
+      `${userDisplayName} のパスワードをリセットしますか？\n新しいパスワードは「password123456789」になります。`
+    )
+    if (!confirmed) return
+
+    try {
+      await adminApi.resetPassword(userId)
+      setToastMessage('パスワードをリセットしました')
+      setTimeout(() => setToastMessage(null), 3000)
+    } catch (err) {
+      console.error('Failed to reset password:', err)
+      setToastMessage('パスワードのリセットに失敗しました')
+      setTimeout(() => setToastMessage(null), 3000)
+    }
+  }
+
   const handleToggleApplied = async (splitId: number, isApplied: boolean) => {
     try {
       const updatedSplit = await adminApi.toggleStockSplitApplied(
@@ -452,6 +469,7 @@ export function AdminPage() {
             <th>管理者</th>
             <th>作成日時</th>
             <th>最終ログイン</th>
+            <th>操作</th>
           </tr>
         </thead>
         <tbody>
@@ -480,6 +498,15 @@ export function AdminPage() {
                   {user.last_login_at
                     ? formatDateTime(user.last_login_at)
                     : '-'}
+                </td>
+                <td>
+                  <button
+                    className={styles.recalculateButton}
+                    onClick={() => handleResetPassword(user.id, user.username || user.user_id)}
+                    disabled={isSelf}
+                  >
+                    PWリセット
+                  </button>
                 </td>
               </tr>
             )
