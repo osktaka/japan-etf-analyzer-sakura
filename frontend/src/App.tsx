@@ -12,7 +12,14 @@ import {
   MyPage,
   PortfolioPage,
   AdminPage,
+  GuideTopPage,
+  GuideSearchPage,
+  GuideRecommendPage,
+  GuideComparePage,
+  GuideMypagePage,
+  GuideFaqPage,
 } from './pages'
+import { GuideLayout } from './components/guide'
 import { ROUTES } from './utils'
 import './styles/global.css'
 
@@ -57,6 +64,14 @@ export default function App() {
                     </AdminRoute>
                   }
                 />
+                <Route path={ROUTES.GUIDE} element={<GuideLayout />}>
+                  <Route index element={<GuideTopPage />} />
+                  <Route path="search" element={<GuideSearchPage />} />
+                  <Route path="recommend" element={<GuideRecommendPage />} />
+                  <Route path="compare" element={<GuideComparePage />} />
+                  <Route path="mypage" element={<GuideMypagePage />} />
+                  <Route path="faq" element={<GuideFaqPage />} />
+                </Route>
               </Routes>
             </main>
             <Footer />

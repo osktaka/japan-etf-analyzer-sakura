@@ -132,6 +132,12 @@ export function Header() {
                   >
                     マイページ
                   </Link>
+                  <Link
+                    to={ROUTES.GUIDE}
+                    className={`${styles.navLink} ${location.pathname.startsWith(ROUTES.GUIDE) ? styles.active : ''}`}
+                  >
+                    使い方
+                  </Link>
                   {isAdmin && (
                     <Link
                       to={ROUTES.ADMIN}
@@ -160,9 +166,17 @@ export function Header() {
                   </div>
                 </>
               ) : (
-                <Link to={ROUTES.LOGIN} className={styles.loginBtn}>
-                  ログイン
-                </Link>
+                <>
+                  <Link
+                    to={ROUTES.GUIDE}
+                    className={`${styles.navLink} ${location.pathname.startsWith(ROUTES.GUIDE) ? styles.active : ''}`}
+                  >
+                    使い方
+                  </Link>
+                  <Link to={ROUTES.LOGIN} className={styles.loginBtn}>
+                    ログイン
+                  </Link>
+                </>
               )}
             </>
           )}
@@ -225,6 +239,14 @@ export function Header() {
                   >
                     マイページ
                   </Link>
+                  <Link
+                    to={ROUTES.GUIDE}
+                    className={`${styles.mobileNavLink} ${location.pathname.startsWith(ROUTES.GUIDE) ? styles.active : ''}`}
+                    role="menuitem"
+                    onClick={closeMobileMenu}
+                  >
+                    使い方
+                  </Link>
                   {isAdmin && (
                     <Link
                       to={ROUTES.ADMIN}
@@ -249,14 +271,24 @@ export function Header() {
                   </button>
                 </>
               ) : (
-                <Link
-                  to={ROUTES.LOGIN}
-                  className={styles.mobileLoginBtn}
-                  role="menuitem"
-                  onClick={closeMobileMenu}
-                >
-                  ログイン
-                </Link>
+                <>
+                  <Link
+                    to={ROUTES.GUIDE}
+                    className={`${styles.mobileNavLink} ${location.pathname.startsWith(ROUTES.GUIDE) ? styles.active : ''}`}
+                    role="menuitem"
+                    onClick={closeMobileMenu}
+                  >
+                    使い方
+                  </Link>
+                  <Link
+                    to={ROUTES.LOGIN}
+                    className={styles.mobileLoginBtn}
+                    role="menuitem"
+                    onClick={closeMobileMenu}
+                  >
+                    ログイン
+                  </Link>
+                </>
               )}
             </>
           )}
