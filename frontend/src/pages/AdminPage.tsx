@@ -369,22 +369,21 @@ export function AdminPage() {
                 </div>
               </td>
               <td>{renderStatusBadge(log)}</td>
-              <td style={{ minWidth: '200px' }}>
+              <td style={{ minWidth: '180px' }}>
                 {log.total_count > 0 ? (
                   <div
                     style={{
                       display: 'flex',
+                      flexDirection: 'column',
                       alignItems: 'center',
-                      gap: '8px',
-                      whiteSpace: 'nowrap',
+                      gap: '4px',
                     }}
                   >
                     <div
                       style={{
                         position: 'relative',
-                        height: '20px',
-                        minWidth: '100px',
-                        flex: '0 0 100px',
+                        height: '16px',
+                        width: '150px',
                         background: '#e0e0e0',
                         borderRadius: '4px',
                         overflow: 'hidden',
@@ -400,16 +399,16 @@ export function AdminPage() {
                         }}
                       />
                     </div>
-                    <span style={{ fontSize: '13px', fontWeight: 'bold' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
                       {log.processed_count}/{log.total_count} (
                       {Math.round((log.processed_count / log.total_count) * 100)}
                       %)
+                      {log.last_item_code && (
+                        <small style={{ color: '#666', fontSize: '11px', marginLeft: '4px' }}>
+                          {log.last_item_code}
+                        </small>
+                      )}
                     </span>
-                    {log.last_item_code && (
-                      <small style={{ color: '#666', fontSize: '11px' }}>
-                        {log.last_item_code}
-                      </small>
-                    )}
                   </div>
                 ) : (
                   <span>-</span>

@@ -157,12 +157,11 @@ class BaseBatchScript(ABC):
         if self.args.dry_run:
             return
 
-        if self.processed_count % self.progress_interval != 0:
-            self.batch_log_repo.update_progress(
-                self.batch_log.id,
-                processed_count=self.processed_count,
-                last_item_code=last_item_code,
-            )
+        self.batch_log_repo.update_progress(
+            self.batch_log.id,
+            processed_count=self.processed_count,
+            last_item_code=last_item_code,
+        )
 
     def get_resume_start_code(self) -> Optional[str]:
         """resume時の開始コードを取得"""
