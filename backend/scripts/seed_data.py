@@ -18,15 +18,55 @@ CATEGORIES = [
     {"name": "インバース", "description": "指数の値動きの逆に連動するETF", "sort_order": 8},
 ]
 
+# 6カテゴリ・41タグ
 TAGS = [
-    {"name": "高配当", "color": "#10B981"},
-    {"name": "低コスト", "color": "#3B82F6"},
-    {"name": "人気", "color": "#F59E0B"},
-    {"name": "安定運用", "color": "#6366F1"},
-    {"name": "成長", "color": "#EC4899"},
-    {"name": "分散投資", "color": "#8B5CF6"},
-    {"name": "初心者向け", "color": "#14B8A6"},
-    {"name": "大型", "color": "#EF4444"},
+    # 業種(sector) - 9個 - 青系
+    {"name": "金融", "color": "#3B82F6", "category": "sector"},
+    {"name": "テクノロジー", "color": "#2563EB", "category": "sector"},
+    {"name": "ヘルスケア", "color": "#1D4ED8", "category": "sector"},
+    {"name": "エネルギー", "color": "#1E40AF", "category": "sector"},
+    {"name": "素材", "color": "#1E3A8A", "category": "sector"},
+    {"name": "消費", "color": "#60A5FA", "category": "sector"},
+    {"name": "機械・製造", "color": "#93C5FD", "category": "sector"},
+    {"name": "通信", "color": "#BFDBFE", "category": "sector"},
+    {"name": "公益", "color": "#DBEAFE", "category": "sector"},
+    # テーマ(theme) - 10個 - 緑系
+    {"name": "AI・半導体", "color": "#10B981", "category": "theme"},
+    {"name": "EV・自動運転", "color": "#059669", "category": "theme"},
+    {"name": "クリーンエネルギー", "color": "#047857", "category": "theme"},
+    {"name": "DX", "color": "#065F46", "category": "theme"},
+    {"name": "高配当", "color": "#064E3B", "category": "theme"},
+    {"name": "ESG", "color": "#34D399", "category": "theme"},
+    {"name": "小型株", "color": "#6EE7B7", "category": "theme"},
+    {"name": "バリュー", "color": "#A7F3D0", "category": "theme"},
+    {"name": "グロース", "color": "#D1FAE5", "category": "theme"},
+    {"name": "インデックス", "color": "#ECFDF5", "category": "theme"},
+    # 地域(region) - 8個 - 紫系
+    {"name": "国内", "color": "#8B5CF6", "category": "region"},
+    {"name": "米国", "color": "#7C3AED", "category": "region"},
+    {"name": "先進国", "color": "#6D28D9", "category": "region"},
+    {"name": "新興国", "color": "#5B21B6", "category": "region"},
+    {"name": "全世界", "color": "#4C1D95", "category": "region"},
+    {"name": "アジア", "color": "#A78BFA", "category": "region"},
+    {"name": "ヨーロッパ", "color": "#C4B5FD", "category": "region"},
+    {"name": "中国", "color": "#DDD6FE", "category": "region"},
+    # 資産クラス(asset) - 4個 - オレンジ系
+    {"name": "株式", "color": "#F59E0B", "category": "asset"},
+    {"name": "債券", "color": "#D97706", "category": "asset"},
+    {"name": "REIT", "color": "#B45309", "category": "asset"},
+    {"name": "コモディティ", "color": "#92400E", "category": "asset"},
+    # 経済情勢(economic) - 7個 - 赤系
+    {"name": "円安", "color": "#EF4444", "category": "economic"},
+    {"name": "円高", "color": "#DC2626", "category": "economic"},
+    {"name": "金利上昇", "color": "#B91C1C", "category": "economic"},
+    {"name": "金利低下", "color": "#991B1B", "category": "economic"},
+    {"name": "インフレヘッジ", "color": "#7F1D1D", "category": "economic"},
+    {"name": "景気敏感", "color": "#F87171", "category": "economic"},
+    {"name": "ディフェンシブ", "color": "#FCA5A5", "category": "economic"},
+    # 政策(policy) - 3個 - ピンク系
+    {"name": "防衛関連", "color": "#EC4899", "category": "policy"},
+    {"name": "インフラ", "color": "#DB2777", "category": "policy"},
+    {"name": "半導体政策", "color": "#BE185D", "category": "policy"},
 ]
 
 
@@ -53,6 +93,7 @@ def seed_tags():
         tag = repo.create_if_not_exists(
             name=tag_data["name"],
             color=tag_data["color"],
+            category=tag_data.get("category"),
         )
         if tag:
             created += 1

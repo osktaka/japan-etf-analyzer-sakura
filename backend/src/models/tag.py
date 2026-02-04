@@ -11,6 +11,7 @@ class Tag(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(50), nullable=False, unique=True)
     color = db.Column(db.String(7), nullable=True, default="#6B7280")
+    category = db.Column(db.String(20), nullable=True)
 
     # Relationship
     etf_relations = db.relationship(
@@ -26,4 +27,5 @@ class Tag(TimestampMixin, db.Model):
             "id": self.id,
             "name": self.name,
             "color": self.color,
+            "category": self.category,
         }

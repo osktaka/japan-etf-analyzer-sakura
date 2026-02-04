@@ -23,11 +23,13 @@ class TagRepository(BaseRepository[Tag]):
         """Get all tags sorted by name."""
         return db.session.query(Tag).order_by(Tag.name).all()
 
-    def create_if_not_exists(self, name: str, color: str = "#6B7280") -> Tag:
+    def create_if_not_exists(
+        self, name: str, color: str = "#6B7280", category: str = None
+    ) -> Tag:
         """Create tag if it doesn't exist, otherwise return existing."""
         existing = self.get_by_name(name)
         if existing:
             return existing
 
-        tag = Tag(name=name, color=color)
+        tag = Tag(name=name, color=color, category=category)
         return self.create(tag)
