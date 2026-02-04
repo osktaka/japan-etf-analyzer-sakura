@@ -28,6 +28,8 @@ from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Optional, Tuple
 
+import jpholiday
+
 # Load .env file if it exists
 project_root = Path(__file__).resolve().parent.parent.parent
 env_file = project_root / ".env"
@@ -63,6 +65,57 @@ logger = logging.getLogger(__name__)
 
 RATE_LIMIT_SECONDS = 1.0  # Yahoo Finance API rate limit対策
 JST = timezone(timedelta(hours=9))  # Japan Standard Time
+MARKET_DATA_AVAILABLE_TIME = time(16, 0)  # 16:00 JST（yfinance遅延考慮）
+
+
+def is_market_open_day(date) -> bool:
+    """指定日が営業日（平日かつ非祝日）かどうか"""
+    if date.weekday() >= 5:  # 土日
+        return False
+    if jpholiday.is_holiday(date):  # 日本の祝日
+        return False
+    return True
+
+
+def get_previous_market_day(date):
+    """前営業日を取得"""
+    prev_day = date - timedelta(days=1)
+    while not is_market_open_day(prev_day):
+        prev_day -= timedelta(days=1)
+    return prev_day
+
+
+def get_next_market_day(date):
+    """次の営業日を取得"""
+    next_day = date + timedelta(days=1)
+    while not is_market_open_day(next_day):
+        next_day += timedelta(days=1)
+    return next_day
+
+
+def should_skip_fetch(latest_date, updated_at) -> Tuple[bool, str]:
+    """リクエスト前に完全スキップすべきか判定
+
+    Returns:
+        (should_skip, reason)
+    """
+    now_jst = datetime.now(JST)
+    today_jst = now_jst.date()
+
+    # Case 1: 最新データが今日で、16:00以降に更新済み
+    if latest_date == today_jst and updated_at:
+        updated_at_jst = updated_at.replace(tzinfo=timezone.utc).astimezone(JST)
+        if updated_at_jst.time() >= MARKET_DATA_AVAILABLE_TIME:
+            next_market_day = get_next_market_day(today_jst)
+            return True, f"Today's data fetched after 16:00, next market day: {next_market_day}"
+
+    # Case 2: 今日が非営業日で、直前営業日のデータを取得済み
+    if not is_market_open_day(today_jst):
+        prev_market_day = get_previous_market_day(today_jst)
+        if latest_date >= prev_market_day:
+            return True, f"Non-market day, data up to {latest_date}"
+
+    return False, ""
 
 
 def get_etf_price_status(code: str) -> Tuple[bool, Optional[datetime], Optional[datetime]]:
@@ -126,6 +179,12 @@ def update_single_etf(
             logger.info(f"[SMART] {code}: New ETF - fetching full history")
             full = True
         else:
+            # 事前スキップ判定（完全スキップ - yfinanceリクエストなし）
+            should_skip, skip_reason = should_skip_fetch(latest_date, updated_at)
+            if should_skip:
+                logger.info(f"{code}: Skip (pre-check) - {skip_reason}")
+                return True
+
             logger.info(
                 f"[SMART] {code}: Existing ETF - incremental from {latest_date}"
             )
@@ -149,10 +208,10 @@ def update_single_etf(
         if smart and not full and smart_status:
             has_data, latest_date, updated_at = smart_status
             if has_data and latest_date:
-                # Check if re-fetch is needed based on cutoff time (15:30 JST)
+                # Check if re-fetch is needed based on cutoff time (16:00 JST)
                 now_jst = datetime.now(JST)
                 today_jst = now_jst.date()
-                cutoff_time = time(15, 30)
+                cutoff_time = time(16, 0)  # 16:00 JST（yfinance遅延考慮）
 
                 # Convert updated_at (UTC) to JST for comparison
                 if updated_at:
@@ -162,11 +221,11 @@ def update_single_etf(
                     updated_time_jst = None
 
                 if latest_date == today_jst and updated_time_jst and updated_time_jst < cutoff_time:
-                    # Today's data updated before 15:30 JST - re-fetch from latest date
+                    # Today's data updated before 16:00 JST - re-fetch from latest date
                     start_date = latest_date
                     logger.info(f"[SMART] {code}: Re-fetching today's data (updated at {updated_at_jst.strftime('%H:%M:%S')} JST)")
                 else:
-                    # Either not today, or already updated after 15:30 - fetch next day onwards
+                    # Either not today, or already updated after 16:00 - fetch next day onwards
                     start_date = latest_date + timedelta(days=1)
                 df = stock.history(start=start_date.strftime("%Y-%m-%d"))
                 if df.empty:
