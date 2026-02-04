@@ -27,7 +27,7 @@ const mockETFDetail = {
   deviation_rate: 0.21,
   total_assets: 150000000000,
   listing_date: '2002-07-13',
-  tags: [{ id: 1, name: 'TOPIX連動', color: '#3B82F6' }],
+  tags: [{ id: 1, name: 'TOPIX連動', color: '#3B82F6', category: 'theme', etf_count: 5 }],
 }
 
 describe('ETFDetailModal', () => {

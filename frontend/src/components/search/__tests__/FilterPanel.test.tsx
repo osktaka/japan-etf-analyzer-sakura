@@ -15,8 +15,8 @@ const mockCategories = [
 ]
 
 const mockTags = [
-  { id: 1, name: 'TOPIX連動', color: '#3B82F6' },
-  { id: 2, name: '高配当', color: '#10B981' },
+  { id: 1, name: 'TOPIX連動', color: '#3B82F6', category: 'theme', etf_count: 5 },
+  { id: 2, name: '高配当', color: '#10B981', category: 'theme', etf_count: 3 },
 ]
 
 describe('FilterPanel', () => {
@@ -47,8 +47,8 @@ describe('FilterPanel', () => {
     render(<FilterPanel onFilter={vi.fn()} onSearch={vi.fn()} />)
 
     await waitFor(() => {
-      expect(screen.getByText('TOPIX連動')).toBeInTheDocument()
-      expect(screen.getByText('高配当')).toBeInTheDocument()
+      expect(screen.getByText('TOPIX連動(5)')).toBeInTheDocument()
+      expect(screen.getByText('高配当(3)')).toBeInTheDocument()
     })
   })
 
@@ -71,10 +71,10 @@ describe('FilterPanel', () => {
     render(<FilterPanel onFilter={vi.fn()} onSearch={vi.fn()} />)
 
     await waitFor(() => {
-      expect(screen.getByText('TOPIX連動')).toBeInTheDocument()
+      expect(screen.getByText('TOPIX連動(5)')).toBeInTheDocument()
     })
 
-    const tagBtn = screen.getByText('TOPIX連動')
+    const tagBtn = screen.getByText('TOPIX連動(5)')
     fireEvent.click(tagBtn)
     expect(tagBtn.closest('button')?.className).toContain('active')
 
@@ -201,7 +201,7 @@ describe('FilterPanel', () => {
         screen.getByText('国内株式').closest('button')?.className
       ).toContain('active')
       expect(
-        screen.getByText('TOPIX連動').closest('button')?.className
+        screen.getByText('TOPIX連動(5)').closest('button')?.className
       ).toContain('active')
     })
   })

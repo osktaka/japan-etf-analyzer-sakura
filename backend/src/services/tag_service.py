@@ -12,9 +12,14 @@ class TagService:
         self.repository = TagRepository()
 
     def get_all(self) -> List[dict]:
-        """Get all tags sorted by name."""
-        tags = self.repository.get_all_sorted()
-        return [tag.to_dict() for tag in tags]
+        """Get all tags with ETF count."""
+        tags_with_count = self.repository.get_all_with_count()
+        result = []
+        for tag, etf_count in tags_with_count:
+            tag_dict = tag.to_dict()
+            tag_dict["etf_count"] = etf_count
+            result.append(tag_dict)
+        return result
 
     def get_by_id(self, tag_id: int) -> Optional[dict]:
         """Get tag by ID."""

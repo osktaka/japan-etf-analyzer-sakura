@@ -11,7 +11,7 @@ const mockETF: ETFSummary = {
   expense_ratio: 0.088,
   dividend_yield: 2.15,
   market_price: 2345,
-  tags: [{ id: 1, name: 'TOPIX連動', color: '#3B82F6' }],
+  tags: [{ id: 1, name: 'TOPIX連動', color: '#3B82F6', category: 'theme', etf_count: 5 }],
 }
 
 describe('ETFCard', () => {

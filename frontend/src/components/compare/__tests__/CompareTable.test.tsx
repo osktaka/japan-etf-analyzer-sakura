@@ -18,7 +18,7 @@ const mockETFs: ETFDetail[] = [
     deviation_rate: 0.21,
     total_assets: 150000000000,
     listing_date: '2002-07-13',
-    tags: [{ id: 1, name: 'TOPIX連動', color: '#3B82F6' }],
+    tags: [{ id: 1, name: 'TOPIX連動', color: '#3B82F6', category: 'theme', etf_count: 5 }],
   },
   {
     code: '1321',
@@ -33,7 +33,7 @@ const mockETFs: ETFDetail[] = [
     deviation_rate: 0.33,
     total_assets: 200000000000,
     listing_date: '2001-07-09',
-    tags: [{ id: 2, name: '日経225連動', color: '#10B981' }],
+    tags: [{ id: 2, name: '日経225連動', color: '#10B981', category: 'theme', etf_count: 3 }],
   },
 ]
 

@@ -1,7 +1,9 @@
 """Tag repository for tag data access."""
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
-from src.models import Tag, db
+from sqlalchemy import func
+
+from src.models import ETFTagRelation, Tag, db
 
 from .base_repository import BaseRepository
 
@@ -22,6 +24,21 @@ class TagRepository(BaseRepository[Tag]):
     def get_all_sorted(self) -> List[Tag]:
         """Get all tags sorted by name."""
         return db.session.query(Tag).order_by(Tag.name).all()
+
+    def get_all_with_count(self) -> List[Tuple[Tag, int]]:
+        """Get all tags with ETF count using LEFT JOIN.
+
+        Returns:
+            List of tuples: (Tag, etf_count)
+        """
+        result = (
+            db.session.query(Tag, func.count(ETFTagRelation.etf_code).label("etf_count"))
+            .outerjoin(ETFTagRelation, Tag.id == ETFTagRelation.tag_id)
+            .group_by(Tag.id)
+            .order_by(Tag.name)
+            .all()
+        )
+        return result
 
     def create_if_not_exists(
         self, name: str, color: str = "#6B7280", category: str = None

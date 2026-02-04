@@ -1,8 +1,27 @@
 /** Filter panel component for ETF search */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Category, Tag, getCategories, getTags, SearchParams } from '../../api'
 import { SearchBar } from './SearchBar'
 import styles from './FilterPanel.module.css'
+
+/** タググループの表示順序と日本語ラベル */
+const TAG_GROUP_ORDER = [
+  'theme',
+  'region',
+  'asset',
+  'sector',
+  'economic',
+  'policy',
+] as const
+
+const TAG_GROUP_LABELS: Record<string, string> = {
+  theme: 'テーマ',
+  region: '地域',
+  asset: '資産',
+  sector: '業種',
+  economic: '経済情勢',
+  policy: '政策',
+}
 
 interface FilterPanelProps {
   onFilter: (params: SearchParams) => void
@@ -46,6 +65,27 @@ export function FilterPanel({
     initialParams.tag_ids || []
   )
 
+  /** タグをグループ化し、各グループ内は件数降順でソート */
+  const groupedTags = useMemo(() => {
+    const groups: Record<string, Tag[]> = {}
+
+    // グループ化
+    tags.forEach((tag) => {
+      const category = tag.category || 'other'
+      if (!groups[category]) {
+        groups[category] = []
+      }
+      groups[category].push(tag)
+    })
+
+    // 各グループ内を件数降順でソート
+    Object.keys(groups).forEach((key) => {
+      groups[key].sort((a, b) => b.etf_count - a.etf_count)
+    })
+
+    return groups
+  }, [tags])
+
   useEffect(() => {
     const loadFilters = async () => {
       setIsLoading(true)
@@ -85,7 +125,10 @@ export function FilterPanel({
     applyFilters(newCat, selectedTags)
   }
 
-  const handleTagClick = (id: number) => {
+  const handleTagClick = (id: number, etfCount: number) => {
+    // 件数0のタグはクリック不可
+    if (etfCount === 0) return
+
     const newTags = selectedTags.includes(id)
       ? selectedTags.filter((t) => t !== id)
       : [...selectedTags, id]
@@ -215,20 +258,38 @@ export function FilterPanel({
         </div>
       </div>
 
-      <div className={styles.inlineSection}>
-        <span className={styles.inlineLabel}>タグ:</span>
-        <div className={styles.tags}>
-          {tags.map((tag) => (
-            <button
-              key={tag.id}
-              className={`${styles.tagBtn} ${
-                selectedTags.includes(tag.id) ? styles.active : ''
-              }`}
-              onClick={() => handleTagClick(tag.id)}
-            >
-              {tag.name}
-            </button>
-          ))}
+      <div className={styles.tagSection}>
+        <span className={styles.tagSectionLabel}>タグ:</span>
+        <div className={styles.tagGroups}>
+          {TAG_GROUP_ORDER.map((groupKey) => {
+            const groupTags = groupedTags[groupKey]
+            if (!groupTags || groupTags.length === 0) return null
+
+            return (
+              <div key={groupKey} className={styles.tagGroupRow}>
+                <span className={styles.tagGroupLabel}>
+                  {TAG_GROUP_LABELS[groupKey]}:
+                </span>
+                <div className={styles.tags}>
+                  {groupTags.map((tag) => {
+                    const isDisabled = tag.etf_count === 0
+                    return (
+                      <button
+                        key={tag.id}
+                        className={`${styles.tagBtn} ${
+                          selectedTags.includes(tag.id) ? styles.active : ''
+                        } ${isDisabled ? styles.disabled : ''}`}
+                        onClick={() => handleTagClick(tag.id, tag.etf_count)}
+                        disabled={isDisabled}
+                      >
+                        {tag.name}({tag.etf_count})
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 

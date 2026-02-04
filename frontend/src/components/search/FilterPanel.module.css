@@ -103,6 +103,16 @@
   color: white;
 }
 
+.tagBtn.disabled {
+  color: var(--color-text-disabled, #9ca3af);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.tagBtn.disabled:hover {
+  background-color: transparent;
+}
+
 .inlineSection {
   display: flex;
   align-items: center;
@@ -116,4 +126,42 @@
   font-weight: 500;
   color: var(--color-text-secondary);
   white-space: nowrap;
+}
+
+/* タグセクション階層表示 */
+.tagSection {
+  margin-bottom: var(--spacing-md);
+}
+
+.tagSectionLabel {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: var(--spacing-sm);
+}
+
+.tagGroups {
+  padding-left: var(--spacing-md);
+}
+
+.tagGroupRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.tagGroupRow:last-child {
+  margin-bottom: 0;
+}
+
+.tagGroupLabel {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  min-width: 5em;
+  padding-top: 4px;
 }

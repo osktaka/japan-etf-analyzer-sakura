@@ -63,8 +63,8 @@ const mockCategories = [
 ]
 
 const mockTags = [
-  { id: 1, name: 'TOPIX連動', color: '#3B82F6' },
-  { id: 2, name: '高配当', color: '#10B981' },
+  { id: 1, name: 'TOPIX連動', color: '#3B82F6', category: 'theme', etf_count: 5 },
+  { id: 2, name: '高配当', color: '#10B981', category: 'theme', etf_count: 3 },
 ]
 
 const mockETFItems = [
@@ -446,12 +446,12 @@ describe('TopPage', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole('button', { name: 'TOPIX連動' })
+          screen.getByRole('button', { name: 'TOPIX連動(5)' })
         ).toBeInTheDocument()
       })
 
       // TOPIX連動タグをクリック（タグフィルタとして動作確認）
-      const tagButton = screen.getByRole('button', { name: 'TOPIX連動' })
+      const tagButton = screen.getByRole('button', { name: 'TOPIX連動(5)' })
       fireEvent.click(tagButton)
 
       await waitFor(() => {
@@ -540,7 +540,7 @@ describe('TopPage', () => {
         })
         expect(categoryButtons.length).toBeGreaterThan(0)
         expect(
-          screen.getByRole('button', { name: 'TOPIX連動' })
+          screen.getByRole('button', { name: 'TOPIX連動(5)' })
         ).toBeInTheDocument()
       })
 
@@ -560,7 +560,7 @@ describe('TopPage', () => {
       const callCountAfterCategory = mockHandleFilter.mock.calls.length
 
       // タグを選択
-      const tagButton = screen.getByRole('button', { name: 'TOPIX連動' })
+      const tagButton = screen.getByRole('button', { name: 'TOPIX連動(5)' })
       fireEvent.click(tagButton)
 
       await waitFor(() => {

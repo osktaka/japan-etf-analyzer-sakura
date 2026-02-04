@@ -8,6 +8,8 @@ const mockTag: Tag = {
   id: 1,
   name: 'TOPIX連動',
   color: '#3B82F6',
+  category: 'theme',
+  etf_count: 5,
 }
 
 describe('TagBadge', () => {
@@ -41,7 +43,7 @@ describe('TagBadge', () => {
   })
 
   it('異なる色のタグが正しく表示される', () => {
-    const greenTag: Tag = { id: 2, name: '高配当', color: '#10B981' }
+    const greenTag: Tag = { id: 2, name: '高配当', color: '#10B981', category: 'theme', etf_count: 3 }
     render(<TagBadge tag={greenTag} />)
 
     const badge = screen.getByText('高配当')

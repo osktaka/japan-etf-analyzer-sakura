@@ -11,6 +11,8 @@ export interface Tag {
   id: number
   name: string
   color: string
+  category: string | null
+  etf_count: number
 }
 
 export interface ETFSummary {
