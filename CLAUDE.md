@@ -156,6 +156,36 @@ ApacheのDocumentRootから`frontend/dist/`内のファイルにアクセスす�
 
 `setup.sh`で自動作成されます。
 
+#### 4. スクリプト作成時の環境変数設定
+
+`backend/scripts/`にPythonスクリプトを作成する場合、**本番環境で直接実行できるよう環境変数を設定する必要がある**。
+
+CGI（`api/index.cgi`）経由ではなくスクリプト直接実行時は、`APP_BASE_DIR`や`DATABASE_URL`が設定されないため、デフォルトの`/app`（Docker用）が使われてDBが見つからないエラーになる。
+
+**必須テンプレート**（スクリプト冒頭に追加）:
+```python
+import os
+import sys
+from pathlib import Path
+
+# プロジェクトルートを特定（backend/scripts/ → backend/ → project root）
+SCRIPT_DIR = Path(__file__).resolve().parent
+BACKEND_DIR = SCRIPT_DIR.parent
+PROJECT_ROOT = BACKEND_DIR.parent
+
+# 環境変数設定（本番環境用）
+os.environ.setdefault("APP_BASE_DIR", str(PROJECT_ROOT))
+os.environ.setdefault("APP_DATA_DIR", str(PROJECT_ROOT / "data"))
+db_path = PROJECT_ROOT / "data" / "etf.db"
+os.environ.setdefault("DATABASE_URL", f"sqlite:///{db_path}")
+
+sys.path.insert(0, str(BACKEND_DIR))
+
+# この後に from src.app import create_app 等を記述
+```
+
+**参考実装**: `backend/scripts/seed_data.py`, `backend/scripts/auto_tag_etfs.py`
+
 ### 依存ライブラリのバージョン制約
 
 #### OpenSSL 1.0.2互換性
