@@ -303,3 +303,10 @@ cp data/backups/etf.db.backup_YYYYMMDD_HHMMSS data/etf.db
 docker compose exec backend python scripts/seed_data.py
 docker compose exec backend python scripts/sync_etf_from_jpx.py
 ```
+
+## 外部リンク
+
+| リンク | URL |
+|--------|-----|
+| 本番サイト | https://kima3.net/japan-etf-analyzer/ |
+| X アカウント | https://x.com/ETF_Analyzer |
