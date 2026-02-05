@@ -53,6 +53,8 @@ TAGS = [
     {"name": "バリュー", "color": "#A7F3D0", "category": "theme"},
     {"name": "グロース", "color": "#D1FAE5", "category": "theme"},
     {"name": "インデックス", "color": "#ECFDF5", "category": "theme"},
+    {"name": "レバレッジ", "color": "#EF4444", "category": "theme"},
+    {"name": "インバース", "color": "#8B5CF6", "category": "theme"},
     # 地域(region) - 8個 - 紫系
     {"name": "国内", "color": "#8B5CF6", "category": "region"},
     {"name": "米国", "color": "#7C3AED", "category": "region"},

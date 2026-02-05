@@ -1,7 +1,6 @@
 """自動タグ付けスクリプト.
 
 全ETF銘柄に対してタグを自動付与する。
-レバレッジ・インバース銘柄はスキップ。
 
 使用方法:
     開発環境: docker compose exec backend python scripts/auto_tag_etfs.py
@@ -28,26 +27,6 @@ sys.path.insert(0, str(BACKEND_DIR))
 from src.app import create_app  # noqa: E402
 from src.models import db  # noqa: E402
 from scripts.etf_tags_data import ETF_TAG_MAPPING  # noqa: E402
-
-
-def should_skip(name: str) -> bool:
-    """レバレッジ・インバース銘柄かどうかを判定.
-
-    Args:
-        name: ETF銘柄名
-
-    Returns:
-        スキップすべき場合True
-    """
-    # ブルームバーグ、ブルサは除外対象外
-    if "ブルームバーグ" in name or "ブルサ" in name:
-        return False
-
-    skip_keywords = ["レバレッジ", "2倍", "ベア", "インバース", "ダブル", "ブル"]
-    for kw in skip_keywords:
-        if kw in name:
-            return True
-    return False
 
 
 def get_all_etfs():
@@ -125,16 +104,10 @@ def main():
         print("\nタグ付け処理中...")
         relations = []
         tagged_count = 0
-        skipped_count = 0
         no_mapping_count = 0
         no_mapping_codes = []
 
         for code, name, category_id in etfs:
-            # レバレッジ・インバースはスキップ
-            if should_skip(name):
-                skipped_count += 1
-                continue
-
             # マッピングデータからタグを取得
             tag_names = ETF_TAG_MAPPING.get(code)
             if not tag_names:
@@ -156,7 +129,6 @@ def main():
         # 結果表示
         print("\n=== 結果 ===")
         print(f"タグ付け完了: {tagged_count}件")
-        print(f"スキップ（レバ/インバース）: {skipped_count}件")
         print(f"マッピングなし: {no_mapping_count}件")
         print(f"挿入されたタグ関連: {inserted}件")
 
