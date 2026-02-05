@@ -49,8 +49,8 @@
 }
 
 .toggleBtn {
-  padding: var(--spacing-xs) var(--spacing-md);
-  font-size: var(--text-sm);
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
   border: none;
   background: var(--color-bg-card);
   color: var(--color-text-secondary);
