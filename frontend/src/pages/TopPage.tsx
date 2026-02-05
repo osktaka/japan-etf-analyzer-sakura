@@ -26,7 +26,6 @@ import {
   WeightsHelpModal,
 } from '../components/modal'
 import { Pagination } from '../components/common'
-import { MAX_COMPARE_ITEMS } from '../utils'
 import { userSettingsApi, CustomWeights } from '../api'
 import styles from './TopPage.module.css'
 
@@ -56,6 +55,7 @@ export function TopPage() {
     canAdd,
     codes: compareCodes,
     count: compareCount,
+    maxItems,
   } = useCompareList()
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
   const { isFavorite, toggleFavorite, favoriteCodes } = useFavorites()
@@ -200,7 +200,10 @@ export function TopPage() {
 
   const handleCompareToggle = (code: string) => {
     if (!isInList(code) && !canAdd) {
-      alert(`比較は最大${MAX_COMPARE_ITEMS}件までです`)
+      const message = isAuthenticated
+        ? `銘柄比較は最大${maxItems}件までです`
+        : `銘柄比較は最大${maxItems}件までです（ログインすると10件まで比較できます）`
+      alert(message)
       return
     }
     toggleCode(code)

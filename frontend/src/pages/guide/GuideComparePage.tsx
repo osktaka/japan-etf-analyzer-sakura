@@ -7,13 +7,13 @@ export function GuideComparePage() {
     <div className={styles.page}>
       <SEOHead
         title="比較する - Japan ETF Analyzer"
-        description="Japan ETF Analyzerの比較機能の使い方を解説します。最大5銘柄を選んで、チャートや指標を並べて比較できます。"
+        description="Japan ETF Analyzerの比較機能の使い方を解説します。最大5〜10銘柄を選んで、チャートや指標を並べて比較できます。"
       />
 
       <h1 className={styles.pageTitle}>比較する</h1>
 
       <p className={styles.text}>
-        比較機能を使えば、最大5銘柄を並べてチャートや指標を比較できます。
+        比較機能を使えば、最大5銘柄（ログイン時は10銘柄）を並べてチャートや指標を比較できます。
         気になる銘柄を選んで、投資判断に役立てましょう。
       </p>
 

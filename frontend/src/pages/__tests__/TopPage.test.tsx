@@ -122,6 +122,7 @@ const createMockHooksDefault = () => ({
     addCode: vi.fn(),
     removeCode: vi.fn(),
     clearAll: vi.fn(),
+    maxItems: 5,
   },
   useFavorites: {
     isFavorite: () => false,

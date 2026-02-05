@@ -12,6 +12,7 @@ export const CHART_PERIODS = [
 ] as const
 
 export const MAX_COMPARE_ITEMS = 5
+export const MAX_COMPARE_ITEMS_LOGGED_IN = 10
 
 export const PERSPECTIVE_COLORS: Record<string, string> = {
   dividend: '#10B981', // 配当収入: Emerald
