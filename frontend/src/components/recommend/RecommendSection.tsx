@@ -14,6 +14,7 @@ interface RecommendSectionProps {
   onCompareToggle?: (code: string) => void
   isFavorite?: (code: string) => boolean
   onFavoriteToggle?: (code: string) => void
+  isHolding?: (code: string) => boolean
   onShowAll?: () => void
   selectedPerspective?: string
   onSelectPerspective?: (perspective: string) => void
@@ -29,6 +30,7 @@ export function RecommendSection({
   onCompareToggle,
   isFavorite,
   onFavoriteToggle,
+  isHolding,
   onShowAll,
   selectedPerspective,
   onSelectPerspective,
@@ -92,6 +94,7 @@ export function RecommendSection({
               onFavoriteToggle={
                 onFavoriteToggle ? () => onFavoriteToggle(etf.code) : undefined
               }
+              isHolding={isHolding?.(etf.code)}
               perspective={selected}
             />
           ))}

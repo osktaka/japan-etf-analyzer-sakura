@@ -306,6 +306,7 @@ export function TopPage() {
         onCompareToggle={handleCompareToggle}
         isFavorite={isFavorite}
         onFavoriteToggle={handleFavoriteToggle}
+        isHolding={isHolding}
         selectedPerspective={recommendTab}
         onSelectPerspective={handleRecommendTabChange}
         isAuthenticated={isAuthenticated}
