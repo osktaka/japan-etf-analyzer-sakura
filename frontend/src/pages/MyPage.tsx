@@ -171,23 +171,7 @@ export function MyPage() {
       </div>
 
       <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h2 className={styles.sectionTitle}>ポートフォリオ</h2>
-          <div className={styles.buttonGroup}>
-            <button
-              className={styles.secondaryBtn}
-              onClick={() => setShowTradeHistoryModal(true)}
-            >
-              取引履歴
-            </button>
-            <button
-              className={styles.addBtn}
-              onClick={() => setShowTradeFormModal(true)}
-            >
-              取引を追加
-            </button>
-          </div>
-        </div>
+        <h2 className={styles.sectionTitle}>ポートフォリオ</h2>
 
         {summary && <PortfolioSummary summary={summary} />}
 
@@ -203,6 +187,8 @@ export function MyPage() {
           onHistoryClick={handleHistoryClick}
           isInCompare={isInCompare}
           onCompareToggle={toggleCompare}
+          onTradeHistory={() => setShowTradeHistoryModal(true)}
+          onAddTrade={() => setShowTradeFormModal(true)}
         />
       </section>
 

@@ -51,6 +51,8 @@ interface HoldingsListProps {
   onHistoryClick?: (code: string) => void
   isInCompare?: (code: string) => boolean
   onCompareToggle?: (code: string) => void
+  onTradeHistory?: () => void
+  onAddTrade?: () => void
 }
 
 export function HoldingsList({
@@ -61,6 +63,8 @@ export function HoldingsList({
   onHistoryClick,
   isInCompare,
   onCompareToggle,
+  onTradeHistory,
+  onAddTrade,
 }: HoldingsListProps) {
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const stored = localStorage.getItem(STORAGE_KEY)
@@ -193,41 +197,65 @@ export function HoldingsList({
   return (
     <div className={styles.container}>
       <div className={styles.toolbar}>
-        {viewMode === 'card' && (
-          <select
-            className={styles.sortSelect}
-            value={`${sortKey}-${sortOrder}`}
-            onChange={handleSortSelectChange}
-            aria-label="並び替え"
-          >
-            {CARD_SORT_KEYS.map((key) => (
-              <optgroup key={key} label={SORT_LABELS[key]}>
-                <option value={`${key}-desc`}>{SORT_LABELS[key]} (大→小)</option>
-                <option value={`${key}-asc`}>{SORT_LABELS[key]} (小→大)</option>
-              </optgroup>
-            ))}
-          </select>
-        )}
-        <div className={styles.viewModeToggle}>
-          <button
-            type="button"
-            className={`${styles.toggleBtn} ${viewMode === 'table' ? styles.toggleBtnActive : ''}`}
-            onClick={() => handleViewModeChange('table')}
-            aria-label="表形式で表示"
-            title="表形式"
-          >
-            表
-          </button>
-          <button
-            type="button"
-            className={`${styles.toggleBtn} ${viewMode === 'card' ? styles.toggleBtnActive : ''}`}
-            onClick={() => handleViewModeChange('card')}
-            aria-label="カード形式で表示"
-            title="カード形式"
-          >
-            カード
-          </button>
+        <div className={styles.toolbarLeft}>
+          <div className={styles.viewModeToggle}>
+            <button
+              type="button"
+              className={`${styles.toggleBtn} ${viewMode === 'card' ? styles.toggleBtnActive : ''}`}
+              onClick={() => handleViewModeChange('card')}
+              aria-label="カード形式で表示"
+              title="カード形式"
+            >
+              カード
+            </button>
+            <button
+              type="button"
+              className={`${styles.toggleBtn} ${viewMode === 'table' ? styles.toggleBtnActive : ''}`}
+              onClick={() => handleViewModeChange('table')}
+              aria-label="表形式で表示"
+              title="表形式"
+            >
+              表
+            </button>
+          </div>
+          {viewMode === 'card' && (
+            <select
+              className={styles.sortSelect}
+              value={`${sortKey}-${sortOrder}`}
+              onChange={handleSortSelectChange}
+              aria-label="並び替え"
+            >
+              {CARD_SORT_KEYS.map((key) => (
+                <optgroup key={key} label={SORT_LABELS[key]}>
+                  <option value={`${key}-desc`}>{SORT_LABELS[key]} (大→小)</option>
+                  <option value={`${key}-asc`}>{SORT_LABELS[key]} (小→大)</option>
+                </optgroup>
+              ))}
+            </select>
+          )}
         </div>
+        {(onTradeHistory || onAddTrade) && (
+          <div className={styles.tradeButtons}>
+            {onTradeHistory && (
+              <button
+                type="button"
+                className={styles.tradeHistoryBtn}
+                onClick={onTradeHistory}
+              >
+                取引履歴
+              </button>
+            )}
+            {onAddTrade && (
+              <button
+                type="button"
+                className={styles.addTradeBtn}
+                onClick={onAddTrade}
+              >
+                取引を追加
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {viewMode === 'table' ? (

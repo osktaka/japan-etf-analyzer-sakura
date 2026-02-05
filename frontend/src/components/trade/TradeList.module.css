@@ -213,6 +213,7 @@
 
   .name {
     max-width: none;
+    font-size: 0.8125rem;
   }
 
   .actions {
