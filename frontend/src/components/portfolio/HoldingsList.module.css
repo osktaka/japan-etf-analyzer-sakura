@@ -49,8 +49,8 @@
 }
 
 .toggleBtn {
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
   border: none;
   background: var(--color-bg-card);
   color: var(--color-text-secondary);
@@ -296,6 +296,11 @@
   .addTradeBtn {
     padding: 0.375rem 0.75rem;
     font-size: 0.8125rem;
+  }
+
+  .toggleBtn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
   }
 
   .cardGrid {
