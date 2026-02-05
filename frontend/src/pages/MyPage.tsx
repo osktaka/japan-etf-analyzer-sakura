@@ -158,8 +158,8 @@ export function MyPage() {
   }
 
   const handleSaveCustomWeights = async (weights: CustomWeights) => {
-    await userSettingsApi.saveCustomWeights(weights)
-    setCustomWeights(weights)
+    const response = await userSettingsApi.saveCustomWeights(weights)
+    setCustomWeights(response.custom_weights)
     setPerspective('custom')
     refresh('custom', 'full')
   }

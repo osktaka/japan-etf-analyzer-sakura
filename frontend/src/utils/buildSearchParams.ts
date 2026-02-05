@@ -62,6 +62,7 @@ export function buildSearchParams(
   }
 
   // Add custom_weights as JSON string if provided and sorting by custom score
+  // customWeights は既に 0-1 形式のためそのまま送信
   if (currentSort === 'score_custom' && customWeights) {
     searchParams.custom_weights = JSON.stringify(customWeights)
   }

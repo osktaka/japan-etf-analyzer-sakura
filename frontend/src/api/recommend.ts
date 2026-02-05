@@ -21,6 +21,7 @@ export async function getRecommendations(
 ): Promise<Recommendation> {
   let url = `/recommendations?perspective=${perspective}&limit=${limit}&scoring_mode=${scoringMode}`
   if (customWeights) {
+    // customWeights は既に 0-1 形式のためそのまま送信
     url += `&custom_weights=${encodeURIComponent(JSON.stringify(customWeights))}`
   }
   const response = await apiClient.get<ApiResponse<Recommendation>>(url)

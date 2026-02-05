@@ -61,11 +61,13 @@ def create_user_settings_bp():
             return error_response("weightsフィールドは必須です", 400)
 
         try:
-            settings = user_settings_service.save_custom_weights(
+            user_settings_service.save_custom_weights(
                 current_user.id, weights
             )
             return api_response(
-                data=settings.to_dict(),
+                data={
+                    "custom_weights": user_settings_service.get_custom_weights(current_user.id)
+                },
                 message="カスタム重みを更新しました"
             )
         except ValueError as e:
