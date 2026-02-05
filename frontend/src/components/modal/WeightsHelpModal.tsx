@@ -1,6 +1,25 @@
 /** Weights help modal component */
+import { useState, useEffect, useRef } from 'react'
 import { CustomWeights } from '../../api'
 import styles from './WeightsHelpModal.module.css'
+
+type AxisKey = 'dividend' | 'cost' | 'stability' | 'scale' | 'return'
+
+const HEADER_LABELS: Record<AxisKey, string> = {
+  dividend: '配当',
+  cost: 'コスト',
+  stability: '安定',
+  scale: '規模',
+  return: 'リターン',
+}
+
+const AXIS_DESCRIPTIONS: Record<AxisKey, string> = {
+  dividend: '配当利回りの高さ',
+  cost: '信託報酬の低さ',
+  stability: '純資産総額の大きさ',
+  scale: '売買代金・出来高の多さ',
+  return: '1年・3年リターンの高さ',
+}
 
 interface WeightsHelpModalProps {
   isOpen: boolean
@@ -17,7 +36,34 @@ export function WeightsHelpModal({
   customWeights = null,
   onEditCustom,
 }: WeightsHelpModalProps) {
+  const [activeTooltip, setActiveTooltip] = useState<AxisKey | null>(null)
+  const tooltipRefs = useRef<{ [key in AxisKey]?: HTMLDivElement | null }>({})
+
+  // 枠外クリックでツールチップを閉じる
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (activeTooltip) {
+        const tooltipElement = tooltipRefs.current[activeTooltip]
+        if (tooltipElement && !tooltipElement.contains(event.target as Node)) {
+          setActiveTooltip(null)
+        }
+      }
+    }
+
+    if (activeTooltip) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [activeTooltip])
+
   if (!isOpen) return null
+
+  const handleHeaderClick = (key: AxisKey) => {
+    setActiveTooltip((prev) => (prev === key ? null : key))
+  }
 
   return (
     <div className={styles.overlay} onClick={onClose}>
@@ -34,11 +80,39 @@ export function WeightsHelpModal({
             <thead>
               <tr>
                 <th>切り口</th>
-                <th>配当</th>
-                <th>コスト</th>
-                <th>安定</th>
-                <th>規模</th>
-                <th>リターン</th>
+                {(Object.keys(HEADER_LABELS) as AxisKey[]).map((key) => (
+                  <th key={key} className={styles.headerWrapper}>
+                    <span
+                      className={styles.headerClickable}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleHeaderClick(key)
+                      }}
+                      aria-label={`${HEADER_LABELS[key]}の詳細を表示`}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handleHeaderClick(key)
+                        }
+                      }}
+                    >
+                      {HEADER_LABELS[key]}
+                    </span>
+                    {activeTooltip === key && (
+                      <div
+                        ref={(el) => {
+                          tooltipRefs.current[key] = el
+                        }}
+                        className={styles.headerTooltip}
+                      >
+                        {AXIS_DESCRIPTIONS[key]}
+                      </div>
+                    )}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
@@ -128,7 +202,6 @@ export function WeightsHelpModal({
                 className={styles.editLink}
                 onClick={(e) => {
                   e.stopPropagation()
-                  onClose()
                   onEditCustom()
                 }}
               >
