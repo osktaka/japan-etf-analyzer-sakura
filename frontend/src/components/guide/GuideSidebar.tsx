@@ -7,6 +7,7 @@ const navItems = [
   { to: ROUTES.GUIDE, label: '概要', end: true },
   { to: ROUTES.GUIDE_RECOMMEND, label: 'おすすめ銘柄' },
   { to: ROUTES.GUIDE_SEARCH, label: '銘柄を探す' },
+  { to: ROUTES.GUIDE_TAGS, label: 'タグで探す' },
   { to: ROUTES.GUIDE_COMPARE, label: '比較する' },
   { to: ROUTES.GUIDE_MYPAGE, label: 'マイページ活用' },
   { to: ROUTES.GUIDE_FAQ, label: 'よくある質問' },

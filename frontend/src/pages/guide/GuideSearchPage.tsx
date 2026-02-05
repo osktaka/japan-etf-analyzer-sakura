@@ -41,7 +41,8 @@ export function GuideSearchPage() {
             <div className={styles.listContent}>
               <div className={styles.listTitle}>タグ</div>
               <div className={styles.listDescription}>
-                高配当、低コスト、人気などのタグで絞り込みます。複数選択可能です。
+                業種、テーマ、経済情勢など6カテゴリ43タグで絞り込みます。
+                複数選択で幅広く検索。詳しくは「タグで探す」をご覧ください。
               </div>
             </div>
           </li>

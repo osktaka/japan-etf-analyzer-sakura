@@ -13,4 +13,5 @@ export {
   GuideComparePage,
   GuideMypagePage,
   GuideFaqPage,
+  GuideTagsPage,
 } from './guide'

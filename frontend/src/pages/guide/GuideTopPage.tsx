@@ -21,7 +21,7 @@ export function GuideTopPage() {
       </p>
 
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>3つの特徴</h2>
+        <h2 className={styles.sectionTitle}>4つの特徴</h2>
         <div className={styles.featureGrid}>
           <div className={styles.featureCard}>
             <div className={styles.featureIcon}>&#128200;</div>
@@ -29,6 +29,14 @@ export function GuideTopPage() {
             <p className={styles.featureText}>
               配当重視、低コスト、安定性など6つの視点からおすすめ銘柄を提案。
               目的に合った銘柄を見つけやすくします。
+            </p>
+          </div>
+          <div className={styles.featureCard}>
+            <div className={styles.featureIcon}>&#128193;</div>
+            <h3 className={styles.featureTitle}>43タグで分類</h3>
+            <p className={styles.featureText}>
+              業種、テーマ、経済情勢など6カテゴリ43タグで多角的に分類。
+              経済ニュースから銘柄を探せます。
             </p>
           </div>
           <div className={styles.featureCard}>
@@ -62,6 +70,10 @@ export function GuideTopPage() {
             <div className={styles.navCardText}>
               検索・フィルター機能の使い方
             </div>
+          </Link>
+          <Link to={ROUTES.GUIDE_TAGS} className={styles.navCard}>
+            <div className={styles.navCardTitle}>タグで探す</div>
+            <div className={styles.navCardText}>43タグ6カテゴリの活用法</div>
           </Link>
           <Link to={ROUTES.GUIDE_COMPARE} className={styles.navCard}>
             <div className={styles.navCardTitle}>比較する</div>

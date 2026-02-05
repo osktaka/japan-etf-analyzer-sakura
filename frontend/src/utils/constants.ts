@@ -47,6 +47,7 @@ export const ROUTES = {
   GUIDE_COMPARE: '/guide/compare',
   GUIDE_MYPAGE: '/guide/mypage',
   GUIDE_FAQ: '/guide/faq',
+  GUIDE_TAGS: '/guide/tags',
 } as const
 
 /** 各期間の期待営業日数（データ充足判定用） */
