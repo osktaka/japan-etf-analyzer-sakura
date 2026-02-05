@@ -82,6 +82,30 @@ export function HoldingCard({
           </span>
         </div>
       </div>
+      <div className={styles.annualizedSection}>
+        <div className={styles.pnlItem}>
+          <span className={styles.label}>保有期間</span>
+          <span className={styles.value}>{holding.holding_period || '-'}</span>
+        </div>
+        <div className={styles.pnlItem}>
+          <span className={styles.label}>年率リターン</span>
+          <span
+            className={`${styles.pnlPercent} ${
+              holding.annualized_return !== null &&
+              holding.annualized_return !== undefined
+                ? holding.annualized_return >= 0
+                  ? styles.positive
+                  : styles.negative
+                : ''
+            }`}
+          >
+            {holding.annualized_return !== null &&
+            holding.annualized_return !== undefined
+              ? `${holding.annualized_return >= 0 ? '+' : ''}${holding.annualized_return.toFixed(2)}%`
+              : '-'}
+          </span>
+        </div>
+      </div>
       {onHistoryClick && (
         <div className={styles.actions}>
           <button

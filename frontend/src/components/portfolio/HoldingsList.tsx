@@ -15,11 +15,15 @@ type SortKey =
   | 'current_value'
   | 'unrealized_pnl'
   | 'unrealized_pnl_percent'
+  | 'holding_days'
+  | 'annualized_return'
 type SortOrder = 'asc' | 'desc'
 
 const CARD_SORT_KEYS: SortKey[] = [
   'unrealized_pnl',
   'unrealized_pnl_percent',
+  'annualized_return',
+  'holding_days',
   'current_value',
   'quantity',
   'etf_code',
@@ -33,6 +37,8 @@ const SORT_LABELS: Record<SortKey, string> = {
   current_value: '評価額',
   unrealized_pnl: '評価損益',
   unrealized_pnl_percent: '損益率',
+  holding_days: '保有期間',
+  annualized_return: '年率リターン',
 }
 
 const STORAGE_KEY = 'holdings-view-mode'
@@ -139,6 +145,14 @@ export function HoldingsList({
         case 'unrealized_pnl_percent':
           aVal = a.unrealized_pnl_percent
           bVal = b.unrealized_pnl_percent
+          break
+        case 'holding_days':
+          aVal = a.holding_days ?? 0
+          bVal = b.holding_days ?? 0
+          break
+        case 'annualized_return':
+          aVal = a.annualized_return ?? -Infinity
+          bVal = b.annualized_return ?? -Infinity
           break
         default:
           return 0
@@ -268,6 +282,20 @@ export function HoldingsList({
               >
                 損益率{getSortIndicator('unrealized_pnl_percent')}
               </th>
+              <th
+                className={styles.right}
+                onClick={() => handleSortClick('holding_days')}
+                style={{ cursor: 'pointer' }}
+              >
+                保有期間{getSortIndicator('holding_days')}
+              </th>
+              <th
+                className={styles.right}
+                onClick={() => handleSortClick('annualized_return')}
+                style={{ cursor: 'pointer' }}
+              >
+                年率リターン{getSortIndicator('annualized_return')}
+              </th>
               {onHistoryClick && <th className={styles.center}>履歴</th>}
               {onCompareToggle && <th className={styles.center}>比較</th>}
             </tr>
@@ -309,6 +337,24 @@ export function HoldingsList({
                   <td className={`${styles.right} ${pnlClass}`}>
                     {pnlSign}
                     {holding.unrealized_pnl_percent.toFixed(2)}%
+                  </td>
+                  <td className={styles.right}>
+                    {holding.holding_period || '-'}
+                  </td>
+                  <td
+                    className={`${styles.right} ${
+                      holding.annualized_return !== null &&
+                      holding.annualized_return !== undefined
+                        ? holding.annualized_return >= 0
+                          ? styles.positive
+                          : styles.negative
+                        : ''
+                    }`}
+                  >
+                    {holding.annualized_return !== null &&
+                    holding.annualized_return !== undefined
+                      ? `${holding.annualized_return >= 0 ? '+' : ''}${holding.annualized_return.toFixed(2)}%`
+                      : '-'}
                   </td>
                   {onHistoryClick && (
                     <td

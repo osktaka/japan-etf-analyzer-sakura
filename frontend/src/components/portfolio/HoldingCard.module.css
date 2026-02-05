@@ -78,6 +78,16 @@
   padding: var(--spacing-sm);
   background-color: var(--color-bg-hover);
   border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-sm);
+}
+
+.annualizedSection {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background-color: var(--color-bg-hover);
+  border-radius: var(--radius-md);
   margin-bottom: var(--spacing-md);
 }
 

@@ -202,6 +202,10 @@ export interface Holding {
   current_value: number
   unrealized_pnl: number
   unrealized_pnl_percent: number
+  holding_days?: number
+  holding_period?: string
+  annualized_return?: number
+  annualized_pnl?: number
 }
 
 export interface PortfolioSummary {

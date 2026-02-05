@@ -1,5 +1,6 @@
 """Portfolio service for calculating user's holdings and P&L."""
 import logging
+import math
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Dict, List, Optional, Tuple
@@ -65,11 +66,16 @@ class PortfolioService:
         - current_value
         - unrealized_pnl
         - unrealized_pnl_percent
+        - holding_days (保有日数)
+        - holding_period (保有期間テキスト)
+        - annualized_return (年率リターン)
+        - annualized_pnl (年率評価損益)
         """
         trades = self.trade_repository.get_by_user_id(user_id)
 
         # Group trades by ETF code and accumulate adjusted quantities
         holdings_data: Dict[str, Dict] = {}
+        trades_by_code: Dict[str, List] = {}
 
         for trade in trades:
             code = trade.etf_code
@@ -79,6 +85,9 @@ class PortfolioService:
                     "adjusted_sell_quantity": 0.0,
                     "original_buy_amount": Decimal("0"),
                 }
+                trades_by_code[code] = []
+
+            trades_by_code[code].append(trade)
 
             # Calculate split adjustment factor from this trade's date to now
             adjustment_factor = self.split_adjustment_service.get_adjustment_factor(
@@ -123,6 +132,25 @@ class PortfolioService:
             unrealized_pnl = current_value - float(total_cost)
             pnl_percent = (unrealized_pnl / total_cost * 100) if total_cost > 0 else 0
 
+            # Calculate holding period and annualized metrics
+            holding_days = self._calculate_holding_days(trades_by_code[code], code)
+            holding_period = self._format_holding_period(holding_days)
+
+            # Calculate annualized return (CAGR) and annualized P&L
+            annualized_return = None
+            annualized_pnl = None
+            if holding_days > 0 and total_cost > 0:
+                years = holding_days / 365.0
+                if years >= 0.01:  # At least ~4 days
+                    # CAGR: ((current_value / total_cost) ^ (1/years) - 1) * 100
+                    ratio = current_value / total_cost
+                    if ratio > 0:
+                        annualized_return = round(
+                            (math.pow(ratio, 1.0 / years) - 1) * 100, 2
+                        )
+                    # Annualized P&L: unrealized_pnl / years
+                    annualized_pnl = round(unrealized_pnl / years, 2)
+
             result.append(
                 {
                     "etf_code": code,
@@ -134,12 +162,81 @@ class PortfolioService:
                     "current_value": round(current_value, 2),
                     "unrealized_pnl": round(unrealized_pnl, 2),
                     "unrealized_pnl_percent": round(pnl_percent, 2),
+                    "holding_days": holding_days,
+                    "holding_period": holding_period,
+                    "annualized_return": annualized_return,
+                    "annualized_pnl": annualized_pnl,
                 }
             )
 
         # Sort by current_value descending
         result.sort(key=lambda x: x["current_value"], reverse=True)
         return result
+
+    def _calculate_holding_days(self, trades_for_code: List, code: str) -> int:
+        """
+        Calculate total holding days for a specific ETF code.
+
+        Only counts days when quantity > 0.
+        If position was fully sold and later re-acquired,
+        the gap period is not counted.
+        """
+        if not trades_for_code:
+            return 0
+
+        # Sort trades by trade_date ascending
+        sorted_trades = sorted(trades_for_code, key=lambda t: t.trade_date)
+
+        total_holding_days = 0
+        running_qty = 0.0
+        holding_start: Optional[date] = None
+
+        for trade in sorted_trades:
+            # Calculate split adjustment factor from this trade's date to now
+            adjustment_factor = self.split_adjustment_service.get_adjustment_factor(
+                code, trade.trade_date
+            )
+            adjusted_qty = trade.quantity * adjustment_factor
+
+            if trade.trade_type == "buy":
+                if running_qty <= 0:
+                    # Start new holding period
+                    holding_start = trade.trade_date
+                running_qty += adjusted_qty
+            else:  # sell
+                running_qty -= adjusted_qty
+                if running_qty <= 0 and holding_start:
+                    # Position closed, count days
+                    total_holding_days += (trade.trade_date - holding_start).days
+                    holding_start = None
+                    running_qty = 0.0
+
+        # If still holding, add days until today
+        if running_qty > 0 and holding_start:
+            total_holding_days += (date.today() - holding_start).days
+
+        return total_holding_days
+
+    def _format_holding_period(self, days: int) -> str:
+        """
+        Format holding days into human-readable text like "1年2ヶ月".
+        """
+        if days <= 0:
+            return "0日"
+
+        years = days // 365
+        remaining_days = days % 365
+        months = remaining_days // 30
+
+        parts = []
+        if years > 0:
+            parts.append(f"{years}年")
+        if months > 0:
+            parts.append(f"{months}ヶ月")
+        if not parts:
+            parts.append(f"{days}日")
+
+        return "".join(parts)
 
     def get_portfolio_summary(self, user_id: int) -> Dict:
         """
