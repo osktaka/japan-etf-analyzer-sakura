@@ -124,7 +124,8 @@
   background-color: #f1f5f9;
 }
 
-.center {
+.table th.center,
+.table td.center {
   text-align: center;
 }
 
@@ -138,7 +139,8 @@
   border-bottom: none;
 }
 
-.right {
+.table th.right,
+.table td.right {
   text-align: right;
 }
 
