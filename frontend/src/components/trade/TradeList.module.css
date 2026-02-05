@@ -223,4 +223,21 @@
   .actionsCell::before {
     display: none;
   }
+
+  .dateContent {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .dateCell,
+  .etfCell {
+    justify-content: flex-start;
+  }
+
+  .dateCell::before,
+  .etfCell::before {
+    display: none;
+  }
 }

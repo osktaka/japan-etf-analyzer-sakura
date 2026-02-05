@@ -67,7 +67,7 @@ export function TradeList({
         <tbody>
           {trades.map((trade) => (
             <tr key={trade.id}>
-              <td className={styles.dateCell} data-label="日付">
+              <td className={styles.dateCell} data-label="">
                 <div className={styles.dateContent}>
                   <span className={styles.date}>
                     {formatDate(trade.trade_date)}
@@ -80,7 +80,7 @@ export function TradeList({
                 </div>
               </td>
               {showEtfInfo && (
-                <td className={styles.etfCell} data-label="銘柄">
+                <td className={styles.etfCell} data-label="">
                   <div className={styles.etfInfo}>
                     <span className={styles.code}>{trade.etf_code}</span>
                     {trade.etf && (
