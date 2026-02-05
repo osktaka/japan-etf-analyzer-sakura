@@ -241,3 +241,27 @@ export function calculateRegressionReturn(
   if (!regression || regression.startY === 0) return null
   return ((regression.endY - regression.startY) / regression.startY) * 100
 }
+
+/** Period to years mapping for annualization */
+export const PERIOD_TO_YEARS: Record<ChartPeriod, number> = {
+  '1m': 1 / 12,
+  '3m': 0.25,
+  '6m': 0.5,
+  '1y': 1,
+  '3y': 3,
+  '5y': 5,
+  '10y': 10,
+  '20y': 20,
+}
+
+/**
+ * Convert period return to annualized return
+ * Simple annualization: periodReturn / years
+ */
+export function annualizeReturn(
+  periodReturn: number,
+  period: ChartPeriod
+): number {
+  const years = PERIOD_TO_YEARS[period]
+  return periodReturn / years
+}

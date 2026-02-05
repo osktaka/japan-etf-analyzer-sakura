@@ -1,0 +1,114 @@
+/* Annualized return cards */
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  position: relative;
+}
+
+.title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.helpIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background-color: var(--color-bg-hover);
+  border-radius: 50%;
+  cursor: pointer;
+  user-select: none;
+}
+
+.helpIcon:hover {
+  background-color: var(--color-border);
+}
+
+.tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  background-color: var(--color-bg-card);
+  color: var(--color-text);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+.tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 20px;
+  border: 6px solid transparent;
+  border-top-color: var(--color-bg-card);
+}
+
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  align-items: center;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background: var(--color-bg-hover);
+  border-radius: var(--radius-sm);
+  min-width: 48px;
+}
+
+.period {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.value {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.positive {
+  color: #22c55e;
+}
+
+.negative {
+  color: #ef4444;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .card {
+    padding: 2px var(--spacing-xs);
+    min-width: 40px;
+  }
+
+  .period {
+    font-size: 10px;
+  }
+
+  .value {
+    font-size: var(--text-xs);
+  }
+}

@@ -221,6 +221,19 @@
   margin-bottom: var(--spacing-md);
 }
 
+.chartHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-md);
+}
+
+.chartHeader > *:last-child {
+  margin-bottom: 0;
+}
+
 .footer {
   display: flex;
   align-items: center;

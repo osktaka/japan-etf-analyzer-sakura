@@ -1,6 +1,11 @@
 /** ETF detail modal component */
 import { useMemo, useState } from 'react'
-import { useETFDetail, usePortfolio, useChartPeriodStorage } from '../../hooks'
+import {
+  useETFDetail,
+  usePortfolio,
+  useChartPeriodStorage,
+  useMultiPeriodChartData,
+} from '../../hooks'
 import {
   formatPercent,
   formatAssets,
@@ -10,11 +15,20 @@ import {
   PERSPECTIVE_COLORS,
   PERSPECTIVE_GRADIENTS,
 } from '../../utils'
+import {
+  checkDataSufficiency,
+  calculateRegressionReturn,
+  annualizeReturn,
+} from '../../utils/chartUtils'
 import { Loading, ErrorMessage } from '../common'
 import { TagBadge } from '../etf'
 import { FavoriteButton } from '../favorite'
 import { CompareCheckbox } from '../actions'
-import { MultiPeriodChart, ChartPeriodSelector } from '../chart'
+import {
+  MultiPeriodChart,
+  ChartPeriodSelector,
+  AnnualizedReturnCards,
+} from '../chart'
 import styles from './ETFDetailModal.module.css'
 
 type PerspectiveKey =
@@ -69,11 +83,33 @@ export function ETFDetailModal({
   const { chartPeriods, setChartPeriods } = useChartPeriodStorage()
   const [selectedPerspective, setSelectedPerspective] =
     useState<PerspectiveKey>(initialPerspective ?? 'balance')
+  const { data: chartData } = useMultiPeriodChartData(code, chartPeriods)
 
   const holdingCodes = useMemo(
     () => new Set(holdings.map((h) => h.etf_code)),
     [holdings]
   )
+
+  const annualizedReturns = useMemo(() => {
+    return chartPeriods.map((period) => {
+      const periodData = chartData[period]
+      if (!periodData || periodData.data.length < 2) {
+        return { period, annualizedReturn: null }
+      }
+      const sufficiency = checkDataSufficiency(period, periodData.data.length)
+      if (!sufficiency.isSufficient) {
+        return { period, annualizedReturn: null }
+      }
+      const regressionReturn = calculateRegressionReturn(periodData.data)
+      if (regressionReturn === null) {
+        return { period, annualizedReturn: null }
+      }
+      return {
+        period,
+        annualizedReturn: annualizeReturn(regressionReturn, period),
+      }
+    })
+  }, [chartData, chartPeriods])
 
   // 選択中の切り口のスコアを取得（フォールバックとしてdata.scoreを使用）
   const currentScore = useMemo(() => {
@@ -308,10 +344,13 @@ export function ETFDetailModal({
             </div>
 
             <div className={styles.chart}>
-              <ChartPeriodSelector
-                selectedPeriods={chartPeriods}
-                onChange={setChartPeriods}
-              />
+              <div className={styles.chartHeader}>
+                <AnnualizedReturnCards data={annualizedReturns} />
+                <ChartPeriodSelector
+                  selectedPeriods={chartPeriods}
+                  onChange={setChartPeriods}
+                />
+              </div>
               <MultiPeriodChart code={data.code} periods={chartPeriods} />
             </div>
 

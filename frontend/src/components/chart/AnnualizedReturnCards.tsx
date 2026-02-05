@@ -1,0 +1,115 @@
+/** Annualized return cards component */
+import { useState, useRef, useEffect } from 'react'
+import { ChartPeriod } from '../../api'
+import { CHART_PERIODS } from '../../utils/constants'
+import styles from './AnnualizedReturnCards.module.css'
+
+const TOOLTIP_TEXT =
+  '回帰直線の上昇率を期間ごとに算出し、さらに1年換算した値です。株価上昇の勢いを見ることができます'
+
+interface AnnualizedReturnData {
+  period: ChartPeriod
+  annualizedReturn: number | null
+}
+
+interface AnnualizedReturnCardsProps {
+  data: AnnualizedReturnData[]
+}
+
+const PERIOD_ORDER: ChartPeriod[] = [
+  '1m',
+  '3m',
+  '6m',
+  '1y',
+  '3y',
+  '5y',
+  '10y',
+  '20y',
+]
+
+export function AnnualizedReturnCards({ data }: AnnualizedReturnCardsProps) {
+  const [showTooltip, setShowTooltip] = useState(false)
+  const tooltipRef = useRef<HTMLDivElement | null>(null)
+  const helpIconRef = useRef<HTMLSpanElement | null>(null)
+
+  const sortedData = [...data].sort(
+    (a, b) => PERIOD_ORDER.indexOf(a.period) - PERIOD_ORDER.indexOf(b.period)
+  )
+
+  const getPeriodLabel = (period: ChartPeriod): string => {
+    const found = CHART_PERIODS.find((p) => p.id === period)
+    return found?.label ?? period
+  }
+
+  const formatReturn = (value: number | null): string => {
+    if (value === null) return '-'
+    const sign = value >= 0 ? '+' : ''
+    return `${sign}${value.toFixed(1)}%`
+  }
+
+  const handleHelpClick = () => {
+    setShowTooltip((prev) => !prev)
+  }
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!showTooltip) return
+      const target = event.target as Node
+      const isInsideTooltip = tooltipRef.current?.contains(target)
+      const isInsideHelpIcon = helpIconRef.current?.contains(target)
+      if (!isInsideTooltip && !isInsideHelpIcon) {
+        setShowTooltip(false)
+      }
+    }
+    // キャプチャフェーズで捕捉（モーダルのstopPropagation対策）
+    document.addEventListener('click', handleClickOutside, true)
+    return () => document.removeEventListener('click', handleClickOutside, true)
+  }, [showTooltip])
+
+  return (
+    <div className={styles.wrapper}>
+      <div className={styles.titleRow}>
+        <span className={styles.title}>年率回帰上昇率</span>
+        <span
+          ref={helpIconRef}
+          className={styles.helpIcon}
+          onClick={handleHelpClick}
+          aria-label="年率回帰上昇率の説明を表示"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              handleHelpClick()
+            }
+          }}
+        >
+          ?
+        </span>
+        {showTooltip && (
+          <div ref={tooltipRef} className={styles.tooltip}>
+            {TOOLTIP_TEXT}
+          </div>
+        )}
+      </div>
+      <div className={styles.container}>
+        {sortedData.map(({ period, annualizedReturn }) => (
+          <div key={period} className={styles.card}>
+            <span className={styles.period}>{getPeriodLabel(period)}</span>
+            <span
+              className={`${styles.value} ${
+                annualizedReturn === null
+                  ? ''
+                  : annualizedReturn >= 0
+                    ? styles.positive
+                    : styles.negative
+              }`}
+            >
+              {formatReturn(annualizedReturn)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
