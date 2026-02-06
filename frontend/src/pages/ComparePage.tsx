@@ -10,6 +10,8 @@ import {
   getPerformanceComparison,
   getETFChart,
   getETFsChartBatch,
+  userSettingsApi,
+  CustomWeights,
 } from '../api'
 import {
   useCompareList,
@@ -30,7 +32,11 @@ import {
   ETFListModal,
   ETFDetailModal,
   LoginPromptModal,
+  WeightsHelpModal,
+  CustomWeightsPromptModal,
+  CustomWeightsModal,
 } from '../components/modal'
+import { CompareScoreSection } from '../components/compare'
 import { TagBadge } from '../components/etf'
 import { FavoriteButton } from '../components/favorite'
 import { PriceChart, OverlayChart } from '../components/chart'
@@ -44,6 +50,14 @@ export function ComparePage() {
   const { isAuthenticated } = useAuth()
   const { holdings } = usePortfolio()
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
+  const [showWeightsHelp, setShowWeightsHelp] = useState(false)
+  const [showCustomWeightsPrompt, setShowCustomWeightsPrompt] = useState(false)
+  const [showCustomWeightsModal, setShowCustomWeightsModal] = useState(false)
+  const [customWeights, setCustomWeights] = useState<CustomWeights | null>(null)
+  const [loginPromptConfig, setLoginPromptConfig] = useState<{
+    title?: string
+    description?: string
+  }>({})
   const [etfs, setEtfs] = useState<ETFDetail[]>([])
   const [performance, setPerformance] = useState<PerformanceComparison | null>(
     null
@@ -59,6 +73,35 @@ export function ComparePage() {
   const [isListModalOpen, setIsListModalOpen] = useState(false)
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
   const initialCodesRef = useRef<string[]>(codes)
+
+  // カスタム重みの取得
+  useEffect(() => {
+    if (!isAuthenticated) return
+    userSettingsApi.getSettings().then((settings) => {
+      if (settings?.custom_weights) {
+        setCustomWeights(settings.custom_weights)
+      }
+    })
+  }, [isAuthenticated])
+
+  const handleCustomClick = () => {
+    if (!isAuthenticated) {
+      setLoginPromptConfig({
+        title: 'カスタム機能',
+        description: 'カスタム重みづけ機能はログイン後にご利用いただけます。',
+      })
+      setShowLoginPrompt(true)
+      return
+    }
+    if (!customWeights) {
+      setShowCustomWeightsPrompt(true)
+    }
+  }
+
+  const handleSaveCustomWeights = async (weights: CustomWeights) => {
+    const response = await userSettingsApi.saveCustomWeights(weights)
+    setCustomWeights(response.custom_weights)
+  }
 
   // 初回読み込み時のみAPI取得
   useEffect(() => {
@@ -368,6 +411,15 @@ export function ComparePage() {
                         </td>
                       ))}
                     </tr>
+                    {etfs.length > 0 && (
+                      <CompareScoreSection
+                        etfs={etfs}
+                        colCount={etfs.length + 1}
+                        onHelpClick={() => setShowWeightsHelp(true)}
+                        onCustomClick={handleCustomClick}
+                        customWeights={customWeights}
+                      />
+                    )}
                     {performance && (
                       <>
                         <tr className={styles.sectionHeader}>
@@ -469,6 +521,32 @@ export function ComparePage() {
       <LoginPromptModal
         isOpen={showLoginPrompt}
         onClose={() => setShowLoginPrompt(false)}
+        title={loginPromptConfig.title}
+        description={loginPromptConfig.description}
+      />
+
+      <WeightsHelpModal
+        isOpen={showWeightsHelp}
+        onClose={() => setShowWeightsHelp(false)}
+        isAuthenticated={isAuthenticated ?? false}
+        customWeights={customWeights}
+        onEditCustom={() => setShowCustomWeightsModal(true)}
+      />
+
+      <CustomWeightsPromptModal
+        isOpen={showCustomWeightsPrompt}
+        onClose={() => setShowCustomWeightsPrompt(false)}
+        onRegister={() => {
+          setShowCustomWeightsPrompt(false)
+          setShowCustomWeightsModal(true)
+        }}
+      />
+
+      <CustomWeightsModal
+        isOpen={showCustomWeightsModal}
+        onClose={() => setShowCustomWeightsModal(false)}
+        currentWeights={customWeights}
+        onSave={handleSaveCustomWeights}
       />
     </div>
   )

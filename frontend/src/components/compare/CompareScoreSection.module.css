@@ -1,0 +1,32 @@
+.sectionHeader td {
+  background-color: var(--color-bg);
+  font-weight: 600;
+  color: var(--color-text);
+  padding-top: var(--spacing-lg);
+}
+
+.scoreHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sectionTitle {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.totalScore {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.scoreCell {
+  text-align: center;
+}
+
+.axisRow td {
+  padding-top: var(--spacing-xs);
+  padding-bottom: var(--spacing-xs);
+}

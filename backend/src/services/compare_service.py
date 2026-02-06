@@ -2,6 +2,7 @@
 import math
 from typing import Dict, List, Optional
 
+from src.repositories import ScoreCacheRepository
 from src.services.chart_service import ChartService
 
 
@@ -22,6 +23,7 @@ class CompareService:
     def __init__(self):
         """Initialize service with chart service."""
         self.chart_service = ChartService()
+        self.score_cache_repository = ScoreCacheRepository()
 
     def get_performance(self, code: str) -> Dict:
         """Get performance metrics for an ETF.
@@ -252,6 +254,96 @@ class CompareService:
             return None
 
         return ((end_value - start_value) / start_value) * 100
+
+    def get_scores(
+        self,
+        codes: List[str],
+        perspective: str = "balance",
+        scoring_mode: str = "full",
+        custom_weights: Optional[Dict] = None,
+    ) -> Dict[str, Dict]:
+        """Get evaluation scores for multiple ETFs.
+
+        Args:
+            codes: List of ETF codes
+            perspective: Perspective ID (balance, dividend, etc.)
+            scoring_mode: Scoring mode - "full" or "partial"
+            custom_weights: Optional custom weights dict for custom perspective
+
+        Returns:
+            Dictionary mapping ETF code to score and axis_scores
+        """
+        if perspective == "custom" and custom_weights:
+            return self._get_custom_scores(codes, custom_weights, scoring_mode)
+
+        return self.score_cache_repository.get_scores_with_axes(
+            codes, perspective, scoring_mode
+        )
+
+    def _get_custom_scores(
+        self,
+        codes: List[str],
+        custom_weights: Dict[str, float],
+        scoring_mode: str = "full",
+    ) -> Dict[str, Dict]:
+        """Calculate custom-weighted scores for specified ETFs.
+
+        Args:
+            codes: List of ETF codes
+            custom_weights: Custom weights dict (0-1 format)
+            scoring_mode: Scoring mode - "full" or "partial"
+
+        Returns:
+            Dictionary mapping ETF code to score and axis_scores
+        """
+        from src.services.scoring_service import ScoringService
+
+        scoring_service = ScoringService()
+
+        # Get all ETFs for percentile calculation
+        all_etfs = scoring_service.etf_repository.get_all()
+        etf_codes = [etf.code for etf in all_etfs]
+
+        # Batch fetch data and cache
+        scoring_service._avg_volumes_cache = (
+            scoring_service.etf_repository.get_average_volumes_batch(etf_codes)
+        )
+        scoring_service._return_rates_cache = (
+            scoring_service.etf_repository.get_return_rates_batch(etf_codes)
+        )
+
+        # Collect values for percentile calculation
+        scoring_service._collect_percentile_data(all_etfs)
+
+        # Build lookup for target codes
+        etf_lookup = {etf.code: etf for etf in all_etfs}
+
+        result = {}
+        for code in codes:
+            etf = etf_lookup.get(code)
+            if etf:
+                score = scoring_service.calculate_score(
+                    etf,
+                    perspective="custom",
+                    mode=scoring_mode,
+                    custom_weights=custom_weights,
+                )
+                axis_scores = scoring_service.calculate_axis_scores(etf)
+                result[code] = {
+                    "score": score,
+                    "axis_scores": axis_scores,
+                }
+            else:
+                result[code] = {
+                    "score": None,
+                    "axis_scores": None,
+                }
+
+        # Clear cache
+        scoring_service._avg_volumes_cache = {}
+        scoring_service._return_rates_cache = {}
+
+        return result
 
     def get_batch_performance(self, codes: List[str]) -> Dict[str, Dict]:
         """Get performance metrics for multiple ETFs from cache.

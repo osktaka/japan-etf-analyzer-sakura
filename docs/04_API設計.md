@@ -123,6 +123,7 @@
 | GET | /portfolio/holdings | 保有銘柄一覧取得 | F-105 | 必要 |
 | GET | /compare/performance | パフォーマンス比較取得 | F-107 | 不要 |
 | GET | /compare/performance/{code} | 個別パフォーマンス取得 | F-107 | 不要 |
+| GET | /compare/scores | 比較銘柄のスコア取得 | F-107 | 任意 |
 
 ### 3.3 管理者用API
 

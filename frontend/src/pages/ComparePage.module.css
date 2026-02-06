@@ -50,7 +50,7 @@
 .table th,
 .table td {
   padding: var(--spacing-md);
-  text-align: left;
+  text-align: center;
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -58,9 +58,11 @@
   background-color: var(--color-bg);
   font-weight: 600;
   vertical-align: top;
+  text-align: left;
 }
 
 .table td:first-child {
+  text-align: left;
   font-weight: 500;
   color: var(--color-text-secondary);
   white-space: nowrap;
