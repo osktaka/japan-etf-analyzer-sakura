@@ -1,10 +1,12 @@
 /** Main application component */
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { Header, Footer, ProtectedRoute, AdminRoute } from './components/common'
 import { CompareFloatingButton } from './components/actions'
 import { AuthProvider } from './contexts/AuthContext'
 import { CompareProvider } from './hooks/useCompareList.tsx'
+import { useAuth } from './hooks'
 import {
   TopPage,
   ComparePage,
@@ -25,6 +27,30 @@ import { GuideLayout } from './components/guide'
 import { ROUTES } from './utils'
 import './styles/global.css'
 
+function GoogleAnalytics() {
+  const { isAdmin, isLoading } = useAuth()
+
+  // セッション中のadminログイン/ログアウト対策（GA公式の無効化プロパティ）
+  useEffect(() => {
+    (window as unknown as Record<string, unknown>)['ga-disable-G-W5LE9WR4C3'] = isAdmin
+  }, [isAdmin])
+
+  // 認証確認中 or 管理者 → GAを読み込まない
+  if (import.meta.env.MODE !== 'production' || isLoading || isAdmin) return null
+
+  return (
+    <Helmet>
+      <script async src="https://www.googletagmanager.com/gtag/js?id=G-W5LE9WR4C3" />
+      <script>{`
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-W5LE9WR4C3');
+      `}</script>
+    </Helmet>
+  )
+}
+
 export default function App() {
   // 開発環境では basename なし、本番環境では /japan-etf-analyzer
   const basename =
@@ -32,18 +58,8 @@ export default function App() {
 
   return (
     <BrowserRouter basename={basename}>
-      {import.meta.env.MODE === 'production' && (
-        <Helmet>
-          <script async src="https://www.googletagmanager.com/gtag/js?id=G-W5LE9WR4C3" />
-          <script>{`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-W5LE9WR4C3');
-          `}</script>
-        </Helmet>
-      )}
       <AuthProvider>
+        <GoogleAnalytics />
         <CompareProvider>
           <div className="app">
             <Header />
