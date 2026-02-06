@@ -1,7 +1,7 @@
 /** Portfolio value chart component */
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -65,7 +65,7 @@ export function PortfolioValueChart() {
       </div>
       <div className={styles.chartWrapper}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart
+          <AreaChart
             data={data}
             margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
           >
@@ -87,14 +87,16 @@ export function PortfolioValueChart() {
               formatter={(value: number) => [formatPrice(value), '評価額']}
               labelFormatter={(label) => label}
             />
-            <Line
+            <Area
               type="monotone"
               dataKey="value"
               stroke="#10b981"
+              fill="#10b981"
+              fillOpacity={0.2}
               strokeWidth={2}
               dot={false}
             />
-          </LineChart>
+          </AreaChart>
         </ResponsiveContainer>
       </div>
     </div>

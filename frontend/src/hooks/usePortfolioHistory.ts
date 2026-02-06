@@ -20,7 +20,28 @@ export function usePortfolioHistory(
   const [data, setData] = useState<ValuationHistory>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [period, setPeriod] = useState<ValuationHistoryPeriod>(initialPeriod)
+  const VALID_PERIODS: ValuationHistoryPeriod[] = ['1m', '3m', '6m', '1y', '3y', '5y', '10y', '20y']
+
+  const [period, setPeriodState] = useState<ValuationHistoryPeriod>(() => {
+    try {
+      const saved = localStorage.getItem('portfolio-history-period')
+      if (saved && VALID_PERIODS.includes(saved as ValuationHistoryPeriod)) {
+        return saved as ValuationHistoryPeriod
+      }
+    } catch {
+      // ストレージアクセスエラー時はデフォルト値
+    }
+    return initialPeriod
+  })
+
+  const setPeriod = useCallback((p: ValuationHistoryPeriod) => {
+    try {
+      localStorage.setItem('portfolio-history-period', p)
+    } catch {
+      // 保存失敗時は無視
+    }
+    setPeriodState(p)
+  }, [])
 
   // キャッシュ: period別にデータを保持
   const cacheRef = useRef<Map<ValuationHistoryPeriod, ValuationHistory>>(
