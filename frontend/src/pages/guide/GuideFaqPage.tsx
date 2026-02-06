@@ -1,8 +1,14 @@
 /** Guide FAQ Page - Frequently asked questions */
+import { useState } from 'react'
 import { SEOHead } from '../../components/common'
 import styles from './GuidePage.module.css'
 
 export function GuideFaqPage() {
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(0)
+
+  const toggleFaq = (index: number) =>
+    setExpandedIndex((prev) => (prev === index ? null : index))
+
   const faqs = [
     {
       question: 'ETFとは何ですか？',
@@ -74,11 +80,39 @@ export function GuideFaqPage() {
         <ul className={styles.faqList}>
           {faqs.map((faq, index) => (
             <li key={index} className={styles.faqItem}>
-              <div className={styles.faqQuestion}>
-                <span className={styles.faqBadge}>Q</span>
-                {faq.question}
+              <div
+                className={styles.faqQuestion}
+                onClick={() => toggleFaq(index)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    toggleFaq(index)
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+                aria-expanded={expandedIndex === index}
+              >
+                <span className={styles.faqQuestionContent}>
+                  <span className={styles.faqBadge}>Q</span>
+                  {faq.question}
+                </span>
+                <span
+                  className={`${styles.faqToggle} ${expandedIndex === index ? styles.open : ''}`}
+                >
+                  +
+                </span>
               </div>
-              <div className={styles.faqAnswer}>{faq.answer}</div>
+              <div
+                className={`${styles.faqAnswerWrapper} ${expandedIndex === index ? styles.open : ''}`}
+              >
+                <div className={styles.faqAnswerInner}>
+                  <div className={styles.faqAnswer}>
+                    <span className={styles.faqAnswerBadge}>A</span>
+                    <span>{faq.answer}</span>
+                  </div>
+                </div>
+              </div>
             </li>
           ))}
         </ul>

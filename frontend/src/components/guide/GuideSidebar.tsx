@@ -16,6 +16,7 @@ const navItems = [
 export function GuideSidebar() {
   return (
     <nav className={styles.sidebar} aria-label="ガイドナビゲーション">
+      <div className={styles.navTitle}>ガイド</div>
       <ul className={styles.navList}>
         {navItems.map((item) => (
           <li key={item.to} className={styles.navItem}>

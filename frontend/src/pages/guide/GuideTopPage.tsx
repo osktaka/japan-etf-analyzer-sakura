@@ -12,13 +12,14 @@ export function GuideTopPage() {
         description="Japan ETF Analyzerの使い方を解説します。銘柄検索、おすすめ銘柄、比較機能、マイページの活用方法を学びましょう。"
       />
 
-      <h1 className={styles.pageTitle}>使い方ガイド</h1>
-
-      <p className={styles.text}>
-        Japan ETF
-        Analyzerは、東証に上場するETF銘柄を検索・比較・分析できるWebアプリケーションです。
-        このガイドでは、主要な機能の使い方を説明します。
-      </p>
+      <div className={styles.heroSection}>
+        <h1 className={styles.heroTitle}>使い方ガイド</h1>
+        <p className={styles.heroSubtitle}>
+          Japan ETF
+          Analyzerは、東証に上場するETF銘柄を検索・比較・分析できるWebアプリケーションです。
+          このガイドでは、主要な機能の使い方を説明します。
+        </p>
+      </div>
 
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>4つの特徴</h2>
@@ -62,30 +63,36 @@ export function GuideTopPage() {
         <h2 className={styles.sectionTitle}>目次</h2>
         <div className={styles.navGrid}>
           <Link to={ROUTES.GUIDE_RECOMMEND} className={styles.navCard}>
+            <span className={styles.navCardArrow}>&rarr;</span>
             <div className={styles.navCardTitle}>おすすめ銘柄</div>
             <div className={styles.navCardText}>6つの切り口の詳細</div>
           </Link>
           <Link to={ROUTES.GUIDE_SEARCH} className={styles.navCard}>
+            <span className={styles.navCardArrow}>&rarr;</span>
             <div className={styles.navCardTitle}>銘柄を探す</div>
             <div className={styles.navCardText}>
               検索・フィルター機能の使い方
             </div>
           </Link>
           <Link to={ROUTES.GUIDE_TAGS} className={styles.navCard}>
+            <span className={styles.navCardArrow}>&rarr;</span>
             <div className={styles.navCardTitle}>タグで探す</div>
             <div className={styles.navCardText}>43タグ6カテゴリの活用法</div>
           </Link>
           <Link to={ROUTES.GUIDE_COMPARE} className={styles.navCard}>
+            <span className={styles.navCardArrow}>&rarr;</span>
             <div className={styles.navCardTitle}>比較する</div>
             <div className={styles.navCardText}>銘柄比較機能の活用法</div>
           </Link>
           <Link to={ROUTES.GUIDE_MYPAGE} className={styles.navCard}>
+            <span className={styles.navCardArrow}>&rarr;</span>
             <div className={styles.navCardTitle}>マイページ活用</div>
             <div className={styles.navCardText}>
               お気に入り・ポートフォリオ管理
             </div>
           </Link>
           <Link to={ROUTES.GUIDE_FAQ} className={styles.navCard}>
+            <span className={styles.navCardArrow}>&rarr;</span>
             <div className={styles.navCardTitle}>よくある質問</div>
             <div className={styles.navCardText}>Q&A形式で疑問を解決</div>
           </Link>
