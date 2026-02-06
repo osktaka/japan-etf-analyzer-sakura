@@ -28,6 +28,7 @@ export interface DisplayModeState {
   selectedPerspective: PerspectiveKey
   selectedPeriods: PerformancePeriod[]
   returnType: ReturnType
+  annualized: boolean
 }
 
 export interface DisplayModeActions {
@@ -37,6 +38,7 @@ export interface DisplayModeActions {
   setSelectedPerspective: (perspective: PerspectiveKey) => void
   setSelectedPeriods: (periods: PerformancePeriod[]) => void
   setReturnType: (returnType: ReturnType) => void
+  setAnnualized: (annualized: boolean) => void
   handleViewModeChange: (mode: ViewMode) => void
   handleScoringModeChange: (mode: ScoringMode) => void
 }
@@ -116,6 +118,9 @@ export function useTopPageDisplayMode(
     const saved = localStorage.getItem('scoringMode')
     return (saved === 'partial' ? 'partial' : 'full') as ScoringMode
   })
+  const [annualized, setAnnualized] = useState<boolean>(
+    storage.getStoredAnnualized
+  )
   const [selectedPerspective, setSelectedPerspective] =
     useState<PerspectiveKey>(storage.getStoredPerspective())
 
@@ -156,6 +161,14 @@ export function useTopPageDisplayMode(
       selectedPerspective
     )
   }, [selectedPerspective, storage.keys.PERSPECTIVE_STORAGE_KEY])
+
+  // 年率表示をローカルストレージに保存
+  useEffect(() => {
+    localStorage.setItem(
+      storage.keys.ANNUALIZED_STORAGE_KEY,
+      String(annualized)
+    )
+  }, [annualized, storage.keys.ANNUALIZED_STORAGE_KEY])
 
   // 上昇率タイプをローカルストレージに保存
   useEffect(() => {
@@ -389,6 +402,7 @@ export function useTopPageDisplayMode(
     selectedPerspective,
     selectedPeriods,
     returnType,
+    annualized,
     // Actions
     setViewMode,
     setDisplayMode,
@@ -396,6 +410,7 @@ export function useTopPageDisplayMode(
     setSelectedPerspective,
     setSelectedPeriods,
     setReturnType,
+    setAnnualized,
     handleViewModeChange,
     handleScoringModeChange,
     // Utilities

@@ -41,6 +41,17 @@ const SORT_FIELD_MAP: Record<string, SortField> = {
   axis_return_performance: 'axis_return_performance',
 }
 
+const PERIOD_YEARS: Record<PerformancePeriod, number> = {
+  '1m': 1 / 12,
+  '3m': 0.25,
+  '6m': 0.5,
+  '1y': 1,
+  '3y': 3,
+  '5y': 5,
+  '10y': 10,
+  '20y': 20,
+}
+
 type AxisKey =
   | 'evaluation_score'
   | 'axis_dividend_power'
@@ -78,6 +89,7 @@ interface ETFTableViewProps {
   selectedPeriods: PerformancePeriod[]
   selectedPerspective?: PerspectiveKey
   returnType?: ReturnType
+  annualized?: boolean
   onETFClick: (code: string) => void
   isInCompare?: (code: string) => boolean
   onCompareToggle?: (code: string) => void
@@ -97,6 +109,7 @@ export function ETFTableView({
   selectedPeriods,
   selectedPerspective = 'balance',
   returnType = 'price',
+  annualized = false,
   onETFClick,
   isInCompare,
   onCompareToggle,
@@ -178,6 +191,16 @@ export function ETFTableView({
   const renderSortIcon = (key: SortKey) => {
     if (currentSortKey !== key) return null
     return currentSortDirection === 'asc' ? ' \u25B2' : ' \u25BC'
+  }
+
+  const annualizeReturn = (
+    value: number | null | undefined,
+    period: PerformancePeriod
+  ): number | null | undefined => {
+    if (value === null || value === undefined) return value
+    const years = PERIOD_YEARS[period]
+    if (years === 1) return value
+    return value / years
   }
 
   const formatPerformance = (value: number | null | undefined) => {
@@ -361,12 +384,16 @@ export function ETFTableView({
                 {displayMode === 'trend' &&
                   selectedPeriods.map((period) => {
                     const returnsData = getReturnsData(etf.code)
+                    const rawValue = returnsData[period]
+                    const displayValue = annualized
+                      ? annualizeReturn(rawValue, period)
+                      : rawValue
                     return (
                       <td
                         key={period}
-                        className={`${styles.numeric} ${getPerformanceClass(returnsData[period])}`}
+                        className={`${styles.numeric} ${getPerformanceClass(displayValue)}`}
                       >
-                        {formatPerformance(returnsData[period])}
+                        {formatPerformance(displayValue)}
                       </td>
                     )
                   })}

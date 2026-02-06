@@ -98,6 +98,8 @@ export function TopPage() {
     setSelectedPerspective,
     setSelectedPeriods,
     setReturnType,
+    annualized,
+    setAnnualized,
     handleViewModeChange,
     handleScoringModeChange,
     getInitialViewMode,
@@ -356,6 +358,8 @@ export function TopPage() {
             onPerspectiveChange={setSelectedPerspective}
             onPeriodsChange={setSelectedPeriods}
             onReturnTypeChange={setReturnType}
+            annualized={annualized}
+            onAnnualizedChange={setAnnualized}
             isAuthenticated={isAuthenticated}
             customWeights={customWeights}
             onCustomClick={handleSearchCustomClick}
@@ -387,6 +391,7 @@ export function TopPage() {
             selectedPeriods={selectedPeriods}
             selectedPerspective={selectedPerspective}
             returnType={returnType}
+            annualized={annualized}
             onETFClick={setSelectedCode}
             isInCompare={isInList}
             onCompareToggle={handleCompareToggle}

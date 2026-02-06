@@ -5,6 +5,7 @@ import { TableDisplayToggle, DisplayMode } from './TableDisplayToggle'
 import { ScoringModeToggle, ScoringMode } from './ScoringModeToggle'
 import { PerspectiveSelector } from './PerspectiveSelector'
 import { ReturnTypeToggle, ReturnType } from './ReturnTypeToggle'
+import { AnnualizedToggle } from './AnnualizedToggle'
 import { PeriodSelector } from './PeriodSelector'
 import type { PerspectiveKey } from './ETFTableView'
 import type { CustomWeights } from '../../api'
@@ -17,12 +18,14 @@ interface SectionControlsProps {
   selectedPerspective: PerspectiveKey
   selectedPeriods: PerformancePeriod[]
   returnType: ReturnType
+  annualized: boolean
   onViewModeChange: (mode: ViewMode) => void
   onDisplayModeChange: (mode: DisplayMode) => void
   onScoringModeChange: (mode: ScoringMode) => void
   onPerspectiveChange: (perspective: PerspectiveKey) => void
   onPeriodsChange: (periods: PerformancePeriod[]) => void
   onReturnTypeChange: (returnType: ReturnType) => void
+  onAnnualizedChange: (annualized: boolean) => void
   isAuthenticated?: boolean
   customWeights?: CustomWeights | null
   onCustomClick?: () => void
@@ -36,12 +39,14 @@ export function SectionControls({
   selectedPerspective,
   selectedPeriods,
   returnType,
+  annualized,
   onViewModeChange,
   onDisplayModeChange,
   onScoringModeChange,
   onPerspectiveChange,
   onPeriodsChange,
   onReturnTypeChange,
+  onAnnualizedChange,
   isAuthenticated,
   customWeights,
   onCustomClick,
@@ -97,6 +102,10 @@ export function SectionControls({
               <ReturnTypeToggle
                 returnType={returnType}
                 onChange={onReturnTypeChange}
+              />
+              <AnnualizedToggle
+                annualized={annualized}
+                onChange={onAnnualizedChange}
               />
               <PeriodSelector
                 selectedPeriods={selectedPeriods}

@@ -15,6 +15,7 @@ const TREND_SORT_STORAGE_KEY = 'etf-trend-sort-state'
 const CARD_SORT_STORAGE_KEY = 'etf-card-sort-state'
 const DISPLAY_MODE_STORAGE_KEY = 'etf-table-display-mode'
 const PERSPECTIVE_STORAGE_KEY = 'etf-perspective'
+const ANNUALIZED_STORAGE_KEY = 'etf-annualized'
 
 // ローカルストレージから表示期間を復元
 const getStoredPeriods = (): PerformancePeriod[] => {
@@ -107,6 +108,15 @@ const getStoredDisplayMode = (): DisplayMode => {
   return 'trend'
 }
 
+// ローカルストレージから年率表示を復元
+const getStoredAnnualized = (): boolean => {
+  try {
+    return localStorage.getItem(ANNUALIZED_STORAGE_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
 // ローカルストレージから切り口を復元
 const getStoredPerspective = (): PerspectiveKey => {
   try {
@@ -164,6 +174,7 @@ export function useTopPageStorage() {
     getStoredCardSort,
     getStoredDisplayMode,
     getStoredPerspective,
+    getStoredAnnualized,
     // Save関数
     saveSortState,
     // ストレージキー（useEffect等での直接保存用）
@@ -176,6 +187,7 @@ export function useTopPageStorage() {
       CARD_SORT_STORAGE_KEY,
       DISPLAY_MODE_STORAGE_KEY,
       PERSPECTIVE_STORAGE_KEY,
+      ANNUALIZED_STORAGE_KEY,
     },
   }
 }
