@@ -1,5 +1,6 @@
 /** Main application component */
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import { Header, Footer, ProtectedRoute, AdminRoute } from './components/common'
 import { CompareFloatingButton } from './components/actions'
 import { AuthProvider } from './contexts/AuthContext'
@@ -31,6 +32,17 @@ export default function App() {
 
   return (
     <BrowserRouter basename={basename}>
+      {import.meta.env.MODE === 'production' && (
+        <Helmet>
+          <script async src="https://www.googletagmanager.com/gtag/js?id=G-W5LE9WR4C3" />
+          <script>{`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-W5LE9WR4C3');
+          `}</script>
+        </Helmet>
+      )}
       <AuthProvider>
         <CompareProvider>
           <div className="app">
