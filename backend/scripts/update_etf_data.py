@@ -220,14 +220,10 @@ def update_single_etf(
                     logger.info(f"{code}: No new data since {latest_date}")
                     # Still update ETF info even if no new price data
                     info = stock.info
-                    dividend_yield = info.get("dividendYield")
-                    total_assets = info.get("totalAssets")
-                    if dividend_yield is not None:
-                        dividend_yield = round(dividend_yield, 2)
                     market_price = info.get("regularMarketPrice")
                     if market_price is not None:
                         market_price = round(float(market_price), 2)
-                    update_etf_info(code, dividend_yield, total_assets, market_price)
+                    update_etf_info(code, None, None, market_price)
                     return True
             else:
                 # Fallback to full if status check failed
@@ -241,14 +237,8 @@ def update_single_etf(
                 logger.warning(f"No data returned for {ticker}")
                 return False
 
-        # ticker.info から配当利回りと総資産を取得
-        info = stock.info
-        dividend_yield = info.get("dividendYield")  # 既にパーセント値 (e.g., 1.94)
-        total_assets = info.get("totalAssets")  # 整数 (円)
-
-        # 配当利回りを丸める
-        if dividend_yield is not None:
-            dividend_yield = round(dividend_yield, 2)
+        # 配当利回りはsync_dividend_from_minkabu.pyで別途取得
+        # totalAssetsはyfinance 0.1.63で取得不可のためスキップ
 
         # 株式分割検知処理（データが2行以上ある場合のみ）
         if not df.empty and len(df) >= 2:
@@ -257,12 +247,10 @@ def update_single_etf(
         # DBに保存（Flask app contextが必要）
         save_to_db(code, df)
         market_price = round(float(df["Close"].iloc[-1]), 2) if not df.empty else None
-        update_etf_info(code, dividend_yield, total_assets, market_price)
-        yield_str = f"{dividend_yield}%" if dividend_yield else "N/A"
-        assets_str = f"{total_assets:,}" if total_assets else "N/A"
+        update_etf_info(code, None, None, market_price)
         mode_str = "[FULL]" if full else ("[INCR]" if smart else "")
         logger.info(
-            f"Updated {code} {mode_str}: {len(df)} records, yield={yield_str}, assets={assets_str}"
+            f"Updated {code} {mode_str}: {len(df)} records"
         )
         return True
 
