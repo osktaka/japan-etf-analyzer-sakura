@@ -417,6 +417,8 @@ export function TopPage() {
           selectedCode && handleFavoriteToggle(selectedCode)
         }
         initialPerspective={selectedPerspective}
+        onCustomClick={handleCustomClick}
+        customWeights={customWeights}
       />
 
       <LoginPromptModal

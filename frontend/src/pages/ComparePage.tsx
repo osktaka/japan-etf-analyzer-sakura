@@ -516,6 +516,8 @@ export function ComparePage() {
         onFavoriteToggle={() =>
           selectedCode && handleFavoriteToggle(selectedCode)
         }
+        onCustomClick={handleCustomClick}
+        customWeights={customWeights}
       />
 
       <LoginPromptModal

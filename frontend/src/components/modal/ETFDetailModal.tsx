@@ -1,18 +1,18 @@
 /** ETF detail modal component */
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   useETFDetail,
   usePortfolio,
   useChartPeriodStorage,
   useMultiPeriodChartData,
 } from '../../hooks'
+import { getPerspectives, Perspective, CustomWeights } from '../../api'
 import {
   formatPercent,
   formatAssets,
   formatDate,
   formatVolume,
   formatTradingValue,
-  PERSPECTIVE_COLORS,
   PERSPECTIVE_GRADIENTS,
 } from '../../utils'
 import {
@@ -24,6 +24,7 @@ import { Loading, ErrorMessage } from '../common'
 import { TagBadge } from '../etf'
 import { FavoriteButton } from '../favorite'
 import { CompareCheckbox } from '../actions'
+import { PerspectiveTabs } from '../recommend'
 import {
   MultiPeriodChart,
   ChartPeriodSelector,
@@ -39,15 +40,6 @@ type PerspectiveKey =
   | 'volume'
   | 'growth'
   | 'custom'
-
-const PERSPECTIVES: { key: PerspectiveKey; label: string }[] = [
-  { key: 'balance', label: 'バランス' },
-  { key: 'dividend', label: '配当収入' },
-  { key: 'low-cost', label: '低コスト' },
-  { key: 'stability', label: '安定性' },
-  { key: 'volume', label: '取引規模' },
-  { key: 'growth', label: '成長性' },
-]
 
 const PERSPECTIVE_TO_SCORE_KEY: Record<PerspectiveKey, string> = {
   balance: 'score_balance',
@@ -67,6 +59,8 @@ interface ETFDetailModalProps {
   isFavorite?: boolean
   onFavoriteToggle?: () => void
   initialPerspective?: PerspectiveKey
+  onCustomClick?: () => void
+  customWeights?: CustomWeights | null
 }
 
 export function ETFDetailModal({
@@ -77,18 +71,35 @@ export function ETFDetailModal({
   isFavorite,
   onFavoriteToggle,
   initialPerspective,
+  onCustomClick,
+  customWeights,
 }: ETFDetailModalProps) {
   const { data, isLoading, error, refetch } = useETFDetail(code)
   const { holdings } = usePortfolio()
   const { chartPeriods, setChartPeriods } = useChartPeriodStorage()
   const [selectedPerspective, setSelectedPerspective] =
     useState<PerspectiveKey>(initialPerspective ?? 'balance')
+  const [perspectives, setPerspectives] = useState<Perspective[]>([])
   const { data: chartData } = useMultiPeriodChartData(code, chartPeriods)
+
+  useEffect(() => {
+    getPerspectives().then(setPerspectives)
+  }, [])
 
   const holdingCodes = useMemo(
     () => new Set(holdings.map((h) => h.etf_code)),
     [holdings]
   )
+
+  const handleCustomClick = onCustomClick
+    ? () => {
+        if (customWeights) {
+          setSelectedPerspective('custom')
+        } else {
+          onCustomClick()
+        }
+      }
+    : undefined
 
   const annualizedReturns = useMemo(() => {
     return chartPeriods.map((period) => {
@@ -195,31 +206,13 @@ export function ETFDetailModal({
               <p className={styles.description}>{data.description}</p>
             )}
 
-            <div className={styles.perspectiveTabs}>
-              {PERSPECTIVES.map(({ key, label }) => {
-                const isActive = selectedPerspective === key
-                const activeColor =
-                  PERSPECTIVE_COLORS[key] || PERSPECTIVE_COLORS.balance
-                return (
-                  <button
-                    key={key}
-                    className={`${styles.perspectiveTab} ${isActive ? styles.active : ''}`}
-                    onClick={() => setSelectedPerspective(key)}
-                    type="button"
-                    style={
-                      isActive
-                        ? {
-                            backgroundColor: activeColor,
-                            borderColor: activeColor,
-                            color: 'white',
-                          }
-                        : undefined
-                    }
-                  >
-                    {label}
-                  </button>
-                )
-              })}
+            <div style={{ marginBottom: 'var(--spacing-md)' }}>
+              <PerspectiveTabs
+                perspectives={perspectives}
+                selected={selectedPerspective}
+                onSelect={(id) => setSelectedPerspective(id as PerspectiveKey)}
+                onCustomClick={handleCustomClick}
+              />
             </div>
 
             {currentScore !== null && (

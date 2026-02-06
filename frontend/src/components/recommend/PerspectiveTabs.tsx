@@ -51,15 +51,17 @@ export function PerspectiveTabs({
       )}
 
       {/* ヘルプアイコン */}
-      <div className={styles.helpWrapper}>
-        <button
-          className={styles.helpButton}
-          onClick={() => onHelpClick?.()}
-          aria-label="重みづけ比率を表示"
-        >
-          ?
-        </button>
-      </div>
+      {onHelpClick && (
+        <div className={styles.helpWrapper}>
+          <button
+            className={styles.helpButton}
+            onClick={() => onHelpClick()}
+            aria-label="重みづけ比率を表示"
+          >
+            ?
+          </button>
+        </div>
+      )}
     </div>
   )
 }

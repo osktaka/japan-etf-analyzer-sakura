@@ -267,6 +267,8 @@ export function MyPage() {
             onFavoriteToggle={() => toggleFavorite(modalCode)}
             isInCompare={isInCompare(modalCode)}
             onCompareToggle={() => toggleCompare(modalCode)}
+            onCustomClick={handleCustomClick}
+            customWeights={customWeights}
           />
         )
       })()}

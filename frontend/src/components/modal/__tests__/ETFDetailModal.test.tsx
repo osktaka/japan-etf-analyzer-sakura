@@ -4,14 +4,46 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ETFDetailModal } from '../ETFDetailModal'
 import * as hooks from '../../../hooks'
 
+vi.mock('../../../api/recommend', () => ({
+  getPerspectives: vi.fn(),
+}))
+
+import { getPerspectives } from '../../../api/recommend'
+
 vi.mock('../../../hooks', () => ({
   useETFDetail: vi.fn(),
   usePortfolio: vi.fn(() => ({ holdings: [] })),
+  useChartPeriodStorage: vi.fn(() => ({
+    chartPeriods: ['1y'],
+    setChartPeriods: vi.fn(),
+  })),
+  useMultiPeriodChartData: vi.fn(() => ({ data: {} })),
 }))
 
 vi.mock('../../chart', () => ({
   ChartContainer: () => <div data-testid="chart-container">Chart</div>,
   MultiPeriodChart: () => <div data-testid="chart-container">Chart</div>,
+  ChartPeriodSelector: () => <div data-testid="chart-period-selector">Period</div>,
+  AnnualizedReturnCards: () => <div data-testid="annualized-return-cards">Returns</div>,
+}))
+
+vi.mock('../../recommend', () => ({
+  PerspectiveTabs: ({ perspectives, onSelect, onCustomClick }: {
+    perspectives: { id: string; name: string }[]
+    onSelect: (id: string) => void
+    onCustomClick?: () => void
+  }) => (
+    <div data-testid="perspective-tabs">
+      {perspectives.map((p: { id: string; name: string }) => (
+        <button key={p.id} onClick={() => onSelect(p.id)}>
+          {p.name}
+        </button>
+      ))}
+      {onCustomClick && (
+        <button onClick={onCustomClick}>カスタム</button>
+      )}
+    </div>
+  ),
 }))
 
 const mockETFDetail = {
@@ -33,6 +65,14 @@ const mockETFDetail = {
 describe('ETFDetailModal', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(getPerspectives).mockResolvedValue([
+      { id: 'balance', name: 'バランス', description: 'バランス重視' },
+      { id: 'dividend', name: '配当収入', description: '配当重視' },
+      { id: 'low-cost', name: '低コスト', description: '低コスト重視' },
+      { id: 'stability', name: '安定性', description: '安定性重視' },
+      { id: 'volume', name: '取引規模', description: '取引規模重視' },
+      { id: 'growth', name: '成長性', description: '成長性重視' },
+    ])
     vi.mocked(hooks.useETFDetail).mockReturnValue({
       data: mockETFDetail,
       isLoading: false,
@@ -72,12 +112,11 @@ describe('ETFDetailModal', () => {
 
   it('各指標が表示される', () => {
     render(<ETFDetailModal code="1306" onClose={vi.fn()} />)
-    expect(screen.getByText('市場価格')).toBeInTheDocument()
-    expect(screen.getByText('基準価額')).toBeInTheDocument()
     expect(screen.getByText('配当利回り')).toBeInTheDocument()
     expect(screen.getByText('信託報酬')).toBeInTheDocument()
-    expect(screen.getByText('乖離率')).toBeInTheDocument()
     expect(screen.getByText('純資産総額')).toBeInTheDocument()
+    expect(screen.getByText('売買代金')).toBeInTheDocument()
+    expect(screen.getByText('1年リターン')).toBeInTheDocument()
   })
 
   it('閉じるボタンクリックでonCloseが呼ばれる', () => {
@@ -178,5 +217,62 @@ describe('ETFDetailModal', () => {
   it('descriptionが表示される', () => {
     render(<ETFDetailModal code="1306" onClose={vi.fn()} />)
     expect(screen.getByText('TOPIXに連動するETF')).toBeInTheDocument()
+  })
+
+  it('onCustomClickが渡された場合カスタムボタンが表示される', async () => {
+    render(
+      <ETFDetailModal
+        code="1306"
+        onClose={vi.fn()}
+        onCustomClick={vi.fn()}
+      />
+    )
+    const button = await screen.findByText('カスタム')
+    expect(button).toBeInTheDocument()
+  })
+
+  it('onCustomClickが渡されない場合カスタムボタンが表示されない', async () => {
+    render(<ETFDetailModal code="1306" onClose={vi.fn()} />)
+    // PerspectiveTabsのタブが表示されるまで待つ
+    await screen.findByText('バランス')
+    expect(screen.queryByText('カスタム')).not.toBeInTheDocument()
+  })
+
+  it('customWeightsありの場合、カスタムボタンクリックでperspectiveがcustomに切り替わる', async () => {
+    const handleCustomClick = vi.fn()
+    const customWeights = {
+      dividend_power: 30,
+      cost_efficiency: 20,
+      scale_reliability: 20,
+      trading_quality: 15,
+      return_performance: 15,
+    }
+    render(
+      <ETFDetailModal
+        code="1306"
+        onClose={vi.fn()}
+        onCustomClick={handleCustomClick}
+        customWeights={customWeights}
+      />
+    )
+    const button = await screen.findByText('カスタム')
+    fireEvent.click(button)
+    // customWeightsがあるのでonCustomClickは呼ばれず、内部でperspectiveが切り替わる
+    expect(handleCustomClick).not.toHaveBeenCalled()
+  })
+
+  it('customWeightsなしの場合、カスタムボタンクリックでonCustomClickが呼ばれる', async () => {
+    const handleCustomClick = vi.fn()
+    render(
+      <ETFDetailModal
+        code="1306"
+        onClose={vi.fn()}
+        onCustomClick={handleCustomClick}
+        customWeights={null}
+      />
+    )
+    const button = await screen.findByText('カスタム')
+    fireEvent.click(button)
+    expect(handleCustomClick).toHaveBeenCalled()
   })
 })
