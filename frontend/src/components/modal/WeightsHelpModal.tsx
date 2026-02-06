@@ -164,36 +164,44 @@ export function WeightsHelpModal({
                 <td>10</td>
                 <td className={styles.highlight}>50</td>
               </tr>
-              {isAuthenticated && (
-                <tr>
-                  <td>カスタム</td>
-                  <td>
-                    {customWeights?.dividend_power != null
-                      ? Math.round(customWeights.dividend_power * 100)
-                      : '--'}
-                  </td>
-                  <td>
-                    {customWeights?.cost_efficiency != null
-                      ? Math.round(customWeights.cost_efficiency * 100)
-                      : '--'}
-                  </td>
-                  <td>
-                    {customWeights?.scale_reliability != null
-                      ? Math.round(customWeights.scale_reliability * 100)
-                      : '--'}
-                  </td>
-                  <td>
-                    {customWeights?.trading_quality != null
-                      ? Math.round(customWeights.trading_quality * 100)
-                      : '--'}
-                  </td>
-                  <td>
-                    {customWeights?.return_performance != null
-                      ? Math.round(customWeights.return_performance * 100)
-                      : '--'}
-                  </td>
-                </tr>
-              )}
+              <tr>
+                <td className={styles.customLabel}>カスタム</td>
+                <td>
+                  {isAuthenticated
+                    ? (customWeights?.dividend_power != null
+                        ? Math.round(customWeights.dividend_power * 100)
+                        : '-')
+                    : '-'}
+                </td>
+                <td>
+                  {isAuthenticated
+                    ? (customWeights?.cost_efficiency != null
+                        ? Math.round(customWeights.cost_efficiency * 100)
+                        : '-')
+                    : '-'}
+                </td>
+                <td>
+                  {isAuthenticated
+                    ? (customWeights?.scale_reliability != null
+                        ? Math.round(customWeights.scale_reliability * 100)
+                        : '-')
+                    : '-'}
+                </td>
+                <td>
+                  {isAuthenticated
+                    ? (customWeights?.trading_quality != null
+                        ? Math.round(customWeights.trading_quality * 100)
+                        : '-')
+                    : '-'}
+                </td>
+                <td>
+                  {isAuthenticated
+                    ? (customWeights?.return_performance != null
+                        ? Math.round(customWeights.return_performance * 100)
+                        : '-')
+                    : '-'}
+                </td>
+              </tr>
             </tbody>
           </table>
           {isAuthenticated && onEditCustom && (

@@ -127,6 +127,10 @@
   color: var(--color-primary);
 }
 
+.helpTable .customLabel {
+  border-left: 3px solid #EC4899;
+}
+
 .editLink {
   background: none;
   border: none;
