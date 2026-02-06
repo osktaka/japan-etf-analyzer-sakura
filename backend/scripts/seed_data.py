@@ -30,9 +30,9 @@ CATEGORIES = [
     {"name": "インバース", "description": "指数の値動きの逆に連動するETF", "sort_order": 8},
 ]
 
-# 6カテゴリ・41タグ
+# 6カテゴリ・49タグ
 TAGS = [
-    # 業種(sector) - 9個 - 青系
+    # 業種(sector) - 12個 - 青系
     {"name": "金融", "color": "#3B82F6", "category": "sector"},
     {"name": "テクノロジー", "color": "#2563EB", "category": "sector"},
     {"name": "ヘルスケア", "color": "#1D4ED8", "category": "sector"},
@@ -42,7 +42,11 @@ TAGS = [
     {"name": "機械・製造", "color": "#93C5FD", "category": "sector"},
     {"name": "通信", "color": "#BFDBFE", "category": "sector"},
     {"name": "公益", "color": "#DBEAFE", "category": "sector"},
-    # テーマ(theme) - 10個 - 緑系
+    # 2026年経済情勢対応タグ（sector）
+    {"name": "建設・資材", "color": "#3B82F6", "category": "sector"},
+    {"name": "造船", "color": "#2563EB", "category": "sector"},
+    {"name": "エンタメ", "color": "#1D4ED8", "category": "sector"},
+    # テーマ(theme) - 13個 - 緑系
     {"name": "AI・半導体", "color": "#10B981", "category": "theme"},
     {"name": "EV・自動運転", "color": "#059669", "category": "theme"},
     {"name": "クリーンエネルギー", "color": "#047857", "category": "theme"},
@@ -55,6 +59,10 @@ TAGS = [
     {"name": "インデックス", "color": "#ECFDF5", "category": "theme"},
     {"name": "レバレッジ", "color": "#EF4444", "category": "theme"},
     {"name": "インバース", "color": "#8B5CF6", "category": "theme"},
+    # 2026年経済情勢対応タグ（theme）
+    {"name": "原子力", "color": "#10B981", "category": "theme"},
+    {"name": "宇宙関連", "color": "#059669", "category": "theme"},
+    {"name": "データセンター", "color": "#047857", "category": "theme"},
     # 地域(region) - 8個 - 紫系
     {"name": "国内", "color": "#8B5CF6", "category": "region"},
     {"name": "米国", "color": "#7C3AED", "category": "region"},

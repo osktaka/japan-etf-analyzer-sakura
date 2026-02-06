@@ -1,4 +1,4 @@
-/** Guide Tags Page - Explanation of 43 tags in 6 categories */
+/** Guide Tags Page - Explanation of 49 tags in 6 categories */
 import { SEOHead } from '../../components/common'
 import styles from './GuidePage.module.css'
 
@@ -7,14 +7,14 @@ export function GuideTagsPage() {
     <div className={styles.page}>
       <SEOHead
         title="タグで探す - Japan ETF Analyzer"
-        description="Japan ETF Analyzerの43タグ6カテゴリについて解説します。経済ニュースから銘柄を探す方法を学びましょう。"
+        description="Japan ETF Analyzerの49タグ6カテゴリについて解説します。経済ニュースから銘柄を探す方法を学びましょう。"
       />
 
       <h1 className={styles.pageTitle}>タグで探す</h1>
 
       <p className={styles.text}>
         Japan ETF
-        Analyzerでは、43タグ6カテゴリでETF銘柄を多角的に分類しています。
+        Analyzerでは、49タグ6カテゴリでETF銘柄を多角的に分類しています。
         経済ニュースを見たときに「この状況で有利な銘柄は?」と思ったら、
         タグを使って素早く探すことができます。
       </p>
