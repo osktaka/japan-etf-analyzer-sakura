@@ -142,15 +142,22 @@ class BatchLogRepository(BaseRepository[BatchLog]):
 
         Returns jobs that:
         - Status is 'failed'
-        - Failed between 10-20 minutes ago
+        - Failed between 5-60 minutes ago
         - retry_count < 3
+        - Not already retried (no child batch_log exists)
 
         Returns:
             List of BatchLog instances eligible for retry
         """
         now = datetime.utcnow()
-        min_time = now - timedelta(minutes=20)
-        max_time = now - timedelta(minutes=10)
+        min_time = now - timedelta(minutes=60)
+        max_time = now - timedelta(minutes=5)
+
+        # 既にリトライ済みのジョブIDを除外
+        retried_parent_ids = (
+            db.session.query(BatchLog.parent_batch_log_id)
+            .filter(BatchLog.parent_batch_log_id.isnot(None))
+        )
 
         return (
             db.session.query(BatchLog)
@@ -158,6 +165,7 @@ class BatchLogRepository(BaseRepository[BatchLog]):
                 BatchLog.status == BatchLog.STATUS_FAILED,
                 BatchLog.finished_at.between(min_time, max_time),
                 BatchLog.retry_count < 3,
+                ~BatchLog.id.in_(retried_parent_ids),
             )
             .all()
         )

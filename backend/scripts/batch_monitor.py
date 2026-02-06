@@ -3,11 +3,11 @@
 Batch Monitor Script
 
 バッチ処理の監視とリトライを自動実行するスクリプト。
-cronで10分間隔で実行することを想定（*/10 * * * *）。
+cronで5分間隔で実行することを想定（*/5 * * * *）。
 
 処理内容:
 1. 10分以上ハートビート更新がないrunningジョブをfailedに更新
-2. 直近10-20分でfailedになったレコードを取得
+2. 直近5-60分でfailedになったレコードを取得
 3. retry_count < 3 のジョブを自動リトライ
 """
 
@@ -75,7 +75,7 @@ class BatchMonitorScript(SimpleBatchScript):
 
     def _retry_failed_jobs(self, repo: BatchLogRepository) -> int:
         """
-        直近10-20分でfailedになったジョブをリトライする.
+        直近5-60分でfailedになったジョブをリトライする.
 
         Args:
             repo: BatchLogRepository instance
@@ -85,6 +85,7 @@ class BatchMonitorScript(SimpleBatchScript):
         """
         retryable_jobs = repo.get_retryable_jobs()
         retry_count = 0
+        retried_batch_names: set = set()
 
         for job in retryable_jobs:
             # リトライ上限チェック
@@ -99,6 +100,14 @@ class BatchMonitorScript(SimpleBatchScript):
             if repo.has_running_job(job.batch_name):
                 self.logger.info(
                     f"Skip (already running): batch_log_id={job.id}, "
+                    f"batch_name={job.batch_name}"
+                )
+                continue
+
+            # 同一batch_nameの重複リトライ防止（レースコンディション対策）
+            if job.batch_name in retried_batch_names:
+                self.logger.info(
+                    f"Skip (already retried in this cycle): batch_log_id={job.id}, "
                     f"batch_name={job.batch_name}"
                 )
                 continue
@@ -154,6 +163,7 @@ class BatchMonitorScript(SimpleBatchScript):
                     )
 
                 retry_count += 1
+                retried_batch_names.add(job.batch_name)
                 self.logger.info(
                     f"Retry started: batch_log_id={job.id}, log_file={log_file}"
                 )
