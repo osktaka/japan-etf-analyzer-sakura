@@ -145,7 +145,7 @@ def update_single_etf(
     dry_run: bool = False,
     full: bool = False,
     smart: bool = False,
-) -> bool:
+) -> str:
     """Update price data for a single ETF.
 
     Args:
@@ -156,7 +156,9 @@ def update_single_etf(
         smart: If True, use smart update (full for new, incremental for existing)
 
     Returns:
-        True if successful, False otherwise
+        "success" if data was fetched and saved,
+        "skipped" if no yfinance request was made (pre-check skip or dry-run),
+        "failed" if an error occurred during fetch/save.
     """
     # Smart mode: check existing data status (store result for later use)
     smart_status = None
@@ -171,7 +173,7 @@ def update_single_etf(
             should_skip, skip_reason = should_skip_fetch(latest_date, updated_at)
             if should_skip:
                 logger.info(f"{code}: Skip (pre-check) - {skip_reason}")
-                return True
+                return "skipped"
 
             logger.info(
                 f"[SMART] {code}: Existing ETF - incremental from {latest_date}"
@@ -179,12 +181,12 @@ def update_single_etf(
     elif smart and dry_run:
         # In dry-run mode, we can still check status for logging
         logger.info(f"[DRY-RUN][SMART] Would check status and update ETF {code}")
-        return True
+        return "skipped"
 
     if dry_run:
         mode = "full history" if full else "1 year"
         logger.info(f"[DRY-RUN] Would update ETF {code} ({mode})")
-        return True
+        return "skipped"
 
     try:
         import yfinance as yf
@@ -224,7 +226,7 @@ def update_single_etf(
                     if market_price is not None:
                         market_price = round(float(market_price), 2)
                     update_etf_info(code, None, None, market_price)
-                    return True
+                    return "success"
             else:
                 # Fallback to full if status check failed
                 full = True
@@ -235,7 +237,7 @@ def update_single_etf(
             df = stock.history(period=period)
             if df.empty:
                 logger.warning(f"No data returned for {ticker}")
-                return False
+                return "failed"
 
         # 配当利回りはsync_dividend_from_minkabu.pyで別途取得
         # totalAssetsはyfinance 0.1.63で取得不可のためスキップ
@@ -252,7 +254,7 @@ def update_single_etf(
         logger.info(
             f"Updated {code} {mode_str}: {len(df)} records"
         )
-        return True
+        return "success"
 
     except Exception as e:
         logger.error(f"Failed to update {code}: {e}")
@@ -263,7 +265,7 @@ def update_single_etf(
             db.session.rollback()
         except Exception:
             pass
-        return False
+        return "failed"
 
 
 def update_etf_info(
@@ -652,24 +654,28 @@ class UpdateEtfDataScript(BaseBatchScript):
 
         success_count = 0
         fail_count = 0
+        skip_count = 0
 
         try:
             for i, etf in enumerate(etfs, 1):
                 code = etf["code"]
                 self.logger.info(f"[{i}/{len(etfs)}] Processing {code} ({etf.get('name', '')})")
 
-                if update_single_etf(
+                result = update_single_etf(
                     code, self.logger, dry_run=self.args.dry_run, full=self.args.full, smart=self.args.smart
-                ):
+                )
+                if result == "success":
                     success_count += 1
+                elif result == "skipped":
+                    skip_count += 1
                 else:
                     fail_count += 1
 
                 # 進捗更新
                 self._update_progress(last_item_code=code)
 
-                # レート制限対策（最後の銘柄以外）
-                if i < len(etfs) and not self.args.dry_run:
+                # レート制限対策（最後の銘柄以外、スキップ時はsleep不要）
+                if i < len(etfs) and result != "skipped":
                     time_module.sleep(self.args.rate_limit)
 
             # 最終進捗更新
@@ -693,7 +699,7 @@ class UpdateEtfDataScript(BaseBatchScript):
             self._finish_batch_log(success=True)
 
             self.logger.info("=" * 60)
-            self.logger.info(f"Update completed: {success_count} success, {fail_count} failed")
+            self.logger.info(f"Update completed: {success_count} success, {skip_count} skipped, {fail_count} failed")
             self.logger.info("=" * 60)
 
             return 0 if fail_count == 0 else 1
