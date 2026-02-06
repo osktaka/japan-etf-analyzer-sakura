@@ -50,9 +50,11 @@ make help
 |------|---------|---------|
 | データベースパス | backend/data/etf.db | ./data/etf.db |
 | 作業ディレクトリ | /app (コンテナ内) | ~/www/japan-etf-analyzer |
-| Pythonスクリプト実行 | `docker compose exec backend python scripts/xxx.py` | `cd ~/www/japan-etf-analyzer && python backend/scripts/xxx.py` |
+| Pythonスクリプト実行 | `docker compose exec backend python scripts/xxx.py` | `cd ~/www/japan-etf-analyzer && source backend/venv/bin/activate && python backend/scripts/xxx.py` |
 
-**重要**: 本番環境でPythonスクリプトを実行する際は、必ずプロジェクトルート（~/www/japan-etf-analyzer）から実行すること。データベースパスが相対パス（./data/etf.db）のため。
+**重要**: 本番環境でPythonスクリプトを実行する際は、必ず以下の2点を守ること:
+1. プロジェクトルート（~/www/japan-etf-analyzer）から実行（データベースパスが相対パスのため）
+2. venvをアクティベート（`source backend/venv/bin/activate`）してから実行
 
 ## ポート番号
 
