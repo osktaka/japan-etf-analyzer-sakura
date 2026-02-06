@@ -43,9 +43,12 @@ class TagRepository(BaseRepository[Tag]):
     def create_if_not_exists(
         self, name: str, color: str = "#6B7280", category: str = None
     ) -> Tag:
-        """Create tag if it doesn't exist, otherwise return existing."""
+        """Create tag if it doesn't exist, otherwise update and return existing."""
         existing = self.get_by_name(name)
         if existing:
+            existing.color = color
+            existing.category = category
+            db.session.commit()
             return existing
 
         tag = Tag(name=name, color=color, category=category)

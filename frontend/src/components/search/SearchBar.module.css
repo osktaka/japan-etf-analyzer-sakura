@@ -32,12 +32,30 @@
   background-color: var(--color-primary-dark);
 }
 
+.clearButton {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.clearButton:hover {
+  color: var(--color-primary);
+}
+
 @media (max-width: 768px) {
   .input {
     padding: var(--spacing-xs) var(--spacing-sm);
     font-size: var(--text-sm);
   }
   .button {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--text-sm);
+  }
+  .clearButton {
     padding: var(--spacing-xs) var(--spacing-sm);
     font-size: var(--text-sm);
   }

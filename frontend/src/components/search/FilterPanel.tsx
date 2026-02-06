@@ -69,8 +69,9 @@ export function FilterPanel({
   const groupedTags = useMemo(() => {
     const groups: Record<string, Tag[]> = {}
 
-    // グループ化
+    // グループ化（0件タグは除外）
     tags.forEach((tag) => {
+      if (tag.etf_count === 0) return
       const category = tag.category || 'other'
       if (!groups[category]) {
         groups[category] = []
@@ -140,6 +141,8 @@ export function FilterPanel({
     setSelectedCategory(null)
     setSelectedTags([])
     onFilter({})
+    // 検索キーワードもクリア
+    onSearch('')
     // 保有中フィルターもクリア
     if (holdingsOnly && onHoldingsOnlyChange) {
       onHoldingsOnlyChange(false)
@@ -214,9 +217,6 @@ export function FilterPanel({
     <div className={styles.panel}>
       <div className={styles.header}>
         <h3 className={styles.title}>絞り込み</h3>
-        <button className={styles.clearBtn} onClick={handleClear}>
-          クリア
-        </button>
       </div>
 
       <div className={styles.section}>
@@ -271,21 +271,17 @@ export function FilterPanel({
                   {TAG_GROUP_LABELS[groupKey]}:
                 </span>
                 <div className={styles.tags}>
-                  {groupTags.map((tag) => {
-                    const isDisabled = tag.etf_count === 0
-                    return (
-                      <button
-                        key={tag.id}
-                        className={`${styles.tagBtn} ${
-                          selectedTags.includes(tag.id) ? styles.active : ''
-                        } ${isDisabled ? styles.disabled : ''}`}
-                        onClick={() => handleTagClick(tag.id, tag.etf_count)}
-                        disabled={isDisabled}
-                      >
-                        {tag.name}({tag.etf_count})
-                      </button>
-                    )
-                  })}
+                  {groupTags.map((tag) => (
+                    <button
+                      key={tag.id}
+                      className={`${styles.tagBtn} ${
+                        selectedTags.includes(tag.id) ? styles.active : ''
+                      }`}
+                      onClick={() => handleTagClick(tag.id, tag.etf_count)}
+                    >
+                      {tag.name}({tag.etf_count})
+                    </button>
+                  ))}
                 </div>
               </div>
             )
@@ -296,6 +292,7 @@ export function FilterPanel({
       <div className={styles.searchSection}>
         <SearchBar
           onSearch={onSearch}
+          onClear={handleClear}
           placeholder="銘柄コードまたは名前で検索..."
           initialKeyword={initialKeyword}
         />

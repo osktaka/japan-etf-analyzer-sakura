@@ -3,12 +3,14 @@ import styles from './SearchBar.module.css'
 
 interface SearchBarProps {
   onSearch: (keyword: string) => void
+  onClear?: () => void
   placeholder?: string
   initialKeyword?: string
 }
 
 export function SearchBar({
   onSearch,
+  onClear,
   placeholder = '銘柄を検索...',
   initialKeyword = '',
 }: SearchBarProps) {
@@ -21,6 +23,11 @@ export function SearchBar({
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     onSearch(value)
+  }
+
+  const handleClear = () => {
+    setValue('')
+    onClear?.()
   }
 
   return (
@@ -36,6 +43,11 @@ export function SearchBar({
       <button type="submit" className={styles.button}>
         検索
       </button>
+      {onClear && (
+        <button type="button" className={styles.clearButton} onClick={handleClear}>
+          クリア
+        </button>
+      )}
     </form>
   )
 }

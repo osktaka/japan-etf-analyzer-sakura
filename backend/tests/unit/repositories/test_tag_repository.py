@@ -65,11 +65,12 @@ class TestTagRepository:
         assert result.color == "#FF0000"
 
     def test_create_if_not_exists_existing(self, db_session):
-        """Test create_if_not_exists with existing tag."""
+        """Test create_if_not_exists with existing tag updates color and category."""
         repo = TagRepository()
         original = repo.create(Tag(name="既存タグ", color="#000000"))
 
-        result = repo.create_if_not_exists(name="既存タグ", color="#FFFFFF")
+        result = repo.create_if_not_exists(name="既存タグ", color="#FFFFFF", category="theme")
 
         assert result.id == original.id
-        assert result.color == "#000000"
+        assert result.color == "#FFFFFF"
+        assert result.category == "theme"

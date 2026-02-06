@@ -122,6 +122,26 @@ def seed_tags():
     return created
 
 
+def cleanup_tags():
+    """Remove tags not in TAGS definition."""
+    from src.models import Tag, db
+
+    valid_names = {tag["name"] for tag in TAGS}
+    all_tags = Tag.query.all()
+    deleted = 0
+    for tag in all_tags:
+        if tag.name not in valid_names:
+            # etf_tag_relationsの関連レコードを先に削除
+            db.session.execute(
+                db.text("DELETE FROM etf_tag_relations WHERE tag_id = :tid"),
+                {"tid": tag.id},
+            )
+            db.session.delete(tag)
+            deleted += 1
+    db.session.commit()
+    return deleted
+
+
 def main():
     """Run seed data script."""
     app = create_app()
@@ -133,6 +153,10 @@ def main():
         print("Seeding tags...")
         tag_count = seed_tags()
         print(f"  -> {tag_count} tags processed")
+
+        print("Cleaning up obsolete tags...")
+        deleted = cleanup_tags()
+        print(f"  -> {deleted} obsolete tags removed")
 
         print("Seed data complete!")
 

@@ -24,18 +24,6 @@
   font-weight: 600;
 }
 
-.clearBtn {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-.clearBtn:hover {
-  color: var(--color-primary);
-}
-
 .section {
   margin-bottom: var(--spacing-md);
 }
@@ -101,16 +89,6 @@
   background-color: var(--color-primary);
   border-color: var(--color-primary);
   color: white;
-}
-
-.tagBtn.disabled {
-  color: var(--color-text-disabled, #9ca3af);
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.tagBtn.disabled:hover {
-  background-color: transparent;
 }
 
 .inlineSection {

@@ -79,9 +79,10 @@ class ETFRepository(BaseRepository[ETF]):
             query = query.filter(ETF.category_id == category_id)
 
         if tag_ids:
-            query = query.join(ETFTagRelation).filter(
+            tag_codes = db.session.query(ETFTagRelation.etf_code).filter(
                 ETFTagRelation.tag_id.in_(tag_ids)
             )
+            query = query.filter(ETF.code.in_(tag_codes))
 
         if min_dividend_yield is not None:
             query = query.filter(ETF.dividend_yield >= min_dividend_yield)
