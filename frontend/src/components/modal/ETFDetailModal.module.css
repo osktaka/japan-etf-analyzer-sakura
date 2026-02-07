@@ -229,6 +229,10 @@
 }
 
 @media (max-width: 600px) {
+  .headerLeft {
+    flex-wrap: wrap;
+  }
+
   .metrics {
     grid-template-columns: repeat(2, 1fr);
   }
