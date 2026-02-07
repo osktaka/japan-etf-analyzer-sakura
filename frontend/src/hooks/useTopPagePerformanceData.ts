@@ -37,11 +37,10 @@ export function useTopPagePerformanceData({
   useEffect(() => {
     if (viewMode === 'table' && items.length > 0) {
       const codes = items.map((item) => item.code)
-      if (displayMode === 'trend') {
-        getBatchPerformance(codes).then((data) => {
-          setPerformance(data)
-        })
-      } else if (displayMode === 'score') {
+      getBatchPerformance(codes).then((data) => {
+        setPerformance(data)
+      })
+      if (displayMode === 'score') {
         getBatchScores(codes, scoringMode).then((data) => {
           setScores(data)
         })

@@ -350,6 +350,9 @@ export function ETFTableView({
                   信託報酬{renderSortIcon('expense')}
                 </th>
               )}
+              {(momentumVisible === undefined || momentumVisible) && (
+                <th className={styles.numeric}>勢い</th>
+              )}
               {displayMode === 'trend' &&
                 selectedPeriods.map((period) => (
                   <th
@@ -361,9 +364,6 @@ export function ETFTableView({
                     {renderSortIcon(period)}
                   </th>
                 ))}
-              {displayMode === 'trend' && (momentumVisible === undefined || momentumVisible) && (
-                <th className={styles.numeric}>勢い</th>
-              )}
               {displayMode === 'score' &&
                 axisKeys.map((axisKey) => (
                   <th
@@ -422,23 +422,7 @@ export function ETFTableView({
                     {etf.expense_ratio ? `${etf.expense_ratio.toFixed(2)}%` : '-'}
                   </td>
                 )}
-                {displayMode === 'trend' &&
-                  selectedPeriods.map((period) => {
-                    const returnsData = getReturnsData(etf.code)
-                    const rawValue = returnsData[period]
-                    const displayValue = annualized
-                      ? annualizeReturn(rawValue, period)
-                      : rawValue
-                    return (
-                      <td
-                        key={period}
-                        className={`${styles.numeric} ${getPerformanceClass(displayValue)}`}
-                      >
-                        {formatPerformance(displayValue)}
-                      </td>
-                    )
-                  })}
-                {displayMode === 'trend' && (momentumVisible === undefined || momentumVisible) && (() => {
+                {(momentumVisible === undefined || momentumVisible) && (() => {
                   const regression = performance[etf.code]?.regression
                   const momentum = getMomentumInfo(regression?.['1m'], regression?.['3m'])
                   return (
@@ -457,6 +441,22 @@ export function ETFTableView({
                     </td>
                   )
                 })()}
+                {displayMode === 'trend' &&
+                  selectedPeriods.map((period) => {
+                    const returnsData = getReturnsData(etf.code)
+                    const rawValue = returnsData[period]
+                    const displayValue = annualized
+                      ? annualizeReturn(rawValue, period)
+                      : rawValue
+                    return (
+                      <td
+                        key={period}
+                        className={`${styles.numeric} ${getPerformanceClass(displayValue)}`}
+                      >
+                        {formatPerformance(displayValue)}
+                      </td>
+                    )
+                  })}
                 {displayMode === 'score' &&
                   axisKeys.map((axisKey) => {
                     const scoreValue = getAxisScore(etf.code, axisKey)

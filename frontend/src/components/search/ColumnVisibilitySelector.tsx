@@ -109,19 +109,28 @@ export function ColumnVisibilitySelector({
     <div className={styles.periodSelector}>
       <span className={styles.periodLabel}>列表示:</span>
       <div className={styles.periodButtons}>
-        {COMMON_COLUMNS.map(({ key, label }, i) => (
+        {COMMON_COLUMNS.map(({ key, label }) => (
           <button
             key={key}
             type="button"
             className={`${styles.periodButton} ${
               commonColumnVisibility[key] ? styles.periodButtonActive : ''
             }`}
-            style={i === COMMON_COLUMNS.length - 1 ? { marginRight: 'var(--spacing-sm)' } : undefined}
             onClick={() => toggleCommon(key)}
           >
             {label}
           </button>
         ))}
+        <button
+          type="button"
+          className={`${styles.periodButton} ${
+            momentumVisible ? styles.periodButtonActive : ''
+          }`}
+          style={{ marginRight: 'var(--spacing-sm)' }}
+          onClick={() => onMomentumVisibleChange(!momentumVisible)}
+        >
+          勢い
+        </button>
         {displayMode === 'score' && (
           <>
             <button
@@ -147,28 +156,18 @@ export function ColumnVisibilitySelector({
         )}
         {displayMode === 'trend' && (
           <>
-            {ALL_PERIODS.map(({ id, label }, i) => (
+            {ALL_PERIODS.map(({ id, label }) => (
               <button
                 key={id}
                 type="button"
                 className={`${styles.periodButton} ${
                   selectedPeriods.includes(id) ? styles.periodButtonActive : ''
                 }`}
-                style={i === ALL_PERIODS.length - 1 ? { marginRight: 'var(--spacing-sm)' } : undefined}
                 onClick={() => togglePeriod(id)}
               >
                 {label}
               </button>
             ))}
-            <button
-              type="button"
-              className={`${styles.periodButton} ${
-                momentumVisible ? styles.periodButtonActive : ''
-              }`}
-              onClick={() => onMomentumVisibleChange(!momentumVisible)}
-            >
-              勢い
-            </button>
           </>
         )}
       </div>
