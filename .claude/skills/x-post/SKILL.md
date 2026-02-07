@@ -3,7 +3,7 @@
 ```yaml
 ---
 name: x-post
-description: X投稿文の生成（ETFアナライザー宣伝用）
+description: X投稿文の生成（東証ETF分析 宣伝用）
 user-invocable: true
 allowed-tools: Read, Edit, WebSearch, WebFetch
 aliases: ["/x-post", "/tweet"]
@@ -19,11 +19,11 @@ japan-etf-analyzer-sakuraの宣伝用X投稿文を生成するスキル。
 
 | 項目 | 値 |
 |------|-----|
-| サービス呼称 | 東証ETFアナライザー |
+| サービス呼称 | 東証ETF分析 |
 | 本番URL | https://kima3.net/japan-etf-analyzer/ |
 | Xアカウント | https://x.com/ETF_Analyzer |
 
-**注意:** 投稿文では「東証ETFアナライザー」の呼称を使用すること。
+**注意:** 投稿文では「東証ETF分析」の呼称を使用すること。
 
 ## キャラクター設定
 
@@ -151,7 +151,7 @@ WebSearch + WebFetch で最新の経済ニュースを取得し、関連する�
 【候補1】(248文字)
 ETF選び、何を重視するかで探し方が変わります。
 
-東証ETFアナライザーでは6つの切り口からおすすめ銘柄を提案しています📊
+東証ETF分析では6つの切り口からおすすめ銘柄を提案しています📊
 
 💰 配当収入重視
 📉 低コスト重視

@@ -16,7 +16,7 @@ export function GuideTopPage() {
         <h1 className={styles.heroTitle}>使い方ガイド</h1>
         <p className={styles.heroSubtitle}>
           Japan ETF
-          Analyzerは、東証に上場するETF銘柄を検索・比較・分析できるWebアプリケーションです。
+          Analyzerは、東証に上場するETF銘柄を検索・分析・比較できるWebアプリケーションです。
           このガイドでは、主要な機能の使い方を説明します。
         </p>
       </div>

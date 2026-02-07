@@ -303,7 +303,7 @@ export function TopPage() {
       <section className={styles.hero}>
         <h1 className={styles.title}>東証ETF銘柄の比較分析</h1>
         <p className={styles.subtitle}>
-          銘柄を検索・比較して、あなたに最適な投資先を見つけましょう
+          銘柄を検索・分析して、最適な投資先を見つけましょう
         </p>
       </section>
 
