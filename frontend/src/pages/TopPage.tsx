@@ -40,7 +40,6 @@ export function TopPage() {
   const [showCustomWeightsModal, setShowCustomWeightsModal] = useState(false)
   const [showWeightsHelpModal, setShowWeightsHelpModal] = useState(false)
   const [customWeights, setCustomWeights] = useState<CustomWeights | null>(null)
-
   // おすすめタブの状態（URLとlocalStorageから復元）
   const [recommendTab, setRecommendTab] = useState(() => {
     const params = new URLSearchParams(window.location.search)

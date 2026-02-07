@@ -1,6 +1,11 @@
 /** Filter panel component for ETF search */
 import { useState, useEffect, useMemo } from 'react'
 import { Category, Tag, getCategories, getTags, SearchParams } from '../../api'
+import {
+  MomentumLabel,
+  ALL_MOMENTUM_LABELS,
+  MOMENTUM_STYLES,
+} from '../../utils/momentum'
 import { SearchBar } from './SearchBar'
 import styles from './FilterPanel.module.css'
 
@@ -64,6 +69,9 @@ export function FilterPanel({
   const [selectedTags, setSelectedTags] = useState<number[]>(
     initialParams.tag_ids || []
   )
+  const [selectedMomentum, setSelectedMomentum] = useState<MomentumLabel[]>(
+    (initialParams.momentum_labels as MomentumLabel[]) ?? []
+  )
 
   /** タグをグループ化し、各グループ内は件数降順でソート */
   const groupedTags = useMemo(() => {
@@ -109,13 +117,16 @@ export function FilterPanel({
   useEffect(() => {
     setSelectedCategory(initialParams.category_id || null)
     setSelectedTags(initialParams.tag_ids || [])
-  }, [initialParams.category_id, initialParams.tag_ids])
+    setSelectedMomentum((initialParams.momentum_labels as MomentumLabel[]) ?? [])
+  }, [initialParams.category_id, initialParams.tag_ids, initialParams.momentum_labels])
 
   // フィルタ適用ロジック
-  const applyFilters = (cat: number | null, tgs: number[]) => {
+  const applyFilters = (cat: number | null, tgs: number[], momentumLabels?: MomentumLabel[]) => {
     const params: SearchParams = {}
     if (cat) params.category_id = cat
     if (tgs.length > 0) params.tag_ids = tgs
+    const labels = momentumLabels ?? selectedMomentum ?? []
+    if (labels.length > 0) params.momentum_labels = labels
     onFilter(params)
   }
 
@@ -155,6 +166,8 @@ export function FilterPanel({
     if (compareOnly && onCompareOnlyChange) {
       onCompareOnlyChange(false)
     }
+    // 勢いフィルターもクリア
+    setSelectedMomentum([])
   }
 
   const handleHoldingsToggle = () => {
@@ -203,6 +216,26 @@ export function FilterPanel({
         }
       }
     }
+  }
+
+  const handleMomentumClick = (label: MomentumLabel) => {
+    const newLabels = selectedMomentum.includes(label)
+      ? selectedMomentum.filter((l) => l !== label)
+      : [...selectedMomentum, label]
+    setSelectedMomentum(newLabels)
+    applyFilters(selectedCategory, selectedTags, newLabels)
+  }
+
+  const getMomentumButtonStyle = (label: MomentumLabel, isActive: boolean) => {
+    const style = MOMENTUM_STYLES[label]
+    if (isActive) {
+      return {
+        backgroundColor: style.bgColor,
+        color: style.color,
+        borderColor: style.color,
+      }
+    }
+    return {}
   }
 
   if (isLoading) {
@@ -286,6 +319,31 @@ export function FilterPanel({
               </div>
             )
           })}
+        </div>
+      </div>
+
+      <div className={styles.tagSection}>
+        <span className={styles.tagSectionLabel}>勢い:</span>
+        <div className={styles.tagGroups}>
+          <div className={styles.tagGroupRow}>
+            <div className={styles.tags}>
+              {ALL_MOMENTUM_LABELS.map((label) => (
+                <button
+                  key={label}
+                  className={`${styles.tagBtn} ${
+                    selectedMomentum.includes(label) ? styles.active : ''
+                  }`}
+                  onClick={() => handleMomentumClick(label)}
+                  style={getMomentumButtonStyle(
+                    label,
+                    selectedMomentum.includes(label)
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 

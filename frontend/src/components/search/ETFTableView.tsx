@@ -10,6 +10,7 @@ import { SortField, SortOrder } from '../../api/etf'
 import { CompareCheckbox } from '../actions'
 import { FavoriteButton } from '../favorite'
 import type { ReturnType } from './ReturnTypeToggle'
+import { getMomentumInfo } from '../../utils/momentum'
 import styles from './ETFTableView.module.css'
 
 // Map table column keys to API sort fields
@@ -329,6 +330,9 @@ export function ETFTableView({
                     {renderSortIcon(period)}
                   </th>
                 ))}
+              {displayMode === 'trend' && (
+                <th className={styles.numeric}>勢い</th>
+              )}
               {displayMode === 'score' &&
                 axisKeys.map((axisKey) => (
                   <th
@@ -397,6 +401,25 @@ export function ETFTableView({
                       </td>
                     )
                   })}
+                {displayMode === 'trend' && (() => {
+                  const regression = performance[etf.code]?.regression
+                  const momentum = getMomentumInfo(regression?.['1m'], regression?.['3m'])
+                  return (
+                    <td className={styles.numeric}>
+                      {momentum ? (
+                        <span
+                          className={styles.momentumBadge}
+                          style={{
+                            color: momentum.color,
+                            backgroundColor: momentum.bgColor,
+                          }}
+                        >
+                          {momentum.label}
+                        </span>
+                      ) : '-'}
+                    </td>
+                  )
+                })()}
                 {displayMode === 'score' &&
                   axisKeys.map((axisKey) => {
                     const scoreValue = getAxisScore(etf.code, axisKey)

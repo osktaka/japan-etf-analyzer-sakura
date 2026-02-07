@@ -207,3 +207,13 @@
   color: white;
   border-color: var(--color-primary);
 }
+
+.momentumBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  border: 1px solid currentColor;
+}

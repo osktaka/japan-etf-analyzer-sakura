@@ -50,7 +50,8 @@ components/
     ├── ChartContainer.tsx   # チャートコンテナ
     ├── PeriodSelector.tsx   # 期間選択
     ├── PriceChart.tsx       # 価格チャート
-    └── PerformanceBadge.tsx # パフォーマンス表示
+    ├── PerformanceBadge.tsx # パフォーマンス表示
+    └── MomentumBadge.tsx   # 勢いバッジ（モメンタムラベル）
 ```
 
 ### 1.2 主要コンポーネント仕様
@@ -187,6 +188,21 @@ interface UseRecommendationsReturn {
 | テキスト薄 | --color-text-muted | #6B7280 |
 | ボーダー | --color-border | #E5E7EB |
 | オーバーレイ | --color-overlay | rgba(0, 0, 0, 0.5) |
+
+#### モメンタムカラー
+
+勢いバッジ（MomentumBadge）で使用する8色。インラインスタイルで `color` / `backgroundColor` を動的に設定する。枠線: `border: 1px solid currentColor`。維持判定の閾値: 比率ベース判定（ratio = |1M年率| / |3M年率|）で RATIO_UPPER=1.45 超なら「加速」、RATIO_LOWER=0.55 未満なら「減速」、0.55〜1.45なら「維持」。
+
+| ラベル | カラーコード | 説明 |
+|--------|-------------|------|
+| 上昇加速 | #059669 | 濃い緑 |
+| 上昇維持 | #10b981 | 緑 |
+| 上昇減速 | #6ee7b7 | 薄い緑 |
+| 反転上昇 | #2563eb | 青 |
+| 失速 | #f59e0b | 黄 |
+| 下降減速 | #fca5a5 | 薄い赤 |
+| 下降維持 | #ef4444 | 赤 |
+| 下降加速 | #dc2626 | 濃い赤 |
 
 ### 2.2 タイポグラフィ
 

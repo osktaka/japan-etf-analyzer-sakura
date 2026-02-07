@@ -49,6 +49,7 @@ class ETFRepository(BaseRepository[ETF]):
         keyword: str = None,
         category_id: int = None,
         tag_ids: List[int] = None,
+        momentum_labels: List[str] = None,
         min_dividend_yield: float = None,
         max_expense_ratio: float = None,
         favorite_codes: List[str] = None,
@@ -84,6 +85,36 @@ class ETFRepository(BaseRepository[ETF]):
             )
             query = query.filter(ETF.code.in_(tag_codes))
 
+        if momentum_labels:
+            from src.utils.momentum import get_momentum_label
+
+            cache_1m = db.session.query(
+                PerformanceCache.etf_code,
+                PerformanceCache.regression_rate,
+            ).filter(PerformanceCache.period == "1m").subquery()
+
+            cache_3m = db.session.query(
+                PerformanceCache.etf_code,
+                PerformanceCache.regression_rate,
+            ).filter(PerformanceCache.period == "3m").subquery()
+
+            pairs = (
+                db.session.query(
+                    cache_1m.c.etf_code,
+                    cache_1m.c.regression_rate.label("rate_1m"),
+                    cache_3m.c.regression_rate.label("rate_3m"),
+                )
+                .join(cache_3m, cache_1m.c.etf_code == cache_3m.c.etf_code)
+                .all()
+            )
+
+            matching_codes = [
+                p.etf_code
+                for p in pairs
+                if get_momentum_label(p.rate_1m, p.rate_3m) in momentum_labels
+            ]
+            query = query.filter(ETF.code.in_(matching_codes))
+
         if min_dividend_yield is not None:
             query = query.filter(ETF.dividend_yield >= min_dividend_yield)
 
@@ -103,6 +134,7 @@ class ETFRepository(BaseRepository[ETF]):
         keyword: str = None,
         category_id: int = None,
         tag_ids: List[int] = None,
+        momentum_labels: List[str] = None,
         min_dividend_yield: float = None,
         max_expense_ratio: float = None,
         favorite_codes: List[str] = None,
@@ -118,6 +150,7 @@ class ETFRepository(BaseRepository[ETF]):
             keyword=keyword,
             category_id=category_id,
             tag_ids=tag_ids,
+            momentum_labels=momentum_labels,
             min_dividend_yield=min_dividend_yield,
             max_expense_ratio=max_expense_ratio,
             favorite_codes=favorite_codes,
@@ -158,6 +191,7 @@ class ETFRepository(BaseRepository[ETF]):
         keyword: str = None,
         category_id: int = None,
         tag_ids: List[int] = None,
+        momentum_labels: List[str] = None,
         min_dividend_yield: float = None,
         max_expense_ratio: float = None,
         favorite_codes: List[str] = None,
@@ -168,6 +202,7 @@ class ETFRepository(BaseRepository[ETF]):
             keyword=keyword,
             category_id=category_id,
             tag_ids=tag_ids,
+            momentum_labels=momentum_labels,
             min_dividend_yield=min_dividend_yield,
             max_expense_ratio=max_expense_ratio,
             favorite_codes=favorite_codes,

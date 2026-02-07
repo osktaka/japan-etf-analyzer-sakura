@@ -58,6 +58,7 @@ export interface SearchParams {
   scoring_mode?: 'full' | 'partial'
   perspective?: string
   custom_weights?: string
+  momentum_labels?: string[]
   limit?: number
   offset?: number
 }
@@ -100,6 +101,8 @@ export async function searchETFs(params: SearchParams = {}): Promise<{
   if (params.perspective) queryParams.append('perspective', params.perspective)
   if (params.custom_weights)
     queryParams.append('custom_weights', params.custom_weights)
+  if (params.momentum_labels?.length)
+    queryParams.append('momentum_labels', params.momentum_labels.join(','))
   if (params.limit) queryParams.append('limit', String(params.limit))
   if (params.offset) queryParams.append('offset', String(params.offset))
 

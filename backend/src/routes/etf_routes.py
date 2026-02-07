@@ -24,6 +24,7 @@ def create_etf_bp():
             keyword: Search keyword (name, code, description)
             category_id: Filter by category ID
             tag_ids: Filter by tag IDs (comma-separated)
+            momentum_labels: Filter by momentum labels (comma-separated, e.g., "上昇加速,上昇維持")
             min_dividend_yield: Minimum dividend yield (%)
             max_expense_ratio: Maximum expense ratio (%)
             favorite_codes: Filter by favorite codes (comma-separated)
@@ -81,6 +82,15 @@ def create_etf_bp():
             except ValueError:
                 return error_response("Invalid tag_ids format", 400)
 
+        momentum_labels = None
+        momentum_labels_param = request.args.get("momentum_labels")
+        if momentum_labels_param:
+            momentum_labels = [
+                label.strip()
+                for label in momentum_labels_param.split(",")
+                if label.strip()
+            ]
+
         favorite_codes = None
         if favorite_codes_param:
             favorite_codes = [
@@ -106,6 +116,7 @@ def create_etf_bp():
             keyword=keyword,
             category_id=category_id,
             tag_ids=tag_ids,
+            momentum_labels=momentum_labels,
             min_dividend_yield=min_dividend_yield,
             max_expense_ratio=max_expense_ratio,
             favorite_codes=favorite_codes,

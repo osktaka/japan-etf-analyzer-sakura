@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChartPeriod } from '../../api'
 import { CHART_PERIODS } from '../../utils/constants'
+import { getMomentumInfoFromAnnualized } from '../../utils/momentum'
 import styles from './AnnualizedReturnCards.module.css'
 
 const TOOLTIP_TEXT =
@@ -35,6 +36,10 @@ export function AnnualizedReturnCards({ data }: AnnualizedReturnCardsProps) {
   const sortedData = [...data].sort(
     (a, b) => PERIOD_ORDER.indexOf(a.period) - PERIOD_ORDER.indexOf(b.period)
   )
+
+  const annual1m = data.find((d) => d.period === '1m')?.annualizedReturn ?? null
+  const annual3m = data.find((d) => d.period === '3m')?.annualizedReturn ?? null
+  const momentum = getMomentumInfoFromAnnualized(annual1m, annual3m)
 
   const getPeriodLabel = (period: ChartPeriod): string => {
     const found = CHART_PERIODS.find((p) => p.id === period)
@@ -109,6 +114,25 @@ export function AnnualizedReturnCards({ data }: AnnualizedReturnCardsProps) {
             </span>
           </div>
         ))}
+        {momentum && (
+          <span
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              padding: '2px 8px',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.75rem',
+              fontWeight: 500,
+              color: momentum.color,
+              backgroundColor: momentum.bgColor,
+              border: '1px solid currentColor',
+              alignSelf: 'center',
+              marginLeft: 'var(--spacing-sm)',
+            }}
+          >
+            {momentum.label}
+          </span>
+        )}
       </div>
     </div>
   )
