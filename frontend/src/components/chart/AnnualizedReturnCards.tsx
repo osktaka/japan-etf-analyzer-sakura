@@ -104,6 +104,15 @@ export function AnnualizedReturnCards({
         >
           ?
         </span>
+        {onHistoryClick && (
+          <button
+            className={styles.historyLink}
+            onClick={onHistoryClick}
+            type="button"
+          >
+            履歴
+          </button>
+        )}
         {showTooltip && (
           <div ref={tooltipRef} className={styles.tooltip}>
             {TOOLTIP_TEXT}
@@ -138,15 +147,6 @@ export function AnnualizedReturnCards({
           >
             <MomentumBadge label={resolvedMomentumLabel} size="md" />
           </span>
-        )}
-        {onHistoryClick && (
-          <button
-            className={styles.historyLink}
-            onClick={onHistoryClick}
-            type="button"
-          >
-            履歴
-          </button>
         )}
       </div>
     </div>
