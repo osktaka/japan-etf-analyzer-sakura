@@ -17,6 +17,7 @@ interface AnnualizedReturnData {
 interface AnnualizedReturnCardsProps {
   data: AnnualizedReturnData[]
   momentumLabel?: string | null
+  onHistoryClick?: () => void
 }
 
 const PERIOD_ORDER: ChartPeriod[] = [
@@ -33,6 +34,7 @@ const PERIOD_ORDER: ChartPeriod[] = [
 export function AnnualizedReturnCards({
   data,
   momentumLabel,
+  onHistoryClick,
 }: AnnualizedReturnCardsProps) {
   const [showTooltip, setShowTooltip] = useState(false)
   const tooltipRef = useRef<HTMLDivElement | null>(null)
@@ -136,6 +138,15 @@ export function AnnualizedReturnCards({
           >
             <MomentumBadge label={resolvedMomentumLabel} size="md" />
           </span>
+        )}
+        {onHistoryClick && (
+          <button
+            className={styles.historyLink}
+            onClick={onHistoryClick}
+            type="button"
+          >
+            履歴
+          </button>
         )}
       </div>
     </div>

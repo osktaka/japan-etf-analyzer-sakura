@@ -1,7 +1,11 @@
 """ETF service for ETF business logic."""
 from typing import Dict, List, Optional
 
-from src.repositories import ETFRepository, ScoreCacheRepository
+from src.repositories import (
+    ETFRepository,
+    EtfMetricsHistoryRepository,
+    ScoreCacheRepository,
+)
 from src.services.scoring_service import ScoringService
 
 # Map score sort fields to scoring service perspective keys or axis keys
@@ -42,6 +46,7 @@ class ETFService:
         self.repository = ETFRepository()
         self.score_cache_repository = ScoreCacheRepository()
         self.scoring_service = ScoringService()
+        self.metrics_history_repository = EtfMetricsHistoryRepository()
 
     def search(
         self,
@@ -409,3 +414,24 @@ class ETFService:
             }
 
         return result
+
+    def get_momentum_history(self, code: str, limit: int = 30) -> List[dict]:
+        """Get momentum history for an ETF.
+
+        Args:
+            code: ETF code
+            limit: Number of records to return (default: 30)
+
+        Returns:
+            List of momentum history dicts
+        """
+        records = self.metrics_history_repository.get_momentum_history(code, limit)
+        return [
+            {
+                "date": str(record.date),
+                "momentum_label": record.momentum_label,
+                "regression_rate_1m": record.regression_rate_1m,
+                "regression_rate_3m": record.regression_rate_3m,
+            }
+            for record in records
+        ]

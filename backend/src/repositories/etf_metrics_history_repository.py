@@ -169,3 +169,26 @@ class EtfMetricsHistoryRepository(BaseRepository):
 
         db.session.commit()
         return len(records)
+
+    def get_momentum_history(
+        self, etf_code: str, limit: int = 30
+    ) -> List[EtfMetricsHistory]:
+        """Get momentum history for an ETF.
+
+        Args:
+            etf_code: ETF code
+            limit: Number of records to return (default: 30, max: 90)
+
+        Returns:
+            List of EtfMetricsHistory objects with momentum_label
+        """
+        limit = min(limit, 90)
+        return (
+            EtfMetricsHistory.query.filter(
+                EtfMetricsHistory.etf_code == etf_code,
+                EtfMetricsHistory.momentum_label.isnot(None),
+            )
+            .order_by(EtfMetricsHistory.date.desc())
+            .limit(limit)
+            .all()
+        )

@@ -303,6 +303,34 @@ def create_etf_bp():
 
         return api_response(data=result)
 
+    @bp.route("/<code>/momentum-history", methods=["GET"])
+    def get_momentum_history(code: str):
+        """Get momentum history for an ETF.
+
+        GET /api/v1/etfs/{code}/momentum-history
+
+        Args:
+            code: ETF code (4 digits)
+
+        Query Parameters:
+            limit: Number of records (default: 30, max: 90)
+
+        Returns:
+            Momentum history data
+        """
+        is_valid, error = validate_etf_code(code)
+        if not is_valid:
+            return error_response(error, 400)
+
+        limit = request.args.get("limit", 30, type=int)
+        if limit < 1:
+            limit = 30
+
+        service = ETFService()
+        result = service.get_momentum_history(code, limit)
+
+        return api_response(data=result)
+
     @bp.route("/scores/batch", methods=["GET"])
     def get_batch_scores():
         """Get all 6 perspective scores for multiple ETFs.

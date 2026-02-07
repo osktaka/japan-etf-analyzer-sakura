@@ -320,3 +320,10 @@ export interface ChangePasswordRequest {
   current_password: string
   new_password: string
 }
+
+export interface MomentumHistoryItem {
+  date: string
+  momentum_label: string
+  regression_rate_1m: number | null
+  regression_rate_3m: number | null
+}

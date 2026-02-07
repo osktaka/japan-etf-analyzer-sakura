@@ -97,6 +97,22 @@
   color: #ef4444;
 }
 
+.historyLink {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 2px 4px;
+  margin-left: var(--spacing-xs);
+  align-self: center;
+  text-decoration: underline;
+}
+
+.historyLink:hover {
+  color: #1d4ed8;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .card {

@@ -11,6 +11,7 @@ import {
   ChartPeriod,
   ETFDetail,
   ETFSummary,
+  MomentumHistoryItem,
   Tag,
 } from './types'
 
@@ -209,4 +210,16 @@ export async function getBatchScores(
   } catch {
     return {}
   }
+}
+
+export async function getMomentumHistory(
+  code: string,
+  limit?: number
+): Promise<MomentumHistoryItem[]> {
+  const params = new URLSearchParams()
+  if (limit) params.append('limit', String(limit))
+  const query = params.toString()
+  const url = `/etfs/${code}/momentum-history${query ? `?${query}` : ''}`
+  const response = await apiClient.get<ApiResponse<MomentumHistoryItem[]>>(url)
+  return response.data.data
 }

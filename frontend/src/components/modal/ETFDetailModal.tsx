@@ -30,6 +30,7 @@ import {
   ChartPeriodSelector,
   AnnualizedReturnCards,
 } from '../chart'
+import { MomentumHistoryModal } from './MomentumHistoryModal'
 import styles from './ETFDetailModal.module.css'
 
 type PerspectiveKey =
@@ -77,6 +78,7 @@ export function ETFDetailModal({
   const { data, isLoading, error, refetch } = useETFDetail(code)
   const { holdings } = usePortfolio()
   const { chartPeriods, setChartPeriods } = useChartPeriodStorage()
+  const [showMomentumHistory, setShowMomentumHistory] = useState(false)
   const [selectedPerspective, setSelectedPerspective] =
     useState<PerspectiveKey>(initialPerspective ?? 'balance')
   const [perspectives, setPerspectives] = useState<Perspective[]>([])
@@ -344,6 +346,7 @@ export function ETFDetailModal({
                 <AnnualizedReturnCards
                   data={annualizedReturns}
                   momentumLabel={data.momentum_label}
+                  onHistoryClick={() => setShowMomentumHistory(true)}
                 />
                 <ChartPeriodSelector
                   selectedPeriods={chartPeriods}
@@ -359,6 +362,13 @@ export function ETFDetailModal({
               </span>
             </div>
           </>
+        )}
+
+        {showMomentumHistory && data && (
+          <MomentumHistoryModal
+            code={data.code}
+            onClose={() => setShowMomentumHistory(false)}
+          />
         )}
       </div>
     </div>
