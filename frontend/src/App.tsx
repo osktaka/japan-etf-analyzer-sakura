@@ -22,6 +22,7 @@ import {
   GuideMypagePage,
   GuideFaqPage,
   GuideTagsPage,
+  GuideMomentumPage,
 } from './pages'
 import { GuideLayout } from './components/guide'
 import { ROUTES } from './utils'
@@ -97,6 +98,7 @@ export default function App() {
                   <Route index element={<GuideTopPage />} />
                   <Route path="search" element={<GuideSearchPage />} />
                   <Route path="tags" element={<GuideTagsPage />} />
+                  <Route path="momentum" element={<GuideMomentumPage />} />
                   <Route path="recommend" element={<GuideRecommendPage />} />
                   <Route path="compare" element={<GuideComparePage />} />
                   <Route path="mypage" element={<GuideMypagePage />} />

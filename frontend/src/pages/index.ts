@@ -14,4 +14,5 @@ export {
   GuideMypagePage,
   GuideFaqPage,
   GuideTagsPage,
+  GuideMomentumPage,
 } from './guide'
