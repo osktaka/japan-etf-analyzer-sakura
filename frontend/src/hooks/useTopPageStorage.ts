@@ -4,6 +4,8 @@ import type {
   ReturnType,
   DisplayMode,
   PerspectiveKey,
+  CommonColumnVisibility,
+  ScoreColumnVisibility,
 } from '../components/search'
 
 // ローカルストレージキー定数
@@ -16,6 +18,9 @@ const CARD_SORT_STORAGE_KEY = 'etf-card-sort-state'
 const DISPLAY_MODE_STORAGE_KEY = 'etf-table-display-mode'
 const PERSPECTIVE_STORAGE_KEY = 'etf-perspective'
 const ANNUALIZED_STORAGE_KEY = 'etf-annualized'
+const COMMON_COLUMN_VISIBILITY_KEY = 'etf-common-column-visibility'
+const SCORE_COLUMN_VISIBILITY_KEY = 'etf-score-column-visibility'
+const MOMENTUM_VISIBILITY_KEY = 'etf-momentum-visibility'
 
 // ローカルストレージから表示期間を復元
 const getStoredPeriods = (): PerformancePeriod[] => {
@@ -117,6 +122,57 @@ const getStoredAnnualized = (): boolean => {
   }
 }
 
+// ローカルストレージから共通列の可視性を復元
+const getStoredCommonColumnVisibility = (): CommonColumnVisibility => {
+  const defaults: CommonColumnVisibility = {
+    price: true,
+    dividendYield: true,
+    expenseRatio: true,
+  }
+  try {
+    const stored = localStorage.getItem(COMMON_COLUMN_VISIBILITY_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      return { ...defaults, ...parsed }
+    }
+  } catch {
+    // パースエラー時はデフォルト値を返す
+  }
+  return defaults
+}
+
+// ローカルストレージからスコア列の可視性を復元
+const getStoredScoreColumnVisibility = (): ScoreColumnVisibility => {
+  const defaults: ScoreColumnVisibility = {
+    dividendPower: true,
+    costEfficiency: true,
+    scaleReliability: true,
+    tradingQuality: true,
+    returnPerformance: true,
+  }
+  try {
+    const stored = localStorage.getItem(SCORE_COLUMN_VISIBILITY_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      return { ...defaults, ...parsed }
+    }
+  } catch {
+    // パースエラー時はデフォルト値を返す
+  }
+  return defaults
+}
+
+// ローカルストレージから勢い列の可視性を復元
+const getStoredMomentumVisibility = (): boolean => {
+  try {
+    const stored = localStorage.getItem(MOMENTUM_VISIBILITY_KEY)
+    if (stored !== null) return stored === 'true'
+  } catch {
+    // エラー時はデフォルト値を返す
+  }
+  return true
+}
+
 // ローカルストレージから切り口を復元
 const getStoredPerspective = (): PerspectiveKey => {
   try {
@@ -175,6 +231,9 @@ export function useTopPageStorage() {
     getStoredDisplayMode,
     getStoredPerspective,
     getStoredAnnualized,
+    getStoredCommonColumnVisibility,
+    getStoredScoreColumnVisibility,
+    getStoredMomentumVisibility,
     // Save関数
     saveSortState,
     // ストレージキー（useEffect等での直接保存用）
@@ -188,6 +247,9 @@ export function useTopPageStorage() {
       DISPLAY_MODE_STORAGE_KEY,
       PERSPECTIVE_STORAGE_KEY,
       ANNUALIZED_STORAGE_KEY,
+      COMMON_COLUMN_VISIBILITY_KEY,
+      SCORE_COLUMN_VISIBILITY_KEY,
+      MOMENTUM_VISIBILITY_KEY,
     },
   }
 }

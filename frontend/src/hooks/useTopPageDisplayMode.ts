@@ -7,6 +7,8 @@ import type {
   DisplayMode,
   PerspectiveKey,
   ScoringMode,
+  CommonColumnVisibility,
+  ScoreColumnVisibility,
 } from '../components/search'
 import { useTopPageStorage } from './useTopPageStorage'
 
@@ -29,6 +31,9 @@ export interface DisplayModeState {
   selectedPeriods: PerformancePeriod[]
   returnType: ReturnType
   annualized: boolean
+  commonColumnVisibility: CommonColumnVisibility
+  scoreColumnVisibility: ScoreColumnVisibility
+  momentumVisible: boolean
 }
 
 export interface DisplayModeActions {
@@ -39,6 +44,9 @@ export interface DisplayModeActions {
   setSelectedPeriods: (periods: PerformancePeriod[]) => void
   setReturnType: (returnType: ReturnType) => void
   setAnnualized: (annualized: boolean) => void
+  setCommonColumnVisibility: (v: CommonColumnVisibility) => void
+  setScoreColumnVisibility: (v: ScoreColumnVisibility) => void
+  setMomentumVisible: (v: boolean) => void
   handleViewModeChange: (mode: ViewMode) => void
   handleScoringModeChange: (mode: ScoringMode) => void
 }
@@ -121,6 +129,13 @@ export function useTopPageDisplayMode(
   const [annualized, setAnnualized] = useState<boolean>(
     storage.getStoredAnnualized
   )
+  const [commonColumnVisibility, setCommonColumnVisibility] =
+    useState<CommonColumnVisibility>(storage.getStoredCommonColumnVisibility)
+  const [scoreColumnVisibility, setScoreColumnVisibility] =
+    useState<ScoreColumnVisibility>(storage.getStoredScoreColumnVisibility)
+  const [momentumVisible, setMomentumVisible] = useState<boolean>(
+    storage.getStoredMomentumVisibility
+  )
   const [selectedPerspective, setSelectedPerspective] =
     useState<PerspectiveKey>(storage.getStoredPerspective())
 
@@ -169,6 +184,30 @@ export function useTopPageDisplayMode(
       String(annualized)
     )
   }, [annualized, storage.keys.ANNUALIZED_STORAGE_KEY])
+
+  // 共通列の可視性をローカルストレージに保存
+  useEffect(() => {
+    localStorage.setItem(
+      storage.keys.COMMON_COLUMN_VISIBILITY_KEY,
+      JSON.stringify(commonColumnVisibility)
+    )
+  }, [commonColumnVisibility, storage.keys.COMMON_COLUMN_VISIBILITY_KEY])
+
+  // スコア列の可視性をローカルストレージに保存
+  useEffect(() => {
+    localStorage.setItem(
+      storage.keys.SCORE_COLUMN_VISIBILITY_KEY,
+      JSON.stringify(scoreColumnVisibility)
+    )
+  }, [scoreColumnVisibility, storage.keys.SCORE_COLUMN_VISIBILITY_KEY])
+
+  // 勢い列の可視性をローカルストレージに保存
+  useEffect(() => {
+    localStorage.setItem(
+      storage.keys.MOMENTUM_VISIBILITY_KEY,
+      String(momentumVisible)
+    )
+  }, [momentumVisible, storage.keys.MOMENTUM_VISIBILITY_KEY])
 
   // 上昇率タイプをローカルストレージに保存
   useEffect(() => {
@@ -403,6 +442,9 @@ export function useTopPageDisplayMode(
     selectedPeriods,
     returnType,
     annualized,
+    commonColumnVisibility,
+    scoreColumnVisibility,
+    momentumVisible,
     // Actions
     setViewMode,
     setDisplayMode,
@@ -411,6 +453,9 @@ export function useTopPageDisplayMode(
     setSelectedPeriods,
     setReturnType,
     setAnnualized,
+    setCommonColumnVisibility,
+    setScoreColumnVisibility,
+    setMomentumVisible,
     handleViewModeChange,
     handleScoringModeChange,
     // Utilities

@@ -10,6 +10,10 @@ import { SortField, SortOrder } from '../../api/etf'
 import { CompareCheckbox } from '../actions'
 import { FavoriteButton } from '../favorite'
 import type { ReturnType } from './ReturnTypeToggle'
+import type {
+  CommonColumnVisibility,
+  ScoreColumnVisibility,
+} from './ColumnVisibilitySelector'
 import { getMomentumInfo } from '../../utils/momentum'
 import styles from './ETFTableView.module.css'
 
@@ -91,6 +95,9 @@ interface ETFTableViewProps {
   selectedPerspective?: PerspectiveKey
   returnType?: ReturnType
   annualized?: boolean
+  commonColumnVisibility?: CommonColumnVisibility
+  scoreColumnVisibility?: ScoreColumnVisibility
+  momentumVisible?: boolean
   onETFClick: (code: string) => void
   isInCompare?: (code: string) => boolean
   onCompareToggle?: (code: string) => void
@@ -111,6 +118,9 @@ export function ETFTableView({
   selectedPerspective = 'balance',
   returnType = 'price',
   annualized = false,
+  commonColumnVisibility,
+  scoreColumnVisibility,
+  momentumVisible,
   onETFClick,
   isInCompare,
   onCompareToggle,
@@ -227,7 +237,16 @@ export function ETFTableView({
     return styles.negative
   }
 
-  const axisKeys: AxisKey[] = [
+  // scoreColumnVisibilityでフィルタされた5軸キー（evaluation_scoreは常に含む）
+  const SCORE_VISIBILITY_MAP: Record<string, keyof NonNullable<typeof scoreColumnVisibility>> = {
+    axis_dividend_power: 'dividendPower',
+    axis_cost_efficiency: 'costEfficiency',
+    axis_scale_reliability: 'scaleReliability',
+    axis_trading_quality: 'tradingQuality',
+    axis_return_performance: 'returnPerformance',
+  }
+
+  const allAxisKeys: AxisKey[] = [
     'evaluation_score',
     'axis_dividend_power',
     'axis_cost_efficiency',
@@ -235,6 +254,12 @@ export function ETFTableView({
     'axis_trading_quality',
     'axis_return_performance',
   ]
+
+  const axisKeys = allAxisKeys.filter((key) => {
+    if (key === 'evaluation_score') return true
+    const visKey = SCORE_VISIBILITY_MAP[key]
+    return !scoreColumnVisibility || !visKey || scoreColumnVisibility[visKey]
+  })
 
   // Get evaluation score value based on selected perspective
   const getEvaluationScore = (code: string): number | null | undefined => {
@@ -301,24 +326,30 @@ export function ETFTableView({
               >
                 カテゴリ{renderSortIcon('category')}
               </th>
-              <th
-                onClick={() => handleSort('price')}
-                className={`${styles.sortable} ${styles.numeric}`}
-              >
-                株価{renderSortIcon('price')}
-              </th>
-              <th
-                onClick={() => handleSort('dividend')}
-                className={`${styles.sortable} ${styles.numeric}`}
-              >
-                配当利回り{renderSortIcon('dividend')}
-              </th>
-              <th
-                onClick={() => handleSort('expense')}
-                className={`${styles.sortable} ${styles.numeric}`}
-              >
-                信託報酬{renderSortIcon('expense')}
-              </th>
+              {(!commonColumnVisibility || commonColumnVisibility.price) && (
+                <th
+                  onClick={() => handleSort('price')}
+                  className={`${styles.sortable} ${styles.numeric}`}
+                >
+                  株価{renderSortIcon('price')}
+                </th>
+              )}
+              {(!commonColumnVisibility || commonColumnVisibility.dividendYield) && (
+                <th
+                  onClick={() => handleSort('dividend')}
+                  className={`${styles.sortable} ${styles.numeric}`}
+                >
+                  配当利回り{renderSortIcon('dividend')}
+                </th>
+              )}
+              {(!commonColumnVisibility || commonColumnVisibility.expenseRatio) && (
+                <th
+                  onClick={() => handleSort('expense')}
+                  className={`${styles.sortable} ${styles.numeric}`}
+                >
+                  信託報酬{renderSortIcon('expense')}
+                </th>
+              )}
               {displayMode === 'trend' &&
                 selectedPeriods.map((period) => (
                   <th
@@ -330,7 +361,7 @@ export function ETFTableView({
                     {renderSortIcon(period)}
                   </th>
                 ))}
-              {displayMode === 'trend' && (
+              {displayMode === 'trend' && (momentumVisible === undefined || momentumVisible) && (
                 <th className={styles.numeric}>勢い</th>
               )}
               {displayMode === 'score' &&
@@ -372,19 +403,25 @@ export function ETFTableView({
                   {etf.name}
                 </td>
                 <td className={styles.category}>{etf.category || '-'}</td>
-                <td className={styles.numeric}>
-                  {etf.market_price
-                    ? `\u00A5${etf.market_price.toLocaleString()}`
-                    : '-'}
-                </td>
-                <td className={styles.numeric}>
-                  {etf.dividend_yield
-                    ? `${etf.dividend_yield.toFixed(2)}%`
-                    : '-'}
-                </td>
-                <td className={styles.numeric}>
-                  {etf.expense_ratio ? `${etf.expense_ratio.toFixed(2)}%` : '-'}
-                </td>
+                {(!commonColumnVisibility || commonColumnVisibility.price) && (
+                  <td className={styles.numeric}>
+                    {etf.market_price
+                      ? `\u00A5${etf.market_price.toLocaleString()}`
+                      : '-'}
+                  </td>
+                )}
+                {(!commonColumnVisibility || commonColumnVisibility.dividendYield) && (
+                  <td className={styles.numeric}>
+                    {etf.dividend_yield
+                      ? `${etf.dividend_yield.toFixed(2)}%`
+                      : '-'}
+                  </td>
+                )}
+                {(!commonColumnVisibility || commonColumnVisibility.expenseRatio) && (
+                  <td className={styles.numeric}>
+                    {etf.expense_ratio ? `${etf.expense_ratio.toFixed(2)}%` : '-'}
+                  </td>
+                )}
                 {displayMode === 'trend' &&
                   selectedPeriods.map((period) => {
                     const returnsData = getReturnsData(etf.code)
@@ -401,7 +438,7 @@ export function ETFTableView({
                       </td>
                     )
                   })}
-                {displayMode === 'trend' && (() => {
+                {displayMode === 'trend' && (momentumVisible === undefined || momentumVisible) && (() => {
                   const regression = performance[etf.code]?.regression
                   const momentum = getMomentumInfo(regression?.['1m'], regression?.['3m'])
                   return (

@@ -1,12 +1,10 @@
 /** Section controls component for TopPage */
-import { PerformancePeriod } from '../../api/types'
 import { ViewModeToggle, ViewMode } from './ViewModeToggle'
 import { TableDisplayToggle, DisplayMode } from './TableDisplayToggle'
 import { ScoringModeToggle, ScoringMode } from './ScoringModeToggle'
 import { PerspectiveSelector } from './PerspectiveSelector'
 import { ReturnTypeToggle, ReturnType } from './ReturnTypeToggle'
 import { AnnualizedToggle } from './AnnualizedToggle'
-import { PeriodSelector } from './PeriodSelector'
 import type { PerspectiveKey } from './ETFTableView'
 import type { CustomWeights } from '../../api'
 import styles from '../../pages/TopPage.module.css'
@@ -16,14 +14,12 @@ interface SectionControlsProps {
   displayMode: DisplayMode
   scoringMode: ScoringMode
   selectedPerspective: PerspectiveKey
-  selectedPeriods: PerformancePeriod[]
   returnType: ReturnType
   annualized: boolean
   onViewModeChange: (mode: ViewMode) => void
   onDisplayModeChange: (mode: DisplayMode) => void
   onScoringModeChange: (mode: ScoringMode) => void
   onPerspectiveChange: (perspective: PerspectiveKey) => void
-  onPeriodsChange: (periods: PerformancePeriod[]) => void
   onReturnTypeChange: (returnType: ReturnType) => void
   onAnnualizedChange: (annualized: boolean) => void
   isAuthenticated?: boolean
@@ -37,14 +33,12 @@ export function SectionControls({
   displayMode,
   scoringMode,
   selectedPerspective,
-  selectedPeriods,
   returnType,
   annualized,
   onViewModeChange,
   onDisplayModeChange,
   onScoringModeChange,
   onPerspectiveChange,
-  onPeriodsChange,
   onReturnTypeChange,
   onAnnualizedChange,
   isAuthenticated,
@@ -53,68 +47,66 @@ export function SectionControls({
   onHelpClick,
 }: SectionControlsProps) {
   return (
-    <div className={styles.sectionControls}>
-      <ViewModeToggle mode={viewMode} onChange={onViewModeChange} />
-      <TableDisplayToggle
-        displayMode={displayMode}
-        onChange={viewMode === 'card' ? () => {} : onDisplayModeChange}
-        disabled={viewMode === 'card'}
-      />
-      {viewMode === 'card' ? (
-        <>
-          <ScoringModeToggle
-            scoringMode={scoringMode}
-            onChange={onScoringModeChange}
-            className={styles.scoringModeToggle}
-          />
-          <PerspectiveSelector
-            selectedPerspective={selectedPerspective}
-            onChange={onPerspectiveChange}
-            className={styles.scoringModeToggle}
-            isAuthenticated={isAuthenticated}
-            customWeights={customWeights}
-            onCustomClick={onCustomClick}
-            onHelpClick={onHelpClick}
-          />
-        </>
-      ) : (
-        <>
-          {displayMode === 'score' && (
-            <>
-              <ScoringModeToggle
-                scoringMode={scoringMode}
-                onChange={onScoringModeChange}
-                className={styles.scoringModeToggle}
-              />
-              <PerspectiveSelector
-                selectedPerspective={selectedPerspective}
-                onChange={onPerspectiveChange}
-                className={styles.scoringModeToggle}
-                isAuthenticated={isAuthenticated}
-                customWeights={customWeights}
-                onCustomClick={onCustomClick}
-                onHelpClick={onHelpClick}
-              />
-            </>
-          )}
-          {displayMode === 'trend' && (
-            <>
-              <ReturnTypeToggle
-                returnType={returnType}
-                onChange={onReturnTypeChange}
-              />
-              <AnnualizedToggle
-                annualized={annualized}
-                onChange={onAnnualizedChange}
-              />
-              <PeriodSelector
-                selectedPeriods={selectedPeriods}
-                onChange={onPeriodsChange}
-              />
-            </>
-          )}
-        </>
-      )}
+    <div style={{ width: '100%' }}>
+      <div className={styles.sectionControls}>
+        <ViewModeToggle mode={viewMode} onChange={onViewModeChange} />
+        <TableDisplayToggle
+          displayMode={displayMode}
+          onChange={viewMode === 'card' ? () => {} : onDisplayModeChange}
+          disabled={viewMode === 'card'}
+        />
+        {viewMode === 'card' ? (
+          <>
+            <ScoringModeToggle
+              scoringMode={scoringMode}
+              onChange={onScoringModeChange}
+              className={styles.scoringModeToggle}
+            />
+            <PerspectiveSelector
+              selectedPerspective={selectedPerspective}
+              onChange={onPerspectiveChange}
+              className={styles.scoringModeToggle}
+              isAuthenticated={isAuthenticated}
+              customWeights={customWeights}
+              onCustomClick={onCustomClick}
+              onHelpClick={onHelpClick}
+            />
+          </>
+        ) : (
+          <>
+            {displayMode === 'score' && (
+              <>
+                <ScoringModeToggle
+                  scoringMode={scoringMode}
+                  onChange={onScoringModeChange}
+                  className={styles.scoringModeToggle}
+                />
+                <PerspectiveSelector
+                  selectedPerspective={selectedPerspective}
+                  onChange={onPerspectiveChange}
+                  className={styles.scoringModeToggle}
+                  isAuthenticated={isAuthenticated}
+                  customWeights={customWeights}
+                  onCustomClick={onCustomClick}
+                  onHelpClick={onHelpClick}
+                />
+              </>
+            )}
+            {displayMode === 'trend' && (
+              <>
+                <ReturnTypeToggle
+                  returnType={returnType}
+                  onChange={onReturnTypeChange}
+                />
+                <AnnualizedToggle
+                  annualized={annualized}
+                  onChange={onAnnualizedChange}
+                />
+              </>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }

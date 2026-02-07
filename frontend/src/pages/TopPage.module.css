@@ -77,10 +77,17 @@
 }
 
 .resultCount {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
   margin-bottom: var(--spacing-sm);
-  text-align: right;
+}
+
+.resultCountText {
+  margin-left: auto;
+  white-space: nowrap;
 }
 
 .scoringModeToggle {

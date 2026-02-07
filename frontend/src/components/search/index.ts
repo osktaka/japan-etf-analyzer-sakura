@@ -16,4 +16,9 @@ export { ScoringModeToggle } from './ScoringModeToggle'
 export type { ScoringMode } from './ScoringModeToggle'
 export { PerspectiveSelector } from './PerspectiveSelector'
 export { AnnualizedToggle } from './AnnualizedToggle'
+export { ColumnVisibilitySelector } from './ColumnVisibilitySelector'
+export type {
+  CommonColumnVisibility,
+  ScoreColumnVisibility,
+} from './ColumnVisibilitySelector'
 export { SectionControls } from './SectionControls'

@@ -16,6 +16,7 @@ import {
   FilterPanel,
   ETFTableView,
   SectionControls,
+  ColumnVisibilitySelector,
 } from '../components/search'
 import { RecommendSection } from '../components/recommend'
 import {
@@ -99,6 +100,12 @@ export function TopPage() {
     setReturnType,
     annualized,
     setAnnualized,
+    commonColumnVisibility,
+    scoreColumnVisibility,
+    momentumVisible,
+    setCommonColumnVisibility,
+    setScoreColumnVisibility,
+    setMomentumVisible,
     handleViewModeChange,
     handleScoringModeChange,
     getInitialViewMode,
@@ -349,15 +356,13 @@ export function TopPage() {
             displayMode={displayMode}
             scoringMode={scoringMode}
             selectedPerspective={selectedPerspective}
-            selectedPeriods={selectedPeriods}
             returnType={returnType}
+            annualized={annualized}
             onViewModeChange={handleViewModeChange}
             onDisplayModeChange={setDisplayMode}
             onScoringModeChange={handleScoringModeChange}
             onPerspectiveChange={setSelectedPerspective}
-            onPeriodsChange={setSelectedPeriods}
             onReturnTypeChange={setReturnType}
-            annualized={annualized}
             onAnnualizedChange={setAnnualized}
             isAuthenticated={isAuthenticated}
             customWeights={customWeights}
@@ -366,7 +371,20 @@ export function TopPage() {
           />
         </div>
         <div className={styles.resultCount}>
-          <span>{total}件</span>
+          {viewMode === 'table' && (
+            <ColumnVisibilitySelector
+              displayMode={displayMode}
+              commonColumnVisibility={commonColumnVisibility}
+              onCommonColumnVisibilityChange={setCommonColumnVisibility}
+              scoreColumnVisibility={scoreColumnVisibility}
+              onScoreColumnVisibilityChange={setScoreColumnVisibility}
+              selectedPeriods={selectedPeriods}
+              onPeriodsChange={setSelectedPeriods}
+              momentumVisible={momentumVisible}
+              onMomentumVisibleChange={setMomentumVisible}
+            />
+          )}
+          <span className={styles.resultCountText}>{total}件</span>
         </div>
         {viewMode === 'card' ? (
           <SearchResults
@@ -391,6 +409,9 @@ export function TopPage() {
             selectedPerspective={selectedPerspective}
             returnType={returnType}
             annualized={annualized}
+            commonColumnVisibility={commonColumnVisibility}
+            scoreColumnVisibility={scoreColumnVisibility}
+            momentumVisible={momentumVisible}
             onETFClick={setSelectedCode}
             isInCompare={isInList}
             onCompareToggle={handleCompareToggle}
