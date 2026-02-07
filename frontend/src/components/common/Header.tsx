@@ -193,19 +193,32 @@ export function Header() {
           )}
         </nav>
 
-        {/* ハンバーガーボタン（モバイル用） */}
-        <button
-          ref={hamburgerButtonRef}
-          className={styles.hamburgerButton}
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          aria-expanded={isMobileMenuOpen}
-          aria-controls="mobile-menu"
-          aria-label={isMobileMenuOpen ? 'メニューを閉じる' : 'メニューを開く'}
-        >
-          <span className={styles.hamburgerLine} />
-          <span className={styles.hamburgerLine} />
-          <span className={styles.hamburgerLine} />
-        </button>
+        {/* モバイル用アクション（マイページショートカット + ハンバーガー） */}
+        <div className={styles.mobileActions}>
+          {isAuthenticated && !isLoading && (
+            <Link
+              to={ROUTES.MYPAGE}
+              className={`${styles.mypageShortcut} ${location.pathname === ROUTES.MYPAGE ? styles.active : ''}`}
+              aria-label="マイページ"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z" />
+              </svg>
+            </Link>
+          )}
+          <button
+            ref={hamburgerButtonRef}
+            className={styles.hamburgerButton}
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-menu"
+            aria-label={isMobileMenuOpen ? 'メニューを閉じる' : 'メニューを開く'}
+          >
+            <span className={styles.hamburgerLine} />
+            <span className={styles.hamburgerLine} />
+            <span className={styles.hamburgerLine} />
+          </button>
+        </div>
 
         {/* オーバーレイ（モバイル用） */}
         <div

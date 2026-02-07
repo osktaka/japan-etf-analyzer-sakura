@@ -124,6 +124,41 @@
   text-decoration: none;
 }
 
+/* マイページショートカット（モバイル用） */
+.mypageShortcut {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  width: 36px;
+  height: 36px;
+  color: var(--color-text);
+  text-decoration: none;
+  border: 1.5px solid #94a3b8;
+  border-radius: var(--radius-full);
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.mypageShortcut svg {
+  width: 22px;
+  height: 22px;
+}
+
+.mypageShortcut:hover {
+  text-decoration: none;
+  color: var(--color-text-secondary);
+}
+
+.mypageShortcut.active {
+  color: var(--color-primary);
+}
+
+/* モバイルヘッダー右側グループ */
+.mobileActions {
+  display: none;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
 /* ハンバーガーボタン */
 .hamburgerButton {
   display: none;
@@ -291,6 +326,14 @@
 @media (max-width: 768px) {
   .nav {
     display: none;
+  }
+
+  .mobileActions {
+    display: flex;
+  }
+
+  .mypageShortcut {
+    display: flex;
   }
 
   .hamburgerButton {
