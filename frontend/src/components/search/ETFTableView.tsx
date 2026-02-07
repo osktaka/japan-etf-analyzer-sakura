@@ -301,6 +301,19 @@ export function ETFTableView({
     return field ? axisScores[field] : undefined
   }
 
+  // 表示中のデータ列数を算出して銘柄名の動的max-widthを決定
+  const visibleDataColumns =
+    ((!commonColumnVisibility || commonColumnVisibility.price) ? 1 : 0) +
+    ((!commonColumnVisibility || commonColumnVisibility.dividendYield) ? 1 : 0) +
+    ((!commonColumnVisibility || commonColumnVisibility.expenseRatio) ? 1 : 0) +
+    ((momentumVisible === undefined || momentumVisible) ? 1 : 0) +
+    (displayMode === 'trend' ? selectedPeriods.length : axisKeys.length)
+
+  const nameMaxWidth =
+    visibleDataColumns <= 3 ? 600 :
+    visibleDataColumns <= 5 ? 450 :
+    visibleDataColumns <= 7 ? 320 : 200
+
   return (
     <div className={styles.container}>
       <div className={styles.tableWrapper}>
@@ -317,6 +330,7 @@ export function ETFTableView({
               <th
                 onClick={() => handleSort('name')}
                 className={styles.sortable}
+                style={{ maxWidth: nameMaxWidth }}
               >
                 銘柄名{renderSortIcon('name')}
               </th>
@@ -399,7 +413,7 @@ export function ETFTableView({
                   </td>
                 )}
                 <td className={styles.code}>{etf.code}</td>
-                <td className={styles.name} title={etf.name}>
+                <td className={styles.name} title={etf.name} style={{ maxWidth: nameMaxWidth }}>
                   {etf.name}
                 </td>
                 <td className={styles.category}>{etf.category || '-'}</td>
