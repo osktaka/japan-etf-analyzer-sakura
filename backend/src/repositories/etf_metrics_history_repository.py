@@ -70,6 +70,14 @@ class EtfMetricsHistoryRepository(BaseRepository):
         regression_rate_5y: Optional[float] = None,
         regression_rate_10y: Optional[float] = None,
         regression_rate_20y: Optional[float] = None,
+        return_rate_1m: Optional[float] = None,
+        return_rate_3m: Optional[float] = None,
+        return_rate_6m: Optional[float] = None,
+        return_rate_1y: Optional[float] = None,
+        return_rate_3y: Optional[float] = None,
+        return_rate_5y: Optional[float] = None,
+        return_rate_10y: Optional[float] = None,
+        return_rate_20y: Optional[float] = None,
     ) -> EtfMetricsHistory:
         """Insert or update metrics history.
 
@@ -92,6 +100,14 @@ class EtfMetricsHistoryRepository(BaseRepository):
             regression_rate_5y: 5-year regression rate
             regression_rate_10y: 10-year regression rate
             regression_rate_20y: 20-year regression rate
+            return_rate_1m: 1-month return rate
+            return_rate_3m: 3-month return rate
+            return_rate_6m: 6-month return rate
+            return_rate_1y: 1-year return rate
+            return_rate_3y: 3-year return rate
+            return_rate_5y: 5-year return rate
+            return_rate_10y: 10-year return rate
+            return_rate_20y: 20-year return rate
 
         Returns:
             EtfMetricsHistory object
@@ -115,6 +131,14 @@ class EtfMetricsHistoryRepository(BaseRepository):
             existing.regression_rate_5y = regression_rate_5y
             existing.regression_rate_10y = regression_rate_10y
             existing.regression_rate_20y = regression_rate_20y
+            existing.return_rate_1m = return_rate_1m
+            existing.return_rate_3m = return_rate_3m
+            existing.return_rate_6m = return_rate_6m
+            existing.return_rate_1y = return_rate_1y
+            existing.return_rate_3y = return_rate_3y
+            existing.return_rate_5y = return_rate_5y
+            existing.return_rate_10y = return_rate_10y
+            existing.return_rate_20y = return_rate_20y
             existing.updated_at = datetime.utcnow()
         else:
             existing = EtfMetricsHistory(
@@ -136,6 +160,14 @@ class EtfMetricsHistoryRepository(BaseRepository):
                 regression_rate_5y=regression_rate_5y,
                 regression_rate_10y=regression_rate_10y,
                 regression_rate_20y=regression_rate_20y,
+                return_rate_1m=return_rate_1m,
+                return_rate_3m=return_rate_3m,
+                return_rate_6m=return_rate_6m,
+                return_rate_1y=return_rate_1y,
+                return_rate_3y=return_rate_3y,
+                return_rate_5y=return_rate_5y,
+                return_rate_10y=return_rate_10y,
+                return_rate_20y=return_rate_20y,
             )
             db.session.add(existing)
 
@@ -152,7 +184,10 @@ class EtfMetricsHistoryRepository(BaseRepository):
                      momentum_label, regression_rate_1m, regression_rate_3m,
                      regression_rate_6m, regression_rate_1y,
                      regression_rate_3y, regression_rate_5y,
-                     regression_rate_10y, regression_rate_20y
+                     regression_rate_10y, regression_rate_20y,
+                     return_rate_1m, return_rate_3m, return_rate_6m,
+                     return_rate_1y, return_rate_3y, return_rate_5y,
+                     return_rate_10y, return_rate_20y
             target_date: Target date for all records
 
         Returns:
@@ -182,6 +217,14 @@ class EtfMetricsHistoryRepository(BaseRepository):
                 existing.regression_rate_5y = record.get("regression_rate_5y")
                 existing.regression_rate_10y = record.get("regression_rate_10y")
                 existing.regression_rate_20y = record.get("regression_rate_20y")
+                existing.return_rate_1m = record.get("return_rate_1m")
+                existing.return_rate_3m = record.get("return_rate_3m")
+                existing.return_rate_6m = record.get("return_rate_6m")
+                existing.return_rate_1y = record.get("return_rate_1y")
+                existing.return_rate_3y = record.get("return_rate_3y")
+                existing.return_rate_5y = record.get("return_rate_5y")
+                existing.return_rate_10y = record.get("return_rate_10y")
+                existing.return_rate_20y = record.get("return_rate_20y")
                 existing.updated_at = datetime.utcnow()
             else:
                 new_record = EtfMetricsHistory(
@@ -203,6 +246,14 @@ class EtfMetricsHistoryRepository(BaseRepository):
                     regression_rate_5y=record.get("regression_rate_5y"),
                     regression_rate_10y=record.get("regression_rate_10y"),
                     regression_rate_20y=record.get("regression_rate_20y"),
+                    return_rate_1m=record.get("return_rate_1m"),
+                    return_rate_3m=record.get("return_rate_3m"),
+                    return_rate_6m=record.get("return_rate_6m"),
+                    return_rate_1y=record.get("return_rate_1y"),
+                    return_rate_3y=record.get("return_rate_3y"),
+                    return_rate_5y=record.get("return_rate_5y"),
+                    return_rate_10y=record.get("return_rate_10y"),
+                    return_rate_20y=record.get("return_rate_20y"),
                 )
                 db.session.add(new_record)
 

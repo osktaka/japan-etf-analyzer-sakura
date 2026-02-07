@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Backfill momentum history data for etf_metrics_history.
+"""Backfill return rate history data for etf_metrics_history.
 
-One-time manual script to populate momentum_label, regression_rate_1m,
-regression_rate_3m from PriceHistory data. After backfill, verifies
-latest date against PerformanceCache and corrects any discrepancies.
+One-time manual script to populate return_rate_1m, return_rate_3m
+from PriceHistory data. After backfill, verifies latest date against
+PerformanceCache and corrects any discrepancies.
 
 Usage:
-    python scripts/backfill_momentum_history.py [--days N] [--dry-run]
+    python scripts/backfill_return_rate_history.py [--days N] [--dry-run]
 """
 import os
 import sys
@@ -26,26 +26,23 @@ os.environ.setdefault("DATABASE_URL", f"sqlite:///{db_path}")
 
 sys.path.insert(0, str(SCRIPT_DIR))
 from base_batch import SimpleBatchScript
-from update_etf_data import calculate_regression_return_from_df
+from update_etf_data import calculate_return_from_df
 
 from src.models import EtfMetricsHistory, PerformanceCache, PriceHistory, db
 from src.repositories import ETFRepository, EtfMetricsHistoryRepository
-from src.utils.momentum import get_momentum_label
 
 # バックフィル対象: 1m/3mのみ（他の期間は日次バッチで蓄積）
 BACKFILL_PERIODS = {
-    "1m": ("regression_rate_1m", 30),
-    "3m": ("regression_rate_3m", 90),
+    "1m": ("return_rate_1m", 30),
+    "3m": ("return_rate_3m", 90),
 }
 
 
-class BackfillMomentumHistoryBatch(SimpleBatchScript):
-    """勢いデータのバックフィルバッチ"""
+class BackfillReturnRateHistoryBatch(SimpleBatchScript):
+    """リターン率データのバックフィルバッチ"""
 
-    batch_name = "backfill_momentum_history"
-    description = (
-        "Backfill momentum_label, regression_rate_1m/3m into etf_metrics_history"
-    )
+    batch_name = "backfill_return_rate_history"
+    description = "Backfill return_rate_1m/3m into etf_metrics_history"
 
     def add_custom_arguments(self, parser):
         """カスタム引数追加"""
@@ -91,18 +88,19 @@ class BackfillMomentumHistoryBatch(SimpleBatchScript):
 
     def _verify_and_fix_latest(self, etf_codes, latest_date):
         """最新日の値をPerformanceCacheと比較し、差異があれば修正する。"""
-        self.logger.info(
-            f"Verifying latest date ({latest_date}) against PerformanceCache..."
-        )
+        self.logger.info(f"Verifying latest date ({latest_date}) against PerformanceCache...")
 
-        # PerformanceCacheから1m/3mのregression_rateを一括取得
-        pc_records = PerformanceCache.query.filter(
-            PerformanceCache.etf_code.in_(etf_codes),
-            PerformanceCache.period.in_(["1m", "3m"]),
-        ).all()
+        # PerformanceCacheから1m/3mの値を一括取得
+        pc_records = (
+            PerformanceCache.query.filter(
+                PerformanceCache.etf_code.in_(etf_codes),
+                PerformanceCache.period.in_(["1m", "3m"]),
+            )
+            .all()
+        )
         pc_map = {}
         for r in pc_records:
-            pc_map.setdefault(r.etf_code, {})[r.period] = r.regression_rate
+            pc_map.setdefault(r.etf_code, {})[r.period] = r.return_rate
 
         # etf_metrics_historyの最新日レコード取得
         metrics_repo = EtfMetricsHistoryRepository()
@@ -127,17 +125,7 @@ class BackfillMomentumHistoryBatch(SimpleBatchScript):
                     setattr(record, col, pc_val)
                     changed = True
 
-            # momentum_labelもregression_rateに基づいて再計算
             if changed:
-                new_1m = getattr(record, "regression_rate_1m")
-                new_3m = getattr(record, "regression_rate_3m")
-                new_label = get_momentum_label(new_1m, new_3m)
-                if record.momentum_label != new_label:
-                    self.logger.info(
-                        f"  Fix {etf_code} momentum_label: "
-                        f"{record.momentum_label} -> {new_label}"
-                    )
-                    record.momentum_label = new_label
                 fixed_count += 1
 
         if fixed_count > 0:
@@ -183,19 +171,11 @@ class BackfillMomentumHistoryBatch(SimpleBatchScript):
                     rates = {}
                     for period, (col, days) in BACKFILL_PERIODS.items():
                         df = self._get_price_history(etf_code, target_date, days)
-                        rates[col] = calculate_regression_return_from_df(
-                            df, len(df)
-                        )
-
-                    label = get_momentum_label(
-                        rates["regression_rate_1m"],
-                        rates["regression_rate_3m"],
-                    )
+                        rates[col] = calculate_return_from_df(df, len(df))
 
                     if not self.args.dry_run:
                         if etf_code in existing:
                             record = existing[etf_code]
-                            record.momentum_label = label
                             for col, value in rates.items():
                                 setattr(record, col, value)
                             date_updated += 1
@@ -203,7 +183,6 @@ class BackfillMomentumHistoryBatch(SimpleBatchScript):
                             record = EtfMetricsHistory(
                                 etf_code=etf_code,
                                 date=target_date,
-                                momentum_label=label,
                                 **rates,
                             )
                             db.session.add(record)
@@ -246,4 +225,4 @@ class BackfillMomentumHistoryBatch(SimpleBatchScript):
 
 
 if __name__ == "__main__":
-    sys.exit(BackfillMomentumHistoryBatch().run())
+    sys.exit(BackfillReturnRateHistoryBatch().run())

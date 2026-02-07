@@ -220,6 +220,18 @@ class UpdateScoresBatch(BaseBatchScript):
             "20y": "regression_rate_20y",
         }
 
+        # 期間→return_rateカラム名のマッピング
+        return_period_map = {
+            "1m": "return_rate_1m",
+            "3m": "return_rate_3m",
+            "6m": "return_rate_6m",
+            "1y": "return_rate_1y",
+            "3y": "return_rate_3y",
+            "5y": "return_rate_5y",
+            "10y": "return_rate_10y",
+            "20y": "return_rate_20y",
+        }
+
         for record in perf_records:
             if record.etf_code not in performance_data:
                 performance_data[record.etf_code] = {}
@@ -235,6 +247,11 @@ class UpdateScoresBatch(BaseBatchScript):
                 performance_data[record.etf_code][
                     regression_key
                 ] = record.regression_rate
+
+            # return_rateを全期間で取得
+            return_key = return_period_map.get(record.period)
+            if return_key and record.return_rate is not None:
+                performance_data[record.etf_code][return_key] = record.return_rate
 
         # 一括保存用のレコードを作成
         records = []
@@ -270,6 +287,14 @@ class UpdateScoresBatch(BaseBatchScript):
                     "regression_rate_5y": perf.get("regression_rate_5y"),
                     "regression_rate_10y": perf.get("regression_rate_10y"),
                     "regression_rate_20y": perf.get("regression_rate_20y"),
+                    "return_rate_1m": perf.get("return_rate_1m"),
+                    "return_rate_3m": perf.get("return_rate_3m"),
+                    "return_rate_6m": perf.get("return_rate_6m"),
+                    "return_rate_1y": perf.get("return_rate_1y"),
+                    "return_rate_3y": perf.get("return_rate_3y"),
+                    "return_rate_5y": perf.get("return_rate_5y"),
+                    "return_rate_10y": perf.get("return_rate_10y"),
+                    "return_rate_20y": perf.get("return_rate_20y"),
                 }
             )
 

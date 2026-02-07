@@ -55,6 +55,7 @@ export interface ETFDetail {
   return_1y?: number | null
   return_3y?: number | null
   momentum_label?: string | null
+  regression_rates?: Partial<Record<string, number | null>>
 }
 
 export interface ChartDataPoint {
@@ -332,4 +333,12 @@ export interface MomentumHistoryItem {
   regression_rate_5y: number | null
   regression_rate_10y: number | null
   regression_rate_20y: number | null
+  return_rate_1m: number | null
+  return_rate_3m: number | null
+  return_rate_6m: number | null
+  return_rate_1y: number | null
+  return_rate_3y: number | null
+  return_rate_5y: number | null
+  return_rate_10y: number | null
+  return_rate_20y: number | null
 }

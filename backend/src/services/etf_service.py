@@ -6,6 +6,7 @@ from src.repositories import (
     EtfMetricsHistoryRepository,
     ScoreCacheRepository,
 )
+from src.models import PerformanceCache
 from src.services.scoring_service import ScoringService
 
 # Map score sort fields to scoring service perspective keys or axis keys
@@ -239,10 +240,23 @@ class ETFService:
         else:
             result["trading_value"] = None
 
-        # Return rates
-        return_rates = self.repository.get_return_rates(code)
-        result["return_1y"] = return_rates.get("1y")
-        result["return_3y"] = return_rates.get("3y")
+        # Return rates and regression rates from PerformanceCache
+        perf_data = (
+            PerformanceCache.query.filter(PerformanceCache.etf_code == code).all()
+        )
+        regression_rates = {}
+        return_1y = None
+        return_3y = None
+        for perf in perf_data:
+            regression_rates[perf.period] = perf.regression_rate
+            if perf.period == "1y":
+                return_1y = perf.return_rate
+            elif perf.period == "3y":
+                return_3y = perf.return_rate
+
+        result["return_1y"] = return_1y
+        result["return_3y"] = return_3y
+        result["regression_rates"] = regression_rates
 
         return result
 
@@ -438,6 +452,14 @@ class ETFService:
                 "regression_rate_5y": record.regression_rate_5y,
                 "regression_rate_10y": record.regression_rate_10y,
                 "regression_rate_20y": record.regression_rate_20y,
+                "return_rate_1m": record.return_rate_1m,
+                "return_rate_3m": record.return_rate_3m,
+                "return_rate_6m": record.return_rate_6m,
+                "return_rate_1y": record.return_rate_1y,
+                "return_rate_3y": record.return_rate_3y,
+                "return_rate_5y": record.return_rate_5y,
+                "return_rate_10y": record.return_rate_10y,
+                "return_rate_20y": record.return_rate_20y,
             }
             for record in records
         ]

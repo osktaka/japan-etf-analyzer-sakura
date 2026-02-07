@@ -28,6 +28,14 @@ class EtfMetricsHistory(db.Model):
     regression_rate_5y = db.Column(db.Float, nullable=True)
     regression_rate_10y = db.Column(db.Float, nullable=True)
     regression_rate_20y = db.Column(db.Float, nullable=True)
+    return_rate_1m = db.Column(db.Float, nullable=True)
+    return_rate_3m = db.Column(db.Float, nullable=True)
+    return_rate_6m = db.Column(db.Float, nullable=True)
+    return_rate_1y = db.Column(db.Float, nullable=True)
+    return_rate_3y = db.Column(db.Float, nullable=True)
+    return_rate_5y = db.Column(db.Float, nullable=True)
+    return_rate_10y = db.Column(db.Float, nullable=True)
+    return_rate_20y = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(
         db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
@@ -65,6 +73,14 @@ class EtfMetricsHistory(db.Model):
             "regression_rate_5y": self.regression_rate_5y,
             "regression_rate_10y": self.regression_rate_10y,
             "regression_rate_20y": self.regression_rate_20y,
+            "return_rate_1m": self.return_rate_1m,
+            "return_rate_3m": self.return_rate_3m,
+            "return_rate_6m": self.return_rate_6m,
+            "return_rate_1y": self.return_rate_1y,
+            "return_rate_3y": self.return_rate_3y,
+            "return_rate_5y": self.return_rate_5y,
+            "return_rate_10y": self.return_rate_10y,
+            "return_rate_20y": self.return_rate_20y,
             "created_at": (self.created_at.isoformat() if self.created_at else None),
             "updated_at": (self.updated_at.isoformat() if self.updated_at else None),
         }

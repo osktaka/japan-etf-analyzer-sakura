@@ -1,11 +1,6 @@
 /** ETF detail modal component */
 import { useEffect, useMemo, useState } from 'react'
-import {
-  useETFDetail,
-  usePortfolio,
-  useChartPeriodStorage,
-  useMultiPeriodChartData,
-} from '../../hooks'
+import { useETFDetail, usePortfolio, useChartPeriodStorage } from '../../hooks'
 import { getPerspectives, Perspective, CustomWeights } from '../../api'
 import {
   formatPercent,
@@ -15,11 +10,7 @@ import {
   formatTradingValue,
   PERSPECTIVE_GRADIENTS,
 } from '../../utils'
-import {
-  checkDataSufficiency,
-  calculateRegressionReturn,
-  annualizeReturn,
-} from '../../utils/chartUtils'
+import { annualizeReturn } from '../../utils/chartUtils'
 import { Loading, ErrorMessage, MomentumBadge } from '../common'
 import { TagBadge } from '../etf'
 import { FavoriteButton } from '../favorite'
@@ -82,7 +73,6 @@ export function ETFDetailModal({
   const [selectedPerspective, setSelectedPerspective] =
     useState<PerspectiveKey>(initialPerspective ?? 'balance')
   const [perspectives, setPerspectives] = useState<Perspective[]>([])
-  const { data: chartData } = useMultiPeriodChartData(code, chartPeriods)
 
   useEffect(() => {
     getPerspectives().then(setPerspectives)
@@ -104,25 +94,18 @@ export function ETFDetailModal({
     : undefined
 
   const annualizedReturns = useMemo(() => {
+    const rates = data?.regression_rates
     return chartPeriods.map((period) => {
-      const periodData = chartData[period]
-      if (!periodData || periodData.data.length < 2) {
-        return { period, annualizedReturn: null }
-      }
-      const sufficiency = checkDataSufficiency(period, periodData.data.length)
-      if (!sufficiency.isSufficient) {
-        return { period, annualizedReturn: null }
-      }
-      const regressionReturn = calculateRegressionReturn(periodData.data)
-      if (regressionReturn === null) {
+      const raw = rates?.[period] ?? null
+      if (raw === null || raw === undefined) {
         return { period, annualizedReturn: null }
       }
       return {
         period,
-        annualizedReturn: annualizeReturn(regressionReturn, period),
+        annualizedReturn: annualizeReturn(raw, period),
       }
     })
-  }, [chartData, chartPeriods])
+  }, [data, chartPeriods])
 
   // 選択中の切り口のスコアを取得（フォールバックとしてdata.scoreを使用）
   const currentScore = useMemo(() => {

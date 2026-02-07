@@ -40,7 +40,41 @@
 .title {
   font-size: 1.1rem;
   font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.tabGroup {
+  display: flex;
+  gap: 8px;
   margin-bottom: 16px;
+}
+
+.tab {
+  padding: 6px 16px;
+  border-radius: 6px;
+  background: var(--color-bg-hover, #f3f4f6);
+  color: var(--color-text-secondary, #6b7280);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.tab:hover {
+  background: var(--color-bg-active, #e5e7eb);
+}
+
+.tabActive {
+  background: var(--color-primary, #2563eb);
+  color: #fff;
+}
+
+.tabActive:hover {
+  background: var(--color-primary, #2563eb);
+  color: #fff;
 }
 
 .tableWrapper {
