@@ -11,10 +11,16 @@ from typing import Dict, List, Optional
 import requests
 
 original_prepare_request = requests.Session.prepare_request
+
+
 def custom_prepare_request(self, request):
     # 常に新しいUser-Agentに置き換える（yfinanceの古いUser-Agentを上書き）
-    request.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    request.headers[
+        "User-Agent"
+    ] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     return original_prepare_request(self, request)
+
+
 requests.Session.prepare_request = custom_prepare_request
 
 logger = logging.getLogger(__name__)

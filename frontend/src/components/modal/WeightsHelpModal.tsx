@@ -168,37 +168,37 @@ export function WeightsHelpModal({
                 <td className={styles.customLabel}>カスタム</td>
                 <td>
                   {isAuthenticated
-                    ? (customWeights?.dividend_power != null
-                        ? Math.round(customWeights.dividend_power * 100)
-                        : '-')
+                    ? customWeights?.dividend_power != null
+                      ? Math.round(customWeights.dividend_power * 100)
+                      : '-'
                     : '-'}
                 </td>
                 <td>
                   {isAuthenticated
-                    ? (customWeights?.cost_efficiency != null
-                        ? Math.round(customWeights.cost_efficiency * 100)
-                        : '-')
+                    ? customWeights?.cost_efficiency != null
+                      ? Math.round(customWeights.cost_efficiency * 100)
+                      : '-'
                     : '-'}
                 </td>
                 <td>
                   {isAuthenticated
-                    ? (customWeights?.scale_reliability != null
-                        ? Math.round(customWeights.scale_reliability * 100)
-                        : '-')
+                    ? customWeights?.scale_reliability != null
+                      ? Math.round(customWeights.scale_reliability * 100)
+                      : '-'
                     : '-'}
                 </td>
                 <td>
                   {isAuthenticated
-                    ? (customWeights?.trading_quality != null
-                        ? Math.round(customWeights.trading_quality * 100)
-                        : '-')
+                    ? customWeights?.trading_quality != null
+                      ? Math.round(customWeights.trading_quality * 100)
+                      : '-'
                     : '-'}
                 </td>
                 <td>
                   {isAuthenticated
-                    ? (customWeights?.return_performance != null
-                        ? Math.round(customWeights.return_performance * 100)
-                        : '-')
+                    ? customWeights?.return_performance != null
+                      ? Math.round(customWeights.return_performance * 100)
+                      : '-'
                     : '-'}
                 </td>
               </tr>

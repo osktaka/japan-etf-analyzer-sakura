@@ -74,7 +74,7 @@ class UserSettingsService:
             "cost_efficiency",
             "scale_reliability",
             "trading_quality",
-            "return_performance"
+            "return_performance",
         }
 
         # Check for missing keys

@@ -91,7 +91,9 @@ export function GuideMomentumPage() {
           <li className={styles.listItem}>
             <span className={styles.listIcon}>1</span>
             <div className={styles.listContent}>
-              <div className={styles.listTitle}>最小二乗法によるフィッティング</div>
+              <div className={styles.listTitle}>
+                最小二乗法によるフィッティング
+              </div>
               <div className={styles.listDescription}>
                 期間内の全終値データに最もフィットする直線を算出します（最小二乗法）。
               </div>
@@ -111,7 +113,8 @@ export function GuideMomentumPage() {
             <div className={styles.listContent}>
               <div className={styles.listTitle}>回帰上昇率の算出</div>
               <div className={styles.listDescription}>
-                回帰上昇率 = (回帰直線の終了値 - 開始値) / 開始値 x 100（%）で算出します。
+                回帰上昇率 = (回帰直線の終了値 - 開始値) / 開始値 x
+                100（%）で算出します。
               </div>
             </div>
           </li>
@@ -144,9 +147,9 @@ export function GuideMomentumPage() {
         <div className={styles.highlightBox}>
           <div className={styles.highlightTitle}>閾値の意味</div>
           <div className={styles.highlightText}>
-            ratio {'>'} 1.45 → 加速（直近の勢いが中期の1.45倍超）。
-            ratio {'<'} 0.55 → 減速（直近の勢いが中期の55%未満）。
-            その間（0.55〜1.45）→ 維持（短期と中期がほぼ同じペース）。
+            ratio {'>'} 1.45 → 加速（直近の勢いが中期の1.45倍超）。 ratio {'<'}{' '}
+            0.55 → 減速（直近の勢いが中期の55%未満）。 その間（0.55〜1.45）→
+            維持（短期と中期がほぼ同じペース）。
           </div>
         </div>
       </section>

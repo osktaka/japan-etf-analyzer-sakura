@@ -121,14 +121,18 @@ class RecommendService:
                 "description": "あなたが設定した重みで評価された銘柄",
             }
 
-            scored_items = self._get_scored_etfs_custom(custom_weights, limit, scoring_mode)
+            scored_items = self._get_scored_etfs_custom(
+                custom_weights, limit, scoring_mode
+            )
         else:
             perspective_info = next(
                 (p for p in self.PERSPECTIVES if p["id"] == perspective),
                 self.PERSPECTIVES[0],  # Default to balance
             )
 
-            scored_items = self._get_scored_etfs_cached(perspective, limit, scoring_mode)
+            scored_items = self._get_scored_etfs_cached(
+                perspective, limit, scoring_mode
+            )
 
         return {
             "perspective": perspective_info,
@@ -142,7 +146,9 @@ class RecommendService:
             ],
         }
 
-    def _get_scored_etfs_cached(self, perspective: str, limit: int, scoring_mode: str = "full") -> List[Dict]:
+    def _get_scored_etfs_cached(
+        self, perspective: str, limit: int, scoring_mode: str = "full"
+    ) -> List[Dict]:
         """Get ETFs ranked by cached composite score.
 
         Args:
@@ -170,7 +176,9 @@ class RecommendService:
                 continue
 
             # Select score based on mode
-            score = cache.total_score_full if scoring_mode == "full" else cache.total_score
+            score = (
+                cache.total_score_full if scoring_mode == "full" else cache.total_score
+            )
 
             result.append(
                 {
@@ -211,7 +219,9 @@ class RecommendService:
 
         return result
 
-    def _get_scored_etfs_custom(self, custom_weights: Dict[str, float], limit: int, scoring_mode: str = "full") -> List[Dict]:
+    def _get_scored_etfs_custom(
+        self, custom_weights: Dict[str, float], limit: int, scoring_mode: str = "full"
+    ) -> List[Dict]:
         """Get ETFs ranked by custom composite score.
 
         Args:
@@ -230,8 +240,12 @@ class RecommendService:
 
         # Batch fetch data and cache
         etf_codes = [etf.code for etf in all_etfs]
-        self.scoring_service._avg_volumes_cache = self.etf_repository.get_average_volumes_batch(etf_codes)
-        self.scoring_service._return_rates_cache = self.etf_repository.get_return_rates_batch(etf_codes)
+        self.scoring_service._avg_volumes_cache = (
+            self.etf_repository.get_average_volumes_batch(etf_codes)
+        )
+        self.scoring_service._return_rates_cache = (
+            self.etf_repository.get_return_rates_batch(etf_codes)
+        )
 
         # Collect values for percentile calculation
         self.scoring_service._collect_percentile_data(all_etfs)
@@ -239,14 +253,21 @@ class RecommendService:
         # Score each ETF with custom weights
         scored = []
         for etf in filtered_candidates:
-            score = self.scoring_service.calculate_score(etf, perspective="custom", mode=scoring_mode, custom_weights=custom_weights)
+            score = self.scoring_service.calculate_score(
+                etf,
+                perspective="custom",
+                mode=scoring_mode,
+                custom_weights=custom_weights,
+            )
             if score > 0:
                 axis_scores = self.scoring_service.calculate_axis_scores(etf)
-                scored.append({
-                    "etf": etf,
-                    "score": score,
-                    "axis_scores": axis_scores,
-                })
+                scored.append(
+                    {
+                        "etf": etf,
+                        "score": score,
+                        "axis_scores": axis_scores,
+                    }
+                )
 
         # Clear cache
         self.scoring_service._avg_volumes_cache = {}

@@ -186,7 +186,10 @@ export function AdminPage() {
     }
   }
 
-  const handleResetPassword = async (userId: number, userDisplayName: string) => {
+  const handleResetPassword = async (
+    userId: number,
+    userDisplayName: string
+  ) => {
     const confirmed = window.confirm(
       `${userDisplayName} のパスワードをリセットしますか？\n新しいパスワードは「password123456789」になります。`
     )
@@ -416,12 +419,26 @@ export function AdminPage() {
                         }}
                       />
                     </div>
-                    <span style={{ fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap' }}>
+                    <span
+                      style={{
+                        fontSize: '12px',
+                        fontWeight: 'bold',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
                       {log.processed_count}/{log.total_count} (
-                      {Math.round((log.processed_count / log.total_count) * 100)}
+                      {Math.round(
+                        (log.processed_count / log.total_count) * 100
+                      )}
                       %)
                       {log.last_item_code && (
-                        <small style={{ color: '#666', fontSize: '11px', marginLeft: '4px' }}>
+                        <small
+                          style={{
+                            color: '#666',
+                            fontSize: '11px',
+                            marginLeft: '4px',
+                          }}
+                        >
                           {log.last_item_code}
                         </small>
                       )}
@@ -502,7 +519,12 @@ export function AdminPage() {
                 <td>
                   <button
                     className={styles.recalculateButton}
-                    onClick={() => handleResetPassword(user.id, user.username || user.user_id)}
+                    onClick={() =>
+                      handleResetPassword(
+                        user.id,
+                        user.username || user.user_id
+                      )
+                    }
                     disabled={isSelf}
                   >
                     PWリセット

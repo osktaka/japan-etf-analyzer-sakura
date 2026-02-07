@@ -43,7 +43,13 @@ describe('TagBadge', () => {
   })
 
   it('異なる色のタグが正しく表示される', () => {
-    const greenTag: Tag = { id: 2, name: '高配当', color: '#10B981', category: 'theme', etf_count: 3 }
+    const greenTag: Tag = {
+      id: 2,
+      name: '高配当',
+      color: '#10B981',
+      category: 'theme',
+      etf_count: 3,
+    }
     render(<TagBadge tag={greenTag} />)
 
     const badge = screen.getByText('高配当')

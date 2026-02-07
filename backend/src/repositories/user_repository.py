@@ -17,7 +17,9 @@ class UserRepository(BaseRepository[User]):
 
     def user_id_exists(self, user_id: str) -> bool:
         """Check if user_id already exists."""
-        return db.session.query(User).filter(User.user_id == user_id).first() is not None
+        return (
+            db.session.query(User).filter(User.user_id == user_id).first() is not None
+        )
 
     def get_active_users(self) -> List[User]:
         """Get all active users."""

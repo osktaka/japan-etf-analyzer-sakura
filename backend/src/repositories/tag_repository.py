@@ -32,7 +32,9 @@ class TagRepository(BaseRepository[Tag]):
             List of tuples: (Tag, etf_count)
         """
         result = (
-            db.session.query(Tag, func.count(ETFTagRelation.etf_code).label("etf_count"))
+            db.session.query(
+                Tag, func.count(ETFTagRelation.etf_code).label("etf_count")
+            )
             .outerjoin(ETFTagRelation, Tag.id == ETFTagRelation.tag_id)
             .group_by(Tag.id)
             .order_by(Tag.name)

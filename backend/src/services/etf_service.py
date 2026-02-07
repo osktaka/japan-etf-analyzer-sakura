@@ -6,31 +6,31 @@ from src.services.scoring_service import ScoringService
 
 # Map score sort fields to scoring service perspective keys or axis keys
 SCORE_SORT_FIELDS = {
-    'score_balance': 'balance',
-    'score_dividend': 'dividend',
-    'score_low_cost': 'low-cost',
-    'score_stability': 'stability',
-    'score_volume': 'volume',
-    'score_growth': 'growth',
-    'score_custom': 'custom',
+    "score_balance": "balance",
+    "score_dividend": "dividend",
+    "score_low_cost": "low-cost",
+    "score_stability": "stability",
+    "score_volume": "volume",
+    "score_growth": "growth",
+    "score_custom": "custom",
     # Axis scores
-    'axis_dividend_power': 'axis_scores.dividend_power',
-    'axis_cost_efficiency': 'axis_scores.cost_efficiency',
-    'axis_scale_reliability': 'axis_scores.scale_reliability',
-    'axis_trading_quality': 'axis_scores.trading_quality',
-    'axis_return_performance': 'axis_scores.return_performance',
+    "axis_dividend_power": "axis_scores.dividend_power",
+    "axis_cost_efficiency": "axis_scores.cost_efficiency",
+    "axis_scale_reliability": "axis_scores.scale_reliability",
+    "axis_trading_quality": "axis_scores.trading_quality",
+    "axis_return_performance": "axis_scores.return_performance",
     # Evaluation score (balance by default)
-    'evaluation_score': 'score',
+    "evaluation_score": "score",
 }
 
 # Map perspective names to API response keys
 PERSPECTIVE_TO_KEY = {
-    'balance': 'score_balance',
-    'dividend': 'score_dividend',
-    'low-cost': 'score_low_cost',
-    'stability': 'score_stability',
-    'volume': 'score_volume',
-    'growth': 'score_growth',
+    "balance": "score_balance",
+    "dividend": "score_dividend",
+    "low-cost": "score_low_cost",
+    "stability": "score_stability",
+    "volume": "score_volume",
+    "growth": "score_growth",
 }
 
 
@@ -67,9 +67,9 @@ class ETFService:
         is_score_sort = sort in SCORE_SORT_FIELDS
 
         # For custom score sort, we need custom_weights
-        if sort == 'score_custom' and not custom_weights:
+        if sort == "score_custom" and not custom_weights:
             # Fallback to balance if custom_weights not provided
-            sort = 'score_balance'
+            sort = "score_balance"
 
         if is_score_sort:
             # Score sort: get all matching ETFs, compute scores, sort, then paginate
@@ -92,8 +92,10 @@ class ETFService:
             # Get scores from cache (with fallback to calculation)
             codes = [etf.code for etf in all_etfs]
             # For custom sort, calculate on-the-fly with custom_weights
-            if sort == 'score_custom':
-                all_scores = self._get_batch_custom_scores(codes, scoring_mode, custom_weights)
+            if sort == "score_custom":
+                all_scores = self._get_batch_custom_scores(
+                    codes, scoring_mode, custom_weights
+                )
             else:
                 all_scores = self.get_batch_scores(codes, scoring_mode)
 
@@ -103,31 +105,28 @@ class ETFService:
             # Helper function to get nested value (e.g., "axis_scores.dividend_power")
             def get_score_value(etf):
                 scores_data = all_scores.get(etf.code, {})
-                if '.' in score_key:
+                if "." in score_key:
                     # Nested key (e.g., "axis_scores.dividend_power")
-                    parts = score_key.split('.')
+                    parts = score_key.split(".")
                     value = scores_data
                     for part in parts:
                         value = value.get(part) if isinstance(value, dict) else None
                         if value is None:
                             return -1
                     return value if value is not None else -1
-                elif score_key == 'custom':
+                elif score_key == "custom":
                     # Custom score (uses 'score' field from custom calculation)
-                    return scores_data.get('score', -1)
+                    return scores_data.get("score", -1)
                 else:
                     # Top-level key (e.g., "balance", "score")
                     return scores_data.get(score_key, -1)
 
             # Sort by score (missing scores = -1, sorted to end)
-            all_etfs.sort(
-                key=get_score_value,
-                reverse=(order == 'desc')
-            )
+            all_etfs.sort(key=get_score_value, reverse=(order == "desc"))
 
             # Apply pagination
             total = len(all_etfs)
-            etfs = all_etfs[offset:offset + limit]
+            etfs = all_etfs[offset : offset + limit]
         else:
             # Normal sort: use repository pagination
             etfs = self.repository.search(
@@ -159,10 +158,14 @@ class ETFService:
         # Get scores for all ETFs with the specified perspective
         codes = [etf.code for etf in etfs]
         # カスタムの場合は計算、それ以外はキャッシュから取得
-        if perspective == 'custom' and custom_weights:
-            all_scores = self._get_batch_custom_scores(codes, scoring_mode, custom_weights)
+        if perspective == "custom" and custom_weights:
+            all_scores = self._get_batch_custom_scores(
+                codes, scoring_mode, custom_weights
+            )
         else:
-            all_scores = self._get_scores_for_perspective(codes, perspective, scoring_mode)
+            all_scores = self._get_scores_for_perspective(
+                codes, perspective, scoring_mode
+            )
 
         # Merge scores into items
         items = []
@@ -170,11 +173,11 @@ class ETFService:
             item = etf.to_summary_dict()
             score_data = all_scores.get(etf.code)
             if score_data:
-                item['score'] = score_data['score']
-                item['axis_scores'] = score_data['axis_scores']
+                item["score"] = score_data["score"]
+                item["axis_scores"] = score_data["axis_scores"]
             else:
-                item['score'] = None
-                item['axis_scores'] = None
+                item["score"] = None
+                item["axis_scores"] = None
             items.append(item)
 
         return {
@@ -202,39 +205,39 @@ class ETFService:
             key = PERSPECTIVE_TO_KEY.get(cache.perspective)
             if key:
                 result[key] = cache.total_score
-            if cache.perspective == 'balance':
+            if cache.perspective == "balance":
                 balance_cache = cache
 
         # Set default score and axis_scores from balance perspective
         if balance_cache:
-            result['score'] = balance_cache.total_score
-            result['score_full'] = balance_cache.total_score_full
-            result['axis_scores'] = {
-                'dividend_power': balance_cache.dividend_power,
-                'cost_efficiency': balance_cache.cost_efficiency,
-                'scale_reliability': balance_cache.scale_reliability,
-                'trading_quality': balance_cache.trading_quality,
-                'return_performance': balance_cache.return_performance,
+            result["score"] = balance_cache.total_score
+            result["score_full"] = balance_cache.total_score_full
+            result["axis_scores"] = {
+                "dividend_power": balance_cache.dividend_power,
+                "cost_efficiency": balance_cache.cost_efficiency,
+                "scale_reliability": balance_cache.scale_reliability,
+                "trading_quality": balance_cache.trading_quality,
+                "return_performance": balance_cache.return_performance,
             }
         else:
-            result['score'] = None
-            result['score_full'] = None
-            result['axis_scores'] = None
+            result["score"] = None
+            result["score_full"] = None
+            result["axis_scores"] = None
 
         # Add score basis data
         # 30-day average volume
-        result['average_volume'] = self.repository.get_average_volume(code, days=30)
+        result["average_volume"] = self.repository.get_average_volume(code, days=30)
 
         # Trading value (price × volume)
-        if etf.market_price and result['average_volume']:
-            result['trading_value'] = float(etf.market_price) * result['average_volume']
+        if etf.market_price and result["average_volume"]:
+            result["trading_value"] = float(etf.market_price) * result["average_volume"]
         else:
-            result['trading_value'] = None
+            result["trading_value"] = None
 
         # Return rates
         return_rates = self.repository.get_return_rates(code)
-        result['return_1y'] = return_rates.get('1y')
-        result['return_3y'] = return_rates.get('3y')
+        result["return_1y"] = return_rates.get("1y")
+        result["return_3y"] = return_rates.get("3y")
 
         return result
 
@@ -248,7 +251,9 @@ class ETFService:
             "offset": offset,
         }
 
-    def get_batch_scores(self, codes: List[str], scoring_mode: str = 'full') -> Dict[str, Dict]:
+    def get_batch_scores(
+        self, codes: List[str], scoring_mode: str = "full"
+    ) -> Dict[str, Dict]:
         """Get all 6 perspective scores + axis scores for multiple ETFs.
 
         Args:
@@ -277,36 +282,43 @@ class ETFService:
             if code in cached_data and cached_data[code]:
                 # Convert cached data to score dict based on scoring_mode
                 perspective_scores = {}
-                if scoring_mode == 'partial':
+                if scoring_mode == "partial":
                     perspective_scores = {
                         perspective: cache.total_score
                         for perspective, cache in cached_data[code].items()
                     }
                 else:  # full mode (default)
                     perspective_scores = {
-                        perspective: cache.total_score_full if cache.total_score_full is not None else cache.total_score
+                        perspective: cache.total_score_full
+                        if cache.total_score_full is not None
+                        else cache.total_score
                         for perspective, cache in cached_data[code].items()
                     }
 
                 # Add axis_scores from balance cache
-                balance_cache = cached_data[code].get('balance')
+                balance_cache = cached_data[code].get("balance")
                 if balance_cache:
                     axis_scores = {
-                        'dividend_power': balance_cache.dividend_power,
-                        'cost_efficiency': balance_cache.cost_efficiency,
-                        'scale_reliability': balance_cache.scale_reliability,
-                        'trading_quality': balance_cache.trading_quality,
-                        'return_performance': balance_cache.return_performance,
+                        "dividend_power": balance_cache.dividend_power,
+                        "cost_efficiency": balance_cache.cost_efficiency,
+                        "scale_reliability": balance_cache.scale_reliability,
+                        "trading_quality": balance_cache.trading_quality,
+                        "return_performance": balance_cache.return_performance,
                     }
-                    score = balance_cache.total_score_full if scoring_mode == 'full' and balance_cache.total_score_full is not None else balance_cache.total_score
+                    score = (
+                        balance_cache.total_score_full
+                        if scoring_mode == "full"
+                        and balance_cache.total_score_full is not None
+                        else balance_cache.total_score
+                    )
                 else:
                     axis_scores = None
                     score = None
 
                 result[code] = {
                     **perspective_scores,
-                    'axis_scores': axis_scores,
-                    'score': score,
+                    "axis_scores": axis_scores,
+                    "score": score,
                 }
             else:
                 missing_codes.append(code)
@@ -319,17 +331,19 @@ class ETFService:
 
             for code, scores in calculated_scores.items():
                 etf = etf_map.get(code)
-                axis_scores = self.scoring_service.calculate_axis_scores(etf) if etf else None
+                axis_scores = (
+                    self.scoring_service.calculate_axis_scores(etf) if etf else None
+                )
                 result[code] = {
                     **scores,
-                    'axis_scores': axis_scores,
-                    'score': scores.get('balance'),
+                    "axis_scores": axis_scores,
+                    "score": scores.get("balance"),
                 }
 
         return result
 
     def _get_scores_for_perspective(
-        self, codes: List[str], perspective: str, scoring_mode: str = 'full'
+        self, codes: List[str], perspective: str, scoring_mode: str = "full"
     ) -> Dict[str, Dict]:
         """Get scores for a specific perspective.
 
@@ -382,13 +396,16 @@ class ETFService:
 
             # Calculate custom score
             score = self.scoring_service.calculate_score(
-                etf, perspective='balance', mode=scoring_mode, custom_weights=custom_weights
+                etf,
+                perspective="balance",
+                mode=scoring_mode,
+                custom_weights=custom_weights,
             )
             axis_scores = self.scoring_service.calculate_axis_scores(etf)
 
             result[code] = {
-                'score': score,
-                'axis_scores': axis_scores,
+                "score": score,
+                "axis_scores": axis_scores,
             }
 
         return result

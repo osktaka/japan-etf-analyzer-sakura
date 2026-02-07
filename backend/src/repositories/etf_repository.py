@@ -4,7 +4,15 @@ from typing import Dict, List, Optional
 
 from sqlalchemy import or_, func
 
-from src.models import ETF, ETFTagRelation, Category, Tag, PerformanceCache, PriceHistory, db
+from src.models import (
+    ETF,
+    ETFTagRelation,
+    Category,
+    Tag,
+    PerformanceCache,
+    PriceHistory,
+    db,
+)
 
 from .base_repository import BaseRepository
 
@@ -341,9 +349,7 @@ class ETFRepository(BaseRepository[ETF]):
             .all()
         )
 
-        return {
-            code: float(avg_vol) if avg_vol else None for code, avg_vol in results
-        }
+        return {code: float(avg_vol) if avg_vol else None for code, avg_vol in results}
 
     def get_return_rates_batch(
         self, codes: List[str]

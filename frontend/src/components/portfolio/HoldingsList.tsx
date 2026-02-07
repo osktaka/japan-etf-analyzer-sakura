@@ -228,8 +228,12 @@ export function HoldingsList({
             >
               {CARD_SORT_KEYS.map((key) => (
                 <optgroup key={key} label={SORT_LABELS[key]}>
-                  <option value={`${key}-desc`}>{SORT_LABELS[key]} (大→小)</option>
-                  <option value={`${key}-asc`}>{SORT_LABELS[key]} (小→大)</option>
+                  <option value={`${key}-desc`}>
+                    {SORT_LABELS[key]} (大→小)
+                  </option>
+                  <option value={`${key}-asc`}>
+                    {SORT_LABELS[key]} (小→大)
+                  </option>
                 </optgroup>
               ))}
             </select>
@@ -343,7 +347,13 @@ export function HoldingsList({
                 >
                   <td>
                     <div className={styles.etfInfo}>
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                        }}
+                      >
                         <span className={styles.code}>{holding.etf_code}</span>
                         <MomentumBadge label={holding.etf?.momentum_label} />
                       </span>
@@ -428,11 +438,15 @@ export function HoldingsList({
               holding={holding}
               onClick={() => onETFClick?.(holding.etf_code)}
               onHistoryClick={
-                onHistoryClick ? () => onHistoryClick(holding.etf_code) : undefined
+                onHistoryClick
+                  ? () => onHistoryClick(holding.etf_code)
+                  : undefined
               }
               isInCompare={isInCompare?.(holding.etf_code)}
               onCompareToggle={
-                onCompareToggle ? () => onCompareToggle(holding.etf_code) : undefined
+                onCompareToggle
+                  ? () => onCompareToggle(holding.etf_code)
+                  : undefined
               }
             />
           ))}

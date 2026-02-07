@@ -107,6 +107,7 @@ def create_etf_bp():
         if custom_weights_param:
             try:
                 import json
+
                 custom_weights = json.loads(custom_weights_param)
             except (ValueError, json.JSONDecodeError):
                 return error_response("Invalid custom_weights format", 400)

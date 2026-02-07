@@ -178,7 +178,7 @@ class ScoreCacheRepository(BaseRepository):
         return result
 
     def get_scores_with_axes(
-        self, etf_codes: List[str], perspective: str, scoring_mode: str = 'full'
+        self, etf_codes: List[str], perspective: str, scoring_mode: str = "full"
     ) -> Dict[str, Dict]:
         """Get scores and axis scores for multiple ETFs.
 
@@ -205,26 +205,26 @@ class ScoreCacheRepository(BaseRepository):
                 # Select score based on mode
                 score = (
                     cache.total_score_full
-                    if scoring_mode == 'full' and cache.total_score_full is not None
+                    if scoring_mode == "full" and cache.total_score_full is not None
                     else cache.total_score
                 )
 
                 axis_scores = {
-                    'dividend_power': cache.dividend_power,
-                    'cost_efficiency': cache.cost_efficiency,
-                    'scale_reliability': cache.scale_reliability,
-                    'trading_quality': cache.trading_quality,
-                    'return_performance': cache.return_performance,
+                    "dividend_power": cache.dividend_power,
+                    "cost_efficiency": cache.cost_efficiency,
+                    "scale_reliability": cache.scale_reliability,
+                    "trading_quality": cache.trading_quality,
+                    "return_performance": cache.return_performance,
                 }
 
                 result[code] = {
-                    'score': score,
-                    'axis_scores': axis_scores,
+                    "score": score,
+                    "axis_scores": axis_scores,
                 }
             else:
                 result[code] = {
-                    'score': None,
-                    'axis_scores': None,
+                    "score": None,
+                    "axis_scores": None,
                 }
 
         return result

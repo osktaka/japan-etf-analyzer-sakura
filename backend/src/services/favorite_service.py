@@ -46,7 +46,9 @@ class FavoriteService:
         codes = [favorite.etf_code for favorite in favorites]
 
         # Get scores for the specified perspective
-        score_data = self._get_scores_for_perspective(codes, perspective, scoring_mode, user_id)
+        score_data = self._get_scores_for_perspective(
+            codes, perspective, scoring_mode, user_id
+        )
 
         for favorite in favorites:
             etf = self.etf_repository.get_by_code(favorite.etf_code)
@@ -56,11 +58,11 @@ class FavoriteService:
                 # Add score and axis_scores
                 scores = score_data.get(favorite.etf_code)
                 if scores:
-                    etf_dict['score'] = scores['score']
-                    etf_dict['axis_scores'] = scores['axis_scores']
+                    etf_dict["score"] = scores["score"]
+                    etf_dict["axis_scores"] = scores["axis_scores"]
                 else:
-                    etf_dict['score'] = None
-                    etf_dict['axis_scores'] = None
+                    etf_dict["score"] = None
+                    etf_dict["axis_scores"] = None
 
                 result.append(
                     {
@@ -133,8 +135,11 @@ class FavoriteService:
         return self.favorite_repository.get_etf_codes_for_user(user_id)
 
     def _get_scores_for_perspective(
-        self, codes: List[str], perspective: str, scoring_mode: str = 'full',
-        user_id: Optional[int] = None
+        self,
+        codes: List[str],
+        perspective: str,
+        scoring_mode: str = "full",
+        user_id: Optional[int] = None,
     ) -> Dict[str, Dict]:
         """Get scores for a specific perspective.
 
@@ -151,7 +156,9 @@ class FavoriteService:
         if perspective == "custom" and user_id:
             custom_weights = self.user_settings_service.get_custom_weights(user_id)
             if custom_weights:
-                return self._calculate_custom_scores(codes, custom_weights, scoring_mode)
+                return self._calculate_custom_scores(
+                    codes, custom_weights, scoring_mode
+                )
             return {}
 
         return self.score_cache_repository.get_scores_with_axes(
@@ -178,8 +185,12 @@ class FavoriteService:
         etf_codes_all = [etf.code for etf in all_etfs]
 
         # Batch fetch data and cache
-        self.scoring_service._avg_volumes_cache = self.etf_repository.get_average_volumes_batch(etf_codes_all)
-        self.scoring_service._return_rates_cache = self.etf_repository.get_return_rates_batch(etf_codes_all)
+        self.scoring_service._avg_volumes_cache = (
+            self.etf_repository.get_average_volumes_batch(etf_codes_all)
+        )
+        self.scoring_service._return_rates_cache = (
+            self.etf_repository.get_return_rates_batch(etf_codes_all)
+        )
 
         # Collect percentile data
         self.scoring_service._collect_percentile_data(all_etfs)
@@ -189,12 +200,15 @@ class FavoriteService:
             etf = self.etf_repository.get_by_code(code)
             if etf:
                 score = self.scoring_service.calculate_score(
-                    etf, perspective="custom", mode=scoring_mode, custom_weights=custom_weights
+                    etf,
+                    perspective="custom",
+                    mode=scoring_mode,
+                    custom_weights=custom_weights,
                 )
                 axis_scores = self.scoring_service.calculate_axis_scores(etf)
                 result[code] = {
-                    'score': score,
-                    'axis_scores': axis_scores,
+                    "score": score,
+                    "axis_scores": axis_scores,
                 }
 
         # Clear cache

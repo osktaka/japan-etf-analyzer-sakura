@@ -60,6 +60,7 @@ def create_recommend_bp():
         if custom_weights_param:
             try:
                 import json
+
                 custom_weights = json.loads(custom_weights_param)
             except (ValueError, json.JSONDecodeError):
                 return error_response("Invalid custom_weights format", 400)
@@ -71,7 +72,7 @@ def create_recommend_bp():
                 limit=limit,
                 scoring_mode=scoring_mode,
                 user_id=user_id,
-                custom_weights=custom_weights
+                custom_weights=custom_weights,
             )
             return api_response(data=result)
         except ValueError as e:

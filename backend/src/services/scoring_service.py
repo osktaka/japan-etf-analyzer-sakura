@@ -1,5 +1,4 @@
 """Scoring service for ETF analysis and recommendations."""
-import math
 from typing import Dict, List, Optional
 
 from src.models import ETF
@@ -95,7 +94,13 @@ class ScoringService:
         # Invert if needed (for cost metrics where lower is better)
         return 1 - score if inverted else score
 
-    def calculate_score(self, etf: ETF, perspective: str, mode: str = "partial", custom_weights: Optional[Dict[str, float]] = None) -> float:
+    def calculate_score(
+        self,
+        etf: ETF,
+        perspective: str,
+        mode: str = "partial",
+        custom_weights: Optional[Dict[str, float]] = None,
+    ) -> float:
         """Calculate composite score for an ETF based on perspective.
 
         Args:
@@ -310,7 +315,9 @@ class ScoringService:
         """
         # Batch fetch data and cache for individual scoring
         etf_codes = [etf.code for etf in etfs]
-        self._avg_volumes_cache = self.etf_repository.get_average_volumes_batch(etf_codes)
+        self._avg_volumes_cache = self.etf_repository.get_average_volumes_batch(
+            etf_codes
+        )
         self._return_rates_cache = self.etf_repository.get_return_rates_batch(etf_codes)
 
         # Collect values for percentile calculation
@@ -351,14 +358,25 @@ class ScoringService:
         all_etf_codes = [etf.code for etf in all_etfs]
 
         # Batch fetch data for ALL ETFs
-        self._avg_volumes_cache = self.etf_repository.get_average_volumes_batch(all_etf_codes)
-        self._return_rates_cache = self.etf_repository.get_return_rates_batch(all_etf_codes)
+        self._avg_volumes_cache = self.etf_repository.get_average_volumes_batch(
+            all_etf_codes
+        )
+        self._return_rates_cache = self.etf_repository.get_return_rates_batch(
+            all_etf_codes
+        )
 
         # Collect percentile data from ALL ETFs
         self._collect_percentile_data(all_etfs)
 
         result = {}
-        perspectives = ["balance", "dividend", "low-cost", "stability", "volume", "growth"]
+        perspectives = [
+            "balance",
+            "dividend",
+            "low-cost",
+            "stability",
+            "volume",
+            "growth",
+        ]
 
         # Calculate scores only for requested ETFs
         for etf in etfs:
@@ -380,12 +398,20 @@ class ScoringService:
         Args:
             etfs: List of ETF objects
         """
-        self._dividend_yields = [etf.dividend_yield for etf in etfs if etf.dividend_yield is not None]
-        self._expense_ratios = [etf.expense_ratio for etf in etfs if etf.expense_ratio is not None]
-        self._total_assets = [etf.total_assets for etf in etfs if etf.total_assets is not None]
+        self._dividend_yields = [
+            etf.dividend_yield for etf in etfs if etf.dividend_yield is not None
+        ]
+        self._expense_ratios = [
+            etf.expense_ratio for etf in etfs if etf.expense_ratio is not None
+        ]
+        self._total_assets = [
+            etf.total_assets for etf in etfs if etf.total_assets is not None
+        ]
 
         # Use cached data (already fetched in rank_etfs)
-        self._avg_volumes = [vol for vol in self._avg_volumes_cache.values() if vol is not None]
+        self._avg_volumes = [
+            vol for vol in self._avg_volumes_cache.values() if vol is not None
+        ]
 
         # Collect trading value (price * volume)
         self._trading_values = []
@@ -396,7 +422,11 @@ class ScoringService:
                 self._trading_values.append(trading_value)
 
         # Collect deviation rates
-        self._deviation_rates = [abs(float(etf.deviation_rate)) for etf in etfs if etf.deviation_rate is not None]
+        self._deviation_rates = [
+            abs(float(etf.deviation_rate))
+            for etf in etfs
+            if etf.deviation_rate is not None
+        ]
 
         # Use cached return rates (already fetched in rank_etfs)
         self._return_1y = []

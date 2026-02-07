@@ -20,7 +20,16 @@ export function usePortfolioHistory(
   const [data, setData] = useState<ValuationHistory>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const VALID_PERIODS: ValuationHistoryPeriod[] = ['1m', '3m', '6m', '1y', '3y', '5y', '10y', '20y']
+  const VALID_PERIODS: ValuationHistoryPeriod[] = [
+    '1m',
+    '3m',
+    '6m',
+    '1y',
+    '3y',
+    '5y',
+    '10y',
+    '20y',
+  ]
 
   const [period, setPeriodState] = useState<ValuationHistoryPeriod>(() => {
     try {

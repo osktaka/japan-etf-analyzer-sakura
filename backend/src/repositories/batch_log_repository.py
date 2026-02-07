@@ -154,9 +154,8 @@ class BatchLogRepository(BaseRepository[BatchLog]):
         max_time = now - timedelta(minutes=5)
 
         # 既にリトライ済みのジョブIDを除外
-        retried_parent_ids = (
-            db.session.query(BatchLog.parent_batch_log_id)
-            .filter(BatchLog.parent_batch_log_id.isnot(None))
+        retried_parent_ids = db.session.query(BatchLog.parent_batch_log_id).filter(
+            BatchLog.parent_batch_log_id.isnot(None)
         )
 
         return (

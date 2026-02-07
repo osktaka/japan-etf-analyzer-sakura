@@ -117,11 +117,21 @@ export function FilterPanel({
   useEffect(() => {
     setSelectedCategory(initialParams.category_id || null)
     setSelectedTags(initialParams.tag_ids || [])
-    setSelectedMomentum((initialParams.momentum_labels as MomentumLabel[]) ?? [])
-  }, [initialParams.category_id, initialParams.tag_ids, initialParams.momentum_labels])
+    setSelectedMomentum(
+      (initialParams.momentum_labels as MomentumLabel[]) ?? []
+    )
+  }, [
+    initialParams.category_id,
+    initialParams.tag_ids,
+    initialParams.momentum_labels,
+  ])
 
   // フィルタ適用ロジック
-  const applyFilters = (cat: number | null, tgs: number[], momentumLabels?: MomentumLabel[]) => {
+  const applyFilters = (
+    cat: number | null,
+    tgs: number[],
+    momentumLabels?: MomentumLabel[]
+  ) => {
     const params: SearchParams = {}
     if (cat) params.category_id = cat
     if (tgs.length > 0) params.tag_ids = tgs

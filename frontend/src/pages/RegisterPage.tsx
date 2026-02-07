@@ -81,7 +81,9 @@ export function RegisterPage() {
               title="英数字、ハイフン、アンダースコアのみ使用可能（3〜50文字）"
               autoComplete="username"
             />
-            <span className={styles.hint}>英数字、ハイフン、アンダースコアのみ（3〜50文字）</span>
+            <span className={styles.hint}>
+              英数字、ハイフン、アンダースコアのみ（3〜50文字）
+            </span>
           </div>
 
           <div className={styles.field}>

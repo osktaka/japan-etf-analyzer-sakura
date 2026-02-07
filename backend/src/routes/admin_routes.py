@@ -130,7 +130,8 @@ def create_admin_bp():
 
         if log.status != "running":
             return error_response(
-                f"実行中のバッチのみリセット可能です（現在のステータス: {log.status}）", 400
+                f"実行中のバッチのみリセット可能です（現在のステータス: {log.status}）",
+                400,
             )
 
         updated_log = batch_log_repo.update(

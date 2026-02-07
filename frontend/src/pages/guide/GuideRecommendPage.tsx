@@ -26,7 +26,8 @@ export function GuideRecommendPage() {
               配当利回りが高く、定期的な配当収入を期待できる銘柄。配当金による定期収入を重視する投資家におすすめです。
             </p>
             <div className={styles.perspectiveMetrics}>
-              重視指標: 配当力（50%）、安定性（20%）、コスト効率・取引規模・リターン実績
+              重視指標:
+              配当力（50%）、安定性（20%）、コスト効率・取引規模・リターン実績
             </div>
           </div>
 
@@ -36,7 +37,8 @@ export function GuideRecommendPage() {
               信託報酬が低く、長期保有でコストを抑えられる銘柄。保有コストを最小化したい長期投資家におすすめです。
             </p>
             <div className={styles.perspectiveMetrics}>
-              重視指標: コスト効率（50%）、安定性（20%）、配当力・取引規模・リターン実績
+              重視指標:
+              コスト効率（50%）、安定性（20%）、配当力・取引規模・リターン実績
             </div>
           </div>
 
@@ -46,7 +48,8 @@ export function GuideRecommendPage() {
               純資産規模が大きく、安心して保有できる銘柄。リスクを抑えたい初心者・保守的な投資家におすすめです。
             </p>
             <div className={styles.perspectiveMetrics}>
-              重視指標: 安定性（40%）、コスト効率・取引規模（各20%）、配当力・リターン実績
+              重視指標:
+              安定性（40%）、コスト効率・取引規模（各20%）、配当力・リターン実績
             </div>
           </div>
 
@@ -56,7 +59,8 @@ export function GuideRecommendPage() {
               出来高が多く、売買が成立しやすい銘柄。流動性を重視する短期トレーダー・アクティブ投資家におすすめです。
             </p>
             <div className={styles.perspectiveMetrics}>
-              重視指標: 取引規模（50%）、安定性（20%）、配当力・コスト効率・リターン実績
+              重視指標:
+              取引規模（50%）、安定性（20%）、配当力・コスト効率・リターン実績
             </div>
           </div>
 
@@ -66,7 +70,8 @@ export function GuideRecommendPage() {
               過去の値上がり実績が良好な銘柄。キャピタルゲインを重視する成長志向の投資家におすすめです。
             </p>
             <div className={styles.perspectiveMetrics}>
-              重視指標: リターン実績（50%）、安定性（20%）、配当力・コスト効率・取引規模
+              重視指標:
+              リターン実績（50%）、安定性（20%）、配当力・コスト効率・取引規模
             </div>
           </div>
 
@@ -76,7 +81,8 @@ export function GuideRecommendPage() {
               複数の観点でバランス良く評価された銘柄。特定の軸に偏らず、総合的に優れた銘柄を探している投資家におすすめです。
             </p>
             <div className={styles.perspectiveMetrics}>
-              重視指標: 配当力・コスト効率・安定性・取引規模・リターン実績（各20%均等）
+              重視指標:
+              配当力・コスト効率・安定性・取引規模・リターン実績（各20%均等）
             </div>
           </div>
         </div>

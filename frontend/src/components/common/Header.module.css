@@ -135,7 +135,9 @@
   text-decoration: none;
   border: 1.5px solid #b0bec5;
   border-radius: var(--radius-full);
-  transition: color 0.2s, border-color 0.2s;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
 }
 
 .mypageShortcut svg {

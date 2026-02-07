@@ -32,7 +32,7 @@ class User(db.Model, UserMixin, TimestampMixin):
 
     def set_password(self, password: str) -> None:
         """Set hashed password."""
-        self.password_hash = generate_password_hash(password, method='pbkdf2:sha256')
+        self.password_hash = generate_password_hash(password, method="pbkdf2:sha256")
 
     def check_password(self, password: str) -> bool:
         """Verify password against hash."""

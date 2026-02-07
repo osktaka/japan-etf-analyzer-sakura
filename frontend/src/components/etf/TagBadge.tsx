@@ -17,7 +17,10 @@ function getLuminance(hex: string): number {
 }
 
 /** 明るい色の場合のスタイル調整を返す */
-function getLightColorStyles(bgColor: string): { color: string; border?: string } {
+function getLightColorStyles(bgColor: string): {
+  color: string
+  border?: string
+} {
   const luminance = getLuminance(bgColor)
   // 輝度が180以上の明るい色は暗いテキストと枠線を使用
   if (luminance > 180) {

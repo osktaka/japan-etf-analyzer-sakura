@@ -212,7 +212,9 @@ export function Header() {
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             aria-expanded={isMobileMenuOpen}
             aria-controls="mobile-menu"
-            aria-label={isMobileMenuOpen ? 'メニューを閉じる' : 'メニューを開く'}
+            aria-label={
+              isMobileMenuOpen ? 'メニューを閉じる' : 'メニューを開く'
+            }
           >
             <span className={styles.hamburgerLine} />
             <span className={styles.hamburgerLine} />

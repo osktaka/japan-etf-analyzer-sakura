@@ -57,7 +57,9 @@ export function PasswordChangeModal({
       alert('パスワードを変更しました')
       handleClose()
     } catch {
-      setError('パスワードの変更に失敗しました。現在のパスワードをご確認ください。')
+      setError(
+        'パスワードの変更に失敗しました。現在のパスワードをご確認ください。'
+      )
     } finally {
       setIsSubmitting(false)
     }

@@ -44,7 +44,11 @@ export function SearchBar({
         検索
       </button>
       {onClear && (
-        <button type="button" className={styles.clearButton} onClick={handleClear}>
+        <button
+          type="button"
+          className={styles.clearButton}
+          onClick={handleClear}
+        >
           クリア
         </button>
       )}

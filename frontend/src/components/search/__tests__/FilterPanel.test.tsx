@@ -15,7 +15,13 @@ const mockCategories = [
 ]
 
 const mockTags = [
-  { id: 1, name: 'TOPIX連動', color: '#3B82F6', category: 'theme', etf_count: 5 },
+  {
+    id: 1,
+    name: 'TOPIX連動',
+    color: '#3B82F6',
+    category: 'theme',
+    etf_count: 5,
+  },
   { id: 2, name: '高配当', color: '#10B981', category: 'theme', etf_count: 3 },
 ]
 

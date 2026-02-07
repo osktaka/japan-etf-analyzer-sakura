@@ -23,11 +23,7 @@ def create_user_settings_bp():
         """
         custom_weights = user_settings_service.get_custom_weights(current_user.id)
 
-        return api_response(
-            data={
-                "custom_weights": custom_weights
-            }
-        )
+        return api_response(data={"custom_weights": custom_weights})
 
     @bp.route("/settings/custom-weights", methods=["PUT"])
     @login_required
@@ -61,14 +57,14 @@ def create_user_settings_bp():
             return error_response("weightsフィールドは必須です", 400)
 
         try:
-            user_settings_service.save_custom_weights(
-                current_user.id, weights
-            )
+            user_settings_service.save_custom_weights(current_user.id, weights)
             return api_response(
                 data={
-                    "custom_weights": user_settings_service.get_custom_weights(current_user.id)
+                    "custom_weights": user_settings_service.get_custom_weights(
+                        current_user.id
+                    )
                 },
-                message="カスタム重みを更新しました"
+                message="カスタム重みを更新しました",
             )
         except ValueError as e:
             return error_response(str(e), 400)

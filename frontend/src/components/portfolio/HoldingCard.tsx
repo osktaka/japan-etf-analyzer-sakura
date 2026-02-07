@@ -40,7 +40,9 @@ export function HoldingCard({
       onKeyDown={handleKeyDown}
     >
       <div className={styles.header}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+        <span
+          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+        >
           <span className={styles.code}>{holding.etf_code}</span>
           <MomentumBadge label={holding.etf?.momentum_label} />
         </span>
@@ -67,7 +69,9 @@ export function HoldingCard({
         </div>
         <div className={styles.metric}>
           <span className={styles.label}>評価額</span>
-          <span className={styles.value}>{formatPrice(holding.current_value)}</span>
+          <span className={styles.value}>
+            {formatPrice(holding.current_value)}
+          </span>
         </div>
       </div>
       <div className={styles.pnlSection}>

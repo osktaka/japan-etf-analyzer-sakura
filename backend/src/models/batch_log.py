@@ -23,7 +23,9 @@ class BatchLog(db.Model, TimestampMixin):
     last_item_code = db.Column(db.String(20), nullable=True)
 
     # Retry tracking columns
-    parent_batch_log_id = db.Column(db.Integer, db.ForeignKey("batch_logs.id"), nullable=True)
+    parent_batch_log_id = db.Column(
+        db.Integer, db.ForeignKey("batch_logs.id"), nullable=True
+    )
     retry_count = db.Column(db.Integer, default=0)
 
     # Status constants

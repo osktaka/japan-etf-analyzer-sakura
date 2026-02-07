@@ -21,11 +21,20 @@ const RATIO_UPPER = 1.45
 const RATIO_LOWER = 0.55
 
 export const ALL_MOMENTUM_LABELS: MomentumLabel[] = [
-  '上昇加速', '上昇維持', '上昇減速', '反転上昇',
-  '失速', '下降減速', '下降維持', '下降加速',
+  '上昇加速',
+  '上昇維持',
+  '上昇減速',
+  '反転上昇',
+  '失速',
+  '下降減速',
+  '下降維持',
+  '下降加速',
 ]
 
-export const MOMENTUM_STYLES: Record<MomentumLabel, { color: string; bgColor: string }> = {
+export const MOMENTUM_STYLES: Record<
+  MomentumLabel,
+  { color: string; bgColor: string }
+> = {
   上昇加速: { color: '#059669', bgColor: '#05966920' },
   上昇維持: { color: '#10b981', bgColor: '#10b98120' },
   上昇減速: { color: '#6ee7b7', bgColor: '#6ee7b720' },
@@ -68,7 +77,9 @@ export function getMomentumInfo(
 }
 
 /** ラベル文字列から直接スタイルを取得 */
-export function getStyleFromLabel(label: string | null | undefined): { color: string; bgColor: string } | null {
+export function getStyleFromLabel(
+  label: string | null | undefined
+): { color: string; bgColor: string } | null {
   if (!label) return null
   const entry = MOMENTUM_STYLES[label as MomentumLabel]
   return entry ? { color: entry.color, bgColor: entry.bgColor } : null

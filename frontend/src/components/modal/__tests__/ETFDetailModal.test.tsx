@@ -23,12 +23,20 @@ vi.mock('../../../hooks', () => ({
 vi.mock('../../chart', () => ({
   ChartContainer: () => <div data-testid="chart-container">Chart</div>,
   MultiPeriodChart: () => <div data-testid="chart-container">Chart</div>,
-  ChartPeriodSelector: () => <div data-testid="chart-period-selector">Period</div>,
-  AnnualizedReturnCards: () => <div data-testid="annualized-return-cards">Returns</div>,
+  ChartPeriodSelector: () => (
+    <div data-testid="chart-period-selector">Period</div>
+  ),
+  AnnualizedReturnCards: () => (
+    <div data-testid="annualized-return-cards">Returns</div>
+  ),
 }))
 
 vi.mock('../../recommend', () => ({
-  PerspectiveTabs: ({ perspectives, onSelect, onCustomClick }: {
+  PerspectiveTabs: ({
+    perspectives,
+    onSelect,
+    onCustomClick,
+  }: {
     perspectives: { id: string; name: string }[]
     onSelect: (id: string) => void
     onCustomClick?: () => void
@@ -39,9 +47,7 @@ vi.mock('../../recommend', () => ({
           {p.name}
         </button>
       ))}
-      {onCustomClick && (
-        <button onClick={onCustomClick}>カスタム</button>
-      )}
+      {onCustomClick && <button onClick={onCustomClick}>カスタム</button>}
     </div>
   ),
 }))
@@ -59,7 +65,15 @@ const mockETFDetail = {
   deviation_rate: 0.21,
   total_assets: 150000000000,
   listing_date: '2002-07-13',
-  tags: [{ id: 1, name: 'TOPIX連動', color: '#3B82F6', category: 'theme', etf_count: 5 }],
+  tags: [
+    {
+      id: 1,
+      name: 'TOPIX連動',
+      color: '#3B82F6',
+      category: 'theme',
+      etf_count: 5,
+    },
+  ],
 }
 
 describe('ETFDetailModal', () => {
@@ -221,11 +235,7 @@ describe('ETFDetailModal', () => {
 
   it('onCustomClickが渡された場合カスタムボタンが表示される', async () => {
     render(
-      <ETFDetailModal
-        code="1306"
-        onClose={vi.fn()}
-        onCustomClick={vi.fn()}
-      />
+      <ETFDetailModal code="1306" onClose={vi.fn()} onCustomClick={vi.fn()} />
     )
     const button = await screen.findByText('カスタム')
     expect(button).toBeInTheDocument()

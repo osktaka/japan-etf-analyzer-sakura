@@ -341,7 +341,10 @@ export function ETFDetailModal({
 
             <div className={styles.chart}>
               <div className={styles.chartHeader}>
-                <AnnualizedReturnCards data={annualizedReturns} momentumLabel={data.momentum_label} />
+                <AnnualizedReturnCards
+                  data={annualizedReturns}
+                  momentumLabel={data.momentum_label}
+                />
                 <ChartPeriodSelector
                   selectedPeriods={chartPeriods}
                   onChange={setChartPeriods}

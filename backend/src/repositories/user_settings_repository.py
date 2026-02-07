@@ -19,9 +19,7 @@ class UserSettingsRepository(BaseRepository[UserSettings]):
             .first()
         )
 
-    def create_or_update(
-        self, user_id: int, custom_weights: str
-    ) -> UserSettings:
+    def create_or_update(self, user_id: int, custom_weights: str) -> UserSettings:
         """Create or update user settings."""
         settings = self.get_by_user_id(user_id)
         if settings:

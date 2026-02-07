@@ -25,7 +25,10 @@ class AuthService:
         if not user_id:
             return False, "ユーザーIDは必須です"
         if not self.USER_ID_PATTERN.match(user_id):
-            return False, "ユーザーIDは3〜50文字の英数字、ハイフン、アンダースコアのみ使用可能です"
+            return (
+                False,
+                "ユーザーIDは3〜50文字の英数字、ハイフン、アンダースコアのみ使用可能です",
+            )
         return True, None
 
     def validate_password(self, password: str) -> Tuple[bool, Optional[str]]:

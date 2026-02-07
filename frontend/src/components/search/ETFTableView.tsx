@@ -238,7 +238,10 @@ export function ETFTableView({
   }
 
   // scoreColumnVisibilityでフィルタされた5軸キー（evaluation_scoreは常に含む）
-  const SCORE_VISIBILITY_MAP: Record<string, keyof NonNullable<typeof scoreColumnVisibility>> = {
+  const SCORE_VISIBILITY_MAP: Record<
+    string,
+    keyof NonNullable<typeof scoreColumnVisibility>
+  > = {
     axis_dividend_power: 'dividendPower',
     axis_cost_efficiency: 'costEfficiency',
     axis_scale_reliability: 'scaleReliability',
@@ -303,16 +306,20 @@ export function ETFTableView({
 
   // 表示中のデータ列数を算出して銘柄名の動的max-widthを決定
   const visibleDataColumns =
-    ((!commonColumnVisibility || commonColumnVisibility.price) ? 1 : 0) +
-    ((!commonColumnVisibility || commonColumnVisibility.dividendYield) ? 1 : 0) +
-    ((!commonColumnVisibility || commonColumnVisibility.expenseRatio) ? 1 : 0) +
-    ((momentumVisible === undefined || momentumVisible) ? 1 : 0) +
+    (!commonColumnVisibility || commonColumnVisibility.price ? 1 : 0) +
+    (!commonColumnVisibility || commonColumnVisibility.dividendYield ? 1 : 0) +
+    (!commonColumnVisibility || commonColumnVisibility.expenseRatio ? 1 : 0) +
+    (momentumVisible === undefined || momentumVisible ? 1 : 0) +
     (displayMode === 'trend' ? selectedPeriods.length : axisKeys.length)
 
   const nameMaxWidth =
-    visibleDataColumns <= 3 ? 600 :
-    visibleDataColumns <= 5 ? 450 :
-    visibleDataColumns <= 7 ? 320 : 200
+    visibleDataColumns <= 3
+      ? 600
+      : visibleDataColumns <= 5
+        ? 450
+        : visibleDataColumns <= 7
+          ? 320
+          : 200
 
   return (
     <div className={styles.container}>
@@ -348,7 +355,8 @@ export function ETFTableView({
                   株価{renderSortIcon('price')}
                 </th>
               )}
-              {(!commonColumnVisibility || commonColumnVisibility.dividendYield) && (
+              {(!commonColumnVisibility ||
+                commonColumnVisibility.dividendYield) && (
                 <th
                   onClick={() => handleSort('dividend')}
                   className={`${styles.sortable} ${styles.numeric}`}
@@ -356,7 +364,8 @@ export function ETFTableView({
                   配当利回り{renderSortIcon('dividend')}
                 </th>
               )}
-              {(!commonColumnVisibility || commonColumnVisibility.expenseRatio) && (
+              {(!commonColumnVisibility ||
+                commonColumnVisibility.expenseRatio) && (
                 <th
                   onClick={() => handleSort('expense')}
                   className={`${styles.sortable} ${styles.numeric}`}
@@ -413,7 +422,11 @@ export function ETFTableView({
                   </td>
                 )}
                 <td className={styles.code}>{etf.code}</td>
-                <td className={styles.name} title={etf.name} style={{ maxWidth: nameMaxWidth }}>
+                <td
+                  className={styles.name}
+                  title={etf.name}
+                  style={{ maxWidth: nameMaxWidth }}
+                >
                   {etf.name}
                 </td>
                 <td className={styles.category}>{etf.category || '-'}</td>
@@ -424,23 +437,29 @@ export function ETFTableView({
                       : '-'}
                   </td>
                 )}
-                {(!commonColumnVisibility || commonColumnVisibility.dividendYield) && (
+                {(!commonColumnVisibility ||
+                  commonColumnVisibility.dividendYield) && (
                   <td className={styles.numeric}>
                     {etf.dividend_yield
                       ? `${etf.dividend_yield.toFixed(2)}%`
                       : '-'}
                   </td>
                 )}
-                {(!commonColumnVisibility || commonColumnVisibility.expenseRatio) && (
+                {(!commonColumnVisibility ||
+                  commonColumnVisibility.expenseRatio) && (
                   <td className={styles.numeric}>
-                    {etf.expense_ratio ? `${etf.expense_ratio.toFixed(2)}%` : '-'}
+                    {etf.expense_ratio
+                      ? `${etf.expense_ratio.toFixed(2)}%`
+                      : '-'}
                   </td>
                 )}
                 {(momentumVisible === undefined || momentumVisible) && (
                   <td className={styles.numeric}>
                     {etf.momentum_label ? (
                       <MomentumBadge label={etf.momentum_label} />
-                    ) : '-'}
+                    ) : (
+                      '-'
+                    )}
                   </td>
                 )}
                 {displayMode === 'trend' &&

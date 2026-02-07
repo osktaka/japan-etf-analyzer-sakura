@@ -30,7 +30,10 @@ const PERIOD_ORDER: ChartPeriod[] = [
   '20y',
 ]
 
-export function AnnualizedReturnCards({ data, momentumLabel }: AnnualizedReturnCardsProps) {
+export function AnnualizedReturnCards({
+  data,
+  momentumLabel,
+}: AnnualizedReturnCardsProps) {
   const [showTooltip, setShowTooltip] = useState(false)
   const tooltipRef = useRef<HTMLDivElement | null>(null)
   const helpIconRef = useRef<HTMLSpanElement | null>(null)
@@ -42,8 +45,10 @@ export function AnnualizedReturnCards({ data, momentumLabel }: AnnualizedReturnC
   // Use momentum_label from backend if available, fallback to local calculation
   const resolvedMomentumLabel = (() => {
     if (momentumLabel) return momentumLabel
-    const annual1m = data.find((d) => d.period === '1m')?.annualizedReturn ?? null
-    const annual3m = data.find((d) => d.period === '3m')?.annualizedReturn ?? null
+    const annual1m =
+      data.find((d) => d.period === '1m')?.annualizedReturn ?? null
+    const annual3m =
+      data.find((d) => d.period === '3m')?.annualizedReturn ?? null
     return getMomentumInfoFromAnnualized(annual1m, annual3m)?.label ?? null
   })()
 

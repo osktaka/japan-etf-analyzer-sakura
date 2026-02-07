@@ -460,7 +460,7 @@
 }
 
 .highlightBox::before {
-  content: "\2139";
+  content: '\2139';
   position: absolute;
   left: var(--spacing-lg);
   top: var(--spacing-lg);
@@ -473,7 +473,7 @@
 }
 
 .highlightBox.warning::before {
-  content: "\26A0";
+  content: '\26A0';
 }
 
 .highlightTitle {

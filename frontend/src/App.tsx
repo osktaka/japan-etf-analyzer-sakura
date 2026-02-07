@@ -33,7 +33,9 @@ function GoogleAnalytics() {
 
   // セッション中のadminログイン/ログアウト対策（GA公式の無効化プロパティ）
   useEffect(() => {
-    (window as unknown as Record<string, unknown>)['ga-disable-G-W5LE9WR4C3'] = isAdmin
+    // eslint-disable-next-line no-extra-semi
+    ;(window as unknown as Record<string, unknown>)['ga-disable-G-W5LE9WR4C3'] =
+      isAdmin
   }, [isAdmin])
 
   // 認証確認中 or 管理者 → GAを読み込まない
@@ -41,7 +43,10 @@ function GoogleAnalytics() {
 
   return (
     <Helmet>
-      <script async src="https://www.googletagmanager.com/gtag/js?id=G-W5LE9WR4C3" />
+      <script
+        async
+        src="https://www.googletagmanager.com/gtag/js?id=G-W5LE9WR4C3"
+      />
       <script>{`
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
