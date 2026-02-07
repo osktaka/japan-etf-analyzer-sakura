@@ -181,7 +181,7 @@
 }
 
 .axisValue {
-  font-size: var(--text-base);
+  font-size: var(--text-lg);
   font-weight: 600;
   color: var(--color-primary);
 }
