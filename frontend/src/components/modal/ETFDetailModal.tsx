@@ -186,11 +186,13 @@ export function ETFDetailModal({
                   <MomentumBadge label={data.momentum_label} />
                 </div>
                 {onCompareToggle && (
-                  <CompareCheckbox
-                    isInCompare={isInCompare ?? false}
-                    onToggle={onCompareToggle}
-                    size="lg"
-                  />
+                  <div className={styles.headerCompare}>
+                    <CompareCheckbox
+                      isInCompare={isInCompare ?? false}
+                      onToggle={onCompareToggle}
+                      size="lg"
+                    />
+                  </div>
                 )}
               </div>
               <h2 className={styles.name}>{data.name}</h2>

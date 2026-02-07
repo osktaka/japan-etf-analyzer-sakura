@@ -229,6 +229,14 @@
 }
 
 @media (max-width: 600px) {
+  .headerTop {
+    align-items: flex-start;
+  }
+
+  .headerCompare {
+    margin-top: var(--spacing-xs);
+  }
+
   .headerLeft {
     flex-wrap: wrap;
   }
