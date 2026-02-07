@@ -27,7 +27,7 @@ export function MomentumHistoryModal({
 
   const formatRate = (rate: number | null, multiplier: number): string => {
     if (rate === null) return '-'
-    const annualized = rate * multiplier * 100
+    const annualized = rate * multiplier
     const sign = annualized >= 0 ? '+' : ''
     return `${sign}${annualized.toFixed(1)}%`
   }
@@ -52,19 +52,26 @@ export function MomentumHistoryModal({
         )}
 
         {!isLoading && data.length > 0 && (
+          <div className={styles.tableWrapper}>
           <table className={styles.table}>
             <thead>
               <tr>
                 <th className={styles.th}>日付</th>
                 <th className={styles.th}>勢い</th>
-                <th className={styles.th}>1M年率</th>
-                <th className={styles.th}>3M年率</th>
+                <th className={styles.th}>1M</th>
+                <th className={styles.th}>3M</th>
+                <th className={styles.th}>6M</th>
+                <th className={styles.th}>1Y</th>
+                <th className={styles.th}>3Y</th>
+                <th className={styles.th}>5Y</th>
+                <th className={styles.th}>10Y</th>
+                <th className={styles.th}>20Y</th>
               </tr>
             </thead>
             <tbody>
               {data.map((item) => (
                 <tr key={item.date}>
-                  <td className={styles.td}>{item.date}</td>
+                  <td className={styles.td}>{item.date.replace(/-/g, '/')}</td>
                   <td className={styles.td}>
                     <MomentumBadge label={item.momentum_label} />
                   </td>
@@ -78,10 +85,41 @@ export function MomentumHistoryModal({
                   >
                     {formatRate(item.regression_rate_3m, 4)}
                   </td>
+                  <td
+                    className={`${styles.td} ${getRateClass(item.regression_rate_6m)}`}
+                  >
+                    {formatRate(item.regression_rate_6m, 2)}
+                  </td>
+                  <td
+                    className={`${styles.td} ${getRateClass(item.regression_rate_1y)}`}
+                  >
+                    {formatRate(item.regression_rate_1y, 1)}
+                  </td>
+                  <td
+                    className={`${styles.td} ${getRateClass(item.regression_rate_3y)}`}
+                  >
+                    {formatRate(item.regression_rate_3y, 1 / 3)}
+                  </td>
+                  <td
+                    className={`${styles.td} ${getRateClass(item.regression_rate_5y)}`}
+                  >
+                    {formatRate(item.regression_rate_5y, 1 / 5)}
+                  </td>
+                  <td
+                    className={`${styles.td} ${getRateClass(item.regression_rate_10y)}`}
+                  >
+                    {formatRate(item.regression_rate_10y, 1 / 10)}
+                  </td>
+                  <td
+                    className={`${styles.td} ${getRateClass(item.regression_rate_20y)}`}
+                  >
+                    {formatRate(item.regression_rate_20y, 1 / 20)}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

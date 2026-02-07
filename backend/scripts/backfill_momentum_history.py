@@ -36,7 +36,9 @@ class BackfillMomentumHistoryBatch(SimpleBatchScript):
     """勢いデータのバックフィルバッチ"""
 
     batch_name = "backfill_momentum_history"
-    description = "Backfill momentum_label, regression_rate_1m/3m into etf_metrics_history"
+    description = (
+        "Backfill momentum_label, regression_rate_1m/3m into etf_metrics_history"
+    )
 
     def add_custom_arguments(self, parser):
         """カスタム引数追加"""
@@ -126,21 +128,28 @@ class BackfillMomentumHistoryBatch(SimpleBatchScript):
             )
 
             # 既存レコードを一括取得
-            existing = metrics_repo.get_metrics_batch_for_date(
-                etf_codes, target_date
-            )
+            existing = metrics_repo.get_metrics_batch_for_date(etf_codes, target_date)
 
             date_updated = 0
             date_created = 0
 
             for etf_code in etf_codes:
                 try:
-                    # PriceHistoryからDataFrame構築
-                    df = self._get_price_history(etf_code, target_date)
+                    # PriceHistoryからDataFrame構築（期間別に暦日ベースで取得）
+                    df_1m = self._get_price_history(
+                        etf_code, target_date, lookback_days=30
+                    )
+                    df_3m = self._get_price_history(
+                        etf_code, target_date, lookback_days=90
+                    )
 
-                    # 回帰率計算
-                    rate_1m = calculate_regression_return_from_df(df, 30)
-                    rate_3m = calculate_regression_return_from_df(df, 90)
+                    # 回帰率計算（取得した全データポイントを使用）
+                    rate_1m = calculate_regression_return_from_df(
+                        df_1m, len(df_1m)
+                    )
+                    rate_3m = calculate_regression_return_from_df(
+                        df_3m, len(df_3m)
+                    )
                     label = get_momentum_label(rate_1m, rate_3m)
 
                     if not self.args.dry_run:
@@ -181,8 +190,7 @@ class BackfillMomentumHistoryBatch(SimpleBatchScript):
             total_created += date_created
 
             self.logger.info(
-                f"  {target_date}: updated={date_updated}, "
-                f"created={date_created}"
+                f"  {target_date}: updated={date_updated}, " f"created={date_created}"
             )
 
         self.logger.info(

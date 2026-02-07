@@ -64,6 +64,12 @@ class EtfMetricsHistoryRepository(BaseRepository):
         momentum_label: Optional[str] = None,
         regression_rate_1m: Optional[float] = None,
         regression_rate_3m: Optional[float] = None,
+        regression_rate_6m: Optional[float] = None,
+        regression_rate_1y: Optional[float] = None,
+        regression_rate_3y: Optional[float] = None,
+        regression_rate_5y: Optional[float] = None,
+        regression_rate_10y: Optional[float] = None,
+        regression_rate_20y: Optional[float] = None,
     ) -> EtfMetricsHistory:
         """Insert or update metrics history.
 
@@ -80,6 +86,12 @@ class EtfMetricsHistoryRepository(BaseRepository):
             momentum_label: Momentum label (e.g. "上昇加速")
             regression_rate_1m: 1-month regression rate
             regression_rate_3m: 3-month regression rate
+            regression_rate_6m: 6-month regression rate
+            regression_rate_1y: 1-year regression rate
+            regression_rate_3y: 3-year regression rate
+            regression_rate_5y: 5-year regression rate
+            regression_rate_10y: 10-year regression rate
+            regression_rate_20y: 20-year regression rate
 
         Returns:
             EtfMetricsHistory object
@@ -97,6 +109,12 @@ class EtfMetricsHistoryRepository(BaseRepository):
             existing.momentum_label = momentum_label
             existing.regression_rate_1m = regression_rate_1m
             existing.regression_rate_3m = regression_rate_3m
+            existing.regression_rate_6m = regression_rate_6m
+            existing.regression_rate_1y = regression_rate_1y
+            existing.regression_rate_3y = regression_rate_3y
+            existing.regression_rate_5y = regression_rate_5y
+            existing.regression_rate_10y = regression_rate_10y
+            existing.regression_rate_20y = regression_rate_20y
             existing.updated_at = datetime.utcnow()
         else:
             existing = EtfMetricsHistory(
@@ -112,6 +130,12 @@ class EtfMetricsHistoryRepository(BaseRepository):
                 momentum_label=momentum_label,
                 regression_rate_1m=regression_rate_1m,
                 regression_rate_3m=regression_rate_3m,
+                regression_rate_6m=regression_rate_6m,
+                regression_rate_1y=regression_rate_1y,
+                regression_rate_3y=regression_rate_3y,
+                regression_rate_5y=regression_rate_5y,
+                regression_rate_10y=regression_rate_10y,
+                regression_rate_20y=regression_rate_20y,
             )
             db.session.add(existing)
 
@@ -125,7 +149,10 @@ class EtfMetricsHistoryRepository(BaseRepository):
             records: List of dicts with keys: etf_code, dividend_yield,
                      expense_ratio, total_assets, deviation_rate,
                      return_1y, return_3y, volatility,
-                     momentum_label, regression_rate_1m, regression_rate_3m
+                     momentum_label, regression_rate_1m, regression_rate_3m,
+                     regression_rate_6m, regression_rate_1y,
+                     regression_rate_3y, regression_rate_5y,
+                     regression_rate_10y, regression_rate_20y
             target_date: Target date for all records
 
         Returns:
@@ -149,6 +176,12 @@ class EtfMetricsHistoryRepository(BaseRepository):
                 existing.momentum_label = record.get("momentum_label")
                 existing.regression_rate_1m = record.get("regression_rate_1m")
                 existing.regression_rate_3m = record.get("regression_rate_3m")
+                existing.regression_rate_6m = record.get("regression_rate_6m")
+                existing.regression_rate_1y = record.get("regression_rate_1y")
+                existing.regression_rate_3y = record.get("regression_rate_3y")
+                existing.regression_rate_5y = record.get("regression_rate_5y")
+                existing.regression_rate_10y = record.get("regression_rate_10y")
+                existing.regression_rate_20y = record.get("regression_rate_20y")
                 existing.updated_at = datetime.utcnow()
             else:
                 new_record = EtfMetricsHistory(
@@ -164,6 +197,12 @@ class EtfMetricsHistoryRepository(BaseRepository):
                     momentum_label=record.get("momentum_label"),
                     regression_rate_1m=record.get("regression_rate_1m"),
                     regression_rate_3m=record.get("regression_rate_3m"),
+                    regression_rate_6m=record.get("regression_rate_6m"),
+                    regression_rate_1y=record.get("regression_rate_1y"),
+                    regression_rate_3y=record.get("regression_rate_3y"),
+                    regression_rate_5y=record.get("regression_rate_5y"),
+                    regression_rate_10y=record.get("regression_rate_10y"),
+                    regression_rate_20y=record.get("regression_rate_20y"),
                 )
                 db.session.add(new_record)
 

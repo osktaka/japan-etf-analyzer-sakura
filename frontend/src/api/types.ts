@@ -326,4 +326,10 @@ export interface MomentumHistoryItem {
   momentum_label: string
   regression_rate_1m: number | null
   regression_rate_3m: number | null
+  regression_rate_6m: number | null
+  regression_rate_1y: number | null
+  regression_rate_3y: number | null
+  regression_rate_5y: number | null
+  regression_rate_10y: number | null
+  regression_rate_20y: number | null
 }

@@ -17,11 +17,16 @@ import argparse
 import sys
 from datetime import date
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent))
 from base_batch import BaseBatchScript
 
 from src.models import PerformanceCache
-from src.repositories import ETFRepository, ScoreCacheRepository, EtfMetricsHistoryRepository
+from src.repositories import (
+    ETFRepository,
+    ScoreCacheRepository,
+    EtfMetricsHistoryRepository,
+)
 from src.services.scoring_service import ScoringService
 from src.utils.momentum import get_momentum_label
 
@@ -186,7 +191,6 @@ class UpdateScoresBatch(BaseBatchScript):
             scoring_service._avg_volumes_cache = {}
             scoring_service._return_rates_cache = {}
 
-
     def _save_metrics_history(self, etfs) -> None:
         """評価スコア項目の履歴を保存する。
 
@@ -204,6 +208,18 @@ class UpdateScoresBatch(BaseBatchScript):
             PerformanceCache.etf_code.in_(etf_codes)
         ).all()
 
+        # 期間→regression_rateカラム名のマッピング
+        regression_period_map = {
+            "1m": "regression_rate_1m",
+            "3m": "regression_rate_3m",
+            "6m": "regression_rate_6m",
+            "1y": "regression_rate_1y",
+            "3y": "regression_rate_3y",
+            "5y": "regression_rate_5y",
+            "10y": "regression_rate_10y",
+            "20y": "regression_rate_20y",
+        }
+
         for record in perf_records:
             if record.etf_code not in performance_data:
                 performance_data[record.etf_code] = {}
@@ -212,10 +228,13 @@ class UpdateScoresBatch(BaseBatchScript):
                 performance_data[record.etf_code]["volatility"] = record.volatility
             elif record.period == "3y":
                 performance_data[record.etf_code]["return_3y"] = record.return_rate
-            elif record.period == "1m":
-                performance_data[record.etf_code]["regression_rate_1m"] = record.regression_rate
-            elif record.period == "3m":
-                performance_data[record.etf_code]["regression_rate_3m"] = record.regression_rate
+
+            # regression_rateを全期間で取得
+            regression_key = regression_period_map.get(record.period)
+            if regression_key and record.regression_rate is not None:
+                performance_data[record.etf_code][
+                    regression_key
+                ] = record.regression_rate
 
         # 一括保存用のレコードを作成
         records = []
@@ -224,19 +243,35 @@ class UpdateScoresBatch(BaseBatchScript):
             rate_1m = perf.get("regression_rate_1m")
             rate_3m = perf.get("regression_rate_3m")
             label = get_momentum_label(rate_1m, rate_3m)
-            records.append({
-                "etf_code": etf.code,
-                "dividend_yield": float(etf.dividend_yield) if etf.dividend_yield else None,
-                "expense_ratio": float(etf.expense_ratio) if etf.expense_ratio else None,
-                "total_assets": float(etf.total_assets) if etf.total_assets else None,
-                "deviation_rate": float(etf.deviation_rate) if etf.deviation_rate else None,
-                "return_1y": perf.get("return_1y"),
-                "return_3y": perf.get("return_3y"),
-                "volatility": perf.get("volatility"),
-                "momentum_label": label,
-                "regression_rate_1m": rate_1m,
-                "regression_rate_3m": rate_3m,
-            })
+            records.append(
+                {
+                    "etf_code": etf.code,
+                    "dividend_yield": float(etf.dividend_yield)
+                    if etf.dividend_yield
+                    else None,
+                    "expense_ratio": float(etf.expense_ratio)
+                    if etf.expense_ratio
+                    else None,
+                    "total_assets": float(etf.total_assets)
+                    if etf.total_assets
+                    else None,
+                    "deviation_rate": float(etf.deviation_rate)
+                    if etf.deviation_rate
+                    else None,
+                    "return_1y": perf.get("return_1y"),
+                    "return_3y": perf.get("return_3y"),
+                    "volatility": perf.get("volatility"),
+                    "momentum_label": label,
+                    "regression_rate_1m": rate_1m,
+                    "regression_rate_3m": rate_3m,
+                    "regression_rate_6m": perf.get("regression_rate_6m"),
+                    "regression_rate_1y": perf.get("regression_rate_1y"),
+                    "regression_rate_3y": perf.get("regression_rate_3y"),
+                    "regression_rate_5y": perf.get("regression_rate_5y"),
+                    "regression_rate_10y": perf.get("regression_rate_10y"),
+                    "regression_rate_20y": perf.get("regression_rate_20y"),
+                }
+            )
 
         # バルクUPSERT
         count = metrics_repo.bulk_upsert(records, today)

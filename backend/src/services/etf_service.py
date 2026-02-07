@@ -432,6 +432,12 @@ class ETFService:
                 "momentum_label": record.momentum_label,
                 "regression_rate_1m": record.regression_rate_1m,
                 "regression_rate_3m": record.regression_rate_3m,
+                "regression_rate_6m": record.regression_rate_6m,
+                "regression_rate_1y": record.regression_rate_1y,
+                "regression_rate_3y": record.regression_rate_3y,
+                "regression_rate_5y": record.regression_rate_5y,
+                "regression_rate_10y": record.regression_rate_10y,
+                "regression_rate_20y": record.regression_rate_20y,
             }
             for record in records
         ]
