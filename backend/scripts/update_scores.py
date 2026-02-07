@@ -23,6 +23,7 @@ from base_batch import BaseBatchScript
 from src.models import PerformanceCache
 from src.repositories import ETFRepository, ScoreCacheRepository, EtfMetricsHistoryRepository
 from src.services.scoring_service import ScoringService
+from src.utils.momentum import get_momentum_label
 
 
 PERSPECTIVES = ["dividend", "low-cost", "stability", "volume", "growth", "balance"]
@@ -211,11 +212,18 @@ class UpdateScoresBatch(BaseBatchScript):
                 performance_data[record.etf_code]["volatility"] = record.volatility
             elif record.period == "3y":
                 performance_data[record.etf_code]["return_3y"] = record.return_rate
+            elif record.period == "1m":
+                performance_data[record.etf_code]["regression_rate_1m"] = record.regression_rate
+            elif record.period == "3m":
+                performance_data[record.etf_code]["regression_rate_3m"] = record.regression_rate
 
         # 一括保存用のレコードを作成
         records = []
         for etf in etfs:
             perf = performance_data.get(etf.code, {})
+            rate_1m = perf.get("regression_rate_1m")
+            rate_3m = perf.get("regression_rate_3m")
+            label = get_momentum_label(rate_1m, rate_3m)
             records.append({
                 "etf_code": etf.code,
                 "dividend_yield": float(etf.dividend_yield) if etf.dividend_yield else None,
@@ -225,6 +233,9 @@ class UpdateScoresBatch(BaseBatchScript):
                 "return_1y": perf.get("return_1y"),
                 "return_3y": perf.get("return_3y"),
                 "volatility": perf.get("volatility"),
+                "momentum_label": label,
+                "regression_rate_1m": rate_1m,
+                "regression_rate_3m": rate_3m,
             })
 
         # バルクUPSERT
