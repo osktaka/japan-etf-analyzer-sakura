@@ -20,7 +20,7 @@ import {
   calculateRegressionReturn,
   annualizeReturn,
 } from '../../utils/chartUtils'
-import { Loading, ErrorMessage } from '../common'
+import { Loading, ErrorMessage, MomentumBadge } from '../common'
 import { TagBadge } from '../etf'
 import { FavoriteButton } from '../favorite'
 import { CompareCheckbox } from '../actions'
@@ -183,6 +183,7 @@ export function ETFDetailModal({
                       {data.category.name}
                     </span>
                   )}
+                  <MomentumBadge label={data.momentum_label} />
                 </div>
                 {onCompareToggle && (
                   <CompareCheckbox
@@ -338,7 +339,7 @@ export function ETFDetailModal({
 
             <div className={styles.chart}>
               <div className={styles.chartHeader}>
-                <AnnualizedReturnCards data={annualizedReturns} />
+                <AnnualizedReturnCards data={annualizedReturns} momentumLabel={data.momentum_label} />
                 <ChartPeriodSelector
                   selectedPeriods={chartPeriods}
                   onChange={setChartPeriods}

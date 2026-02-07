@@ -3,6 +3,7 @@ import { ETFSummary, AxisScores } from '../../api'
 import { formatPrice, formatPercent, PERSPECTIVE_GRADIENTS } from '../../utils'
 import { FavoriteButton } from '../favorite'
 import { CompareCheckbox } from '../actions'
+import { MomentumBadge } from '../common'
 import { TagBadge } from './TagBadge'
 import styles from './ETFCard.module.css'
 
@@ -54,6 +55,7 @@ export function ETFCard({
         {etf.category && (
           <span className={styles.category}>{etf.category}</span>
         )}
+        <MomentumBadge label={etf.momentum_label} />
         {showCompareButton && onCompareToggle && (
           <CompareCheckbox
             isInCompare={isSelected ?? false}

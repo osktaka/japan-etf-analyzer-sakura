@@ -1,6 +1,7 @@
 /** Holding card component */
 import { Holding } from '../../api/types'
 import { formatPrice } from '../../utils'
+import { MomentumBadge } from '../common'
 import { CompareCheckbox } from '../actions/CompareCheckbox'
 import styles from './HoldingCard.module.css'
 
@@ -39,7 +40,10 @@ export function HoldingCard({
       onKeyDown={handleKeyDown}
     >
       <div className={styles.header}>
-        <span className={styles.code}>{holding.etf_code}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <span className={styles.code}>{holding.etf_code}</span>
+          <MomentumBadge label={holding.etf?.momentum_label} />
+        </span>
         {onCompareToggle && (
           <div
             className={styles.compareAction}

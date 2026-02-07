@@ -27,7 +27,7 @@ import {
   ROUTES,
   CHART_PERIODS,
 } from '../utils'
-import { Loading, ErrorMessage } from '../components/common'
+import { Loading, ErrorMessage, MomentumBadge } from '../components/common'
 import {
   ETFListModal,
   ETFDetailModal,
@@ -369,6 +369,14 @@ export function ComparePage() {
                       <td>カテゴリ</td>
                       {etfs.map((etf) => (
                         <td key={etf.code}>{etf.category?.name || '-'}</td>
+                      ))}
+                    </tr>
+                    <tr>
+                      <td>勢い</td>
+                      {etfs.map((etf) => (
+                        <td key={etf.code}>
+                          <MomentumBadge label={etf.momentum_label} />
+                        </td>
                       ))}
                     </tr>
                     <tr>

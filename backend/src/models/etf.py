@@ -24,6 +24,7 @@ class ETF(TimestampMixin, db.Model):
     index_name = db.Column(db.String(100), nullable=True)
     manager = db.Column(db.String(100), nullable=True)
     type = db.Column(db.String(10), nullable=False, default="ETF")
+    momentum_label = db.Column(db.String(10), nullable=True)
 
     # Relationships
     category = db.relationship("Category", back_populates="etfs")
@@ -69,6 +70,7 @@ class ETF(TimestampMixin, db.Model):
             "index_name": self.index_name,
             "manager": self.manager,
             "type": self.type,
+            "momentum_label": self.momentum_label,
         }
         if include_tags:
             data["tags"] = [tag.to_dict() for tag in self.tags]
@@ -85,5 +87,6 @@ class ETF(TimestampMixin, db.Model):
                 float(self.dividend_yield) if self.dividend_yield else None
             ),
             "market_price": float(self.market_price) if self.market_price else None,
+            "momentum_label": self.momentum_label,
             "tags": [tag.to_dict() for tag in self.tags],
         }

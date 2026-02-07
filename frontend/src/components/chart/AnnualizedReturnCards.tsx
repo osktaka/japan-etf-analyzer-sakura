@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import { ChartPeriod } from '../../api'
 import { CHART_PERIODS } from '../../utils/constants'
 import { getMomentumInfoFromAnnualized } from '../../utils/momentum'
+import { MomentumBadge } from '../common'
 import styles from './AnnualizedReturnCards.module.css'
 
 const TOOLTIP_TEXT =
@@ -15,6 +16,7 @@ interface AnnualizedReturnData {
 
 interface AnnualizedReturnCardsProps {
   data: AnnualizedReturnData[]
+  momentumLabel?: string | null
 }
 
 const PERIOD_ORDER: ChartPeriod[] = [
@@ -28,7 +30,7 @@ const PERIOD_ORDER: ChartPeriod[] = [
   '20y',
 ]
 
-export function AnnualizedReturnCards({ data }: AnnualizedReturnCardsProps) {
+export function AnnualizedReturnCards({ data, momentumLabel }: AnnualizedReturnCardsProps) {
   const [showTooltip, setShowTooltip] = useState(false)
   const tooltipRef = useRef<HTMLDivElement | null>(null)
   const helpIconRef = useRef<HTMLSpanElement | null>(null)
@@ -37,9 +39,13 @@ export function AnnualizedReturnCards({ data }: AnnualizedReturnCardsProps) {
     (a, b) => PERIOD_ORDER.indexOf(a.period) - PERIOD_ORDER.indexOf(b.period)
   )
 
-  const annual1m = data.find((d) => d.period === '1m')?.annualizedReturn ?? null
-  const annual3m = data.find((d) => d.period === '3m')?.annualizedReturn ?? null
-  const momentum = getMomentumInfoFromAnnualized(annual1m, annual3m)
+  // Use momentum_label from backend if available, fallback to local calculation
+  const resolvedMomentumLabel = (() => {
+    if (momentumLabel) return momentumLabel
+    const annual1m = data.find((d) => d.period === '1m')?.annualizedReturn ?? null
+    const annual3m = data.find((d) => d.period === '3m')?.annualizedReturn ?? null
+    return getMomentumInfoFromAnnualized(annual1m, annual3m)?.label ?? null
+  })()
 
   const getPeriodLabel = (period: ChartPeriod): string => {
     const found = CHART_PERIODS.find((p) => p.id === period)
@@ -114,23 +120,16 @@ export function AnnualizedReturnCards({ data }: AnnualizedReturnCardsProps) {
             </span>
           </div>
         ))}
-        {momentum && (
+        {resolvedMomentumLabel && (
           <span
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              padding: '2px 8px',
-              borderRadius: 'var(--radius-sm)',
-              fontSize: '0.75rem',
-              fontWeight: 500,
-              color: momentum.color,
-              backgroundColor: momentum.bgColor,
-              border: '1px solid currentColor',
               alignSelf: 'center',
               marginLeft: 'var(--spacing-sm)',
             }}
           >
-            {momentum.label}
+            <MomentumBadge label={resolvedMomentumLabel} size="md" />
           </span>
         )}
       </div>

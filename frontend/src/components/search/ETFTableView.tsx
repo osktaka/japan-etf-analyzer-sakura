@@ -9,12 +9,12 @@ import {
 import { SortField, SortOrder } from '../../api/etf'
 import { CompareCheckbox } from '../actions'
 import { FavoriteButton } from '../favorite'
+import { MomentumBadge } from '../common'
 import type { ReturnType } from './ReturnTypeToggle'
 import type {
   CommonColumnVisibility,
   ScoreColumnVisibility,
 } from './ColumnVisibilitySelector'
-import { getMomentumInfo } from '../../utils/momentum'
 import styles from './ETFTableView.module.css'
 
 // Map table column keys to API sort fields
@@ -436,25 +436,13 @@ export function ETFTableView({
                     {etf.expense_ratio ? `${etf.expense_ratio.toFixed(2)}%` : '-'}
                   </td>
                 )}
-                {(momentumVisible === undefined || momentumVisible) && (() => {
-                  const regression = performance[etf.code]?.regression
-                  const momentum = getMomentumInfo(regression?.['1m'], regression?.['3m'])
-                  return (
-                    <td className={styles.numeric}>
-                      {momentum ? (
-                        <span
-                          className={styles.momentumBadge}
-                          style={{
-                            color: momentum.color,
-                            backgroundColor: momentum.bgColor,
-                          }}
-                        >
-                          {momentum.label}
-                        </span>
-                      ) : '-'}
-                    </td>
-                  )
-                })()}
+                {(momentumVisible === undefined || momentumVisible) && (
+                  <td className={styles.numeric}>
+                    {etf.momentum_label ? (
+                      <MomentumBadge label={etf.momentum_label} />
+                    ) : '-'}
+                  </td>
+                )}
                 {displayMode === 'trend' &&
                   selectedPeriods.map((period) => {
                     const returnsData = getReturnsData(etf.code)

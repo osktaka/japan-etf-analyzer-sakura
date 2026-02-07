@@ -86,34 +86,7 @@ class ETFRepository(BaseRepository[ETF]):
             query = query.filter(ETF.code.in_(tag_codes))
 
         if momentum_labels:
-            from src.utils.momentum import get_momentum_label
-
-            cache_1m = db.session.query(
-                PerformanceCache.etf_code,
-                PerformanceCache.regression_rate,
-            ).filter(PerformanceCache.period == "1m").subquery()
-
-            cache_3m = db.session.query(
-                PerformanceCache.etf_code,
-                PerformanceCache.regression_rate,
-            ).filter(PerformanceCache.period == "3m").subquery()
-
-            pairs = (
-                db.session.query(
-                    cache_1m.c.etf_code,
-                    cache_1m.c.regression_rate.label("rate_1m"),
-                    cache_3m.c.regression_rate.label("rate_3m"),
-                )
-                .join(cache_3m, cache_1m.c.etf_code == cache_3m.c.etf_code)
-                .all()
-            )
-
-            matching_codes = [
-                p.etf_code
-                for p in pairs
-                if get_momentum_label(p.rate_1m, p.rate_3m) in momentum_labels
-            ]
-            query = query.filter(ETF.code.in_(matching_codes))
+            query = query.filter(ETF.momentum_label.in_(momentum_labels))
 
         if min_dividend_yield is not None:
             query = query.filter(ETF.dividend_yield >= min_dividend_yield)

@@ -24,6 +24,7 @@ export interface ETFSummary {
   market_price: number | null
   tags: Tag[]
   score?: number | null
+  momentum_label?: string | null
 }
 
 export interface ETFDetail {
@@ -53,6 +54,7 @@ export interface ETFDetail {
   trading_value?: number | null
   return_1y?: number | null
   return_3y?: number | null
+  momentum_label?: string | null
 }
 
 export interface ChartDataPoint {

@@ -2,6 +2,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 import { Holding } from '../../api/types'
 import { formatPrice } from '../../utils'
+import { MomentumBadge } from '../common'
 import { CompareCheckbox } from '../actions/CompareCheckbox'
 import { HoldingCard } from './HoldingCard'
 import styles from './HoldingsList.module.css'
@@ -342,7 +343,10 @@ export function HoldingsList({
                 >
                   <td>
                     <div className={styles.etfInfo}>
-                      <span className={styles.code}>{holding.etf_code}</span>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                        <span className={styles.code}>{holding.etf_code}</span>
+                        <MomentumBadge label={holding.etf?.momentum_label} />
+                      </span>
                       <span className={styles.name}>
                         {holding.etf?.name || '-'}
                       </span>

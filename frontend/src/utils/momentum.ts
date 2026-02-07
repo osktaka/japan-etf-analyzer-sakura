@@ -67,6 +67,13 @@ export function getMomentumInfo(
   return getMomentumInfoFromAnnualized(rate1m * 12, rate3m * 4)
 }
 
+/** ラベル文字列から直接スタイルを取得 */
+export function getStyleFromLabel(label: string | null | undefined): { color: string; bgColor: string } | null {
+  if (!label) return null
+  const entry = MOMENTUM_STYLES[label as MomentumLabel]
+  return entry ? { color: entry.color, bgColor: entry.bgColor } : null
+}
+
 /**
  * 年率化済みの1M/3M回帰上昇率からモメンタム情報を取得
  * AnnualizedReturnCards等、既に年率化されたデータ用

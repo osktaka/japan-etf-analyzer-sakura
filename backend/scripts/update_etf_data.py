@@ -566,6 +566,34 @@ def update_performance_cache(codes: list, logger, rate_limit: float = 1.0) -> tu
     return success, fail
 
 
+def update_momentum_labels(codes, logger):
+    """モメンタムラベルを更新"""
+    from src.models.performance_cache import PerformanceCache
+    from src.models.etf import ETF
+    from src.models import db
+    from src.utils.momentum import get_momentum_label
+
+    logger.info("モメンタムラベルを更新中...")
+    updated = 0
+
+    for code in codes:
+        cache_1m = PerformanceCache.query.filter_by(etf_code=code, period='1m').first()
+        cache_3m = PerformanceCache.query.filter_by(etf_code=code, period='3m').first()
+
+        rate_1m = cache_1m.regression_rate if cache_1m else None
+        rate_3m = cache_3m.regression_rate if cache_3m else None
+
+        label = get_momentum_label(rate_1m, rate_3m)
+
+        etf = ETF.query.get(code)
+        if etf and etf.momentum_label != label:
+            etf.momentum_label = label
+            updated += 1
+
+    db.session.commit()
+    logger.info(f"モメンタムラベル更新完了: {updated}/{len(codes)}件")
+
+
 class UpdateEtfDataScript(BaseBatchScript):
     """ETF price data update batch script."""
 
@@ -694,6 +722,12 @@ class UpdateEtfDataScript(BaseBatchScript):
                 self.logger.info(
                     f"Performance cache: {perf_success} success, {perf_fail} failed"
                 )
+
+            # モメンタムラベルの更新（パフォーマンスキャッシュ依存、常に実行）
+            if not self.args.dry_run:
+                self.logger.info("-" * 60)
+                codes = [etf["code"] for etf in all_etfs]
+                update_momentum_labels(codes, self.logger)
 
             # バッチログ終了（成功）
             self._finish_batch_log(success=True)
