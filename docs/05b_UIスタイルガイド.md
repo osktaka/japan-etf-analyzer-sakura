@@ -44,6 +44,7 @@ components/
 ├── compare/
 │   ├── ComparePage.tsx      # 比較画面
 │   ├── CompareList.tsx      # 比較対象リスト
+│   ├── ETFSearchInput.tsx   # 銘柄検索入力（インクリメンタルサーチ）
 │   ├── CompareChart.tsx     # 比較チャート
 │   └── CompareTable.tsx     # 指標比較テーブル
 └── chart/

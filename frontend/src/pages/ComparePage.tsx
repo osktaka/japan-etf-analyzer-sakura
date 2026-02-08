@@ -36,7 +36,7 @@ import {
   CustomWeightsPromptModal,
   CustomWeightsModal,
 } from '../components/modal'
-import { CompareScoreSection } from '../components/compare'
+import { CompareScoreSection, ETFSearchInput } from '../components/compare'
 import { TagBadge } from '../components/etf'
 import { FavoriteButton } from '../components/favorite'
 import { PriceChart, OverlayChart } from '../components/chart'
@@ -45,7 +45,8 @@ import styles from './ComparePage.module.css'
 type ChartMode = 'overlay' | 'individual'
 
 export function ComparePage() {
-  const { codes, removeCode, addCode, clearAll } = useCompareList()
+  const { codes, removeCode, addCode, clearAll, canAdd, maxItems } =
+    useCompareList()
   const { isFavorite, toggleFavorite } = useFavorites()
   const { isAuthenticated } = useAuth()
   const { holdings } = usePortfolio()
@@ -220,6 +221,12 @@ export function ComparePage() {
       <div className={styles.header}>
         <h1 className={styles.title}>銘柄比較</h1>
         <div className={styles.headerButtons}>
+          <ETFSearchInput
+            onSelect={handleAddFromFavorite}
+            existingCodes={codes}
+            canAdd={canAdd}
+            maxItems={maxItems}
+          />
           <button
             className="btn btn-primary"
             onClick={() => setIsListModalOpen(true)}

@@ -31,7 +31,30 @@
 
 .headerButtons {
   display: flex;
+  align-items: center;
   gap: var(--spacing-sm);
+}
+
+.headerButtons button {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .header {
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+  }
+
+  .headerButtons {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .headerButtons > *:first-child {
+    width: 100%;
+    order: -1;
+  }
 }
 
 .tableWrapper {

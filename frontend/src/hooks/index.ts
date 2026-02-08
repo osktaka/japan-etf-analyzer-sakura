@@ -1,4 +1,5 @@
 /** Hooks exports */
+export { useDebounce } from './useDebounce'
 export { useRecommendations } from './useRecommendations'
 export { useETFSearch } from './useETFSearch'
 export { useETFDetail } from './useETFDetail'
