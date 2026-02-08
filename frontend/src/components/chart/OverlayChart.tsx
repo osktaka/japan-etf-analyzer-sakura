@@ -129,7 +129,17 @@ export function OverlayChart({
             <Tooltip
               formatter={(value: number, name: string) => {
                 const ds = datasets.find((d) => d.code === name)
-                const label = ds ? `${ds.code} ${ds.name}` : name
+                const maxWidth = 24
+                let truncatedName = ''
+                if (ds) {
+                  let width = 0
+                  for (const ch of ds.name) {
+                    width += ch.charCodeAt(0) > 0x7f ? 2 : 1
+                    if (width > maxWidth) { truncatedName += '…'; break }
+                    truncatedName += ch
+                  }
+                }
+                const label = ds ? `${ds.code} ${truncatedName}` : name
                 return [`${value.toFixed(2)}%`, label]
               }}
               labelFormatter={(label) => label}
