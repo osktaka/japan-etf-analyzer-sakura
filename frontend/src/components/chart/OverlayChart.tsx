@@ -1,5 +1,5 @@
 /** Overlay comparison chart component */
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   LineChart,
   Line,
@@ -38,6 +38,16 @@ export function OverlayChart({
   height = 400,
   showRegressionLine = true,
 }: OverlayChartProps) {
+  const [isMobile, setIsMobile] = useState(
+    () => window.matchMedia('(max-width: 768px)').matches
+  )
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 768px)')
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mql.addEventListener('change', handler)
+    return () => mql.removeEventListener('change', handler)
+  }, [])
+
   // Normalize each dataset and merge by date
   const { normalizedDatasets, mergedData } = useMemo(() => {
     if (datasets.length === 0) {
@@ -106,23 +116,24 @@ export function OverlayChart({
 
   return (
     <div className={styles.container}>
-      <div className={styles.chartArea} style={{ height }}>
+      <div className={styles.chartArea} style={{ height: isMobile ? 250 : height }}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={mergedData}
-            margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+            margin={{ top: 5, right: isMobile ? 10 : 20, left: isMobile ? 0 : 10, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: isMobile ? 10 : 12 }}
               tickFormatter={(value) => {
                 const date = new Date(value)
                 return `${date.getMonth() + 1}/${date.getDate()}`
               }}
             />
             <YAxis
-              tick={{ fontSize: 12 }}
+              {...(isMobile ? { width: 45 } : {})}
+              tick={{ fontSize: isMobile ? 10 : 12 }}
               tickFormatter={(value) => `${value.toFixed(1)}%`}
               domain={['auto', 'auto']}
             />
