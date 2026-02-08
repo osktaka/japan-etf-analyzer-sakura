@@ -2,6 +2,10 @@
   width: 100%;
 }
 
+.chartArea {
+  width: 100%;
+}
+
 .empty {
   display: flex;
   align-items: center;
@@ -10,4 +14,69 @@
   color: var(--color-text-secondary);
   background-color: var(--color-bg);
   border-radius: var(--radius-md);
+}
+
+.legendArea {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  max-height: 4.5rem;
+  overflow-y: auto;
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  scrollbar-width: thin;
+}
+
+.legendArea::-webkit-scrollbar {
+  width: 4px;
+}
+
+.legendArea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.legendArea::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 9999px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  max-width: 200px;
+  overflow: hidden;
+}
+
+.legendMarker {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.legendLabel {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+  .legendArea {
+    max-height: 3.5rem;
+    gap: 0.25rem 0.5rem;
+  }
+
+  .legendLabel {
+    font-size: 0.75rem;
+  }
+
+  .legendMarker {
+    width: 8px;
+    height: 8px;
+  }
 }

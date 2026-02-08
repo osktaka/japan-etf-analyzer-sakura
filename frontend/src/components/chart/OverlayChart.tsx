@@ -8,7 +8,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
   ReferenceLine,
 } from 'recharts'
 import { ChartData } from '../../api'
@@ -106,63 +105,72 @@ export function OverlayChart({
   }
 
   return (
-    <div className={styles.container} style={{ height }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={mergedData}
-          margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-          <XAxis
-            dataKey="date"
-            tick={{ fontSize: 12 }}
-            tickFormatter={(value) => {
-              const date = new Date(value)
-              return `${date.getMonth() + 1}/${date.getDate()}`
-            }}
-          />
-          <YAxis
-            tick={{ fontSize: 12 }}
-            tickFormatter={(value) => `${value.toFixed(1)}%`}
-            domain={['auto', 'auto']}
-          />
-          <Tooltip
-            formatter={(value: number, name: string) => {
-              const ds = datasets.find((d) => d.code === name)
-              const label = ds ? `${ds.code} ${ds.name}` : name
-              return [`${value.toFixed(2)}%`, label]
-            }}
-            labelFormatter={(label) => label}
-          />
-          <Legend
-            formatter={(value) => {
-              const ds = datasets.find((d) => d.code === value)
-              return ds ? `${ds.code} ${ds.name}` : value
-            }}
-          />
-          {normalizedDatasets.map((ds, index) => (
-            <Line
-              key={ds.code}
-              type="monotone"
-              dataKey={ds.code}
-              stroke={getChartColor(index)}
-              strokeWidth={2}
-              dot={false}
-              connectNulls
+    <div className={styles.container}>
+      <div className={styles.chartArea} style={{ height }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={mergedData}
+            margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: 12 }}
+              tickFormatter={(value) => {
+                const date = new Date(value)
+                return `${date.getMonth() + 1}/${date.getDate()}`
+              }}
             />
-          ))}
-          {regressionSegments.map((rs) => (
-            <ReferenceLine
-              key={`regression-${rs.code}`}
-              segment={rs.segment}
-              stroke={rs.color}
-              strokeWidth={1}
-              strokeDasharray="5 5"
-              strokeOpacity={0.6}
+            <YAxis
+              tick={{ fontSize: 12 }}
+              tickFormatter={(value) => `${value.toFixed(1)}%`}
+              domain={['auto', 'auto']}
             />
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
+            <Tooltip
+              formatter={(value: number, name: string) => {
+                const ds = datasets.find((d) => d.code === name)
+                const label = ds ? `${ds.code} ${ds.name}` : name
+                return [`${value.toFixed(2)}%`, label]
+              }}
+              labelFormatter={(label) => label}
+            />
+            {normalizedDatasets.map((ds, index) => (
+              <Line
+                key={ds.code}
+                type="monotone"
+                dataKey={ds.code}
+                stroke={getChartColor(index)}
+                strokeWidth={2}
+                dot={false}
+                connectNulls
+              />
+            ))}
+            {regressionSegments.map((rs) => (
+              <ReferenceLine
+                key={`regression-${rs.code}`}
+                segment={rs.segment}
+                stroke={rs.color}
+                strokeWidth={1}
+                strokeDasharray="5 5"
+                strokeOpacity={0.6}
+              />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+      <div className={styles.legendArea}>
+        {datasets.map((ds, index) => (
+          <div key={ds.code} className={styles.legendItem}>
+            <span
+              className={styles.legendMarker}
+              style={{ backgroundColor: getChartColor(index) }}
+            />
+            <span className={styles.legendLabel}>
+              {ds.code} {ds.name}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
