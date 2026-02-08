@@ -375,7 +375,7 @@ export function ComparePage() {
                       <td>勢い</td>
                       {etfs.map((etf) => (
                         <td key={etf.code}>
-                          <MomentumBadge label={etf.momentum_label} />
+                          <MomentumBadge label={etf.momentum_label} code={etf.code} />
                         </td>
                       ))}
                     </tr>

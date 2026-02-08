@@ -355,7 +355,7 @@ export function HoldingsList({
                         }}
                       >
                         <span className={styles.code}>{holding.etf_code}</span>
-                        <MomentumBadge label={holding.etf?.momentum_label} />
+                        <MomentumBadge label={holding.etf?.momentum_label} code={holding.etf_code} />
                       </span>
                       <span className={styles.name}>
                         {holding.etf?.name || '-'}

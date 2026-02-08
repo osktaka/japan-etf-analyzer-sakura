@@ -55,7 +55,7 @@ export function ETFCard({
         {etf.category && (
           <span className={styles.category}>{etf.category}</span>
         )}
-        <MomentumBadge label={etf.momentum_label} />
+        <MomentumBadge label={etf.momentum_label} code={etf.code} />
         {showCompareButton && onCompareToggle && (
           <CompareCheckbox
             isInCompare={isSelected ?? false}

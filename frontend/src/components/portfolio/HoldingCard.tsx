@@ -44,7 +44,7 @@ export function HoldingCard({
           style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
           <span className={styles.code}>{holding.etf_code}</span>
-          <MomentumBadge label={holding.etf?.momentum_label} />
+          <MomentumBadge label={holding.etf?.momentum_label} code={holding.etf_code} />
         </span>
         {onCompareToggle && (
           <div

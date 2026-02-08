@@ -168,7 +168,7 @@ export function ETFDetailModal({
                       {data.category.name}
                     </span>
                   )}
-                  <MomentumBadge label={data.momentum_label} />
+                  <MomentumBadge label={data.momentum_label} code={data.code} />
                 </div>
                 {onCompareToggle && (
                   <div className={styles.headerCompare}>
@@ -329,6 +329,7 @@ export function ETFDetailModal({
                 <AnnualizedReturnCards
                   data={annualizedReturns}
                   momentumLabel={data.momentum_label}
+                  code={data.code}
                   onHistoryClick={() => setShowMomentumHistory(true)}
                 />
                 <ChartPeriodSelector
