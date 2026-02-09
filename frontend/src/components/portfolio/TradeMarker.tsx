@@ -15,8 +15,8 @@ export function BuyMarkerShape({ cx = 0, cy = 0, payload }: MarkerShapeProps) {
     <g style={{ cursor: 'pointer' }}>
       <polygon
         points={points}
-        fill="#10b981"
-        stroke="#059669"
+        fill="#34d399"
+        stroke="#10b981"
         strokeWidth={1}
       />
     </g>
@@ -38,8 +38,8 @@ export function SellMarkerShape({ cx = 0, cy = 0, payload }: MarkerShapeProps) {
     <g style={{ cursor: 'pointer' }}>
       <polygon
         points={points}
-        fill="#ef4444"
-        stroke="#dc2626"
+        fill="#f87171"
+        stroke="#ef4444"
         strokeWidth={1}
       />
     </g>

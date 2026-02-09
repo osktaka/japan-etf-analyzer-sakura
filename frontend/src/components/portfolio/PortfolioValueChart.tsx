@@ -33,7 +33,7 @@ const PERIODS: { value: ValuationHistoryPeriod; label: string }[] = [
 interface PopoverState {
   trades: Trade[]
   date: string
-  position: { x: number; y: number }
+  position: { x: number; y: number; markerY: number }
 }
 
 export function PortfolioValueChart() {
@@ -55,7 +55,8 @@ export function PortfolioValueChart() {
         date: entry.payload.date,
         position: {
           x: Math.round(entry.cx ?? 0),
-          y: Math.round((entry.cy ?? 0) + 16),
+          y: Math.round((entry.cy ?? 0) + 20),
+          markerY: Math.round(entry.cy ?? 0),
         },
       })
     },
@@ -123,10 +124,7 @@ export function PortfolioValueChart() {
               domain={['auto', 'auto']}
             />
             <Tooltip
-              formatter={(value: number, name: string) => {
-                if (name === 'buyMarker' || name === 'sellMarker') return null
-                return [formatPrice(value), '総資産額']
-              }}
+              formatter={(value: number) => [formatPrice(value), '総資産額']}
               labelFormatter={(label) => label}
             />
             <Area
@@ -144,6 +142,7 @@ export function PortfolioValueChart() {
               shape={<BuyMarkerShape />}
               onClick={handleMarkerClick}
               legendType="none"
+              tooltipType="none"
             />
             <Scatter
               dataKey="sellMarker"
@@ -151,6 +150,7 @@ export function PortfolioValueChart() {
               shape={<SellMarkerShape />}
               onClick={handleMarkerClick}
               legendType="none"
+              tooltipType="none"
             />
           </ComposedChart>
         </ResponsiveContainer>
