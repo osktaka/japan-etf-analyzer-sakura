@@ -470,7 +470,13 @@ def test_calculate_value_at_date_buy_only(
     result = service._calculate_value_at_date(trades, target_date, price_map)
 
     # holdings: 100 shares * 2500 = 250000, cash: 0
-    assert result == 250000.0
+    assert result["total_asset"] == 250000.0
+    # unrealized_pnl: 250000 - (2000 * 100) = 50000
+    assert result["unrealized_pnl"] == 50000.0
+    # cash_balance: buy -> external funds (cash=0)
+    assert result["cash_balance"] == 0.0
+    # total_cost: avg_cost 2000 * 100 = 200000
+    assert result["total_cost"] == 200000.0
 
 
 def test_calculate_value_at_date_partial_sell(
@@ -511,7 +517,13 @@ def test_calculate_value_at_date_partial_sell(
     # cash: sell 30*2500=75000, buy 200000 > cash so cash=0 before sell
     # cash flow: buy -> external (cash=0), sell 75000 -> cash=75000
     # total = 161000 + 75000 = 236000
-    assert result == 236000.0
+    assert result["total_asset"] == 236000.0
+    # unrealized_pnl: 161000 - (avg_cost 2000 * 70) = 161000 - 140000 = 21000
+    assert result["unrealized_pnl"] == 21000.0
+    # cash_balance: sell 75000
+    assert result["cash_balance"] == 75000.0
+    # total_cost: avg_cost 2000 * 70 = 140000
+    assert result["total_cost"] == 140000.0
 
 
 def test_calculate_value_at_date_reinvestment(
@@ -561,7 +573,16 @@ def test_calculate_value_at_date_reinvestment(
     #            sell 125000 -> cash=125000
     #            buy 63000 -> cash=125000-63000=62000
     # total = 184000 + 62000 = 246000
-    assert result == 246000.0
+    assert result["total_asset"] == 246000.0
+    # unrealized_pnl: 184000 - (avg_cost * 80)
+    # avg_cost = (200000 + 63000) / (100 + 30) = 263000 / 130 = 2023.076923...
+    # total_cost = 2023.076923... * 80 = 161846.153846...
+    # unrealized_pnl = 184000 - 161846.153846... = 22153.85 (rounded)
+    assert result["unrealized_pnl"] == 22153.85
+    # cash_balance: 125000 - 63000 = 62000
+    assert result["cash_balance"] == 62000.0
+    # total_cost: 2023.076923... * 80 = 161846.15 (rounded)
+    assert result["total_cost"] == 161846.15
 
 
 def test_summary_cash_flow_same_day_trades(

@@ -345,12 +345,15 @@ class PortfolioService:
         result = []
 
         for target_date in all_dates:
-            total_asset = self._calculate_value_at_date(trades, target_date, price_map)
-            if total_asset > 0:
+            values = self._calculate_value_at_date(trades, target_date, price_map)
+            if values["total_asset"] > 0:
                 result.append(
                     {
                         "date": target_date.strftime("%Y-%m-%d"),
-                        "value": round(total_asset, 2),
+                        "value": round(values["total_asset"], 2),
+                        "unrealized_pnl": values["unrealized_pnl"],
+                        "cash_balance": values["cash_balance"],
+                        "total_cost": values["total_cost"],
                     }
                 )
 
@@ -407,10 +410,12 @@ class PortfolioService:
         trades: List,
         target_date: date,
         price_map: Dict[date, Dict[str, float]],
-    ) -> float:
-        """Calculate total asset value (holdings + cash) at a specific date."""
+    ) -> Dict[str, float]:
+        """Calculate total asset value (holdings + cash) and unrealized P&L at a specific date."""
         # Filter trades up to target_date and calculate holdings
         holdings: Dict[str, float] = {}
+        # Track buy data per code for cost calculation
+        buy_data: Dict[str, Dict[str, float]] = {}
         trades_up_to_date = []
 
         for trade in trades:
@@ -429,9 +434,13 @@ class PortfolioService:
 
             if code not in holdings:
                 holdings[code] = 0.0
+            if code not in buy_data:
+                buy_data[code] = {"adjusted_buy_qty": 0.0, "buy_amount": 0.0}
 
             if trade.trade_type == "buy":
                 holdings[code] += adjusted_qty
+                buy_data[code]["adjusted_buy_qty"] += adjusted_qty
+                buy_data[code]["buy_amount"] += float(trade.total_amount)
             else:
                 holdings[code] -= adjusted_qty
 
@@ -451,12 +460,25 @@ class PortfolioService:
                 else:
                     cash_balance = 0.0
 
-        # Calculate holdings value using prices at target_date
+        # Calculate holdings value and total cost using prices at target_date
         prices = price_map.get(target_date, {})
         holdings_value = 0.0
+        total_cost = 0.0
 
         for code, qty in holdings.items():
             if qty > 0 and code in prices:
                 holdings_value += qty * prices[code]
+                # Calculate cost using average cost method (consistent with get_holdings)
+                bd = buy_data.get(code)
+                if bd and bd["adjusted_buy_qty"] > 0:
+                    avg_cost = bd["buy_amount"] / bd["adjusted_buy_qty"]
+                    total_cost += avg_cost * qty
 
-        return holdings_value + cash_balance
+        unrealized_pnl = (holdings_value - total_cost) if holdings_value > 0 else 0.0
+
+        return {
+            "total_asset": holdings_value + cash_balance,
+            "unrealized_pnl": round(unrealized_pnl, 2),
+            "cash_balance": round(cash_balance, 2),
+            "total_cost": round(total_cost, 2),
+        }

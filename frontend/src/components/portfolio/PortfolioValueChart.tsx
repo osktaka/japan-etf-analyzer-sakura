@@ -8,6 +8,7 @@ import {
   CartesianGrid,
   Tooltip,
   Scatter,
+  Legend,
   ResponsiveContainer,
 } from 'recharts'
 import { Trade, ValuationHistoryPeriod } from '../../api/types'
@@ -90,7 +91,7 @@ export function PortfolioValueChart() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h3 className={styles.title}>総資産額推移</h3>
+        <h3 className={styles.title}>総資産推移</h3>
         <div className={styles.periodSelector}>
           {PERIODS.map((p) => (
             <button
@@ -124,16 +125,74 @@ export function PortfolioValueChart() {
               domain={['auto', 'auto']}
             />
             <Tooltip
-              formatter={(value: number) => [formatPrice(value), '総資産額']}
-              labelFormatter={(label) => label}
+              content={({ active, payload, label }) => {
+                if (!active || !payload?.length) return null
+                const data = payload[0]?.payload
+                if (!data) return null
+                return (
+                  <div className={styles.tooltip}>
+                    <p className={styles.tooltipDate}>{label}</p>
+                    <p className={styles.tooltipRow}>
+                      <span className={styles.legendDot} style={{ background: '#a78bfa' }} />
+                      現金残高: {formatPrice(data.cash_balance)}
+                    </p>
+                    <p className={styles.tooltipRow}>
+                      <span className={styles.legendDot} style={{ background: '#38bdf8' }} />
+                      取得原価: {formatPrice(data.total_cost)}
+                    </p>
+                    <p
+                      className={styles.tooltipRow}
+                      style={{ color: data.unrealized_pnl >= 0 ? '#10b981' : '#ef4444' }}
+                    >
+                      <span
+                        className={styles.legendDot}
+                        style={{ background: data.unrealized_pnl >= 0 ? '#10b981' : '#ef4444' }}
+                      />
+                      評価損益: {data.unrealized_pnl >= 0 ? '+' : ''}{formatPrice(data.unrealized_pnl)}
+                    </p>
+                    <hr className={styles.tooltipDivider} />
+                    <p className={styles.tooltipRow} style={{ fontWeight: 600 }}>
+                      総資産: {formatPrice(data.value)}
+                    </p>
+                  </div>
+                )
+              }}
             />
+            <Legend />
+            {/* 現金残高（最下層・紫系）*/}
             <Area
               type="monotone"
-              dataKey="value"
-              stroke="#10b981"
-              fill="#10b981"
-              fillOpacity={0.2}
-              strokeWidth={2}
+              dataKey="cash_balance"
+              stackId="1"
+              name="現金残高"
+              stroke="#8b5cf6"
+              fill="#a78bfa"
+              fillOpacity={0.5}
+              strokeWidth={1}
+              dot={false}
+            />
+            {/* 取得原価（中層・水色系）*/}
+            <Area
+              type="monotone"
+              dataKey="total_cost"
+              stackId="1"
+              name="取得原価"
+              stroke="#0ea5e9"
+              fill="#38bdf8"
+              fillOpacity={0.45}
+              strokeWidth={1}
+              dot={false}
+            />
+            {/* 評価損益（最上層・緑系）*/}
+            <Area
+              type="monotone"
+              dataKey="unrealized_pnl"
+              stackId="1"
+              name="評価損益"
+              stroke="#059669"
+              fill="#34d399"
+              fillOpacity={0.5}
+              strokeWidth={1}
               dot={false}
             />
             <Scatter

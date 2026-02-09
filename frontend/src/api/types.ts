@@ -234,6 +234,9 @@ export type ValuationHistoryPeriod =
 export interface ValuationDataPoint {
   date: string
   value: number
+  unrealized_pnl: number
+  cash_balance: number
+  total_cost: number
 }
 
 export type ValuationHistory = ValuationDataPoint[]
