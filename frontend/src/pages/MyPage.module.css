@@ -192,8 +192,13 @@
   gap: 1.5rem;
 }
 
-.chartSection > * {
-  flex: 1;
+.chartSection > *:first-child {
+  flex: 3;
+  min-width: 0;
+}
+
+.chartSection > *:last-child {
+  flex: 2;
   min-width: 0;
 }
 
