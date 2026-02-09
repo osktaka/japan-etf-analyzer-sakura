@@ -4,6 +4,9 @@
 }
 
 .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 0.75rem;
 }
 
@@ -11,6 +14,28 @@
   font-size: 1rem;
   font-weight: 600;
   color: var(--color-text);
+}
+
+.scoreWrapper {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.scoreLabel {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin-right: 0.25rem;
+}
+
+.scoreValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.scoreMax {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
 }
 
 .chartWrapper {

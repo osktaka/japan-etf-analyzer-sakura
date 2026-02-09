@@ -7,6 +7,8 @@ import {
   ALL_MOMENTUM_LABELS,
   MOMENTUM_STYLES,
   MomentumLabel,
+  calcMomentumScore,
+  getMomentumScoreColor,
 } from '../../utils/momentum'
 import { formatPrice } from '../../utils'
 import { MomentumBadge } from '../common/MomentumBadge'
@@ -14,6 +16,7 @@ import styles from './HoldingsTreeMap.module.css'
 
 interface HoldingsTreeMapProps {
   holdings: Holding[]
+  cashBalance: number
   onETFClick?: (code: string) => void
 }
 
@@ -95,7 +98,7 @@ function CustomContent(props: CustomContentProps) {
         rx={4}
         style={{ cursor: onETFClick ? 'pointer' : 'default' }}
         onClick={() => {
-          if (onETFClick && etf_code) {
+          if (onETFClick && etf_code && etf_code !== 'CASH') {
             onETFClick(etf_code)
           }
         }}
@@ -150,6 +153,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   const data = payload[0]?.payload as TreemapNode | undefined
   if (!data) return null
 
+  const isCash = data.etf_code === 'CASH'
   const pnlClass =
     data.pnlPercent >= 0 ? styles.tooltipPositive : styles.tooltipNegative
 
@@ -157,7 +161,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
     <div className={styles.tooltip}>
       <div className={styles.tooltipHeader}>
         <span className={styles.tooltipCode}>{data.etf_code}</span>
-        {data.momentumLabel && (
+        {!isCash && data.momentumLabel && (
           <MomentumBadge label={data.momentumLabel} size="sm" />
         )}
       </div>
@@ -168,14 +172,16 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
           {formatPrice(data.currentValue)}
         </span>
       </div>
-      <div className={styles.tooltipRow}>
-        <span className={styles.tooltipLabel}>損益率</span>
-        <span className={`${styles.tooltipValue} ${pnlClass}`}>
-          {data.pnlPercent >= 0 ? '+' : ''}
-          {data.pnlPercent.toFixed(2)}%
-        </span>
-      </div>
-      {data.annualizedReturn != null && (
+      {!isCash && (
+        <div className={styles.tooltipRow}>
+          <span className={styles.tooltipLabel}>損益率</span>
+          <span className={`${styles.tooltipValue} ${pnlClass}`}>
+            {data.pnlPercent >= 0 ? '+' : ''}
+            {data.pnlPercent.toFixed(2)}%
+          </span>
+        </div>
+      )}
+      {!isCash && data.annualizedReturn != null && (
         <div className={styles.tooltipRow}>
           <span className={styles.tooltipLabel}>年率リターン</span>
           <span
@@ -196,6 +202,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 
 export function HoldingsTreeMap({
   holdings,
+  cashBalance,
   onETFClick,
 }: HoldingsTreeMapProps) {
   const [isMobile, setIsMobile] = useState(() =>
@@ -210,8 +217,9 @@ export function HoldingsTreeMap({
   }, [])
 
   const totalValue = useMemo(
-    () => holdings.reduce((sum, h) => sum + h.current_value, 0),
-    [holdings]
+    () =>
+      holdings.reduce((sum, h) => sum + h.current_value, 0) + cashBalance,
+    [holdings, cashBalance]
   )
 
   const treeData = useMemo(() => {
@@ -227,8 +235,20 @@ export function HoldingsTreeMap({
         annualizedReturn: h.annualized_return ?? null,
         currentValue: h.current_value,
       }))
+    if (cashBalance > 0) {
+      children.push({
+        name: '現金',
+        size: cashBalance,
+        etf_code: 'CASH',
+        etfName: '現金残高',
+        momentumLabel: null,
+        pnlPercent: 0,
+        annualizedReturn: null,
+        currentValue: cashBalance,
+      })
+    }
     return children
-  }, [holdings])
+  }, [holdings, cashBalance])
 
   const momentumRatios = useMemo(() => {
     if (totalValue === 0) return {} as Record<string, number>
@@ -244,12 +264,32 @@ export function HoldingsTreeMap({
     return ratios
   }, [holdings, totalValue])
 
+  const momentumScore = useMemo(() => {
+    const items = holdings
+      .filter((h) => h.current_value > 0)
+      .map((h) => ({
+        currentValue: h.current_value,
+        momentumLabel: h.etf?.momentum_label ?? null,
+      }))
+    return calcMomentumScore(items, cashBalance)
+  }, [holdings, cashBalance])
+
   if (treeData.length === 0) return null
 
   return (
     <div className={styles.container}>
       <div className={styles.header}>
         <h3 className={styles.title}>勢いヒートマップ</h3>
+        <div className={styles.scoreWrapper}>
+          <span className={styles.scoreLabel}>スコア</span>
+          <span
+            className={styles.scoreValue}
+            style={{ color: getMomentumScoreColor(momentumScore) }}
+          >
+            {momentumScore.toFixed(0)}
+          </span>
+          <span className={styles.scoreMax}>/100</span>
+        </div>
       </div>
       <div className={styles.chartWrapper}>
         <ResponsiveContainer width="100%" height={isMobile ? 250 : 300}>

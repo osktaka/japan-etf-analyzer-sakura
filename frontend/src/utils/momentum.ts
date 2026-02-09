@@ -97,3 +97,47 @@ export function getMomentumInfoFromAnnualized(
   const label = classifyMomentum(annual1m, annual3m)
   return { label, ...MOMENTUM_STYLES[label] }
 }
+
+/** 各モメンタムラベルに対応するスコア（0〜100） */
+export const MOMENTUM_SCORES: Record<MomentumLabel, number> = {
+  上昇加速: 100,
+  上昇維持: 85,
+  上昇減速: 70,
+  反転上昇: 60,
+  失速: 40,
+  下降減速: 30,
+  下降維持: 15,
+  下降加速: 0,
+}
+
+/** 現金に割り当てるスコア */
+export const CASH_SCORE = 50
+
+/** ポートフォリオ全体のモメンタムスコアを加重平均で算出 */
+export function calcMomentumScore(
+  items: { currentValue: number; momentumLabel: string | null }[],
+  cashBalance: number
+): number {
+  const totalAsset =
+    items.reduce((sum, item) => sum + item.currentValue, 0) + cashBalance
+  if (totalAsset === 0) return 0
+
+  const FALLBACK_SCORE = 50
+  let score = 0
+  for (const item of items) {
+    const label = item.momentumLabel as MomentumLabel | null
+    const labelScore =
+      label && label in MOMENTUM_SCORES
+        ? MOMENTUM_SCORES[label]
+        : FALLBACK_SCORE
+    score += (item.currentValue / totalAsset) * labelScore
+  }
+  score += (cashBalance / totalAsset) * CASH_SCORE
+  return score
+}
+
+/** スコア（0〜100）に対応するHSLカラーを返す（0=赤, 100=緑） */
+export function getMomentumScoreColor(score: number): string {
+  const hue = (score / 100) * 120
+  return `hsl(${hue}, 70%, 45%)`
+}

@@ -178,9 +178,10 @@ export function MyPage() {
 
         <div className={styles.chartSection}>
           <PortfolioValueChart />
-          {holdings.length > 0 && (
+          {holdings.length > 0 && summary && (
             <HoldingsTreeMap
               holdings={holdings}
+              cashBalance={summary.cash_balance}
               onETFClick={handleHoldingClick}
             />
           )}
