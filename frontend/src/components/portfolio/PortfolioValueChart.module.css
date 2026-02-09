@@ -116,6 +116,10 @@
   }
 
   .chartWrapper {
-    height: 200px;
+    height: 220px;
+  }
+
+  .periodBtn {
+    padding: 0.375rem 0.625rem;
   }
 }

@@ -1,5 +1,5 @@
 /** Portfolio value chart component */
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ComposedChart,
   Area,
@@ -41,6 +41,15 @@ export function PortfolioValueChart() {
   const { data, isLoading, error, period, setPeriod } = usePortfolioHistory()
   const { trades } = useTrades()
   const [popover, setPopover] = useState<PopoverState | null>(null)
+  const [isMobile, setIsMobile] = useState(
+    () => window.matchMedia('(max-width: 640px)').matches
+  )
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 640px)')
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    mql.addEventListener('change', handler)
+    return () => mql.removeEventListener('change', handler)
+  }, [])
 
   const mergedData = useMemo(
     () => mergeTradesWithChartData(data, trades),
@@ -108,19 +117,21 @@ export function PortfolioValueChart() {
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={mergedData}
-            margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+            margin={isMobile ? { top: 5, right: 10, left: 5, bottom: 5 } : { top: 5, right: 20, left: 10, bottom: 5 }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: isMobile ? 10 : 12 }}
+              minTickGap={isMobile ? 40 : 30}
               tickFormatter={(value) => {
                 const date = new Date(value)
                 return `${date.getMonth() + 1}/${date.getDate()}`
               }}
             />
             <YAxis
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: isMobile ? 10 : 12 }}
+              width={isMobile ? 55 : 65}
               tickFormatter={(value) => formatPrice(value).replace('¥', '')}
               domain={['auto', 'auto']}
             />
@@ -158,7 +169,7 @@ export function PortfolioValueChart() {
                 )
               }}
             />
-            <Legend />
+            <Legend iconSize={isMobile ? 8 : 14} wrapperStyle={{ fontSize: isMobile ? '0.625rem' : '0.75rem' }} />
             {/* 現金残高（最下層・紫系）*/}
             <Area
               type="monotone"
@@ -198,7 +209,7 @@ export function PortfolioValueChart() {
             <Scatter
               dataKey="buyMarker"
               fill="#10b981"
-              shape={<BuyMarkerShape />}
+              shape={<BuyMarkerShape isMobile={isMobile} />}
               onClick={handleMarkerClick}
               legendType="none"
               tooltipType="none"
@@ -206,7 +217,7 @@ export function PortfolioValueChart() {
             <Scatter
               dataKey="sellMarker"
               fill="#ef4444"
-              shape={<SellMarkerShape />}
+              shape={<SellMarkerShape isMobile={isMobile} />}
               onClick={handleMarkerClick}
               legendType="none"
               tooltipType="none"

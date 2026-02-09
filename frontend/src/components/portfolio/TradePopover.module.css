@@ -85,4 +85,8 @@
   .popover {
     max-width: 100%;
   }
+
+  .tradeItem {
+    font-size: 0.75rem;
+  }
 }
