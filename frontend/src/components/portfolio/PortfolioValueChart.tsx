@@ -50,7 +50,7 @@ export function PortfolioValueChart() {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h3 className={styles.title}>評価額推移</h3>
+        <h3 className={styles.title}>総資産額推移</h3>
         <div className={styles.periodSelector}>
           {PERIODS.map((p) => (
             <button
@@ -84,7 +84,7 @@ export function PortfolioValueChart() {
               domain={['auto', 'auto']}
             />
             <Tooltip
-              formatter={(value: number) => [formatPrice(value), '評価額']}
+              formatter={(value: number) => [formatPrice(value), '総資産額']}
               labelFormatter={(label) => label}
             />
             <Area

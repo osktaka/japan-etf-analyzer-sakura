@@ -262,3 +262,360 @@ def test_split_with_sell(
     assert holdings[0]["average_cost"] == 1000.0
     # Total cost: 1000 * 150 = 150000 (excludes sold shares)
     assert holdings[0]["total_cost"] == 150000.0
+
+
+# --- Total asset summary tests (cash flow method) ---
+
+
+def test_summary_cash_flow_partial_sell(
+    mock_trade_repository, mock_etf_repository, mock_split_repository
+):
+    """Pattern A: Partial sell - cash balance retains sell proceeds."""
+    # Setup: Buy 100 at 2000 yen, sell 30 at 2500 yen
+    # Current price: 2300 yen
+    mock_etf_repository.get_by_code.return_value = ETF(
+        code="1234", name="Test ETF", market_price=Decimal("2300")
+    )
+    mock_trade_repository.get_by_user_id.return_value = [
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="buy",
+            quantity=100,
+            price=Decimal("2000"),
+            trade_date=date(2024, 1, 15),
+        ),
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="sell",
+            quantity=30,
+            price=Decimal("2500"),
+            trade_date=date(2024, 6, 15),
+        ),
+    ]
+    mock_split_repository.get_approved_splits_since.return_value = []
+
+    split_service = SplitAdjustmentService(mock_split_repository)
+    service = PortfolioService(
+        mock_trade_repository, mock_etf_repository, split_service
+    )
+
+    summary = service.get_portfolio_summary(1)
+
+    # cash_balance: buy -> external funds (cash=0), sell 30*2500=75000 -> cash=75000
+    assert summary["cash_balance"] == 75000.0
+    # total_value: 70 shares * 2300 = 161000
+    assert summary["total_value"] == 161000.0
+    # total_asset = 161000 + 75000 = 236000
+    assert summary["total_asset"] == 236000.0
+
+
+def test_summary_cash_flow_no_sell(
+    mock_trade_repository, mock_etf_repository, mock_split_repository
+):
+    """Pattern B: Buy only - cash balance is zero."""
+    # Setup: Buy 50 at 1800 yen
+    # Current price: 2000 yen
+    mock_trade_repository.get_by_user_id.return_value = [
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="buy",
+            quantity=50,
+            price=Decimal("1800"),
+            trade_date=date(2024, 3, 1),
+        ),
+    ]
+    mock_split_repository.get_approved_splits_since.return_value = []
+
+    split_service = SplitAdjustmentService(mock_split_repository)
+    service = PortfolioService(
+        mock_trade_repository, mock_etf_repository, split_service
+    )
+
+    summary = service.get_portfolio_summary(1)
+
+    # cash_balance: buy -> external funds (cash=0)
+    assert summary["cash_balance"] == 0.0
+    # total_value: 50 shares * 2000 = 100000
+    assert summary["total_value"] == 100000.0
+    # total_asset = total_value = 100000
+    assert summary["total_asset"] == 100000.0
+
+
+def test_summary_cash_flow_fully_sold(
+    mock_trade_repository, mock_etf_repository, mock_split_repository
+):
+    """Pattern C: All shares sold - total asset equals cash balance."""
+    # Setup: Buy 100 at 2000 yen, sell all 100 at 2500 yen
+    mock_trade_repository.get_by_user_id.return_value = [
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="buy",
+            quantity=100,
+            price=Decimal("2000"),
+            trade_date=date(2024, 1, 15),
+        ),
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="sell",
+            quantity=100,
+            price=Decimal("2500"),
+            trade_date=date(2024, 6, 15),
+        ),
+    ]
+    mock_split_repository.get_approved_splits_since.return_value = []
+
+    split_service = SplitAdjustmentService(mock_split_repository)
+    service = PortfolioService(
+        mock_trade_repository, mock_etf_repository, split_service
+    )
+
+    summary = service.get_portfolio_summary(1)
+
+    # cash_balance: buy -> external (cash=0), sell 100*2500=250000 -> cash=250000
+    assert summary["cash_balance"] == 250000.0
+    # total_value: 0 shares => 0
+    assert summary["total_value"] == 0
+    assert summary["holdings_count"] == 0
+    # total_asset = 0 + 250000 = 250000
+    assert summary["total_asset"] == 250000.0
+
+
+def test_summary_cash_flow_reinvestment(
+    mock_trade_repository, mock_etf_repository, mock_split_repository
+):
+    """Pattern D: Sell then reinvest - cash balance reduced by reinvestment."""
+    # Setup: Buy 100 at 2000, sell 50 at 2500 (cash=125000),
+    #        buy 30 at 2100 (cash=125000-63000=62000)
+    # Current price: 2300 yen
+    mock_etf_repository.get_by_code.return_value = ETF(
+        code="1234", name="Test ETF", market_price=Decimal("2300")
+    )
+    mock_trade_repository.get_by_user_id.return_value = [
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="buy",
+            quantity=100,
+            price=Decimal("2000"),
+            trade_date=date(2024, 1, 15),
+        ),
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="sell",
+            quantity=50,
+            price=Decimal("2500"),
+            trade_date=date(2024, 6, 15),
+        ),
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="buy",
+            quantity=30,
+            price=Decimal("2100"),
+            trade_date=date(2024, 9, 1),
+        ),
+    ]
+    mock_split_repository.get_approved_splits_since.return_value = []
+
+    split_service = SplitAdjustmentService(mock_split_repository)
+    service = PortfolioService(
+        mock_trade_repository, mock_etf_repository, split_service
+    )
+
+    summary = service.get_portfolio_summary(1)
+
+    # cash flow: buy 200000 -> external (cash=0)
+    #            sell 125000 -> cash=125000
+    #            buy 63000 -> cash=125000-63000=62000
+    assert summary["cash_balance"] == 62000.0
+    # total_value: 80 shares * 2300 = 184000
+    assert summary["total_value"] == 184000.0
+    # total_asset = 184000 + 62000 = 246000
+    assert summary["total_asset"] == 246000.0
+
+
+# --- Valuation history tests (total asset = holdings + cash) ---
+
+
+def test_calculate_value_at_date_buy_only(
+    mock_trade_repository, mock_etf_repository, mock_split_repository
+):
+    """_calculate_value_at_date: buy only - cash_balance=0, returns holdings value."""
+    trades = [
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="buy",
+            quantity=100,
+            price=Decimal("2000"),
+            trade_date=date(2024, 1, 15),
+        ),
+    ]
+    mock_split_repository.get_approved_splits_between.return_value = []
+
+    split_service = SplitAdjustmentService(mock_split_repository)
+    service = PortfolioService(
+        mock_trade_repository, mock_etf_repository, split_service
+    )
+
+    target_date = date(2024, 3, 1)
+    price_map = {target_date: {"1234": 2500.0}}
+
+    result = service._calculate_value_at_date(trades, target_date, price_map)
+
+    # holdings: 100 shares * 2500 = 250000, cash: 0
+    assert result == 250000.0
+
+
+def test_calculate_value_at_date_partial_sell(
+    mock_trade_repository, mock_etf_repository, mock_split_repository
+):
+    """_calculate_value_at_date: partial sell - cash_balance from sell proceeds."""
+    trades = [
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="buy",
+            quantity=100,
+            price=Decimal("2000"),
+            trade_date=date(2024, 1, 15),
+        ),
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="sell",
+            quantity=30,
+            price=Decimal("2500"),
+            trade_date=date(2024, 6, 15),
+        ),
+    ]
+    mock_split_repository.get_approved_splits_between.return_value = []
+
+    split_service = SplitAdjustmentService(mock_split_repository)
+    service = PortfolioService(
+        mock_trade_repository, mock_etf_repository, split_service
+    )
+
+    target_date = date(2024, 8, 1)
+    price_map = {target_date: {"1234": 2300.0}}
+
+    result = service._calculate_value_at_date(trades, target_date, price_map)
+
+    # holdings: 70 shares * 2300 = 161000
+    # cash: sell 30*2500=75000, buy 200000 > cash so cash=0 before sell
+    # cash flow: buy -> external (cash=0), sell 75000 -> cash=75000
+    # total = 161000 + 75000 = 236000
+    assert result == 236000.0
+
+
+def test_calculate_value_at_date_reinvestment(
+    mock_trade_repository, mock_etf_repository, mock_split_repository
+):
+    """_calculate_value_at_date: sell then reinvest - cash reduced by reinvestment."""
+    trades = [
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="buy",
+            quantity=100,
+            price=Decimal("2000"),
+            trade_date=date(2024, 1, 15),
+        ),
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="sell",
+            quantity=50,
+            price=Decimal("2500"),
+            trade_date=date(2024, 6, 15),
+        ),
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="buy",
+            quantity=30,
+            price=Decimal("2100"),
+            trade_date=date(2024, 9, 1),
+        ),
+    ]
+    mock_split_repository.get_approved_splits_between.return_value = []
+
+    split_service = SplitAdjustmentService(mock_split_repository)
+    service = PortfolioService(
+        mock_trade_repository, mock_etf_repository, split_service
+    )
+
+    target_date = date(2024, 10, 1)
+    price_map = {target_date: {"1234": 2300.0}}
+
+    result = service._calculate_value_at_date(trades, target_date, price_map)
+
+    # holdings: (100 - 50 + 30) = 80 shares * 2300 = 184000
+    # cash flow: buy 200000 -> external (cash=0)
+    #            sell 125000 -> cash=125000
+    #            buy 63000 -> cash=125000-63000=62000
+    # total = 184000 + 62000 = 246000
+    assert result == 246000.0
+
+
+def test_summary_cash_flow_same_day_trades(
+    mock_trade_repository, mock_etf_repository, mock_split_repository
+):
+    """Pattern E: Same-day sell and buy - sells processed before buys."""
+    # Setup: Buy 100 at 2000 (2024-01-15),
+    #        sell 50 at 2500 (2024-06-15, same day),
+    #        buy 20 at 2400 (2024-06-15, same day)
+    # Current price: 2300 yen
+    mock_etf_repository.get_by_code.return_value = ETF(
+        code="1234", name="Test ETF", market_price=Decimal("2300")
+    )
+    mock_trade_repository.get_by_user_id.return_value = [
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="buy",
+            quantity=100,
+            price=Decimal("2000"),
+            trade_date=date(2024, 1, 15),
+        ),
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="sell",
+            quantity=50,
+            price=Decimal("2500"),
+            trade_date=date(2024, 6, 15),
+        ),
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="buy",
+            quantity=20,
+            price=Decimal("2400"),
+            trade_date=date(2024, 6, 15),
+        ),
+    ]
+    mock_split_repository.get_approved_splits_since.return_value = []
+
+    split_service = SplitAdjustmentService(mock_split_repository)
+    service = PortfolioService(
+        mock_trade_repository, mock_etf_repository, split_service
+    )
+
+    summary = service.get_portfolio_summary(1)
+
+    # cash flow (sorted: sell before buy on same day):
+    #   buy 200000 (2024-01-15) -> external (cash=0)
+    #   sell 125000 (2024-06-15) -> cash=125000
+    #   buy 48000  (2024-06-15) -> cash=125000-48000=77000
+    assert summary["cash_balance"] == 77000.0
+    # total_value: 70 shares * 2300 = 161000
+    assert summary["total_value"] == 161000.0
+    # total_asset = 161000 + 77000 = 238000
+    assert summary["total_asset"] == 238000.0

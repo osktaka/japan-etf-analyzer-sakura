@@ -8,32 +8,37 @@ interface PortfolioSummaryProps {
 }
 
 export function PortfolioSummary({ summary }: PortfolioSummaryProps) {
-  const pnlClass =
+  const unrealizedPnlClass =
     summary.total_unrealized_pnl >= 0 ? styles.positive : styles.negative
-  const pnlSign = summary.total_unrealized_pnl >= 0 ? '+' : ''
+  const unrealizedPnlSign = summary.total_unrealized_pnl >= 0 ? '+' : ''
 
   return (
     <div className={styles.container}>
       <div className={styles.card}>
-        <span className={styles.label}>総投資額</span>
-        <span className={styles.value}>{formatPrice(summary.total_cost)}</span>
+        <span className={styles.label}>総資産額</span>
+        <span className={styles.value}>
+          {formatPrice(summary.total_asset)}
+        </span>
       </div>
       <div className={styles.card}>
-        <span className={styles.label}>総評価額</span>
+        <span className={styles.label}>評価額</span>
         <span className={styles.value}>{formatPrice(summary.total_value)}</span>
       </div>
       <div className={styles.card}>
         <span className={styles.label}>評価損益</span>
-        <span className={`${styles.value} ${pnlClass}`}>
-          {pnlSign}
+        <span className={`${styles.value} ${unrealizedPnlClass}`}>
+          {unrealizedPnlSign}
           {formatPrice(summary.total_unrealized_pnl)}
+        </span>
+        <span className={`${styles.subValue} ${unrealizedPnlClass}`}>
+          {unrealizedPnlSign}
+          {summary.total_unrealized_pnl_percent.toFixed(2)}%
         </span>
       </div>
       <div className={styles.card}>
-        <span className={styles.label}>損益率</span>
-        <span className={`${styles.value} ${pnlClass}`}>
-          {pnlSign}
-          {summary.total_unrealized_pnl_percent.toFixed(2)}%
+        <span className={styles.label}>現金残高</span>
+        <span className={styles.value}>
+          {formatPrice(summary.cash_balance)}
         </span>
       </div>
     </div>

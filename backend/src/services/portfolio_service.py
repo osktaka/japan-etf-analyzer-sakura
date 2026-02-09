@@ -248,20 +248,44 @@ class PortfolioService:
         - total_unrealized_pnl: Sum of all unrealized P&L
         - total_unrealized_pnl_percent: Overall P&L percentage
         - holdings_count: Number of unique ETFs held
+        - cash_balance: Cash balance from chronological trade processing
+        - total_asset: total_value + cash_balance
         """
         holdings = self.get_holdings(user_id)
 
         total_value = sum(h["current_value"] for h in holdings)
         total_cost = sum(h["total_cost"] for h in holdings)
-        total_pnl = sum(h["unrealized_pnl"] for h in holdings)
-        pnl_percent = (total_pnl / total_cost * 100) if total_cost > 0 else 0
+        unrealized_pnl = sum(h["unrealized_pnl"] for h in holdings)
+        pnl_percent = (unrealized_pnl / total_cost * 100) if total_cost > 0 else 0
+
+        # Calculate cash balance using chronological cash flow
+        trades = self.trade_repository.get_by_user_id(user_id)
+        # Sort: trade_date ascending, same day sells before buys
+        trades_sorted = sorted(
+            trades,
+            key=lambda t: (t.trade_date, 0 if t.trade_type == "sell" else 1),
+        )
+        cash_balance = 0.0
+        for trade in trades_sorted:
+            if trade.trade_type == "sell":
+                cash_balance += float(trade.total_amount)
+            else:
+                buy_amount = float(trade.total_amount)
+                if cash_balance >= buy_amount:
+                    cash_balance -= buy_amount
+                else:
+                    cash_balance = 0.0  # shortfall covered by external funds
+
+        total_asset = total_value + cash_balance
 
         return {
             "total_value": round(total_value, 2),
             "total_cost": round(total_cost, 2),
-            "total_unrealized_pnl": round(total_pnl, 2),
+            "total_unrealized_pnl": round(unrealized_pnl, 2),
             "total_unrealized_pnl_percent": round(pnl_percent, 2),
             "holdings_count": len(holdings),
+            "cash_balance": round(cash_balance, 2),
+            "total_asset": round(total_asset, 2),
         }
 
     def get_valuation_history(self, user_id: int, period: str = "1y") -> List[Dict]:
@@ -321,12 +345,12 @@ class PortfolioService:
         result = []
 
         for target_date in all_dates:
-            total_value = self._calculate_value_at_date(trades, target_date, price_map)
-            if total_value > 0:
+            total_asset = self._calculate_value_at_date(trades, target_date, price_map)
+            if total_asset > 0:
                 result.append(
                     {
                         "date": target_date.strftime("%Y-%m-%d"),
-                        "value": round(total_value, 2),
+                        "value": round(total_asset, 2),
                     }
                 )
 
@@ -384,13 +408,16 @@ class PortfolioService:
         target_date: date,
         price_map: Dict[date, Dict[str, float]],
     ) -> float:
-        """Calculate total portfolio value at a specific date."""
-        # Calculate holdings at target_date
+        """Calculate total asset value (holdings + cash) at a specific date."""
+        # Filter trades up to target_date and calculate holdings
         holdings: Dict[str, float] = {}
+        trades_up_to_date = []
 
         for trade in trades:
             if trade.trade_date > target_date:
                 continue
+
+            trades_up_to_date.append(trade)
 
             code = trade.etf_code
             # Get adjustment factor from trade date to target date
@@ -408,12 +435,28 @@ class PortfolioService:
             else:
                 holdings[code] -= adjusted_qty
 
-        # Calculate value using prices at target_date
+        # Calculate cash balance from trades up to target_date
+        trades_sorted = sorted(
+            trades_up_to_date,
+            key=lambda t: (t.trade_date, 0 if t.trade_type == "sell" else 1),
+        )
+        cash_balance = 0.0
+        for trade in trades_sorted:
+            if trade.trade_type == "sell":
+                cash_balance += float(trade.total_amount)
+            else:
+                buy_amount = float(trade.total_amount)
+                if cash_balance >= buy_amount:
+                    cash_balance -= buy_amount
+                else:
+                    cash_balance = 0.0
+
+        # Calculate holdings value using prices at target_date
         prices = price_map.get(target_date, {})
-        total_value = 0.0
+        holdings_value = 0.0
 
         for code, qty in holdings.items():
             if qty > 0 and code in prices:
-                total_value += qty * prices[code]
+                holdings_value += qty * prices[code]
 
-        return total_value
+        return holdings_value + cash_balance

@@ -217,6 +217,8 @@ export interface PortfolioSummary {
   total_unrealized_pnl: number
   total_unrealized_pnl_percent: number
   holdings_count: number
+  cash_balance: number
+  total_asset: number
 }
 
 export type ValuationHistoryPeriod =
