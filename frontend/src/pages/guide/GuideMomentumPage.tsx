@@ -1,12 +1,14 @@
 /** Guide Momentum Page - Explanation of momentum evaluation method */
+import { Link } from 'react-router-dom'
 import { SEOHead } from '../../components/common'
+import { ROUTES } from '../../utils'
 import styles from './GuidePage.module.css'
 
 const momentumCategories = [
   {
     name: '上昇加速',
     color: '#059669',
-    condition: '1M・3Mともにプラス、比率 > 1.45',
+    condition: '1M（1ヶ月）・3M（3ヶ月）ともにプラス、比率 > 1.45',
     meaning: '直近の上昇が中期トレンドより強い。勢いが加速中',
   },
   {
@@ -62,6 +64,10 @@ export function GuideMomentumPage() {
       />
 
       <h1 className={styles.pageTitle}>勢いの評価方法</h1>
+
+      <p className={styles.text}>
+        銘柄の値動きの勢いを「上昇中か下降中か」「加速しているか減速しているか」の2軸で8段階に評価しています。
+      </p>
 
       <p className={styles.text}>
         株価の勢い（モメンタム）を回帰直線で数値化し、1ヶ月（短期）と3ヶ月（中期）の年率化リターンの比率で8段階に分類しています。
@@ -123,6 +129,9 @@ export function GuideMomentumPage() {
 
       <section className={styles.section}>
         <h2 className={styles.sectionTitle}>年率化と比率による比較</h2>
+        <p className={styles.text}>
+          期間の異なるリターンを比較可能にするため、年率に換算します。
+        </p>
         <ul className={styles.list}>
           <li className={styles.listItem}>
             <span className={styles.listIcon}>1</span>
@@ -155,6 +164,14 @@ export function GuideMomentumPage() {
       </section>
 
       <section className={styles.section}>
+        <h2 className={styles.sectionTitle}>トップページでの表示</h2>
+        <p className={styles.text}>
+          トップページでは勢いヒートマップとして、保有銘柄の勢いを色分けで一覧表示しています。
+          各銘柄のブロックの色が上記8カテゴリに対応しており、ポートフォリオ全体の勢いを直感的に把握できます。
+        </p>
+      </section>
+
+      <section className={styles.section}>
         <h2 className={styles.sectionTitle}>注意事項</h2>
         <div className={`${styles.highlightBox} ${styles.warning}`}>
           <div className={styles.highlightText}>
@@ -163,6 +180,14 @@ export function GuideMomentumPage() {
           </div>
         </div>
       </section>
+
+      <nav className={styles.guideNav}>
+        <div className={styles.guideNavLinks}>
+          <Link to={ROUTES.GUIDE_SEARCH} className={styles.guideNavLink}>← 銘柄を探す</Link>
+          <Link to={ROUTES.GUIDE_TAGS} className={styles.guideNavLink}>タグで探す →</Link>
+        </div>
+        <Link to={ROUTES.HOME} className={styles.guideNavCta}>この機能を使ってみる →</Link>
+      </nav>
     </div>
   )
 }

@@ -1,5 +1,7 @@
 /** Guide Tags Page - Explanation of 49 tags in 6 categories */
+import { Link } from 'react-router-dom'
 import { SEOHead } from '../../components/common'
+import { ROUTES } from '../../utils'
 import styles from './GuidePage.module.css'
 
 export function GuideTagsPage() {
@@ -23,43 +25,43 @@ export function GuideTagsPage() {
         <h2 className={styles.sectionTitle}>6つのタグカテゴリ</h2>
         <div className={styles.perspectiveGrid}>
           <div className={styles.perspectiveCard} data-perspective="dividend">
-            <h3 className={styles.perspectiveTitle}>業種 (9タグ)</h3>
+            <h3 className={styles.perspectiveTitle}>業種 (12タグ)</h3>
             <p className={styles.perspectiveText}>
-              銀行、商社、不動産、半導体、自動車、医薬品、通信、電力・ガス、海運など、
+              金融、テクノロジー、ヘルスケア、エネルギー、素材、消費、機械・製造、通信、公益、建設・資材、造船、エンタメなど、
               セクター別に銘柄を分類。業種に特化した投資戦略に活用できます。
             </p>
             <div className={styles.perspectiveMetrics}>
-              例: 銀行セクター、半導体関連、商社関連
+              例: 金融、テクノロジー、エネルギー、建設・資材
             </div>
           </div>
 
           <div className={styles.perspectiveCard} data-perspective="low-cost">
-            <h3 className={styles.perspectiveTitle}>テーマ (12タグ)</h3>
+            <h3 className={styles.perspectiveTitle}>テーマ (15タグ)</h3>
             <p className={styles.perspectiveText}>
-              高配当、低コスト、ESG、レバレッジ、インバースなど、
+              高配当、AI・半導体、ESG（環境・社会・ガバナンス）、レバレッジ、インバース、原子力、宇宙関連、データセンターなど、
               投資テーマや銘柄特性で分類。目的に合った銘柄を見つけやすくします。
             </p>
             <div className={styles.perspectiveMetrics}>
-              例: 高配当、低コスト、ESG・環境、レバレッジ
+              例: 高配当、AI・半導体、ESG、原子力、データセンター
             </div>
           </div>
 
           <div className={styles.perspectiveCard} data-perspective="stability">
             <h3 className={styles.perspectiveTitle}>地域 (8タグ)</h3>
             <p className={styles.perspectiveText}>
-              日本、米国、先進国、新興国、中国、インド、ASEAN、欧州など、
+              国内、米国、先進国、新興国、全世界、アジア、ヨーロッパ、中国など、
               投資対象地域で分類。地理的な分散投資に役立ちます。
             </p>
             <div className={styles.perspectiveMetrics}>
-              例: 日本株、米国株、新興国、インド
+              例: 国内、米国、新興国、アジア
             </div>
           </div>
 
           <div className={styles.perspectiveCard} data-perspective="volume">
             <h3 className={styles.perspectiveTitle}>資産クラス (4タグ)</h3>
             <p className={styles.perspectiveText}>
-              株式、債券、REIT、コモディティなど、資産クラスで分類。
-              アセットアロケーションを考える際に便利です。
+              株式、債券、REIT（不動産投資信託）、コモディティ（金・原油などの商品）など、資産クラスで分類。
+              資産配分（アセットアロケーション）を考える際に便利です。
             </p>
             <div className={styles.perspectiveMetrics}>
               例: 株式、債券、REIT、コモディティ
@@ -73,7 +75,7 @@ export function GuideTagsPage() {
               経済環境に応じた銘柄選びに活用できます。
             </p>
             <div className={styles.perspectiveMetrics}>
-              例: 円安メリット、金利上昇メリット、インフレヘッジ
+              例: 円安、金利上昇、インフレヘッジ
             </div>
           </div>
 
@@ -167,6 +169,20 @@ export function GuideTagsPage() {
           </li>
         </ul>
       </section>
+
+      <nav className={styles.guideNav}>
+        <div className={styles.guideNavLinks}>
+          <Link to={ROUTES.GUIDE_MOMENTUM} className={styles.guideNavLink}>
+            &larr; 勢いの評価
+          </Link>
+          <Link to={ROUTES.GUIDE_COMPARE} className={styles.guideNavLink}>
+            比較する &rarr;
+          </Link>
+        </div>
+        <Link to={ROUTES.HOME} className={styles.guideNavCta}>
+          タグで銘柄を探してみる &rarr;
+        </Link>
+      </nav>
     </div>
   )
 }

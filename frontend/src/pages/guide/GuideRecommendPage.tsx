@@ -1,5 +1,7 @@
 /** Guide Recommend Page - Explanation of 6 perspectives */
+import { Link } from 'react-router-dom'
 import { SEOHead } from '../../components/common'
+import { ROUTES } from '../../utils'
 import styles from './GuidePage.module.css'
 
 export function GuideRecommendPage() {
@@ -23,7 +25,7 @@ export function GuideRecommendPage() {
           <div className={styles.perspectiveCard} data-perspective="dividend">
             <h3 className={styles.perspectiveTitle}>配当収入</h3>
             <p className={styles.perspectiveText}>
-              配当利回りが高く、定期的な配当収入を期待できる銘柄。配当金による定期収入を重視する投資家におすすめです。
+              配当利回り（年間配当金を株価で割った比率）が高く、定期的な配当収入を期待できる銘柄。配当金による定期収入を重視する投資家におすすめです。
             </p>
             <div className={styles.perspectiveMetrics}>
               重視指標:
@@ -34,7 +36,7 @@ export function GuideRecommendPage() {
           <div className={styles.perspectiveCard} data-perspective="low-cost">
             <h3 className={styles.perspectiveTitle}>低コスト</h3>
             <p className={styles.perspectiveText}>
-              信託報酬が低く、長期保有でコストを抑えられる銘柄。保有コストを最小化したい長期投資家におすすめです。
+              信託報酬（ETFの運用管理にかかる年間コスト）が低く、長期保有でコストを抑えられる銘柄。保有コストを最小化したい長期投資家におすすめです。
             </p>
             <div className={styles.perspectiveMetrics}>
               重視指標:
@@ -45,7 +47,7 @@ export function GuideRecommendPage() {
           <div className={styles.perspectiveCard} data-perspective="stability">
             <h3 className={styles.perspectiveTitle}>安定性</h3>
             <p className={styles.perspectiveText}>
-              純資産規模が大きく、安心して保有できる銘柄。リスクを抑えたい初心者・保守的な投資家におすすめです。
+              純資産総額（ファンドに集まっている資金の総額）が大きく、安心して保有できる銘柄。リスクを抑えたい初心者・保守的な投資家におすすめです。
             </p>
             <div className={styles.perspectiveMetrics}>
               重視指標:
@@ -56,7 +58,7 @@ export function GuideRecommendPage() {
           <div className={styles.perspectiveCard} data-perspective="volume">
             <h3 className={styles.perspectiveTitle}>取引規模</h3>
             <p className={styles.perspectiveText}>
-              出来高が多く、売買が成立しやすい銘柄。流動性を重視する短期トレーダー・アクティブ投資家におすすめです。
+              出来高（1日に取引された口数）が多く、売買が成立しやすい銘柄。流動性を重視する短期トレーダー・アクティブ投資家におすすめです。
             </p>
             <div className={styles.perspectiveMetrics}>
               重視指標:
@@ -67,7 +69,7 @@ export function GuideRecommendPage() {
           <div className={styles.perspectiveCard} data-perspective="growth">
             <h3 className={styles.perspectiveTitle}>成長性</h3>
             <p className={styles.perspectiveText}>
-              過去の値上がり実績が良好な銘柄。キャピタルゲインを重視する成長志向の投資家におすすめです。
+              過去の値上がり実績が良好な銘柄。値上がり益（キャピタルゲイン）を重視する成長志向の投資家におすすめです。
             </p>
             <div className={styles.perspectiveMetrics}>
               重視指標:
@@ -124,7 +126,7 @@ export function GuideRecommendPage() {
               売買のしやすさを評価します。売買代金・出来高が大きく、乖離率が小さいほどスコアが高くなります。
             </p>
             <div className={styles.axisMetric}>
-              使用指標: 売買代金（50%）、平均出来高（30%）、乖離率（20%）
+              使用指標: 売買代金（50%）、平均出来高（30%）、乖離率（ETFの市場価格と基準価額のズレ）（20%）
             </div>
           </div>
 
@@ -149,11 +151,19 @@ export function GuideRecommendPage() {
         <div className={styles.highlightBox}>
           <div className={styles.highlightTitle}>設定例</div>
           <div className={styles.highlightText}>
-            配当利回り: 40、信託報酬: 30、安定性: 20、流動性: 10、成長性: 0
+            配当力: 40、コスト効率: 30、安定性: 20、取引規模: 10、リターン実績: 0
             のように設定すると、配当と低コストを重視したランキングが表示されます。
           </div>
         </div>
       </section>
+
+      <nav className={styles.guideNav}>
+        <div className={styles.guideNavLinks}>
+          <Link to={ROUTES.GUIDE} className={styles.guideNavLink}>← 概要</Link>
+          <Link to={ROUTES.GUIDE_SEARCH} className={styles.guideNavLink}>銘柄を探す →</Link>
+        </div>
+        <Link to={ROUTES.HOME} className={styles.guideNavCta}>この機能を使ってみる →</Link>
+      </nav>
     </div>
   )
 }

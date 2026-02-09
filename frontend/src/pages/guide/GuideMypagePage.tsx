@@ -1,5 +1,7 @@
 /** Guide MyPage Page - How to use favorites and portfolio */
+import { Link } from 'react-router-dom'
 import { SEOHead } from '../../components/common'
+import { ROUTES } from '../../utils'
 import styles from './GuidePage.module.css'
 
 export function GuideMypagePage() {
@@ -14,7 +16,7 @@ export function GuideMypagePage() {
 
       <p className={styles.text}>
         ログインすると利用できるマイページ機能では、お気に入り銘柄の管理や
-        ポートフォリオのシミュレーションができます。
+        ポートフォリオ（保有銘柄の一覧と構成）のシミュレーションができます。
       </p>
 
       <div className={styles.highlightBox}>
@@ -22,6 +24,7 @@ export function GuideMypagePage() {
         <div className={styles.highlightText}>
           マイページ機能を利用するには、アカウント登録とログインが必要です。
           画面右上の「ログイン」から登録・ログインしてください。
+          新規登録はログイン画面の「アカウント作成」から、ユーザーID・パスワードを設定して登録できます。
         </div>
       </div>
 
@@ -110,8 +113,17 @@ export function GuideMypagePage() {
           5つの評価軸（配当力、コスト効率、安定性、取引規模、リターン実績）の重みを
           自分好みにカスタマイズできます。マイページやトップページの「カスタムを編集」から設定画面を開き、
           各指標の重要度を調整してください。
+          詳しくは<Link to={ROUTES.GUIDE_RECOMMEND}>「おすすめ銘柄」ガイド</Link>をご覧ください。
         </p>
       </section>
+
+      <nav className={styles.guideNav}>
+        <div className={styles.guideNavLinks}>
+          <Link to={ROUTES.GUIDE_COMPARE} className={styles.guideNavLink}>← 比較する</Link>
+          <Link to={ROUTES.GUIDE_FAQ} className={styles.guideNavLink}>よくある質問 →</Link>
+        </div>
+        <Link to={ROUTES.MYPAGE} className={styles.guideNavCta}>この機能を使ってみる →</Link>
+      </nav>
     </div>
   )
 }

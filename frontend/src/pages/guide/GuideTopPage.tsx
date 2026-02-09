@@ -16,7 +16,7 @@ export function GuideTopPage() {
         <h1 className={styles.heroTitle}>使い方ガイド</h1>
         <p className={styles.heroSubtitle}>
           Japan ETF
-          Analyzerは、東証に上場するETF銘柄を検索・分析・比較できるWebアプリケーションです。
+          Analyzerは、東証に上場するETF（上場投資信託）銘柄を検索・分析・比較できるWebアプリケーションです。
           このガイドでは、主要な機能の使い方を説明します。
         </p>
       </div>
@@ -34,9 +34,9 @@ export function GuideTopPage() {
           </div>
           <div className={styles.featureCard}>
             <div className={styles.featureIcon}>&#128193;</div>
-            <h3 className={styles.featureTitle}>43タグで分類</h3>
+            <h3 className={styles.featureTitle}>49タグで分類</h3>
             <p className={styles.featureText}>
-              業種、テーマ、経済情勢など6カテゴリ43タグで多角的に分類。
+              業種、テーマ、経済情勢など6カテゴリ49タグで多角的に分類。
               経済ニュースから銘柄を探せます。
             </p>
           </div>
@@ -44,7 +44,7 @@ export function GuideTopPage() {
             <div className={styles.featureIcon}>&#128269;</div>
             <h3 className={styles.featureTitle}>多角的な検索</h3>
             <p className={styles.featureText}>
-              カテゴリ、信託報酬、利回りなど複数の条件で銘柄を絞り込み。
+              カテゴリやタグなど複数の条件で銘柄を絞り込み。
               あなたの投資スタイルに合った銘柄を効率的に探せます。
             </p>
           </div>
@@ -74,10 +74,15 @@ export function GuideTopPage() {
               検索・フィルター機能の使い方
             </div>
           </Link>
+          <Link to={ROUTES.GUIDE_MOMENTUM} className={styles.navCard}>
+            <span className={styles.navCardArrow}>&rarr;</span>
+            <div className={styles.navCardTitle}>勢いの評価</div>
+            <div className={styles.navCardText}>勢いスコアの仕組みと見方</div>
+          </Link>
           <Link to={ROUTES.GUIDE_TAGS} className={styles.navCard}>
             <span className={styles.navCardArrow}>&rarr;</span>
             <div className={styles.navCardTitle}>タグで探す</div>
-            <div className={styles.navCardText}>43タグ6カテゴリの活用法</div>
+            <div className={styles.navCardText}>49タグ6カテゴリの活用法</div>
           </Link>
           <Link to={ROUTES.GUIDE_COMPARE} className={styles.navCard}>
             <span className={styles.navCardArrow}>&rarr;</span>
@@ -98,6 +103,13 @@ export function GuideTopPage() {
           </Link>
         </div>
       </section>
+
+      <nav className={styles.guideNav}>
+        <div className={styles.guideNavLinks} />
+        <Link to={ROUTES.HOME} className={styles.guideNavCta}>
+          さっそく使ってみる &rarr;
+        </Link>
+      </nav>
     </div>
   )
 }

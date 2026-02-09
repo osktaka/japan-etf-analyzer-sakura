@@ -1,5 +1,7 @@
 /** Guide Search Page - How to search ETFs */
+import { Link } from 'react-router-dom'
 import { SEOHead } from '../../components/common'
+import { ROUTES } from '../../utils'
 import styles from './GuidePage.module.css'
 
 export function GuideSearchPage() {
@@ -41,8 +43,8 @@ export function GuideSearchPage() {
             <div className={styles.listContent}>
               <div className={styles.listTitle}>タグ</div>
               <div className={styles.listDescription}>
-                業種、テーマ、経済情勢など6カテゴリ43タグで絞り込みます。
-                複数選択で幅広く検索。詳しくは「タグで探す」をご覧ください。
+                業種、テーマ、経済情勢など6カテゴリ49タグで絞り込みます。
+                複数選択で幅広く検索。詳しくは<Link to={ROUTES.GUIDE_TAGS}>タグで探す</Link>をご覧ください。
               </div>
             </div>
           </li>
@@ -84,7 +86,7 @@ export function GuideSearchPage() {
             <div className={styles.listContent}>
               <div className={styles.listTitle}>銘柄スコア / 株価傾向</div>
               <div className={styles.listDescription}>
-                表表示時に、銘柄スコア（5軸評価）と株価傾向（期間別リターン）を切り替えられます。
+                表表示時に、銘柄スコア（5つの評価軸で総合判定）と株価傾向（期間別リターン）を切り替えられます。
               </div>
             </div>
           </li>
@@ -105,6 +107,20 @@ export function GuideSearchPage() {
           </div>
         </div>
       </section>
+
+      <nav className={styles.guideNav}>
+        <div className={styles.guideNavLinks}>
+          <Link to={ROUTES.GUIDE_RECOMMEND} className={styles.guideNavLink}>
+            &larr; おすすめ銘柄
+          </Link>
+          <Link to={ROUTES.GUIDE_MOMENTUM} className={styles.guideNavLink}>
+            勢いの評価 &rarr;
+          </Link>
+        </div>
+        <Link to={ROUTES.HOME} className={styles.guideNavCta}>
+          銘柄を探してみる &rarr;
+        </Link>
+      </nav>
     </div>
   )
 }
