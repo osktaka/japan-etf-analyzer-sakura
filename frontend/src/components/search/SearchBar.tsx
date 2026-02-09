@@ -1,4 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react'
+import { ETFCodeAutocomplete } from '../common'
 import styles from './SearchBar.module.css'
 
 interface SearchBarProps {
@@ -32,12 +33,12 @@ export function SearchBar({
 
   return (
     <form className={styles.form} onSubmit={handleSubmit}>
-      <input
-        type="text"
-        className={styles.input}
+      <ETFCodeAutocomplete
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={setValue}
+        onSelect={(code) => onSearch(code)}
         onFocus={(e) => e.target.select()}
+        className={styles.input}
         placeholder={placeholder}
       />
       <button type="submit" className={styles.button}>

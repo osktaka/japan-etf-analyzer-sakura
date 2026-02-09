@@ -1,6 +1,7 @@
 /** Trade form component for creating/editing trades */
 import { useState, FormEvent } from 'react'
 import { CreateTradeRequest } from '../../api/types'
+import { ETFCodeAutocomplete } from '../common'
 import styles from './TradeForm.module.css'
 
 interface TradeFormProps {
@@ -32,6 +33,7 @@ export function TradeForm({
     initialData?.trade_date || new Date().toISOString().split('T')[0]
   )
   const [memo, setMemo] = useState(initialData?.memo || '')
+  const [selectedEtfName, setSelectedEtfName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -86,16 +88,19 @@ export function TradeForm({
 
       <div className={styles.field}>
         <label htmlFor="etfCode">ETFコード</label>
-        <input
+        <ETFCodeAutocomplete
           id="etfCode"
-          type="text"
           value={etfCode}
-          onChange={(e) => setEtfCode(e.target.value)}
+          onChange={setEtfCode}
+          onSelect={(_code, name) => setSelectedEtfName(name)}
           onFocus={(e) => e.target.select()}
           placeholder="例: 1306"
           disabled={isEdit}
           required
         />
+        {selectedEtfName && (
+          <span className={styles.etfName}>{selectedEtfName}</span>
+        )}
       </div>
 
       <div className={styles.field}>
