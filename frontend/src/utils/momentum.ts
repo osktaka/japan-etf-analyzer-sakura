@@ -35,14 +35,14 @@ export const MOMENTUM_STYLES: Record<
   MomentumLabel,
   { color: string; bgColor: string }
 > = {
-  上昇加速: { color: '#059669', bgColor: '#05966920' },
-  上昇維持: { color: '#10b981', bgColor: '#10b98120' },
-  上昇減速: { color: '#6ee7b7', bgColor: '#6ee7b720' },
-  反転上昇: { color: '#2563eb', bgColor: '#2563eb20' },
-  失速: { color: '#f59e0b', bgColor: '#f59e0b20' },
-  下降減速: { color: '#fca5a5', bgColor: '#fca5a520' },
-  下降維持: { color: '#ef4444', bgColor: '#ef444420' },
-  下降加速: { color: '#dc2626', bgColor: '#dc262620' },
+  上昇加速: { color: '#1ea178', bgColor: '#1ea17820' },
+  上昇維持: { color: '#28c08e', bgColor: '#28c08e20' },
+  上昇減速: { color: '#7deabe', bgColor: '#7deabe20' },
+  反転上昇: { color: '#3b73ed', bgColor: '#3b73ed20' },
+  失速: { color: '#f6a823', bgColor: '#f6a82320' },
+  下降減速: { color: '#fcaeae', bgColor: '#fcaeae20' },
+  下降維持: { color: '#f15757', bgColor: '#f1575720' },
+  下降加速: { color: '#e03c3c', bgColor: '#e03c3c20' },
 }
 
 /** 年率化済みの1M/3M値からモメンタムを分類 */
