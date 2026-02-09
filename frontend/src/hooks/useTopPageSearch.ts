@@ -382,8 +382,6 @@ export function useTopPageSearch(
       })
 
       executeSearch({ keyword: trimmed, page: 1 })
-
-      etfListRef.current?.scrollIntoView({ behavior: 'smooth' })
     },
     [updateURL, executeSearch]
   )
