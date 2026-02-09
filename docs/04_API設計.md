@@ -99,6 +99,7 @@
 | GET | /etfs/chart/batch | 複数銘柄チャートデータ一括取得 | F-004 |
 | GET | /etfs/performance/batch | 複数ETFパフォーマンス一括取得 | F-002 |
 | GET | /etfs/{code}/momentum-history | 勢い履歴取得 | - |
+| GET | /etfs/scores/batch | 複数ETFスコア一括取得 | - |
 | GET | /categories | カテゴリ一覧取得 | - |
 | GET | /tags | タグ一覧取得 | - |
 
@@ -110,6 +111,7 @@
 | POST | /auth/login | ログイン | F-101 | 不要 |
 | POST | /auth/logout | ログアウト | F-101 | 必要 |
 | GET | /auth/me | 現在のユーザー情報取得 | F-101 | 必要 |
+| PUT | /auth/password | パスワード変更 | F-101 | 必要 |
 | GET | /favorites | お気に入り一覧取得 | F-102 | 必要 |
 | POST | /favorites | お気に入り追加 | F-102 | 必要 |
 | DELETE | /favorites/{etf_code} | お気に入り削除 | F-102 | 必要 |
@@ -122,6 +124,9 @@
 | DELETE | /trades/{id} | 売買履歴削除 | F-103 | 必要 |
 | GET | /portfolio | ポートフォリオ概要取得 | F-105 | 必要 |
 | GET | /portfolio/holdings | 保有銘柄一覧取得 | F-105 | 必要 |
+| GET | /portfolio/valuation-history | ポートフォリオ評価額推移取得 | F-105 | 必要 |
+| GET | /user/settings | ユーザー設定取得 | - | 必要 |
+| PUT | /user/settings/custom-weights | カスタム重み更新 | - | 必要 |
 | GET | /compare/performance | パフォーマンス比較取得 | F-107 | 不要 |
 | GET | /compare/performance/{code} | 個別パフォーマンス取得 | F-107 | 不要 |
 | GET | /compare/scores | 比較銘柄のスコア取得 | F-107 | 任意 |
@@ -132,11 +137,17 @@
 |----------|------|------|------------|------|
 | GET | /admin/users | ユーザー一覧取得 | F-201 | 管理者 |
 | PATCH | /admin/users/{id} | ユーザー情報更新 | F-201 | 管理者 |
+| POST | /admin/users/{id}/reset-password | ユーザーパスワードリセット | F-201 | 管理者 |
 | GET | /admin/batch-logs | バッチ実行履歴取得 | F-202 | 管理者 |
+| POST | /admin/batch-logs/{id}/reset | バッチログ強制リセット | F-202 | 管理者 |
+| GET | /admin/stock-splits | 株式分割候補一覧取得 | F-203 | 管理者 |
+| PATCH | /admin/stock-splits/{id} | 株式分割適用状態更新 | F-203 | 管理者 |
+| POST | /admin/stock-splits/{id}/recalculate | パフォーマンスキャッシュ再計算 | F-203 | 管理者 |
 
 **備考:**
 - 管理者認証: `@login_required` + `@admin_required` デコレータで保護
 - 自分自身の管理者権限は変更不可
+- 自分自身のパスワードはリセット不可
 
 > 各エンドポイントの詳細仕様は [04a_エンドポイント詳細.md](./04a_エンドポイント詳細.md) を参照
 
