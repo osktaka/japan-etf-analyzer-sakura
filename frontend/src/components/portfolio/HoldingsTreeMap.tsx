@@ -252,7 +252,7 @@ export function HoldingsTreeMap({
         <h3 className={styles.title}>勢いヒートマップ</h3>
       </div>
       <div className={styles.chartWrapper}>
-        <ResponsiveContainer width="100%" height={isMobile ? 300 : 400}>
+        <ResponsiveContainer width="100%" height={isMobile ? 250 : 300}>
           <Treemap
             data={treeData}
             dataKey="size"

@@ -178,14 +178,13 @@ export function MyPage() {
 
         <div className={styles.chartSection}>
           <PortfolioValueChart />
+          {holdings.length > 0 && (
+            <HoldingsTreeMap
+              holdings={holdings}
+              onETFClick={handleHoldingClick}
+            />
+          )}
         </div>
-
-        {holdings.length > 0 && (
-          <HoldingsTreeMap
-            holdings={holdings}
-            onETFClick={handleHoldingClick}
-          />
-        )}
 
         <HoldingsList
           holdings={holdings}

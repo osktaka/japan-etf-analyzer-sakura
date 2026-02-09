@@ -188,9 +188,20 @@
 
 .chartSection {
   margin: 1.5rem 0;
+  display: flex;
+  gap: 1.5rem;
+}
+
+.chartSection > * {
+  flex: 1;
+  min-width: 0;
 }
 
 @media (max-width: 640px) {
+  .chartSection {
+    flex-direction: column;
+  }
+
   .container {
     padding: 1rem 0;
   }
