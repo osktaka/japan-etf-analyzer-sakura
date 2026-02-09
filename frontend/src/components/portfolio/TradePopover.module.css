@@ -1,0 +1,88 @@
+/** Trade popover styles */
+.overlay {
+  position: absolute;
+  z-index: 10;
+}
+
+.popover {
+  background: white;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  padding: 0.75rem;
+  min-width: 220px;
+  max-width: 320px;
+}
+
+.dateHeader {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tradeList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.tradeItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  font-size: 0.6875rem;
+  line-height: 1.4;
+}
+
+.tradeItem + .tradeItem {
+  padding-top: 0.375rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.etfName {
+  font-weight: 500;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tradeDetail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.typeBuy {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.typeSell {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.amount {
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 640px) {
+  .overlay {
+    position: static;
+    margin-top: 0.5rem;
+  }
+
+  .popover {
+    max-width: 100%;
+  }
+}
