@@ -1,6 +1,11 @@
 /** ETF detail modal component */
 import { useEffect, useMemo, useState } from 'react'
-import { useETFDetail, usePortfolio, useChartPeriodStorage } from '../../hooks'
+import {
+  useETFDetail,
+  usePortfolio,
+  useChartPeriodStorage,
+  useTrades,
+} from '../../hooks'
 import { getPerspectives, Perspective, CustomWeights } from '../../api'
 import {
   formatPercent,
@@ -69,6 +74,11 @@ export function ETFDetailModal({
   const { data, isLoading, error, refetch } = useETFDetail(code)
   const { holdings } = usePortfolio()
   const { chartPeriods, setChartPeriods } = useChartPeriodStorage()
+  const { trades: allTrades } = useTrades(data?.code)
+  const trades = useMemo(
+    () => allTrades.filter((t) => t.etf_code === data?.code),
+    [allTrades, data?.code]
+  )
   const [showMomentumHistory, setShowMomentumHistory] = useState(false)
   const [selectedPerspective, setSelectedPerspective] =
     useState<PerspectiveKey>(initialPerspective ?? 'balance')
@@ -337,7 +347,7 @@ export function ETFDetailModal({
                   onChange={setChartPeriods}
                 />
               </div>
-              <MultiPeriodChart code={data.code} periods={chartPeriods} />
+              <MultiPeriodChart code={data.code} periods={chartPeriods} trades={trades} />
             </div>
 
             <div className={styles.footer}>

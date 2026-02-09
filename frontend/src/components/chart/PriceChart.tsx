@@ -1,16 +1,18 @@
 /** Price chart component */
-import { useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
-  LineChart,
+  ComposedChart,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
+  Scatter,
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts'
 import { ChartDataPoint, ChartPeriod } from '../../api'
+import { Trade } from '../../api/types'
 import {
   formatPrice,
   getMovingAveragePeriods,
@@ -18,6 +20,9 @@ import {
   calculateRegressionLine,
   MA_COLORS,
 } from '../../utils'
+import { mergeTradesWithPriceData } from '../../utils/tradeMarkerUtils'
+import { BuyMarkerShape, SellMarkerShape } from '../portfolio/TradeMarker'
+import { TradePopover } from '../portfolio/TradePopover'
 import styles from './PriceChart.module.css'
 
 interface PriceChartProps {
@@ -25,6 +30,7 @@ interface PriceChartProps {
   height?: number
   period?: ChartPeriod
   showRegressionLine?: boolean
+  trades?: Trade[]
 }
 
 interface ChartDataWithMA extends ChartDataPoint {
@@ -39,6 +45,7 @@ export function PriceChart({
   height = 300,
   period = '1y',
   showRegressionLine = true,
+  trades,
 }: PriceChartProps) {
   // Calculate moving average data
   const { chartData, maPeriods } = useMemo(() => {
@@ -59,6 +66,38 @@ export function PriceChart({
 
     return { chartData: enhancedData, maPeriods: periods }
   }, [data, period])
+
+  // Merge trade markers with chart data
+  const mergedData = useMemo(() => {
+    if (!trades || trades.length === 0) return chartData
+    return mergeTradesWithPriceData(chartData, trades)
+  }, [chartData, trades])
+
+  // Popover state for trade markers
+  const [popover, setPopover] = useState<{
+    trades: Trade[]
+    date: string
+    position: { x: number; y: number; markerY: number }
+  } | null>(null)
+
+  const handleMarkerClick = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (entry: any) => {
+      if (!entry?.payload?.trades) return
+      setPopover({
+        trades: entry.payload.trades,
+        date: entry.payload.date,
+        position: {
+          x: Math.round(entry.cx ?? 0),
+          y: Math.round((entry.cy ?? 0) + 20),
+          markerY: Math.round(entry.cy ?? 0),
+        },
+      })
+    },
+    []
+  )
+
+  const handlePopoverClose = useCallback(() => setPopover(null), [])
 
   // Calculate regression line
   const regressionLine = useMemo(() => {
@@ -86,8 +125,8 @@ export function PriceChart({
   return (
     <div className={styles.container} style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={chartData}
+        <ComposedChart
+          data={mergedData}
           margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -177,8 +216,36 @@ export function PriceChart({
               strokeDasharray="5 5"
             />
           )}
-        </LineChart>
+          {trades && trades.length > 0 && (
+            <>
+              <Scatter
+                dataKey="buyMarker"
+                fill="#10b981"
+                shape={<BuyMarkerShape />}
+                onClick={handleMarkerClick}
+                legendType="none"
+                tooltipType="none"
+              />
+              <Scatter
+                dataKey="sellMarker"
+                fill="#ef4444"
+                shape={<SellMarkerShape />}
+                onClick={handleMarkerClick}
+                legendType="none"
+                tooltipType="none"
+              />
+            </>
+          )}
+        </ComposedChart>
       </ResponsiveContainer>
+      {popover && (
+        <TradePopover
+          trades={popover.trades}
+          date={popover.date}
+          position={popover.position}
+          onClose={handlePopoverClose}
+        />
+      )}
     </div>
   )
 }

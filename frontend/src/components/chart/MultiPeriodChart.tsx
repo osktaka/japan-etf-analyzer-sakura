@@ -1,6 +1,7 @@
 /** Multi-period chart component displaying 6 charts in a grid */
 import { useMultiPeriodChartData } from '../../hooks'
 import { ChartPeriod } from '../../api'
+import { Trade } from '../../api/types'
 import { CHART_PERIODS } from '../../utils/constants'
 import {
   checkDataSufficiency,
@@ -16,11 +17,13 @@ import overlayStyles from './ChartOverlay.module.css'
 interface MultiPeriodChartProps {
   code: string
   periods?: ChartPeriod[]
+  trades?: Trade[]
 }
 
 export function MultiPeriodChart({
   code,
   periods: propsPeriods,
+  trades,
 }: MultiPeriodChartProps) {
   const { data, isLoading, error, periods } = useMultiPeriodChartData(
     code,
@@ -104,6 +107,7 @@ export function MultiPeriodChart({
                     data={chartData.data}
                     height={200}
                     period={period}
+                    trades={trades}
                   />
                   {!sufficiency.isSufficient && (
                     <ChartOverlay

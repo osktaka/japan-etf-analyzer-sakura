@@ -9,9 +9,10 @@ vi.mock('recharts', () => ({
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="responsive-container">{children}</div>
   ),
-  LineChart: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="line-chart">{children}</div>
+  ComposedChart: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="composed-chart">{children}</div>
   ),
+  Scatter: () => <div data-testid="scatter" />,
   Line: () => <div data-testid="line" />,
   XAxis: () => <div data-testid="x-axis" />,
   YAxis: () => <div data-testid="y-axis" />,
@@ -52,14 +53,14 @@ describe('PriceChart', () => {
     render(<PriceChart data={mockChartData} />)
 
     expect(screen.getByTestId('responsive-container')).toBeInTheDocument()
-    expect(screen.getByTestId('line-chart')).toBeInTheDocument()
+    expect(screen.getByTestId('composed-chart')).toBeInTheDocument()
   })
 
   it('空のデータの場合、メッセージが表示される', () => {
     render(<PriceChart data={[]} />)
 
     expect(screen.getByText('チャートデータがありません')).toBeInTheDocument()
-    expect(screen.queryByTestId('line-chart')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('composed-chart')).not.toBeInTheDocument()
   })
 
   it('デフォルトの高さが適用される', () => {
