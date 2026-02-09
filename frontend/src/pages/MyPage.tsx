@@ -13,6 +13,7 @@ import {
   PortfolioSummary,
   HoldingsList,
   PortfolioValueChart,
+  HoldingsTreeMap,
 } from '../components/portfolio'
 import { PerspectiveTabs } from '../components/recommend'
 import { useFavorites } from '../hooks/useFavorites'
@@ -178,6 +179,13 @@ export function MyPage() {
         <div className={styles.chartSection}>
           <PortfolioValueChart />
         </div>
+
+        {holdings.length > 0 && (
+          <HoldingsTreeMap
+            holdings={holdings}
+            onETFClick={handleHoldingClick}
+          />
+        )}
 
         <HoldingsList
           holdings={holdings}
