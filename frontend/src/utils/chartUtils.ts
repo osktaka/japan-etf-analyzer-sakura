@@ -242,6 +242,90 @@ export function calculateRegressionReturn(
   return ((regression.endY - regression.startY) / regression.startY) * 100
 }
 
+/**
+ * Decimate chart data using LTTB (Largest Triangle Three Buckets) algorithm.
+ * Preserves visually important data points while reducing total count.
+ * First and last points are always preserved.
+ *
+ * @param data - Array of data points with a numeric 'close' property
+ * @param maxPoints - Maximum number of points to keep (default 500)
+ * @returns Decimated array (original if length <= maxPoints)
+ */
+export function decimateChartData<T extends { close: number }>(
+  data: T[],
+  maxPoints: number = 500
+): T[] {
+  if (data.length <= maxPoints || maxPoints < 3) return data
+
+  const result: T[] = []
+  const bucketCount = maxPoints - 2
+
+  // Always include the first point
+  result.push(data[0])
+
+  const bucketSize = (data.length - 2) / bucketCount
+
+  let prevSelectedIndex = 0
+
+  for (let i = 0; i < bucketCount; i++) {
+    // Current bucket range
+    const bucketStart = Math.floor(1 + i * bucketSize)
+    const bucketEnd = Math.min(
+      Math.floor(1 + (i + 1) * bucketSize),
+      data.length - 1
+    )
+
+    // Next bucket average (or last point for the final bucket)
+    let nextAvg: number
+    if (i + 1 < bucketCount) {
+      const nextBucketStart = Math.floor(1 + (i + 1) * bucketSize)
+      const nextBucketEnd = Math.min(
+        Math.floor(1 + (i + 2) * bucketSize),
+        data.length - 1
+      )
+      let sum = 0
+      let count = 0
+      for (let j = nextBucketStart; j < nextBucketEnd; j++) {
+        sum += data[j].close
+        count++
+      }
+      nextAvg = count > 0 ? sum / count : data[nextBucketStart].close
+    } else {
+      nextAvg = data[data.length - 1].close
+    }
+
+    // Find the point in this bucket that forms the largest triangle
+    let maxArea = -1
+    let selectedIndex = bucketStart
+
+    const prevX = prevSelectedIndex
+    const prevY = data[prevSelectedIndex].close
+    const nextX = bucketEnd
+    const nextY = nextAvg
+
+    for (let j = bucketStart; j < bucketEnd; j++) {
+      // Triangle area = 0.5 * |x1(y2-y3) + x2(y3-y1) + x3(y1-y2)|
+      const area = Math.abs(
+        (prevX - nextX) * (data[j].close - prevY) -
+          (prevX - j) * (nextY - prevY)
+      )
+
+      if (area > maxArea) {
+        maxArea = area
+        selectedIndex = j
+      }
+    }
+
+    result.push(data[selectedIndex])
+    prevSelectedIndex = selectedIndex
+  }
+
+  // Always include the last point
+  result.push(data[data.length - 1])
+
+  return result
+}
+
 /** Period to years mapping for annualization */
 export const PERIOD_TO_YEARS: Record<ChartPeriod, number> = {
   '1m': 1 / 12,

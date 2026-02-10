@@ -68,6 +68,15 @@
   }
 }
 
+/* Placeholder for unmounted charts */
+.placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-sm);
+}
+
 /* Return info styles */
 .returnInfo {
   display: flex;

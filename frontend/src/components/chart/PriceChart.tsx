@@ -1,5 +1,5 @@
 /** Price chart component */
-import { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 import {
   ComposedChart,
   Line,
@@ -18,6 +18,7 @@ import {
   getMovingAveragePeriods,
   calculateMovingAverage,
   calculateRegressionLine,
+  decimateChartData,
   MA_COLORS,
 } from '../../utils'
 import { mergeTradesWithPriceData } from '../../utils/tradeMarkerUtils'
@@ -40,14 +41,14 @@ interface ChartDataWithMA extends ChartDataPoint {
   ma200?: number | null
 }
 
-export function PriceChart({
+export const PriceChart = React.memo(function PriceChart({
   data,
   height = 300,
   period = '1y',
   showRegressionLine = true,
   trades,
 }: PriceChartProps) {
-  // Calculate moving average data
+  // Calculate moving average data, then decimate for performance
   const { chartData, maPeriods } = useMemo(() => {
     const periods = getMovingAveragePeriods(period)
     const maData: Record<number, (number | null)[]> = {}
@@ -64,7 +65,10 @@ export function PriceChart({
       ma200: maData[200]?.[index] ?? undefined,
     }))
 
-    return { chartData: enhancedData, maPeriods: periods }
+    // Apply LTTB decimation for large datasets (>500 points)
+    const decimated = decimateChartData(enhancedData)
+
+    return { chartData: decimated, maPeriods: periods }
   }, [data, period])
 
   // Merge trade markers with chart data
@@ -248,4 +252,4 @@ export function PriceChart({
       )}
     </div>
   )
-}
+})
