@@ -1,10 +1,10 @@
 /** Market analysis page */
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { getTagMomentum } from '../api'
 import type { TagMomentumResponse, TagMomentum } from '../api'
 import { TagMomentumHeatmap } from '../components/market'
-import { ROUTES, TAG_GROUP_ORDER, TAG_GROUP_LABELS } from '../utils/constants'
+import { TagETFListModal } from '../components/modal'
+import { TAG_GROUP_ORDER, TAG_GROUP_LABELS } from '../utils/constants'
 import {
   ALL_MOMENTUM_LABELS,
   MOMENTUM_STYLES,
@@ -16,10 +16,11 @@ import styles from './MarketPage.module.css'
 const SECTION_HEIGHT = { pc: 280, mobile: 200 }
 
 export function MarketPage() {
-  const navigate = useNavigate()
   const [data, setData] = useState<TagMomentumResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [selectedTagId, setSelectedTagId] = useState<number | null>(null)
+  const [selectedTagName, setSelectedTagName] = useState('')
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -51,7 +52,9 @@ export function MarketPage() {
   }, [data])
 
   const handleTagClick = (tagId: number) => {
-    navigate(`${ROUTES.HOME}?tags=${tagId}`)
+    const tag = data?.tags.find(t => t.id === tagId)
+    setSelectedTagId(tagId)
+    setSelectedTagName(tag?.name ?? '')
   }
 
   return (
@@ -98,6 +101,12 @@ export function MarketPage() {
           </div>
         </>
       )}
+      <TagETFListModal
+        isOpen={selectedTagId !== null}
+        onClose={() => setSelectedTagId(null)}
+        tagId={selectedTagId ?? 0}
+        tagName={selectedTagName}
+      />
     </div>
   )
 }
