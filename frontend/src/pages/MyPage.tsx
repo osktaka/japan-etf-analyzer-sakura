@@ -57,6 +57,7 @@ export function MyPage() {
   const [showTradeFormModal, setShowTradeFormModal] = useState(false)
   const [showTradeHistoryModal, setShowTradeHistoryModal] = useState(false)
   const [tradeHistoryCode, setTradeHistoryCode] = useState<string>('')
+  const [tradeFormCode, setTradeFormCode] = useState<string | undefined>(undefined)
 
   // Save perspective to localStorage
   useEffect(() => {
@@ -196,7 +197,10 @@ export function MyPage() {
           isInCompare={isInCompare}
           onCompareToggle={toggleCompare}
           onTradeHistory={() => setShowTradeHistoryModal(true)}
-          onAddTrade={() => setShowTradeFormModal(true)}
+          onAddTrade={(code: string) => {
+            setTradeFormCode(code)
+            setShowTradeFormModal(true)
+          }}
         />
       </section>
 
@@ -283,8 +287,12 @@ export function MyPage() {
 
       <TradeFormModal
         isOpen={showTradeFormModal}
-        onClose={() => setShowTradeFormModal(false)}
+        onClose={() => {
+          setShowTradeFormModal(false)
+          setTradeFormCode(undefined)
+        }}
         onSuccess={handleTradeSuccess}
+        defaultEtfCode={tradeFormCode}
       />
 
       <TradeHistoryModal

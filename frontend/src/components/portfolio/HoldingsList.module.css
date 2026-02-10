@@ -258,6 +258,26 @@
   cursor: not-allowed;
 }
 
+.tradeBtn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #2563eb;
+}
+
+.tradeBtn:hover:not(:disabled) {
+  background: #dbeafe;
+}
+
+.tradeBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @media (max-width: 768px) {
   .container {
     overflow-x: auto;

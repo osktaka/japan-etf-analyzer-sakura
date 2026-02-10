@@ -9,6 +9,7 @@ interface HoldingCardProps {
   holding: Holding
   onClick?: () => void
   onHistoryClick?: () => void
+  onAddTrade?: () => void
   isInCompare?: boolean
   onCompareToggle?: () => void
 }
@@ -17,6 +18,7 @@ export function HoldingCard({
   holding,
   onClick,
   onHistoryClick,
+  onAddTrade,
   isInCompare,
   onCompareToggle,
 }: HoldingCardProps) {
@@ -114,19 +116,34 @@ export function HoldingCard({
           </span>
         </div>
       </div>
-      {onHistoryClick && (
+      {(onHistoryClick || onAddTrade) && (
         <div className={styles.actions}>
-          <button
-            className={styles.historyBtn}
-            onClick={(e) => {
-              e.stopPropagation()
-              onHistoryClick()
-            }}
-            type="button"
-            title="取引履歴"
-          >
-            履歴
-          </button>
+          {onHistoryClick && (
+            <button
+              className={styles.historyBtn}
+              onClick={(e) => {
+                e.stopPropagation()
+                onHistoryClick()
+              }}
+              type="button"
+              title="取引履歴"
+            >
+              履歴
+            </button>
+          )}
+          {onAddTrade && (
+            <button
+              className={styles.tradeBtn}
+              onClick={(e) => {
+                e.stopPropagation()
+                onAddTrade()
+              }}
+              type="button"
+              title="取引登録"
+            >
+              取引
+            </button>
+          )}
         </div>
       )}
     </div>

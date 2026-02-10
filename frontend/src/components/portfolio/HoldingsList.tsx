@@ -53,7 +53,7 @@ interface HoldingsListProps {
   isInCompare?: (code: string) => boolean
   onCompareToggle?: (code: string) => void
   onTradeHistory?: () => void
-  onAddTrade?: () => void
+  onAddTrade?: (code: string) => void
 }
 
 export function HoldingsList({
@@ -254,7 +254,7 @@ export function HoldingsList({
               <button
                 type="button"
                 className={styles.addTradeBtn}
-                onClick={onAddTrade}
+                onClick={() => onAddTrade('')}
               >
                 取引を追加
               </button>
@@ -329,7 +329,7 @@ export function HoldingsList({
               >
                 年率リターン{getSortIndicator('annualized_return')}
               </th>
-              {onHistoryClick && <th className={styles.center}>履歴</th>}
+              {(onHistoryClick || onAddTrade) && <th className={styles.center}>操作</th>}
               {onCompareToggle && <th className={styles.center}>比較</th>}
             </tr>
           </thead>
@@ -398,19 +398,33 @@ export function HoldingsList({
                       ? `${holding.annualized_return >= 0 ? '+' : ''}${holding.annualized_return.toFixed(2)}%`
                       : '-'}
                   </td>
-                  {onHistoryClick && (
+                  {(onHistoryClick || onAddTrade) && (
                     <td
                       className={styles.center}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <button
-                        className={styles.historyBtn}
-                        onClick={() => onHistoryClick(holding.etf_code)}
-                        type="button"
-                        title="取引履歴"
-                      >
-                        履歴
-                      </button>
+                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                        {onHistoryClick && (
+                          <button
+                            className={styles.historyBtn}
+                            onClick={() => onHistoryClick(holding.etf_code)}
+                            type="button"
+                            title="取引履歴"
+                          >
+                            履歴
+                          </button>
+                        )}
+                        {onAddTrade && (
+                          <button
+                            className={styles.tradeBtn}
+                            onClick={() => onAddTrade(holding.etf_code)}
+                            type="button"
+                            title="取引登録"
+                          >
+                            取引
+                          </button>
+                        )}
+                      </div>
                     </td>
                   )}
                   {onCompareToggle && (
@@ -440,6 +454,11 @@ export function HoldingsList({
               onHistoryClick={
                 onHistoryClick
                   ? () => onHistoryClick(holding.etf_code)
+                  : undefined
+              }
+              onAddTrade={
+                onAddTrade
+                  ? () => onAddTrade(holding.etf_code)
                   : undefined
               }
               isInCompare={isInCompare?.(holding.etf_code)}
