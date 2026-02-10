@@ -66,7 +66,7 @@ export const PriceChart = React.memo(function PriceChart({
     }))
 
     // Apply LTTB decimation for large datasets (>500 points)
-    const decimated = decimateChartData(enhancedData)
+    const decimated = decimateChartData(enhancedData, 500, (d) => d.close)
 
     return { chartData: decimated, maPeriods: periods }
   }, [data, period])

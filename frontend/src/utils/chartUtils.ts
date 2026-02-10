@@ -247,13 +247,15 @@ export function calculateRegressionReturn(
  * Preserves visually important data points while reducing total count.
  * First and last points are always preserved.
  *
- * @param data - Array of data points with a numeric 'close' property
- * @param maxPoints - Maximum number of points to keep (default 500)
+ * @param data - Array of data points
+ * @param maxPoints - Maximum number of points to keep
+ * @param getValue - Function to extract the numeric value used for triangle calculation
  * @returns Decimated array (original if length <= maxPoints)
  */
-export function decimateChartData<T extends { close: number }>(
+export function decimateChartData<T>(
   data: T[],
-  maxPoints: number = 500
+  maxPoints: number,
+  getValue: (item: T) => number
 ): T[] {
   if (data.length <= maxPoints || maxPoints < 3) return data
 
@@ -286,12 +288,12 @@ export function decimateChartData<T extends { close: number }>(
       let sum = 0
       let count = 0
       for (let j = nextBucketStart; j < nextBucketEnd; j++) {
-        sum += data[j].close
+        sum += getValue(data[j])
         count++
       }
-      nextAvg = count > 0 ? sum / count : data[nextBucketStart].close
+      nextAvg = count > 0 ? sum / count : getValue(data[nextBucketStart])
     } else {
-      nextAvg = data[data.length - 1].close
+      nextAvg = getValue(data[data.length - 1])
     }
 
     // Find the point in this bucket that forms the largest triangle
@@ -299,14 +301,14 @@ export function decimateChartData<T extends { close: number }>(
     let selectedIndex = bucketStart
 
     const prevX = prevSelectedIndex
-    const prevY = data[prevSelectedIndex].close
+    const prevY = getValue(data[prevSelectedIndex])
     const nextX = bucketEnd
     const nextY = nextAvg
 
     for (let j = bucketStart; j < bucketEnd; j++) {
       // Triangle area = 0.5 * |x1(y2-y3) + x2(y3-y1) + x3(y1-y2)|
       const area = Math.abs(
-        (prevX - nextX) * (data[j].close - prevY) -
+        (prevX - nextX) * (getValue(data[j]) - prevY) -
           (prevX - j) * (nextY - prevY)
       )
 

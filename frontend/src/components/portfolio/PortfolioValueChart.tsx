@@ -14,7 +14,7 @@ import {
 import { Trade, ValuationHistoryPeriod } from '../../api/types'
 import { usePortfolioHistory } from '../../hooks/usePortfolioHistory'
 import { useTrades } from '../../hooks/useTrades'
-import { formatPrice } from '../../utils'
+import { formatPrice, decimateChartData } from '../../utils'
 import { mergeTradesWithChartData } from '../../utils/tradeMarkerUtils'
 import { BuyMarkerShape, SellMarkerShape } from './TradeMarker'
 import { TradePopover } from './TradePopover'
@@ -51,10 +51,10 @@ export function PortfolioValueChart() {
     return () => mql.removeEventListener('change', handler)
   }, [])
 
-  const mergedData = useMemo(
-    () => mergeTradesWithChartData(data, trades),
-    [data, trades]
-  )
+  const mergedData = useMemo(() => {
+    const decimated = decimateChartData(data, 500, (d) => d.value)
+    return mergeTradesWithChartData(decimated, trades)
+  }, [data, trades])
 
   const handleMarkerClick = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
