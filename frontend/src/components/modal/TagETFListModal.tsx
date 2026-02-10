@@ -2,12 +2,19 @@
 import { useState, useEffect, useMemo } from 'react'
 import { searchETFs } from '../../api/etf'
 import { ETFSummary } from '../../api/types'
+import { userSettingsApi } from '../../api/userSettings'
+import type { CustomWeights } from '../../api/types'
 import { useAuth, useFavorites, usePortfolio } from '../../hooks'
 import { MomentumBadge } from '../common/MomentumBadge'
 import { FavoriteButton } from '../favorite/FavoriteButton'
 import { ETFDetailModal } from './ETFDetailModal'
+import { CustomWeightsPromptModal } from './CustomWeightsPromptModal'
+import { WeightsHelpModal } from './WeightsHelpModal'
 import { Loading } from '../common'
 import { MOMENTUM_SCORES, MomentumLabel } from '../../utils/momentum'
+import { PerspectiveSelector } from '../search/PerspectiveSelector'
+import type { PerspectiveKey } from '../search/ETFTableView'
+import { PERSPECTIVE_COLORS } from '../../utils'
 import styles from './TagETFListModal.module.css'
 
 interface TagETFListModalProps {
@@ -32,26 +39,79 @@ export function TagETFListModal({
   const [error, setError] = useState<string | null>(null)
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
 
+  const [selectedPerspective, setSelectedPerspective] =
+    useState<PerspectiveKey>(() => {
+      const stored = localStorage.getItem('etf-perspective')
+      const valid = [
+        'balance',
+        'dividend',
+        'low-cost',
+        'stability',
+        'volume',
+        'growth',
+        'custom',
+      ]
+      if (stored && valid.includes(stored)) {
+        if (stored === 'custom' && !isAuthenticated) return 'balance'
+        return stored as PerspectiveKey
+      }
+      return 'balance'
+    })
+
+  const [customWeights, setCustomWeights] = useState<CustomWeights | null>(null)
+  const [showCustomWeightsPromptModal, setShowCustomWeightsPromptModal] =
+    useState(false)
+  const [showWeightsHelpModal, setShowWeightsHelpModal] = useState(false)
+
   const holdingCodes = useMemo(
     () => new Set(holdings.map((h) => h.etf_code)),
     [holdings]
   )
 
-  // Sort by momentum score descending, then code ascending
   const sortedEtfs = useMemo(() => {
     return [...etfs].sort((a, b) => {
-      const scoreA =
+      const momentumA =
         a.momentum_label && a.momentum_label in MOMENTUM_SCORES
           ? MOMENTUM_SCORES[a.momentum_label as MomentumLabel]
           : -1
-      const scoreB =
+      const momentumB =
         b.momentum_label && b.momentum_label in MOMENTUM_SCORES
           ? MOMENTUM_SCORES[b.momentum_label as MomentumLabel]
           : -1
+      if (momentumA !== momentumB) return momentumB - momentumA
+      // 第2キー: 評価スコア降順
+      const scoreA = a.score ?? -1
+      const scoreB = b.score ?? -1
       if (scoreA !== scoreB) return scoreB - scoreA
       return a.code.localeCompare(b.code)
     })
   }, [etfs])
+
+  const handlePerspectiveChange = (perspective: PerspectiveKey) => {
+    setSelectedPerspective(perspective)
+    localStorage.setItem('etf-perspective', perspective)
+  }
+
+  useEffect(() => {
+    if (!isAuthenticated || !isOpen) return
+    const fetchCustomWeights = async () => {
+      try {
+        const settings = await userSettingsApi.getSettings()
+        setCustomWeights(settings.custom_weights)
+      } catch {
+        // エラー時は無視（カスタム機能が使えないだけ）
+      }
+    }
+    fetchCustomWeights()
+  }, [isAuthenticated, isOpen])
+
+  const handleCustomClick = () => {
+    if (!customWeights) {
+      setShowCustomWeightsPromptModal(true)
+    } else {
+      handlePerspectiveChange('custom')
+    }
+  }
 
   useEffect(() => {
     if (!isOpen) return
@@ -60,7 +120,14 @@ export function TagETFListModal({
       setIsLoading(true)
       setError(null)
       try {
-        const result = await searchETFs({ tag_ids: [tagId], limit: 200 })
+        const result = await searchETFs({
+          tag_ids: [tagId],
+          limit: 200,
+          perspective: selectedPerspective,
+          ...(selectedPerspective === 'custom' && customWeights
+            ? { custom_weights: JSON.stringify(customWeights) }
+            : {}),
+        })
         setEtfs(result.items)
       } catch {
         setError('銘柄の取得に失敗しました')
@@ -70,7 +137,7 @@ export function TagETFListModal({
     }
 
     fetchETFs()
-  }, [isOpen, tagId])
+  }, [isOpen, tagId, selectedPerspective, customWeights])
 
   if (!isOpen) return null
 
@@ -86,6 +153,16 @@ export function TagETFListModal({
         </button>
         <div className={styles.content}>
           <h2 className={styles.title}>#{tagName}</h2>
+
+          <PerspectiveSelector
+            selectedPerspective={selectedPerspective}
+            onChange={handlePerspectiveChange}
+            className={styles.perspectiveSelector}
+            isAuthenticated={isAuthenticated}
+            customWeights={customWeights}
+            onCustomClick={isAuthenticated ? handleCustomClick : undefined}
+            onHelpClick={() => setShowWeightsHelpModal(true)}
+          />
 
           {isLoading && <Loading />}
 
@@ -108,6 +185,7 @@ export function TagETFListModal({
                       )}
                       <th>コード</th>
                       <th>銘柄名</th>
+                      <th className={styles.scoreCol}>スコア</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -137,6 +215,20 @@ export function TagETFListModal({
                         )}
                         <td className={styles.code}>{etf.code}</td>
                         <td className={styles.name}>{etf.name}</td>
+                        <td className={styles.scoreCol}>
+                          {etf.score != null ? (
+                            <span
+                              style={{
+                                color:
+                                  PERSPECTIVE_COLORS[selectedPerspective],
+                              }}
+                            >
+                              {etf.score.toFixed(1)}
+                            </span>
+                          ) : (
+                            <span className={styles.noScore}>-</span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -153,6 +245,19 @@ export function TagETFListModal({
           onFavoriteToggle={() => {
             if (selectedCode) toggleFavorite(selectedCode)
           }}
+        />
+
+        <CustomWeightsPromptModal
+          isOpen={showCustomWeightsPromptModal}
+          onClose={() => setShowCustomWeightsPromptModal(false)}
+          onRegister={() => setShowCustomWeightsPromptModal(false)}
+        />
+
+        <WeightsHelpModal
+          isOpen={showWeightsHelpModal}
+          onClose={() => setShowWeightsHelpModal(false)}
+          isAuthenticated={isAuthenticated}
+          customWeights={customWeights}
         />
       </div>
     </div>

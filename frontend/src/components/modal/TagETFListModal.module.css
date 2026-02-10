@@ -112,6 +112,35 @@
   white-space: nowrap;
 }
 
+.perspectiveSelector {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-sm);
+}
+
+.perspectiveSelector button {
+  font-size: 0.8rem;
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.perspectiveSelector > div {
+  margin-top: 0;
+}
+
+.scoreCol {
+  width: 60px;
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.noScore {
+  color: var(--color-text-muted);
+}
+
 .empty,
 .error {
   text-align: center;
