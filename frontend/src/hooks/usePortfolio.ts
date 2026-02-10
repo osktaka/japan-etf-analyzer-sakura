@@ -12,7 +12,9 @@ interface UsePortfolioReturn {
   refresh: () => Promise<void>
 }
 
-export function usePortfolio(): UsePortfolioReturn {
+export function usePortfolio(
+  options?: { skipSummary?: boolean }
+): UsePortfolioReturn {
   const { isAuthenticated } = useAuth()
   const [holdings, setHoldings] = useState<Holding[]>([])
   const [summary, setSummary] = useState<PortfolioSummary | null>(null)
@@ -30,19 +32,24 @@ export function usePortfolio(): UsePortfolioReturn {
     setError(null)
 
     try {
-      const [holdingsData, summaryData] = await Promise.all([
-        portfolioApi.getHoldings(),
-        portfolioApi.getSummary(),
-      ])
-      setHoldings(holdingsData)
-      setSummary(summaryData)
+      if (options?.skipSummary) {
+        const holdingsData = await portfolioApi.getHoldings()
+        setHoldings(holdingsData)
+      } else {
+        const [holdingsData, summaryData] = await Promise.all([
+          portfolioApi.getHoldings(),
+          portfolioApi.getSummary(),
+        ])
+        setHoldings(holdingsData)
+        setSummary(summaryData)
+      }
     } catch (err) {
       setError('ポートフォリオの取得に失敗しました')
       console.error('Failed to fetch portfolio:', err)
     } finally {
       setIsLoading(false)
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, options?.skipSummary])
 
   useEffect(() => {
     fetchPortfolio()

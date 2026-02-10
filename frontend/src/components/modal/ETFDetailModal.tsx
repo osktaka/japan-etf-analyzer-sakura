@@ -72,9 +72,9 @@ export function ETFDetailModal({
   customWeights,
 }: ETFDetailModalProps) {
   const { data, isLoading, error, refetch } = useETFDetail(code)
-  const { holdings } = usePortfolio()
+  const { holdings } = usePortfolio({ skipSummary: true })
   const { chartPeriods, setChartPeriods } = useChartPeriodStorage()
-  const { trades: allTrades } = useTrades(data?.code)
+  const { trades: allTrades } = useTrades(data?.code, { enabled: !!data?.code })
   const trades = useMemo(
     () => allTrades.filter((t) => t.etf_code === data?.code),
     [allTrades, data?.code]

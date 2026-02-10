@@ -19,11 +19,13 @@ from src.services.split_adjustment_service import SplitAdjustmentService
 def mock_etf_repository():
     """Mock ETF repository."""
     mock = Mock(spec=ETFRepository)
-    mock.get_by_code.return_value = ETF(
+    default_etf = ETF(
         code="1234",
         name="Test ETF",
         market_price=Decimal("2000"),
     )
+    mock.get_by_code.return_value = default_etf
+    mock.get_by_codes.return_value = {"1234": default_etf}
     return mock
 
 
@@ -273,9 +275,9 @@ def test_summary_cash_flow_partial_sell(
     """Pattern A: Partial sell - cash balance retains sell proceeds."""
     # Setup: Buy 100 at 2000 yen, sell 30 at 2500 yen
     # Current price: 2300 yen
-    mock_etf_repository.get_by_code.return_value = ETF(
-        code="1234", name="Test ETF", market_price=Decimal("2300")
-    )
+    etf_2300 = ETF(code="1234", name="Test ETF", market_price=Decimal("2300"))
+    mock_etf_repository.get_by_code.return_value = etf_2300
+    mock_etf_repository.get_by_codes.return_value = {"1234": etf_2300}
     mock_trade_repository.get_by_user_id.return_value = [
         Trade(
             user_id=1,
@@ -392,9 +394,9 @@ def test_summary_cash_flow_reinvestment(
     # Setup: Buy 100 at 2000, sell 50 at 2500 (cash=125000),
     #        buy 30 at 2100 (cash=125000-63000=62000)
     # Current price: 2300 yen
-    mock_etf_repository.get_by_code.return_value = ETF(
-        code="1234", name="Test ETF", market_price=Decimal("2300")
-    )
+    etf_2300 = ETF(code="1234", name="Test ETF", market_price=Decimal("2300"))
+    mock_etf_repository.get_by_code.return_value = etf_2300
+    mock_etf_repository.get_by_codes.return_value = {"1234": etf_2300}
     mock_trade_repository.get_by_user_id.return_value = [
         Trade(
             user_id=1,
@@ -593,9 +595,9 @@ def test_summary_cash_flow_same_day_trades(
     #        sell 50 at 2500 (2024-06-15, same day),
     #        buy 20 at 2400 (2024-06-15, same day)
     # Current price: 2300 yen
-    mock_etf_repository.get_by_code.return_value = ETF(
-        code="1234", name="Test ETF", market_price=Decimal("2300")
-    )
+    etf_2300 = ETF(code="1234", name="Test ETF", market_price=Decimal("2300"))
+    mock_etf_repository.get_by_code.return_value = etf_2300
+    mock_etf_repository.get_by_codes.return_value = {"1234": etf_2300}
     mock_trade_repository.get_by_user_id.return_value = [
         Trade(
             user_id=1,

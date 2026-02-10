@@ -13,6 +13,7 @@ import { getPerspectives } from '../../../api/recommend'
 vi.mock('../../../hooks', () => ({
   useETFDetail: vi.fn(),
   usePortfolio: vi.fn(() => ({ holdings: [] })),
+  useTrades: vi.fn(() => ({ trades: [] })),
   useChartPeriodStorage: vi.fn(() => ({
     chartPeriods: ['1y'],
     setChartPeriods: vi.fn(),

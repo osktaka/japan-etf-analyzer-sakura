@@ -59,7 +59,7 @@ export function TopPage() {
   } = useCompareList()
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
   const { isFavorite, toggleFavorite, favoriteCodes } = useFavorites()
-  const { holdings } = usePortfolio()
+  const { holdings } = usePortfolio({ skipSummary: true })
 
   // 保有コードのSetを作成（quantity > 0の銘柄のみ）
   const holdingCodes = useMemo(

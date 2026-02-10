@@ -7,10 +7,19 @@ import {
   CustomWeights,
 } from './types'
 
-export async function getPerspectives(): Promise<Perspective[]> {
-  const response =
-    await apiClient.get<ApiResponse<Perspective[]>>('/perspectives')
-  return response.data.data
+let perspectivesCache: Promise<Perspective[]> | null = null
+
+export function getPerspectives(): Promise<Perspective[]> {
+  if (!perspectivesCache) {
+    perspectivesCache = apiClient
+      .get<ApiResponse<Perspective[]>>('/perspectives')
+      .then((res) => res.data.data)
+      .catch((err) => {
+        perspectivesCache = null
+        throw err
+      })
+  }
+  return perspectivesCache
 }
 
 export async function getRecommendations(

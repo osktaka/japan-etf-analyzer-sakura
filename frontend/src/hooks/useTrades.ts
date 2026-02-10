@@ -14,14 +14,17 @@ interface UseTradesReturn {
   refresh: () => Promise<void>
 }
 
-export function useTrades(etfCode?: string): UseTradesReturn {
+export function useTrades(
+  etfCode?: string,
+  options?: { enabled?: boolean }
+): UseTradesReturn {
   const { isAuthenticated } = useAuth()
   const [trades, setTrades] = useState<Trade[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const fetchTrades = useCallback(async () => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || options?.enabled === false) {
       setTrades([])
       return
     }
@@ -38,7 +41,7 @@ export function useTrades(etfCode?: string): UseTradesReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [isAuthenticated, etfCode])
+  }, [isAuthenticated, etfCode, options?.enabled])
 
   useEffect(() => {
     fetchTrades()

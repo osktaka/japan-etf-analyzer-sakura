@@ -71,6 +71,7 @@ class PortfolioService:
         - annualized_return (年率リターン)
         - annualized_pnl (年率評価損益)
         """
+        self.split_adjustment_service.clear_cache()
         trades = self.trade_repository.get_by_user_id(user_id)
 
         # Group trades by ETF code and accumulate adjusted quantities
@@ -103,6 +104,10 @@ class PortfolioService:
             else:
                 holdings_data[code]["adjusted_sell_quantity"] += adjusted_quantity
 
+        # Batch fetch ETF info
+        etf_codes = list(holdings_data.keys())
+        etf_map = self.etf_repository.get_by_codes(etf_codes)
+
         # Calculate holdings
         result = []
         for code, data in holdings_data.items():
@@ -125,7 +130,7 @@ class PortfolioService:
             total_cost = adjusted_avg_cost * adjusted_quantity
 
             # Get ETF info and current price
-            etf = self.etf_repository.get_by_code(code)
+            etf = etf_map.get(code)
             current_price = float(etf.market_price) if etf and etf.market_price else 0.0
             current_value = current_price * adjusted_quantity
 
@@ -299,6 +304,7 @@ class PortfolioService:
         Returns:
             List of {date, value} representing daily portfolio value
         """
+        self.split_adjustment_service.clear_cache()
         # キャッシュチェック
         cache_key = f"{user_id}:{period}"
         if cache_key in self._valuation_cache:

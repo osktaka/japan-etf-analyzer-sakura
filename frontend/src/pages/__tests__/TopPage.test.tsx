@@ -39,6 +39,7 @@ vi.mock('../../hooks', async () => {
     useFavorites: vi.fn(),
     useAuth: vi.fn(),
     usePortfolio: vi.fn(),
+    useTrades: vi.fn(() => ({ trades: [] })),
     useTopPageStorage: vi.fn(),
     useRecommendations: vi.fn(),
     useTopPageDisplayMode: vi.fn(),

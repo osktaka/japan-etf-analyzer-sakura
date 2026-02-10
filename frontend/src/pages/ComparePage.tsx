@@ -49,7 +49,7 @@ export function ComparePage() {
     useCompareList()
   const { isFavorite, toggleFavorite } = useFavorites()
   const { isAuthenticated } = useAuth()
-  const { holdings } = usePortfolio()
+  const { holdings } = usePortfolio({ skipSummary: true })
   const [showLoginPrompt, setShowLoginPrompt] = useState(false)
   const [showWeightsHelp, setShowWeightsHelp] = useState(false)
   const [showCustomWeightsPrompt, setShowCustomWeightsPrompt] = useState(false)

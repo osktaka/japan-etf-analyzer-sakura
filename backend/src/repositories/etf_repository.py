@@ -48,6 +48,21 @@ class ETFRepository(BaseRepository[ETF]):
         """Get ETF by code."""
         return db.session.get(ETF, code)
 
+    def get_by_codes(self, codes: List[str]) -> Dict[str, ETF]:
+        """Get multiple ETFs by codes in a single query.
+
+        Args:
+            codes: List of ETF codes
+
+        Returns:
+            Dictionary mapping ETF code to ETF object
+        """
+        if not codes:
+            return {}
+
+        etfs = ETF.query.filter(ETF.code.in_(codes)).all()
+        return {etf.code: etf for etf in etfs}
+
     def get_all(self) -> List[ETF]:
         """Get all ETFs."""
         return db.session.query(ETF).all()

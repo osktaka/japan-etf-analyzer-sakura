@@ -32,7 +32,7 @@ export function TagETFListModal({
 }: TagETFListModalProps) {
   const { isAuthenticated } = useAuth()
   const { favoriteCodes, toggleFavorite } = useFavorites()
-  const { holdings } = usePortfolio()
+  const { holdings } = usePortfolio({ skipSummary: true })
 
   const [etfs, setEtfs] = useState<ETFSummary[]>([])
   const [isLoading, setIsLoading] = useState(false)

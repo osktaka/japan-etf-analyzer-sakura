@@ -35,7 +35,7 @@ export function ETFListModal({
 }: ETFListModalProps) {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
-  const { holdings } = usePortfolio()
+  const { holdings } = usePortfolio({ skipSummary: true })
   const [favorites, setFavorites] = useState<Favorite[]>([])
   const [compareEtfs, setCompareEtfs] = useState<ETFDetail[]>([]) // compareモード用の表示リスト
   const [removedCodes, setRemovedCodes] = useState<Set<string>>(new Set())

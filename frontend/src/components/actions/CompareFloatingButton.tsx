@@ -17,7 +17,7 @@ export function CompareFloatingButton() {
   const location = useLocation()
   const { codes, count, clearAll, toggleCode } = useCompareList()
   const { isFavorite, toggleFavorite } = useFavorites()
-  const { holdings } = usePortfolio()
+  const { holdings } = usePortfolio({ skipSummary: true })
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
 
   // 保有銘柄コードのSet
