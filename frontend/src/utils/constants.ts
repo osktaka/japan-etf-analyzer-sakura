@@ -50,6 +50,7 @@ export const ROUTES = {
   GUIDE_FAQ: '/guide/faq',
   GUIDE_TAGS: '/guide/tags',
   GUIDE_MOMENTUM: '/guide/momentum',
+  MARKET: '/market',
 } as const
 
 /** 各期間の期待営業日数（データ充足判定用） */
@@ -66,3 +67,23 @@ export const EXPECTED_TRADING_DAYS: Record<string, number> = {
 
 /** データ充足率の閾値（この値未満でオーバーレイ表示） */
 export const DATA_SUFFICIENCY_THRESHOLD = 0.8
+
+/** タグカテゴリの表示順序 */
+export const TAG_GROUP_ORDER = [
+  'region',
+  'asset',
+  'theme',
+  'sector',
+  'economic',
+  'policy',
+] as const
+
+/** タグカテゴリの日本語ラベル */
+export const TAG_GROUP_LABELS: Record<string, string> = {
+  theme: 'テーマ',
+  region: '地域',
+  asset: '資産',
+  sector: '業種',
+  economic: '経済情勢',
+  policy: '政策',
+}

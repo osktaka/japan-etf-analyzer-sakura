@@ -6,6 +6,7 @@ export { RegisterPage } from './RegisterPage'
 export { MyPage } from './MyPage'
 export { PortfolioPage } from './PortfolioPage'
 export { AdminPage } from './AdminPage'
+export { MarketPage } from './MarketPage'
 export {
   GuideTopPage,
   GuideSearchPage,

@@ -102,6 +102,7 @@
 | GET | /etfs/scores/batch | 複数ETFスコア一括取得 | - |
 | GET | /categories | カテゴリ一覧取得 | - |
 | GET | /tags | タグ一覧取得 | - |
+| GET | /market/tag-momentum | タグ別モメンタム集計 | - |
 
 ### 3.2 Phase 2（認証関連）
 

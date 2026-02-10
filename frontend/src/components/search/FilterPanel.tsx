@@ -6,27 +6,9 @@ import {
   ALL_MOMENTUM_LABELS,
   MOMENTUM_STYLES,
 } from '../../utils/momentum'
+import { TAG_GROUP_ORDER, TAG_GROUP_LABELS } from '../../utils/constants'
 import { SearchBar } from './SearchBar'
 import styles from './FilterPanel.module.css'
-
-/** タググループの表示順序と日本語ラベル */
-const TAG_GROUP_ORDER = [
-  'region',
-  'asset',
-  'theme',
-  'sector',
-  'economic',
-  'policy',
-] as const
-
-const TAG_GROUP_LABELS: Record<string, string> = {
-  theme: 'テーマ',
-  region: '地域',
-  asset: '資産',
-  sector: '業種',
-  economic: '経済情勢',
-  policy: '政策',
-}
 
 interface FilterPanelProps {
   onFilter: (params: SearchParams) => void

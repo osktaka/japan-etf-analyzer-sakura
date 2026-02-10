@@ -1,0 +1,1 @@
+export { TagMomentumHeatmap } from './TagMomentumHeatmap'

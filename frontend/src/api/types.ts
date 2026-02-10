@@ -347,3 +347,21 @@ export interface MomentumHistoryItem {
   return_rate_10y: number | null
   return_rate_20y: number | null
 }
+
+/** タグ別モメンタム情報 */
+export interface TagMomentum {
+  id: number
+  name: string
+  color: string
+  category: string
+  etf_count: number
+  momentum_score: number
+  momentum_distribution: Record<string, number>
+  dominant_label: string | null
+}
+
+export interface TagMomentumResponse {
+  tags: TagMomentum[]
+  categories: string[]
+  total_etf_count: number
+}

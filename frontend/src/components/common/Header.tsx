@@ -124,6 +124,12 @@ export function Header() {
           >
             比較
           </Link>
+          <Link
+            to={ROUTES.MARKET}
+            className={`${styles.navLink} ${location.pathname === ROUTES.MARKET ? styles.active : ''}`}
+          >
+            市場分析
+          </Link>
           {!isLoading && (
             <>
               {isAuthenticated ? (
@@ -252,6 +258,14 @@ export function Header() {
             onClick={closeMobileMenu}
           >
             銘柄比較
+          </Link>
+          <Link
+            to={ROUTES.MARKET}
+            className={`${styles.mobileNavLink} ${location.pathname === ROUTES.MARKET ? styles.active : ''}`}
+            role="menuitem"
+            onClick={closeMobileMenu}
+          >
+            市場分析
           </Link>
           {!isLoading && (
             <>
