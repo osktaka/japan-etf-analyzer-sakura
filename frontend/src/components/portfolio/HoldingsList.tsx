@@ -71,7 +71,7 @@ export function HoldingsList({
     const stored = localStorage.getItem(STORAGE_KEY)
     return stored === 'card' || stored === 'table' ? stored : 'table'
   })
-  const [sortKey, setSortKey] = useState<SortKey>('unrealized_pnl')
+  const [sortKey, setSortKey] = useState<SortKey>('current_value')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
 
   useEffect(() => {
