@@ -1,8 +1,8 @@
 /** Market analysis page */
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getTagMomentum } from '../api'
-import type { TagMomentumResponse } from '../api'
+import type { TagMomentumResponse, TagMomentum } from '../api'
 import { TagMomentumHeatmap } from '../components/market'
 import { ROUTES, TAG_GROUP_ORDER, TAG_GROUP_LABELS } from '../utils/constants'
 import {
@@ -12,18 +12,20 @@ import {
 } from '../utils/momentum'
 import styles from './MarketPage.module.css'
 
+/** Per-category chart height (smaller than full-page view) */
+const SECTION_HEIGHT = { pc: 280, mobile: 200 }
+
 export function MarketPage() {
   const navigate = useNavigate()
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [data, setData] = useState<TagMomentumResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchData = useCallback(async (category: string | null) => {
+  const fetchData = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const result = await getTagMomentum(category || undefined)
+      const result = await getTagMomentum()
       setData(result)
     } catch {
       setError('データの取得に失敗しました')
@@ -33,12 +35,20 @@ export function MarketPage() {
   }, [])
 
   useEffect(() => {
-    fetchData(selectedCategory)
-  }, [selectedCategory, fetchData])
+    fetchData()
+  }, [fetchData])
 
-  const handleCategoryChange = (category: string | null) => {
-    setSelectedCategory(category)
-  }
+  /** Group tags by category */
+  const groupedTags = useMemo(() => {
+    if (!data) return new Map<string, TagMomentum[]>()
+    const map = new Map<string, TagMomentum[]>()
+    for (const tag of data.tags) {
+      const list = map.get(tag.category) ?? []
+      list.push(tag)
+      map.set(tag.category, list)
+    }
+    return map
+  }, [data])
 
   const handleTagClick = (tagId: number) => {
     navigate(`${ROUTES.HOME}?tags=${tagId}`)
@@ -48,29 +58,33 @@ export function MarketPage() {
     <div className={styles.container}>
       <h2 className={styles.title}>市場分析</h2>
 
-      <div className={styles.tabBar}>
-        <button
-          className={`${styles.tab} ${selectedCategory === null ? styles.tabActive : ''}`}
-          onClick={() => handleCategoryChange(null)}
-        >
-          全体
-        </button>
-        {TAG_GROUP_ORDER.map((key) => (
-          <button
-            key={key}
-            className={`${styles.tab} ${selectedCategory === key ? styles.tabActive : ''}`}
-            onClick={() => handleCategoryChange(key)}
-          >
-            {TAG_GROUP_LABELS[key]}
-          </button>
-        ))}
-      </div>
-
       {loading && <div className={styles.loading}>読み込み中...</div>}
       {error && <div className={styles.error}>{error}</div>}
       {!loading && !error && data && (
         <>
-          <TagMomentumHeatmap data={data.tags} onTagClick={handleTagClick} />
+          <section className={styles.section}>
+            <h3 className={styles.sectionTitle}>全体</h3>
+            <TagMomentumHeatmap
+              data={data.tags}
+              onTagClick={handleTagClick}
+            />
+          </section>
+          {TAG_GROUP_ORDER.map((key) => {
+            const tags = groupedTags.get(key)
+            if (!tags || tags.length === 0) return null
+            return (
+              <section key={key} className={styles.section}>
+                <h3 className={styles.sectionTitle}>
+                  {TAG_GROUP_LABELS[key]}
+                </h3>
+                <TagMomentumHeatmap
+                  data={tags}
+                  onTagClick={handleTagClick}
+                  height={SECTION_HEIGHT}
+                />
+              </section>
+            )
+          })}
           <div className={styles.legend}>
             {ALL_MOMENTUM_LABELS.map((label: MomentumLabel) => (
               <div key={label} className={styles.legendItem}>

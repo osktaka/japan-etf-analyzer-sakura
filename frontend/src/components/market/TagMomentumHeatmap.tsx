@@ -2,12 +2,18 @@
 import { useMemo, useState, useEffect } from 'react'
 import { Treemap, ResponsiveContainer, Tooltip } from 'recharts'
 import type { TagMomentum } from '../../api/types'
-import { getMomentumScoreColor } from '../../utils/momentum'
+import {
+  getMomentumScoreColor,
+  MOMENTUM_STYLES,
+  type MomentumLabel,
+} from '../../utils/momentum'
 import styles from './TagMomentumHeatmap.module.css'
 
 interface TagMomentumHeatmapProps {
   data: TagMomentum[]
   onTagClick?: (tagId: number) => void
+  /** Override chart height for PC and mobile */
+  height?: { pc: number; mobile: number }
 }
 
 interface TreemapNode {
@@ -163,14 +169,26 @@ interface CustomTooltipProps {
   payload?: any[]
 }
 
+/** ツールチップ内訳の表示順（勢い順） */
+const TOOLTIP_LABEL_ORDER = [
+  '上昇加速', '上昇維持', '上昇減速',
+  '失速', '反転上昇',
+  '下降減速', '下降維持', '下降加速',
+]
+
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
   if (!active || !payload?.length) return null
   const data = payload[0]?.payload as TreemapNode | undefined
   if (!data) return null
 
-  const distributionEntries = Object.entries(data.momentum_distribution).filter(
-    ([, count]) => count > 0
-  )
+  const distributionEntries = Object.entries(data.momentum_distribution)
+    .filter(([, count]) => count > 0)
+    .sort(([a], [b]) => {
+      const ia = TOOLTIP_LABEL_ORDER.indexOf(a)
+      const ib = TOOLTIP_LABEL_ORDER.indexOf(b)
+      // 未分類（リストにないラベル）は末尾
+      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib)
+    })
 
   return (
     <div className={styles.tooltip}>
@@ -185,12 +203,27 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
       {distributionEntries.length > 0 && (
         <div className={styles.tooltipDistribution}>
           <div className={styles.tooltipDistTitle}>内訳</div>
-          {distributionEntries.map(([label, count]) => (
-            <div key={label} className={styles.tooltipDistItem}>
-              <span className={styles.tooltipDistLabel}>{label}</span>
-              <span className={styles.tooltipDistCount}>{count}件</span>
-            </div>
-          ))}
+          {distributionEntries.map(([label, count]) => {
+            const momentumColor =
+              MOMENTUM_STYLES[label as MomentumLabel]?.color
+            return (
+              <div
+                key={label}
+                className={styles.tooltipDistItem}
+                style={
+                  momentumColor
+                    ? {
+                        borderLeft: `3px solid ${momentumColor}`,
+                        paddingLeft: '0.375rem',
+                      }
+                    : undefined
+                }
+              >
+                <span className={styles.tooltipDistLabel}>{label}</span>
+                <span className={styles.tooltipDistCount}>{count}件</span>
+              </div>
+            )
+          })}
         </div>
       )}
     </div>
@@ -200,6 +233,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 export function TagMomentumHeatmap({
   data,
   onTagClick,
+  height,
 }: TagMomentumHeatmapProps) {
   const [isMobile, setIsMobile] = useState(
     () => window.matchMedia('(max-width: 640px)').matches
@@ -229,7 +263,10 @@ export function TagMomentumHeatmap({
   return (
     <div className={styles.container}>
       <div className={styles.chartWrapper}>
-        <ResponsiveContainer width="100%" height={isMobile ? 250 : 350}>
+        <ResponsiveContainer
+          width="100%"
+          height={isMobile ? (height?.mobile ?? 250) : (height?.pc ?? 350)}
+        >
           <Treemap
             data={treeData}
             dataKey="size"
