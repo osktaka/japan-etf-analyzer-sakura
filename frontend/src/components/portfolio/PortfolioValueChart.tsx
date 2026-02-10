@@ -143,14 +143,6 @@ export function PortfolioValueChart() {
                 return (
                   <div className={styles.tooltip}>
                     <p className={styles.tooltipDate}>{label}</p>
-                    <p className={styles.tooltipRow}>
-                      <span className={styles.legendDot} style={{ background: '#a78bfa' }} />
-                      現金残高: {formatPrice(data.cash_balance)}
-                    </p>
-                    <p className={styles.tooltipRow}>
-                      <span className={styles.legendDot} style={{ background: '#38bdf8' }} />
-                      取得原価: {formatPrice(data.total_cost)}
-                    </p>
                     <p
                       className={styles.tooltipRow}
                       style={{ color: data.unrealized_pnl >= 0 ? '#10b981' : '#ef4444' }}
@@ -161,6 +153,14 @@ export function PortfolioValueChart() {
                       />
                       評価損益: {data.unrealized_pnl >= 0 ? '+' : ''}{formatPrice(data.unrealized_pnl)}
                     </p>
+                    <p className={styles.tooltipRow}>
+                      <span className={styles.legendDot} style={{ background: '#38bdf8' }} />
+                      取得原価: {formatPrice(data.total_cost)}
+                    </p>
+                    <p className={styles.tooltipRow}>
+                      <span className={styles.legendDot} style={{ background: '#a78bfa' }} />
+                      現金残高: {formatPrice(data.cash_balance)}
+                    </p>
                     <hr className={styles.tooltipDivider} />
                     <p className={styles.tooltipRow} style={{ fontWeight: 600 }}>
                       総資産: {formatPrice(data.value)}
@@ -169,7 +169,15 @@ export function PortfolioValueChart() {
                 )
               }}
             />
-            <Legend iconSize={isMobile ? 8 : 14} wrapperStyle={{ fontSize: isMobile ? '0.625rem' : '0.75rem' }} />
+            <Legend
+              iconSize={isMobile ? 8 : 14}
+              wrapperStyle={{ fontSize: isMobile ? '0.625rem' : '0.75rem' }}
+              payload={[
+                { value: '評価損益', type: 'rect', color: '#059669' },
+                { value: '取得原価', type: 'rect', color: '#0ea5e9' },
+                { value: '現金残高', type: 'rect', color: '#8b5cf6' },
+              ]}
+            />
             {/* 現金残高（最下層・紫系）*/}
             <Area
               type="monotone"
