@@ -236,6 +236,39 @@ rm -rf backend/venv && ./setup.sh
 
 - Yahoo Finance: `backend/src/external/yahoo_finance.py` (106行)
 
+## 株式分割の管理
+
+このシステムでは株式分割を2つの独立したフラグで管理している:
+
+### 1. `is_applied`: ポートフォリオ損益計算で分割を考慮するか
+- **True**: 取引数量を分割比率で調整して計算（例: 2分割なら分割前購入分は数量×2）
+- **SplitAdjustmentService**が取引日以降の適用済み分割を全て乗算
+
+### 2. `is_chart_applied`: チャート表示で分割を考慮するか
+- **True**: yfinanceのauto_adjust=Trueに加えて、追加の分割調整を適用
+- **ChartService**が分割日前の価格データを分割比率で除算
+
+### yfinanceとの関係
+- yfinanceは`auto_adjust=True`で取得しているため、価格データは基本的に分割調整済み
+- ただし、yfinanceの調整タイミングと実際の分割タイミングにズレがある場合がある
+- `is_chart_applied`フラグで追加調整することで、このズレを吸収
+
+### 重要な注意点
+- DBの生の取引データ（tradesテーブル）は**分割前の元の数量・単価**で記録されている
+- 正確な損益を見るには、PortfolioService（API）経由で取得する必要がある
+- SQLiteの直接クエリでは分割が考慮されないため、損益計算が不正確になる
+- 管理画面（Admin → Splits）で各ETFの分割フラグのオン/オフを制御可能
+
+### 関連ファイル
+
+| ファイル | 役割 |
+|---------|------|
+| backend/src/models/stock_split.py | 分割データモデル |
+| backend/src/services/split_adjustment_service.py | 調整係数計算 |
+| backend/src/services/portfolio_service.py | 分割考慮の損益計算 |
+| backend/src/services/chart_service.py | チャート分割調整 |
+| backend/src/external/yahoo_finance.py | yfinance取得（auto_adjust=True） |
+
 ## 運用ルール
 
 開発中に以下を発見した場合、CLAUDE.mdへの追記を提案すること:
