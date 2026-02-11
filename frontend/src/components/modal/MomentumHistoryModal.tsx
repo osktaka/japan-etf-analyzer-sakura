@@ -22,7 +22,7 @@ export function MomentumHistoryModal({
 
   useEffect(() => {
     setIsLoading(true)
-    getMomentumHistory(code)
+    getMomentumHistory(code, 250)
       .then(setData)
       .catch(() => setData([]))
       .finally(() => setIsLoading(false))

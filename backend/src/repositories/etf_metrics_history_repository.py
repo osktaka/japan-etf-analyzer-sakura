@@ -267,12 +267,12 @@ class EtfMetricsHistoryRepository(BaseRepository):
 
         Args:
             etf_code: ETF code
-            limit: Number of records to return (default: 30, max: 90)
+            limit: Number of records to return (default: 30, max: 260)
 
         Returns:
             List of EtfMetricsHistory objects with momentum_label
         """
-        limit = min(limit, 90)
+        limit = min(limit, 260)
         return (
             EtfMetricsHistory.query.filter(
                 EtfMetricsHistory.etf_code == etf_code,
