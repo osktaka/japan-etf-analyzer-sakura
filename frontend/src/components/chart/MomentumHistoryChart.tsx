@@ -160,10 +160,10 @@ export function MomentumHistoryChart({
   if (chartData.length === 0) return null
 
   return (
-    <ResponsiveContainer width="100%" height={isMobile ? 200 : 280}>
+    <ResponsiveContainer width="100%" height={isMobile ? 300 : 440}>
       <LineChart data={chartData}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="date" tickFormatter={tickFormatter} fontSize={11} />
+        <XAxis dataKey="date" tickFormatter={tickFormatter} fontSize={11} interval={Math.max(Math.floor(chartData.length / 12) - 1, 0)} />
         <YAxis yAxisId="left" tickFormatter={yTickFormatter} fontSize={11} width={52} />
         <YAxis
           yAxisId="right"

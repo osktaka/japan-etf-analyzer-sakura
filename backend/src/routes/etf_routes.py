@@ -313,7 +313,7 @@ def create_etf_bp():
             code: ETF code (4 digits)
 
         Query Parameters:
-            limit: Number of records (default: 30, max: 90)
+            limit: Number of records (default: 30, max: 800)
 
         Returns:
             Momentum history data

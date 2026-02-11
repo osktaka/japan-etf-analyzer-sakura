@@ -27,8 +27,8 @@ export function MomentumHistoryModal({
   useEffect(() => {
     setIsLoading(true)
     Promise.all([
-      getMomentumHistory(code, 250),
-      getETFChart(code, '1y').then((d) => d?.data ?? []),
+      getMomentumHistory(code, 750),
+      getETFChart(code, '3y').then((d) => d?.data ?? []),
     ])
       .then(([momentum, prices]) => {
         setData(momentum)
