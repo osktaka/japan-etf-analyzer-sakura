@@ -1,26 +1,30 @@
 /** Momentum history line chart with background label segments */
-import { useMemo, useState, useEffect } from 'react'
+import { useCallback, useMemo, useState, useEffect } from 'react'
 import {
   ResponsiveContainer,
-  LineChart,
+  ComposedChart,
   CartesianGrid,
   XAxis,
   YAxis,
   ReferenceLine,
   ReferenceArea,
   Line,
+  Scatter,
   Legend,
   Tooltip,
   TooltipProps,
 } from 'recharts'
-import { MomentumHistoryItem, ChartDataPoint } from '../../api/types'
+import { MomentumHistoryItem, ChartDataPoint, Trade } from '../../api/types'
 import { MOMENTUM_STYLES, MomentumLabel } from '../../utils/momentum'
 import { MomentumBadge } from '../common'
+import { BuyMarkerShape, SellMarkerShape } from '../portfolio/TradeMarker'
+import { TradePopover } from '../portfolio/TradePopover'
 
 interface MomentumHistoryChartProps {
   data: MomentumHistoryItem[]
   rateMode: 'regression' | 'return'
   priceData: ChartDataPoint[]
+  trades?: Trade[]
 }
 
 interface ChartRow {
@@ -29,6 +33,9 @@ interface ChartRow {
   rate3m: number | null
   momentumLabel: string
   price: number | null
+  buyMarker?: number
+  sellMarker?: number
+  trades?: Trade[]
 }
 
 interface LabelSegment {
@@ -113,6 +120,7 @@ export function MomentumHistoryChart({
   data,
   rateMode,
   priceData,
+  trades,
 }: MomentumHistoryChartProps) {
   const [isMobile, setIsMobile] = useState(
     () => window.matchMedia('(max-width: 640px)').matches
@@ -123,6 +131,32 @@ export function MomentumHistoryChart({
     mql.addEventListener('change', handler)
     return () => mql.removeEventListener('change', handler)
   }, [])
+
+  // Popover state for trade markers
+  const [popover, setPopover] = useState<{
+    trades: Trade[]
+    date: string
+    position: { x: number; y: number; markerY: number }
+  } | null>(null)
+
+  const handleMarkerClick = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (entry: any) => {
+      if (!entry?.payload?.trades) return
+      setPopover({
+        trades: entry.payload.trades,
+        date: entry.payload.date,
+        position: {
+          x: Math.round(entry.cx ?? 0),
+          y: Math.round((entry.cy ?? 0) + 20),
+          markerY: Math.round(entry.cy ?? 0),
+        },
+      })
+    },
+    []
+  )
+
+  const handlePopoverClose = useCallback(() => setPopover(null), [])
 
   const { chartData, segments } = useMemo(() => {
     const reversed = data.slice().reverse()
@@ -147,8 +181,56 @@ export function MomentumHistoryChart({
       }
     })
 
+    // Merge trade markers
+    if (trades && trades.length > 0 && rows.length > 0) {
+      const firstDate = rows[0].date
+      const lastDate = rows[rows.length - 1].date
+      const filteredTrades = trades.filter(
+        (t) => t.trade_date >= firstDate && t.trade_date <= lastDate
+      )
+
+      // Group trades by date
+      const tradesByDate = new Map<string, Trade[]>()
+      for (const trade of filteredTrades) {
+        const existing = tradesByDate.get(trade.trade_date)
+        if (existing) {
+          existing.push(trade)
+        } else {
+          tradesByDate.set(trade.trade_date, [trade])
+        }
+      }
+
+      // Snap trades on holidays to nearest chart date
+      const chartDateSet = new Set(rows.map((r) => r.date))
+      const snappedTradesByDate = new Map<string, Trade[]>()
+      for (const [tradeDate, dateTrades] of tradesByDate) {
+        let targetDate = tradeDate
+        if (!chartDateSet.has(tradeDate)) {
+          // Find next available date, or fall back to last
+          targetDate = rows.find((r) => r.date >= tradeDate)?.date ?? rows[rows.length - 1].date
+        }
+        const existing = snappedTradesByDate.get(targetDate)
+        if (existing) {
+          existing.push(...dateTrades)
+        } else {
+          snappedTradesByDate.set(targetDate, [...dateTrades])
+        }
+      }
+
+      // Apply markers to rows
+      for (const row of rows) {
+        const dayTrades = snappedTradesByDate.get(row.date)
+        if (!dayTrades || row.price === null) continue
+        const hasBuy = dayTrades.some((t) => t.trade_type === 'buy')
+        const hasSell = dayTrades.some((t) => t.trade_type === 'sell')
+        if (hasBuy) row.buyMarker = row.price
+        if (hasSell) row.sellMarker = row.price
+        row.trades = dayTrades
+      }
+    }
+
     return { chartData: rows, segments: buildSegments(rows) }
-  }, [data, rateMode, priceData])
+  }, [data, rateMode, priceData, trades])
 
   const tickFormatter = (value: string) => {
     const parts = value.split('-')
@@ -160,65 +242,97 @@ export function MomentumHistoryChart({
   if (chartData.length === 0) return null
 
   return (
-    <ResponsiveContainer width="100%" height={isMobile ? 300 : 440}>
-      <LineChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="date" tickFormatter={tickFormatter} fontSize={11} interval={Math.max(Math.floor(chartData.length / 12) - 1, 0)} />
-        <YAxis yAxisId="left" tickFormatter={yTickFormatter} fontSize={11} width={52} />
-        <YAxis
-          yAxisId="right"
-          orientation="right"
-          tickFormatter={(v: number) => v.toLocaleString()}
-          fontSize={11}
-          width={52}
+    <div style={{ position: 'relative' }}>
+      <ResponsiveContainer width="100%" height={isMobile ? 300 : 440}>
+        <ComposedChart data={chartData}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="date" tickFormatter={tickFormatter} fontSize={11} interval={Math.max(Math.floor(chartData.length / 12) - 1, 0)} />
+          <YAxis yAxisId="left" tickFormatter={yTickFormatter} fontSize={11} width={52} />
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            tickFormatter={(v: number) => v.toLocaleString()}
+            fontSize={11}
+            width={52}
+          />
+          <ReferenceLine yAxisId="left" y={0} stroke="#9ca3af" strokeDasharray="3 3" />
+          {segments.map((seg, i) => {
+            const style =
+              MOMENTUM_STYLES[seg.label as MomentumLabel] ?? null
+            if (!style) return null
+            return (
+              <ReferenceArea
+                key={i}
+                yAxisId="left"
+                x1={seg.startDate}
+                x2={seg.endDate}
+                fill={style.bgColor}
+                fillOpacity={1}
+              />
+            )
+          })}
+          <Line
+            yAxisId="left"
+            dataKey="rate1m"
+            stroke="#8B5CF6"
+            strokeWidth={2}
+            dot={false}
+            connectNulls={true}
+            name="1M年率"
+          />
+          <Line
+            yAxisId="left"
+            dataKey="rate3m"
+            stroke="#F59E0B"
+            strokeWidth={2}
+            strokeDasharray="6 3"
+            dot={false}
+            connectNulls={true}
+            name="3M年率"
+          />
+          <Line
+            yAxisId="right"
+            dataKey="price"
+            stroke="#2563eb"
+            strokeWidth={2}
+            dot={false}
+            connectNulls={true}
+            name="株価"
+          />
+          {trades && trades.length > 0 && (
+            <>
+              <Scatter
+                yAxisId="right"
+                dataKey="buyMarker"
+                fill="#10b981"
+                shape={<BuyMarkerShape />}
+                onClick={handleMarkerClick}
+                legendType="none"
+                tooltipType="none"
+              />
+              <Scatter
+                yAxisId="right"
+                dataKey="sellMarker"
+                fill="#ef4444"
+                shape={<SellMarkerShape />}
+                onClick={handleMarkerClick}
+                legendType="none"
+                tooltipType="none"
+              />
+            </>
+          )}
+          <Legend wrapperStyle={{ fontSize: isMobile ? '0.625rem' : '0.75rem' }} />
+          <Tooltip content={<CustomTooltip />} />
+        </ComposedChart>
+      </ResponsiveContainer>
+      {popover && (
+        <TradePopover
+          trades={popover.trades}
+          date={popover.date}
+          position={popover.position}
+          onClose={handlePopoverClose}
         />
-        <ReferenceLine yAxisId="left" y={0} stroke="#9ca3af" strokeDasharray="3 3" />
-        {segments.map((seg, i) => {
-          const style =
-            MOMENTUM_STYLES[seg.label as MomentumLabel] ?? null
-          if (!style) return null
-          return (
-            <ReferenceArea
-              key={i}
-              yAxisId="left"
-              x1={seg.startDate}
-              x2={seg.endDate}
-              fill={style.bgColor}
-              fillOpacity={1}
-            />
-          )
-        })}
-        <Line
-          yAxisId="left"
-          dataKey="rate1m"
-          stroke="#3B82F6"
-          strokeWidth={2}
-          dot={false}
-          connectNulls={true}
-          name="1M年率"
-        />
-        <Line
-          yAxisId="left"
-          dataKey="rate3m"
-          stroke="#F59E0B"
-          strokeWidth={2}
-          strokeDasharray="6 3"
-          dot={false}
-          connectNulls={true}
-          name="3M年率"
-        />
-        <Line
-          yAxisId="right"
-          dataKey="price"
-          stroke="#9ca3af"
-          strokeWidth={1}
-          dot={false}
-          connectNulls={true}
-          name="株価"
-        />
-        <Legend wrapperStyle={{ fontSize: isMobile ? '0.625rem' : '0.75rem' }} />
-        <Tooltip content={<CustomTooltip />} />
-      </LineChart>
-    </ResponsiveContainer>
+      )}
+    </div>
   )
 }

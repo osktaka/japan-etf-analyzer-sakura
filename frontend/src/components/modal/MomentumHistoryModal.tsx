@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react'
 import { getMomentumHistory, getETFChart } from '../../api/etf'
 import { MomentumHistoryItem, ChartDataPoint } from '../../api/types'
+import { useAuth, useTrades } from '../../hooks'
 import { MomentumBadge } from '../common'
 import { MomentumHistoryChart } from '../chart'
 import styles from './MomentumHistoryModal.module.css'
@@ -18,11 +19,24 @@ export function MomentumHistoryModal({
   code,
   onClose,
 }: MomentumHistoryModalProps) {
+  const { isAuthenticated } = useAuth()
+  const { trades } = useTrades(code, { enabled: isAuthenticated })
   const [data, setData] = useState<MomentumHistoryItem[]>([])
   const [priceData, setPriceData] = useState<ChartDataPoint[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [rateMode, setRateMode] = useState<RateMode>('regression')
-  const [viewMode, setViewMode] = useState<ViewMode>('table')
+  const [rateMode, setRateMode] = useState<RateMode>(
+    () => (localStorage.getItem('etf-momentum-history-rate-mode') as RateMode) || 'regression'
+  )
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    () => (localStorage.getItem('etf-momentum-history-view-mode') as ViewMode) || 'table'
+  )
+
+  useEffect(() => {
+    localStorage.setItem('etf-momentum-history-rate-mode', rateMode)
+  }, [rateMode])
+  useEffect(() => {
+    localStorage.setItem('etf-momentum-history-view-mode', viewMode)
+  }, [viewMode])
 
   useEffect(() => {
     setIsLoading(true)
@@ -109,7 +123,7 @@ export function MomentumHistoryModal({
         {!isLoading && data.length > 0 && (
           <>
             {viewMode === 'chart' && (
-              <MomentumHistoryChart data={data} rateMode={rateMode} priceData={priceData} />
+              <MomentumHistoryChart data={data} rateMode={rateMode} priceData={priceData} trades={isAuthenticated ? trades : undefined} />
             )}
 
             {viewMode === 'table' && (
