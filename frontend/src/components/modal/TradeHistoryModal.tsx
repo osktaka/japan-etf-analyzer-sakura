@@ -1,13 +1,18 @@
 /** Trade history modal component for viewing and filtering trade history */
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../hooks'
 import { tradesApi } from '../../api/trades'
-import { Trade, TradeFilterOptions } from '../../api/types'
-import { ROUTES } from '../../utils'
-import { TradeList } from '../trade/TradeList'
+import { cashFlowsApi } from '../../api/cashFlows'
+import { Trade, CashFlow, TradeFilterOptions } from '../../api/types'
+import { ROUTES, formatPrice } from '../../utils'
 import { TradeFormModal } from './TradeFormModal'
+import { CashFlowFormModal } from './CashFlowFormModal'
 import styles from './TradeHistoryModal.module.css'
+
+type TimelineEntry =
+  | { type: 'trade'; data: Trade; date: string }
+  | { type: 'cash_flow'; data: CashFlow; date: string }
 
 interface TradeHistoryModalProps {
   isOpen: boolean
@@ -23,36 +28,59 @@ export function TradeHistoryModal({
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const [trades, setTrades] = useState<Trade[]>([])
+  const [cashFlows, setCashFlows] = useState<CashFlow[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editingTrade, setEditingTrade] = useState<Trade | null>(null)
+  const [editingCashFlow, setEditingCashFlow] = useState<CashFlow | null>(null)
   const [isAddFormOpen, setIsAddFormOpen] = useState(false)
+  const [isCashFlowFormOpen, setIsCashFlowFormOpen] = useState(false)
+  const [deletingTradeId, setDeletingTradeId] = useState<number | null>(null)
+  const [deletingCashFlowId, setDeletingCashFlowId] = useState<number | null>(
+    null
+  )
 
   // Filter states
   const [search, setSearch] = useState(initialSearch)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
 
-  const fetchTrades = useCallback(
+  const fetchData = useCallback(
     async (searchOverride?: string) => {
       setIsLoading(true)
       setError(null)
       try {
-        const options: TradeFilterOptions = {}
-        // searchOverride is used when opening modal to avoid state update delay
+        const tradeOptions: TradeFilterOptions = {}
         const currentSearch =
           searchOverride !== undefined ? searchOverride : search
         if (currentSearch.trim()) {
-          options.search = currentSearch.trim()
+          tradeOptions.search = currentSearch.trim()
         }
         if (startDate) {
-          options.startDate = startDate
+          tradeOptions.startDate = startDate
         }
         if (endDate) {
-          options.endDate = endDate
+          tradeOptions.endDate = endDate
         }
-        const data = await tradesApi.getAll(undefined, options)
-        setTrades(data)
+
+        const cashFlowOptions: { startDate?: string; endDate?: string } = {}
+        if (startDate) {
+          cashFlowOptions.startDate = startDate
+        }
+        if (endDate) {
+          cashFlowOptions.endDate = endDate
+        }
+
+        const [tradesData, cashFlowsData] = await Promise.all([
+          tradesApi.getAll(undefined, tradeOptions),
+          cashFlowsApi.getAll(
+            Object.keys(cashFlowOptions).length > 0
+              ? cashFlowOptions
+              : undefined
+          ),
+        ])
+        setTrades(tradesData)
+        setCashFlows(cashFlowsData)
       } catch {
         setError('取引履歴の取得に失敗しました')
       } finally {
@@ -62,12 +90,29 @@ export function TradeHistoryModal({
     [search, startDate, endDate]
   )
 
-  // Fetch trades when modal opens, using initialSearch directly
+  // Build unified timeline
+  const timeline = useMemo(() => {
+    const entries: TimelineEntry[] = [
+      ...trades.map((t) => ({
+        type: 'trade' as const,
+        data: t,
+        date: t.trade_date,
+      })),
+      ...cashFlows.map((cf) => ({
+        type: 'cash_flow' as const,
+        data: cf,
+        date: cf.flow_date,
+      })),
+    ]
+    return entries.sort((a, b) => b.date.localeCompare(a.date))
+  }, [trades, cashFlows])
+
+  // Fetch data when modal opens
   useEffect(() => {
     if (isOpen && isAuthenticated) {
-      fetchTrades(initialSearch)
+      fetchData(initialSearch)
     }
-  }, [isOpen, isAuthenticated, initialSearch, startDate, endDate, fetchTrades])
+  }, [isOpen, isAuthenticated, initialSearch, startDate, endDate, fetchData])
 
   // Initialize search when modal opens
   useEffect(() => {
@@ -82,9 +127,12 @@ export function TradeHistoryModal({
       setStartDate('')
       setEndDate('')
       setTrades([])
+      setCashFlows([])
       setError(null)
       setEditingTrade(null)
+      setEditingCashFlow(null)
       setIsAddFormOpen(false)
+      setIsCashFlowFormOpen(false)
     }
   }, [isOpen])
 
@@ -92,20 +140,52 @@ export function TradeHistoryModal({
     setEditingTrade(trade)
   }
 
-  const handleFormSuccess = () => {
-    fetchTrades()
-    setEditingTrade(null)
-    setIsAddFormOpen(false)
+  const handleCashFlowEdit = (cashFlow: CashFlow) => {
+    setEditingCashFlow(cashFlow)
   }
 
-  const handleDelete = async (id: number): Promise<boolean> => {
+  const handleFormSuccess = () => {
+    fetchData()
+    setEditingTrade(null)
+    setEditingCashFlow(null)
+    setIsAddFormOpen(false)
+    setIsCashFlowFormOpen(false)
+  }
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('この取引を削除しますか？')) return
+
+    setDeletingTradeId(id)
     try {
       await tradesApi.delete(id)
-      await fetchTrades()
-      return true
+      await fetchData()
     } catch {
-      return false
+      setError('削除に失敗しました')
+    } finally {
+      setDeletingTradeId(null)
     }
+  }
+
+  const handleCashFlowDelete = async (id: number) => {
+    if (!confirm('この入出金を削除しますか？')) return
+
+    setDeletingCashFlowId(id)
+    try {
+      await cashFlowsApi.delete(id)
+      await fetchData()
+    } catch {
+      setError('削除に失敗しました')
+    } finally {
+      setDeletingCashFlowId(null)
+    }
+  }
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}/${month}/${day}`
   }
 
   if (!isOpen) return null
@@ -129,7 +209,7 @@ export function TradeHistoryModal({
             &times;
           </button>
           <div className={styles.content}>
-            <div className={styles.icon}>📋</div>
+            <div className={styles.icon}>&#x1f4cb;</div>
             <h2 className={styles.title}>取引履歴</h2>
             <p className={styles.description}>
               取引履歴機能はログイン後にご利用いただけます。
@@ -144,6 +224,149 @@ export function TradeHistoryModal({
             </div>
           </div>
         </div>
+      </div>
+    )
+  }
+
+  const renderTimelineContent = () => {
+    if (isLoading) {
+      return <div className={styles.statusMessage}>読み込み中...</div>
+    }
+
+    if (error) {
+      return <div className={styles.errorMessage}>{error}</div>
+    }
+
+    if (timeline.length === 0) {
+      return <div className={styles.statusMessage}>取引履歴がありません</div>
+    }
+
+    return (
+      <div className={styles.tableContainer}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>日付</th>
+              <th>銘柄</th>
+              <th className={styles.numericHeader}>数量</th>
+              <th className={styles.numericHeader}>価格</th>
+              <th className={styles.numericHeader}>合計</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {timeline.map((entry) => {
+              if (entry.type === 'trade') {
+                const trade = entry.data
+                return (
+                  <tr key={`trade-${trade.id}`}>
+                    <td className={styles.dateCell} data-label="">
+                      <div className={styles.dateContent}>
+                        <span className={styles.date}>
+                          {formatDate(trade.trade_date)}
+                        </span>
+                        <span
+                          className={`${styles.typeBadge} ${trade.trade_type === 'buy' ? styles.buy : styles.sell}`}
+                        >
+                          {trade.trade_type === 'buy' ? '買い' : '売り'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className={styles.etfCell} data-label="">
+                      <div className={styles.etfInfo}>
+                        <span className={styles.code}>{trade.etf_code}</span>
+                        {trade.etf && (
+                          <span className={styles.etfName}>
+                            {trade.etf.name}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className={styles.numericCell} data-label="数量">
+                      {trade.quantity}口
+                    </td>
+                    <td className={styles.numericCell} data-label="価格">
+                      {formatPrice(trade.price)}
+                    </td>
+                    <td className={styles.numericCell} data-label="合計">
+                      {formatPrice(trade.total_amount)}
+                    </td>
+                    <td className={styles.actionsCell}>
+                      <div className={styles.actions}>
+                        <button
+                          className={styles.editBtn}
+                          onClick={() => handleEdit(trade)}
+                          disabled={deletingTradeId === trade.id}
+                        >
+                          編集
+                        </button>
+                        <button
+                          className={styles.deleteBtn}
+                          onClick={() => handleDelete(trade.id)}
+                          disabled={deletingTradeId === trade.id}
+                        >
+                          {deletingTradeId === trade.id ? '削除中...' : '削除'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              } else {
+                const cashFlow = entry.data
+                return (
+                  <tr key={`cf-${cashFlow.id}`}>
+                    <td className={styles.dateCell} data-label="">
+                      <div className={styles.dateContent}>
+                        <span className={styles.date}>
+                          {formatDate(cashFlow.flow_date)}
+                        </span>
+                        <span
+                          className={`${styles.cashFlowType} ${cashFlow.flow_type === 'deposit' ? styles.deposit : styles.withdrawal}`}
+                        >
+                          {cashFlow.flow_type === 'deposit'
+                            ? '入金'
+                            : '出金'}
+                        </span>
+                      </div>
+                    </td>
+                    <td className={styles.dashCell} data-label="">
+                      --
+                    </td>
+                    <td className={styles.dashCell} data-label="数量">
+                      --
+                    </td>
+                    <td className={styles.dashCell} data-label="価格">
+                      --
+                    </td>
+                    <td className={styles.numericCell} data-label="合計">
+                      {formatPrice(cashFlow.amount)}
+                    </td>
+                    <td className={styles.actionsCell}>
+                      <div className={styles.actions}>
+                        <button
+                          className={styles.editBtn}
+                          onClick={() => handleCashFlowEdit(cashFlow)}
+                          disabled={deletingCashFlowId === cashFlow.id}
+                        >
+                          編集
+                        </button>
+                        <button
+                          className={styles.deleteBtn}
+                          onClick={() => handleCashFlowDelete(cashFlow.id)}
+                          disabled={deletingCashFlowId === cashFlow.id}
+                        >
+                          {deletingCashFlowId === cashFlow.id
+                            ? '削除中...'
+                            : '削除'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              }
+            })}
+          </tbody>
+        </table>
       </div>
     )
   }
@@ -196,17 +419,16 @@ export function TradeHistoryModal({
               >
                 取引を追加
               </button>
+              <button
+                className={styles.addCashFlowButton}
+                onClick={() => setIsCashFlowFormOpen(true)}
+              >
+                入出金
+              </button>
             </div>
 
             <div className={styles.listContainer}>
-              <TradeList
-                trades={trades}
-                isLoading={isLoading}
-                error={error}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                showEtfInfo={true}
-              />
+              {renderTimelineContent()}
             </div>
           </div>
         </div>
@@ -222,6 +444,17 @@ export function TradeHistoryModal({
         trade={editingTrade ?? undefined}
         isEdit={editingTrade !== null}
         defaultEtfCode={search}
+      />
+
+      <CashFlowFormModal
+        isOpen={isCashFlowFormOpen || editingCashFlow !== null}
+        onClose={() => {
+          setIsCashFlowFormOpen(false)
+          setEditingCashFlow(null)
+        }}
+        onSuccess={handleFormSuccess}
+        cashFlow={editingCashFlow ?? undefined}
+        isEdit={editingCashFlow !== null}
       />
     </>
   )

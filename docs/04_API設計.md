@@ -123,6 +123,10 @@
 | GET | /trades/{id} | 売買履歴詳細取得 | F-103 | 必要 |
 | PUT | /trades/{id} | 売買履歴更新 | F-103 | 必要 |
 | DELETE | /trades/{id} | 売買履歴削除 | F-103 | 必要 |
+| GET | /cash-flows | 入出金一覧取得 | F-103 | 必要 |
+| POST | /cash-flows | 入出金登録 | F-103 | 必要 |
+| PUT | /cash-flows/{id} | 入出金更新 | F-103 | 必要 |
+| DELETE | /cash-flows/{id} | 入出金削除 | F-103 | 必要 |
 | GET | /portfolio | ポートフォリオ概要取得 | F-105 | 必要 |
 | GET | /portfolio/holdings | 保有銘柄一覧取得 | F-105 | 必要 |
 | GET | /portfolio/valuation-history | ポートフォリオ評価額推移取得 | F-105 | 必要 |

@@ -8,6 +8,7 @@ import pytest
 from src.models.etf import ETF
 from src.models.stock_split import StockSplit
 from src.models.trade import Trade
+from src.repositories.cash_flow_repository import CashFlowRepository
 from src.repositories.etf_repository import ETFRepository
 from src.repositories.stock_split_repository import StockSplitRepository
 from src.repositories.trade_repository import TradeRepository
@@ -41,8 +42,17 @@ def mock_split_repository():
     return Mock(spec=StockSplitRepository)
 
 
+@pytest.fixture
+def mock_cash_flow_repository():
+    """Mock cash flow repository."""
+    mock = Mock(spec=CashFlowRepository)
+    mock.get_by_user_id.return_value = []
+    return mock
+
+
 def test_no_split_simple_buy(
-    mock_trade_repository, mock_etf_repository, mock_split_repository
+    mock_trade_repository, mock_etf_repository, mock_split_repository,
+    mock_cash_flow_repository,
 ):
     """Test portfolio calculation with no splits."""
     # Setup: Buy 100 shares at 1000 yen
@@ -60,7 +70,8 @@ def test_no_split_simple_buy(
 
     split_service = SplitAdjustmentService(mock_split_repository)
     service = PortfolioService(
-        mock_trade_repository, mock_etf_repository, split_service
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
     )
 
     # Execute
@@ -75,7 +86,8 @@ def test_no_split_simple_buy(
 
 
 def test_split_before_all_trades(
-    mock_trade_repository, mock_etf_repository, mock_split_repository
+    mock_trade_repository, mock_etf_repository, mock_split_repository,
+    mock_cash_flow_repository,
 ):
     """Test: All purchases before 2:1 split."""
     # Setup: Buy 100 shares at 2000 yen, then 2:1 split
@@ -100,7 +112,8 @@ def test_split_before_all_trades(
 
     split_service = SplitAdjustmentService(mock_split_repository)
     service = PortfolioService(
-        mock_trade_repository, mock_etf_repository, split_service
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
     )
 
     # Execute
@@ -114,7 +127,8 @@ def test_split_before_all_trades(
 
 
 def test_split_after_all_trades(
-    mock_trade_repository, mock_etf_repository, mock_split_repository
+    mock_trade_repository, mock_etf_repository, mock_split_repository,
+    mock_cash_flow_repository,
 ):
     """Test: All purchases after 2:1 split."""
     # Setup: 2:1 split on Feb 1, then buy 50 shares at 1000 yen
@@ -133,7 +147,8 @@ def test_split_after_all_trades(
 
     split_service = SplitAdjustmentService(mock_split_repository)
     service = PortfolioService(
-        mock_trade_repository, mock_etf_repository, split_service
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
     )
 
     # Execute
@@ -147,7 +162,8 @@ def test_split_after_all_trades(
 
 
 def test_split_between_trades(
-    mock_trade_repository, mock_etf_repository, mock_split_repository
+    mock_trade_repository, mock_etf_repository, mock_split_repository,
+    mock_cash_flow_repository,
 ):
     """Test: Purchase before and after 2:1 split (key test case)."""
     # Setup: Buy 100 at 2000 yen on Jan 1, 2:1 split on Feb 1, buy 50 at 1000 yen on Mar 1
@@ -191,7 +207,8 @@ def test_split_between_trades(
 
     split_service = SplitAdjustmentService(mock_split_repository)
     service = PortfolioService(
-        mock_trade_repository, mock_etf_repository, split_service
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
     )
 
     # Execute
@@ -208,7 +225,8 @@ def test_split_between_trades(
 
 
 def test_split_with_sell(
-    mock_trade_repository, mock_etf_repository, mock_split_repository
+    mock_trade_repository, mock_etf_repository, mock_split_repository,
+    mock_cash_flow_repository,
 ):
     """Test: Buy before split, sell after split."""
     # Setup: Buy 100 at 2000 yen on Jan 1, 2:1 split on Feb 1, sell 50 at 1000 yen on Mar 1
@@ -250,7 +268,8 @@ def test_split_with_sell(
 
     split_service = SplitAdjustmentService(mock_split_repository)
     service = PortfolioService(
-        mock_trade_repository, mock_etf_repository, split_service
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
     )
 
     # Execute
@@ -270,7 +289,8 @@ def test_split_with_sell(
 
 
 def test_summary_cash_flow_partial_sell(
-    mock_trade_repository, mock_etf_repository, mock_split_repository
+    mock_trade_repository, mock_etf_repository, mock_split_repository,
+    mock_cash_flow_repository,
 ):
     """Pattern A: Partial sell - cash balance retains sell proceeds."""
     # Setup: Buy 100 at 2000 yen, sell 30 at 2500 yen
@@ -300,7 +320,8 @@ def test_summary_cash_flow_partial_sell(
 
     split_service = SplitAdjustmentService(mock_split_repository)
     service = PortfolioService(
-        mock_trade_repository, mock_etf_repository, split_service
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
     )
 
     summary = service.get_portfolio_summary(1)
@@ -314,7 +335,8 @@ def test_summary_cash_flow_partial_sell(
 
 
 def test_summary_cash_flow_no_sell(
-    mock_trade_repository, mock_etf_repository, mock_split_repository
+    mock_trade_repository, mock_etf_repository, mock_split_repository,
+    mock_cash_flow_repository,
 ):
     """Pattern B: Buy only - cash balance is zero."""
     # Setup: Buy 50 at 1800 yen
@@ -333,7 +355,8 @@ def test_summary_cash_flow_no_sell(
 
     split_service = SplitAdjustmentService(mock_split_repository)
     service = PortfolioService(
-        mock_trade_repository, mock_etf_repository, split_service
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
     )
 
     summary = service.get_portfolio_summary(1)
@@ -347,7 +370,8 @@ def test_summary_cash_flow_no_sell(
 
 
 def test_summary_cash_flow_fully_sold(
-    mock_trade_repository, mock_etf_repository, mock_split_repository
+    mock_trade_repository, mock_etf_repository, mock_split_repository,
+    mock_cash_flow_repository,
 ):
     """Pattern C: All shares sold - total asset equals cash balance."""
     # Setup: Buy 100 at 2000 yen, sell all 100 at 2500 yen
@@ -373,7 +397,8 @@ def test_summary_cash_flow_fully_sold(
 
     split_service = SplitAdjustmentService(mock_split_repository)
     service = PortfolioService(
-        mock_trade_repository, mock_etf_repository, split_service
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
     )
 
     summary = service.get_portfolio_summary(1)
@@ -388,7 +413,8 @@ def test_summary_cash_flow_fully_sold(
 
 
 def test_summary_cash_flow_reinvestment(
-    mock_trade_repository, mock_etf_repository, mock_split_repository
+    mock_trade_repository, mock_etf_repository, mock_split_repository,
+    mock_cash_flow_repository,
 ):
     """Pattern D: Sell then reinvest - cash balance reduced by reinvestment."""
     # Setup: Buy 100 at 2000, sell 50 at 2500 (cash=125000),
@@ -427,7 +453,8 @@ def test_summary_cash_flow_reinvestment(
 
     split_service = SplitAdjustmentService(mock_split_repository)
     service = PortfolioService(
-        mock_trade_repository, mock_etf_repository, split_service
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
     )
 
     summary = service.get_portfolio_summary(1)
@@ -446,7 +473,8 @@ def test_summary_cash_flow_reinvestment(
 
 
 def test_calculate_value_at_date_buy_only(
-    mock_trade_repository, mock_etf_repository, mock_split_repository
+    mock_trade_repository, mock_etf_repository, mock_split_repository,
+    mock_cash_flow_repository,
 ):
     """_calculate_value_at_date: buy only - cash_balance=0, returns holdings value."""
     trades = [
@@ -463,7 +491,8 @@ def test_calculate_value_at_date_buy_only(
 
     split_service = SplitAdjustmentService(mock_split_repository)
     service = PortfolioService(
-        mock_trade_repository, mock_etf_repository, split_service
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
     )
 
     target_date = date(2024, 3, 1)
@@ -482,7 +511,8 @@ def test_calculate_value_at_date_buy_only(
 
 
 def test_calculate_value_at_date_partial_sell(
-    mock_trade_repository, mock_etf_repository, mock_split_repository
+    mock_trade_repository, mock_etf_repository, mock_split_repository,
+    mock_cash_flow_repository,
 ):
     """_calculate_value_at_date: partial sell - cash_balance from sell proceeds."""
     trades = [
@@ -507,7 +537,8 @@ def test_calculate_value_at_date_partial_sell(
 
     split_service = SplitAdjustmentService(mock_split_repository)
     service = PortfolioService(
-        mock_trade_repository, mock_etf_repository, split_service
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
     )
 
     target_date = date(2024, 8, 1)
@@ -529,7 +560,8 @@ def test_calculate_value_at_date_partial_sell(
 
 
 def test_calculate_value_at_date_reinvestment(
-    mock_trade_repository, mock_etf_repository, mock_split_repository
+    mock_trade_repository, mock_etf_repository, mock_split_repository,
+    mock_cash_flow_repository,
 ):
     """_calculate_value_at_date: sell then reinvest - cash reduced by reinvestment."""
     trades = [
@@ -562,7 +594,8 @@ def test_calculate_value_at_date_reinvestment(
 
     split_service = SplitAdjustmentService(mock_split_repository)
     service = PortfolioService(
-        mock_trade_repository, mock_etf_repository, split_service
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
     )
 
     target_date = date(2024, 10, 1)
@@ -588,7 +621,8 @@ def test_calculate_value_at_date_reinvestment(
 
 
 def test_summary_cash_flow_same_day_trades(
-    mock_trade_repository, mock_etf_repository, mock_split_repository
+    mock_trade_repository, mock_etf_repository, mock_split_repository,
+    mock_cash_flow_repository,
 ):
     """Pattern E: Same-day sell and buy - sells processed before buys."""
     # Setup: Buy 100 at 2000 (2024-01-15),
@@ -628,7 +662,8 @@ def test_summary_cash_flow_same_day_trades(
 
     split_service = SplitAdjustmentService(mock_split_repository)
     service = PortfolioService(
-        mock_trade_repository, mock_etf_repository, split_service
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
     )
 
     summary = service.get_portfolio_summary(1)

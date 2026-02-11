@@ -365,3 +365,29 @@ export interface TagMomentumResponse {
   categories: string[]
   total_etf_count: number
 }
+
+// 入出金データ
+export interface CashFlow {
+  id: number
+  user_id: number
+  flow_type: 'deposit' | 'withdrawal'
+  amount: number
+  flow_date: string
+  memo: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateCashFlowRequest {
+  flow_type: 'deposit' | 'withdrawal'
+  amount: number
+  flow_date: string
+  memo?: string
+}
+
+export interface UpdateCashFlowRequest {
+  flow_type?: 'deposit' | 'withdrawal'
+  amount?: number
+  flow_date?: string
+  memo?: string
+}

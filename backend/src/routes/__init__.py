@@ -6,6 +6,7 @@ def register_routes(app):
     """Register all API routes with the Flask app."""
     from .admin_routes import create_admin_bp
     from .auth_routes import create_auth_bp
+    from .cash_flow_routes import create_cash_flow_bp
     from .category_routes import create_category_bp
     from .compare_routes import create_compare_bp
     from .etf_routes import create_etf_bp
@@ -21,6 +22,7 @@ def register_routes(app):
 
     api_v1.register_blueprint(create_admin_bp())
     api_v1.register_blueprint(create_auth_bp())
+    api_v1.register_blueprint(create_cash_flow_bp())
     api_v1.register_blueprint(create_category_bp())
     api_v1.register_blueprint(create_compare_bp())
     api_v1.register_blueprint(create_tag_bp())

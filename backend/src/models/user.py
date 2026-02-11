@@ -30,6 +30,11 @@ class User(db.Model, UserMixin, TimestampMixin):
         "Trade", back_populates="user", lazy="dynamic", cascade="all, delete-orphan"
     )
 
+    # Relationship to cash flows
+    cash_flows = db.relationship(
+        "CashFlow", back_populates="user", lazy="dynamic", cascade="all, delete-orphan"
+    )
+
     def set_password(self, password: str) -> None:
         """Set hashed password."""
         self.password_hash = generate_password_hash(password, method="pbkdf2:sha256")
