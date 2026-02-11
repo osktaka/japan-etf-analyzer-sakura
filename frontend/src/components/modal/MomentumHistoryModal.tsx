@@ -22,7 +22,7 @@ export function MomentumHistoryModal({
   const [priceData, setPriceData] = useState<ChartDataPoint[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [rateMode, setRateMode] = useState<RateMode>('regression')
-  const [viewMode, setViewMode] = useState<ViewMode>('chart')
+  const [viewMode, setViewMode] = useState<ViewMode>('table')
 
   useEffect(() => {
     setIsLoading(true)
@@ -86,16 +86,16 @@ export function MomentumHistoryModal({
           </div>
           <div className={styles.tabGroup}>
             <button
-              className={`${styles.tab} ${viewMode === 'chart' ? styles.tabActive : ''}`}
-              onClick={() => setViewMode('chart')}
-            >
-              グラフ
-            </button>
-            <button
               className={`${styles.tab} ${viewMode === 'table' ? styles.tabActive : ''}`}
               onClick={() => setViewMode('table')}
             >
               表
+            </button>
+            <button
+              className={`${styles.tab} ${viewMode === 'chart' ? styles.tabActive : ''}`}
+              onClick={() => setViewMode('chart')}
+            >
+              グラフ
             </button>
           </div>
         </div>
