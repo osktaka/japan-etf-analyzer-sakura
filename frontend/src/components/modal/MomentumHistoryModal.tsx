@@ -1,8 +1,9 @@
 /** Momentum history modal component */
 import { useState, useEffect } from 'react'
-import { getMomentumHistory } from '../../api/etf'
-import { MomentumHistoryItem } from '../../api/types'
+import { getMomentumHistory, getETFChart } from '../../api/etf'
+import { MomentumHistoryItem, ChartDataPoint } from '../../api/types'
 import { MomentumBadge } from '../common'
+import { MomentumHistoryChart } from '../chart'
 import styles from './MomentumHistoryModal.module.css'
 
 interface MomentumHistoryModalProps {
@@ -11,20 +12,32 @@ interface MomentumHistoryModalProps {
 }
 
 type RateMode = 'regression' | 'return'
+type ViewMode = 'chart' | 'table'
 
 export function MomentumHistoryModal({
   code,
   onClose,
 }: MomentumHistoryModalProps) {
   const [data, setData] = useState<MomentumHistoryItem[]>([])
+  const [priceData, setPriceData] = useState<ChartDataPoint[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [rateMode, setRateMode] = useState<RateMode>('regression')
+  const [viewMode, setViewMode] = useState<ViewMode>('chart')
 
   useEffect(() => {
     setIsLoading(true)
-    getMomentumHistory(code, 250)
-      .then(setData)
-      .catch(() => setData([]))
+    Promise.all([
+      getMomentumHistory(code, 250),
+      getETFChart(code, '1y').then((d) => d?.data ?? []),
+    ])
+      .then(([momentum, prices]) => {
+        setData(momentum)
+        setPriceData(prices)
+      })
+      .catch(() => {
+        setData([])
+        setPriceData([])
+      })
       .finally(() => setIsLoading(false))
   }, [code])
 
@@ -56,19 +69,35 @@ export function MomentumHistoryModal({
           &times;
         </button>
         <h3 className={styles.title}>勢い履歴</h3>
-        <div className={styles.tabGroup}>
-          <button
-            className={`${styles.tab} ${rateMode === 'regression' ? styles.tabActive : ''}`}
-            onClick={() => setRateMode('regression')}
-          >
-            回帰上昇率
-          </button>
-          <button
-            className={`${styles.tab} ${rateMode === 'return' ? styles.tabActive : ''}`}
-            onClick={() => setRateMode('return')}
-          >
-            株価上昇率
-          </button>
+        <div className={styles.tabRow}>
+          <div className={styles.tabGroup}>
+            <button
+              className={`${styles.tab} ${rateMode === 'regression' ? styles.tabActive : ''}`}
+              onClick={() => setRateMode('regression')}
+            >
+              回帰上昇率
+            </button>
+            <button
+              className={`${styles.tab} ${rateMode === 'return' ? styles.tabActive : ''}`}
+              onClick={() => setRateMode('return')}
+            >
+              株価上昇率
+            </button>
+          </div>
+          <div className={styles.tabGroup}>
+            <button
+              className={`${styles.tab} ${viewMode === 'chart' ? styles.tabActive : ''}`}
+              onClick={() => setViewMode('chart')}
+            >
+              グラフ
+            </button>
+            <button
+              className={`${styles.tab} ${viewMode === 'table' ? styles.tabActive : ''}`}
+              onClick={() => setViewMode('table')}
+            >
+              表
+            </button>
+          </div>
         </div>
 
         {isLoading && <p className={styles.empty}>読み込み中...</p>}
@@ -78,6 +107,12 @@ export function MomentumHistoryModal({
         )}
 
         {!isLoading && data.length > 0 && (
+          <>
+            {viewMode === 'chart' && (
+              <MomentumHistoryChart data={data} rateMode={rateMode} priceData={priceData} />
+            )}
+
+            {viewMode === 'table' && (
           <div className={styles.tableWrapper}>
             <table className={styles.table}>
               <thead>
@@ -148,6 +183,8 @@ export function MomentumHistoryModal({
               </tbody>
             </table>
           </div>
+            )}
+          </>
         )}
       </div>
     </div>

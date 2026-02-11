@@ -44,10 +44,16 @@
   margin-bottom: 12px;
 }
 
+.tabRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
 .tabGroup {
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 4px;
 }
 
 .tab {
