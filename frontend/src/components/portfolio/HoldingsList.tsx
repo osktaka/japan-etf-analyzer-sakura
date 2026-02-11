@@ -54,6 +54,7 @@ interface HoldingsListProps {
   onCompareToggle?: (code: string) => void
   onTradeHistory?: () => void
   onAddTrade?: (code: string) => void
+  onAddCashFlow?: () => void
 }
 
 export function HoldingsList({
@@ -66,6 +67,7 @@ export function HoldingsList({
   onCompareToggle,
   onTradeHistory,
   onAddTrade,
+  onAddCashFlow,
 }: HoldingsListProps) {
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const stored = localStorage.getItem(STORAGE_KEY)
@@ -239,7 +241,7 @@ export function HoldingsList({
             </select>
           )}
         </div>
-        {(onTradeHistory || onAddTrade) && (
+        {(onTradeHistory || onAddTrade || onAddCashFlow) && (
           <div className={styles.tradeButtons}>
             {onTradeHistory && (
               <button
@@ -257,6 +259,15 @@ export function HoldingsList({
                 onClick={() => onAddTrade('')}
               >
                 取引を追加
+              </button>
+            )}
+            {onAddCashFlow && (
+              <button
+                type="button"
+                className={styles.addCashFlowBtn}
+                onClick={onAddCashFlow}
+              >
+                入出金
               </button>
             )}
           </div>

@@ -8,6 +8,7 @@ import {
   CustomWeightsPromptModal,
   CustomWeightsModal,
   WeightsHelpModal,
+  CashFlowFormModal,
 } from '../components/modal'
 import {
   PortfolioSummary,
@@ -56,6 +57,7 @@ export function MyPage() {
   const [selectedETFCode, setSelectedETFCode] = useState<string | null>(null)
   const [showTradeFormModal, setShowTradeFormModal] = useState(false)
   const [showTradeHistoryModal, setShowTradeHistoryModal] = useState(false)
+  const [showCashFlowFormModal, setShowCashFlowFormModal] = useState(false)
   const [tradeHistoryCode, setTradeHistoryCode] = useState<string>('')
   const [tradeFormCode, setTradeFormCode] = useState<string | undefined>(undefined)
 
@@ -201,6 +203,7 @@ export function MyPage() {
             setTradeFormCode(code)
             setShowTradeFormModal(true)
           }}
+          onAddCashFlow={() => setShowCashFlowFormModal(true)}
         />
       </section>
 
@@ -299,6 +302,15 @@ export function MyPage() {
         isOpen={showTradeHistoryModal}
         onClose={handleCloseTradeHistory}
         initialSearch={tradeHistoryCode}
+      />
+
+      <CashFlowFormModal
+        isOpen={showCashFlowFormModal}
+        onClose={() => setShowCashFlowFormModal(false)}
+        onSuccess={() => {
+          setShowCashFlowFormModal(false)
+          refreshPortfolio()
+        }}
       />
 
       <CustomWeightsPromptModal
