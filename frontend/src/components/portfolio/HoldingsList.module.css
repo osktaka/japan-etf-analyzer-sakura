@@ -94,6 +94,7 @@
 .tradeButtons {
   display: flex;
   gap: var(--spacing-sm);
+  margin-left: auto;
 }
 
 .tradeHistoryBtn {
