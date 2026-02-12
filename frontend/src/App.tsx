@@ -33,17 +33,19 @@ import { ROUTES } from './utils'
 import './styles/global.css'
 
 function GoogleAnalytics() {
-  const { isAdmin, isLoading } = useAuth()
+  const { user, isAdmin, isLoading } = useAuth()
+  const isDemo = user?.user_id === 'demo'
 
   // セッション中のadminログイン/ログアウト対策（GA公式の無効化プロパティ）
   useEffect(() => {
     // eslint-disable-next-line no-extra-semi
     ;(window as unknown as Record<string, unknown>)['ga-disable-G-W5LE9WR4C3'] =
-      isAdmin
-  }, [isAdmin])
+      isAdmin || isDemo
+  }, [isAdmin, isDemo])
 
-  // 認証確認中 or 管理者 → GAを読み込まない
-  if (import.meta.env.MODE !== 'production' || isLoading || isAdmin) return null
+  // 認証確認中 or 管理者 or デモユーザー → GAを読み込まない
+  if (import.meta.env.MODE !== 'production' || isLoading || isAdmin || isDemo)
+    return null
 
   return (
     <Helmet>
