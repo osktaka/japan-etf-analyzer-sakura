@@ -7,6 +7,8 @@ export { MyPage } from './MyPage'
 export { PortfolioPage } from './PortfolioPage'
 export { AdminPage } from './AdminPage'
 export { MarketPage } from './MarketPage'
+export { NotesPage } from './NotesPage'
+export { NoteDetailPage } from './NoteDetailPage'
 export {
   GuideTopPage,
   GuideSearchPage,

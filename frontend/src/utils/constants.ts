@@ -51,6 +51,7 @@ export const ROUTES = {
   GUIDE_TAGS: '/guide/tags',
   GUIDE_MOMENTUM: '/guide/momentum',
   MARKET: '/market',
+  NOTES: '/notes',
 } as const
 
 /** 各期間の期待営業日数（データ充足判定用） */

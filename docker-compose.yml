@@ -28,8 +28,10 @@ services:
       - VITE_API_URL=http://localhost:8902
     volumes:
       - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
       - ./frontend/index.html:/app/index.html
       - ./frontend/package.json:/app/package.json
+      - ./frontend/vite.config.ts:/app/vite.config.ts
       - ./frontend/vitest.config.ts:/app/vitest.config.ts
     depends_on:
       - backend

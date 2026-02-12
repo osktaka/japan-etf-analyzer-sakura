@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kima3.net/japan-etf-analyzer/sitemap.xml

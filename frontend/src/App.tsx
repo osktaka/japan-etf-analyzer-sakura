@@ -11,6 +11,8 @@ import {
   TopPage,
   ComparePage,
   MarketPage,
+  NotesPage,
+  NoteDetailPage,
   LoginPage,
   RegisterPage,
   MyPage,
@@ -75,6 +77,8 @@ export default function App() {
                 <Route path={ROUTES.HOME} element={<TopPage />} />
                 <Route path={ROUTES.COMPARE} element={<ComparePage />} />
                 <Route path={ROUTES.MARKET} element={<MarketPage />} />
+                <Route path={ROUTES.NOTES} element={<NotesPage />} />
+                <Route path={`${ROUTES.NOTES}/:slug`} element={<NoteDetailPage />} />
                 <Route path={ROUTES.LOGIN} element={<LoginPage />} />
                 <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
                 <Route

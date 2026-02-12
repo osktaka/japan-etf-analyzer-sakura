@@ -130,6 +130,12 @@ export function Header() {
           >
             市場分析
           </Link>
+          <Link
+            to={ROUTES.NOTES}
+            className={`${styles.navLink} ${location.pathname.startsWith(ROUTES.NOTES) ? styles.active : ''}`}
+          >
+            ノート
+          </Link>
           {!isLoading && (
             <>
               {isAuthenticated ? (
@@ -266,6 +272,14 @@ export function Header() {
             onClick={closeMobileMenu}
           >
             市場分析
+          </Link>
+          <Link
+            to={ROUTES.NOTES}
+            className={`${styles.mobileNavLink} ${location.pathname.startsWith(ROUTES.NOTES) ? styles.active : ''}`}
+            role="menuitem"
+            onClick={closeMobileMenu}
+          >
+            ノート
           </Link>
           {!isLoading && (
             <>

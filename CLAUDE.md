@@ -86,6 +86,7 @@ frontend/
 ├── src/
 │   ├── components/     # Reactコンポーネント
 │   ├── pages/          # ページコンポーネント
+│   ├── content/notes/  # ノート記事（Markdown + ローダー）
 │   ├── api/            # APIクライアント
 │   └── hooks/          # カスタムフック
 └── public/             # 静的ファイル
