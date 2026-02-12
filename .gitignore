@@ -60,3 +60,6 @@ temp/
 # Work logs
 worklogs/
 reports/
+
+# ポートフォリオ分析の一時ファイル
+.tmp/

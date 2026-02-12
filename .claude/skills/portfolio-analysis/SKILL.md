@@ -14,6 +14,44 @@ aliases: ["/portfolio-analysis", "/pf-analysis"]
 
 このスキルは、ユーザーのETFポートフォリオをシステムが保持する全データを活用して定量分析し、最適化提案を行うワークフロー。エージェントチーム（3名体制）で並行分析→クロスレビュー→統合レポートを作成する。
 
+## コンテキスト管理ルール
+
+メインエージェントのコンテキスト消費を最小化するため、以下のルールを厳守する。
+
+### 作業ディレクトリ
+
+スキル実行開始時に、セッション固有の作業ディレクトリを作成する:
+
+```bash
+SESSION_ID=$(date +%Y%m%d_%H%M%S)_$(openssl rand -hex 2)
+WORK_DIR=".tmp/pf_${SESSION_ID}"
+mkdir -p "${WORK_DIR}"
+```
+
+- Docker内: `/app/${WORK_DIR}`
+- ホスト側: `{project_root}/${WORK_DIR}`
+- 全サブエージェントにこの `WORK_DIR` を渡す
+
+### データ受け渡しルール
+
+| ルール | 説明 |
+|--------|------|
+| ファイルベース通信 | 全ての中間データは `WORK_DIR` 内のファイルに保存する |
+| 要約のみ返却 | サブエージェントはメインに1-2行の完了報告のみ返す。分析結果・データの全文を返さない |
+| 統合エージェント | Phase 3のレポート作成はメインが行わず、統合エージェントがファイルから直接読み込んで作成する |
+| 禁止事項 | サブエージェントがJSONデータの全体や分析テーブル全文をメインへの戻り値に含めること |
+
+### ファイル構成
+
+```
+{WORK_DIR}/
+├── market_environment.md    # Phase 0a出力
+├── portfolio_data.json      # Phase 0出力
+├── quant_analysis.md        # Phase 1: quant-analyst出力
+├── score_analysis.md        # Phase 1: score-analyst出力
+├── allocation_analysis.md   # Phase 1: allocation-analyst出力
+```
+
 ## モード選択
 
 スキル実行開始時に、AskUserQuestionツールで分析モードをユーザーに確認する。
@@ -152,17 +190,26 @@ print(resp.json())
 
 ## 実行フロー
 
-### Phase 0a: 市場環境調査（WebSearch）
+### Phase 0a: 市場環境調査（general-purposeエージェントに委譲）
 
-レポートの冒頭に掲載する「市場環境サマリー」の情報を収集する。Phase 0のデータ収集前に実施し、分析エージェントへの共有情報として活用。
+レポートの冒頭に掲載する「市場環境サマリー」の情報を収集する。**general-purposeサブエージェント**に委譲し、Phase 0と並行実行する。
 
-**速度重視・ノーマルモード**: Phase 0と並行実行する。
+**サブエージェントへの指示**:
+- WebSearch/WebFetchで市場環境情報を収集
+- 結果を `{WORK_DIR}/market_environment.md` に保存
+- **メインへの戻り値は「市場環境調査完了」の1行のみ**
 
 詳細な収集手順・まとめ形式は `agent-instructions.md` の「Phase 0a: 市場環境調査」セクションを参照。
 
 ### Phase 0: データ収集（Bashエージェントに委譲）
 
-以下のデータを一括取得する。対象銘柄はAPI取得後の保有銘柄リストから動的に決定。
+以下のデータを一括取得し、`{WORK_DIR}/portfolio_data.json` に保存する。対象銘柄はAPI取得後の保有銘柄リストから動的に決定。
+
+**サブエージェントへの指示**:
+- Docker内でPythonスクリプトを実行してデータ収集
+- 結果を `{WORK_DIR}/portfolio_data.json` に保存
+- **メインへの戻り値は「データ収集完了: N銘柄、総評価額XXX万円」の要約1行のみ**
+- JSONデータの全文をprint出力しないこと
 
 **収集データリスト**:
 1. APIからポートフォリオデータ取得（ログイン → holdings → summary）
@@ -179,7 +226,14 @@ print(resp.json())
 
 ### Phase 1: 並行分析（エージェントチーム）
 
-TeamCreateでチームを作成し、エージェントを並行起動。各エージェントの詳細な分析項目・計算方法・出力形式は `agent-instructions.md` の「Phase 1: 並行分析」セクションを参照。
+TeamCreateでチームを作成し、エージェントを並行起動する。各エージェントはファイルからデータを読み込み、分析結果をファイルに出力する。
+
+**サブエージェント共通指示**:
+- **入力**: `{WORK_DIR}/portfolio_data.json` および `{WORK_DIR}/market_environment.md` を直接読み込む
+- **出力**: 分析結果を `{WORK_DIR}/{agent_name}_analysis.md` に保存
+- **メインへの戻り値は「{agent_name}分析完了」の1行のみ**
+
+各エージェントの詳細な分析項目・計算方法・出力形式は `agent-instructions.md` の「Phase 1: 並行分析」セクションを参照。
 
 #### 速度重視・ノーマルモード: タスク分割型
 
@@ -206,47 +260,38 @@ TeamCreateでチームを作成し、エージェントを並行起動。各エ�
 
 詳細は `agent-instructions.md` の「議論重視モード: 独立分析の指示」セクションを参照。
 
-### Phase 2: クロスレビュー
+### Phase 2: クロスレビュー（統合エージェントに吸収）
 
-**速度重視モード**: スキップ。
+クロスレビューは独立フェーズとして実行せず、Phase 3の統合エージェントの責務として実施する。統合エージェントが全分析結果ファイルを横断的に読み、矛盾・相違点を自ら特定してレポートのセクション9に記載する。
 
-**ノーマルモード**: Phase 1の結果を各エージェントに送り、相手の分析をレビューさせる（1ラウンド）。
-詳細なレビュー観点・出力形式は `agent-instructions.md` の「Phase 2: クロスレビュー」セクションを参照。
+**速度重視モード**: クロスレビューなし（セクション9は「速度重視モードのためスキップ」と記載）。
+**ノーマルモード**: 統合エージェントが分析間の矛盾・整合性を検証し、セクション9に記載。
+**議論重視モード**: 統合エージェントが各独立分析者の見解の相違・合意点を特定し、セクション9に議論の経緯を詳細に記載。
 
-**議論重視モード**: 2ラウンド実施。
-詳細は `agent-instructions.md` の「Phase 2: クロスレビュー（議論重視モード）」セクションを参照。
+レビュー観点の詳細は `agent-instructions.md` の「Phase 2: クロスレビュー」セクションを参照（統合エージェントがこの観点を適用する）。
 
-### Phase 3: 統合レポート作成
+### Phase 3+4: 統合レポート作成・保存（統合エージェントに委譲）
 
-全分析結果とクロスレビューのフィードバックを統合し、最終レポートを作成。
+レポートの作成・保存はメインエージェントが行わず、**統合エージェント（general-purpose）**に委譲する。これによりメインのコンテキスト消費を最小化する。
 
-レポートの出力形式テンプレートは `report-template.md` を参照。
-
-### Phase 4: レポート保存
-
-統合レポートをマークダウンファイルとしてプロジェクトルートの `./reports/` ディレクトリに保存する。
+**統合エージェントへの指示**:
+1. `{WORK_DIR}/` 配下の全ファイルを読み込む（market_environment.md, portfolio_data.json, *_analysis.md）
+2. `report-template.md`（`{skill_dir}/report-template.md`）のテンプレートに従ってレポートを作成
+3. クロスレビュー（ノーマル/議論重視モードの場合）: 分析結果間の矛盾・整合性を検証し、セクション9に記載
+4. `./reports/YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md` に保存
+5. **メインへの戻り値は「レポート保存完了: ./reports/YYYYMMDD_....md」の1行のみ**
 
 **手順**:
 
 1. `./reports/` ディレクトリが存在しない場合は作成
-   ```bash
-   mkdir -p ./reports
-   ```
-2. レポート内容をマークダウンファイルとして保存
+2. レポートを作成・保存
    - ファイル名形式: `YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md`
    - username未指定時: `YYYYMMDD_HHMMSS_portfolio_analysis.md`
-   - 例: `20260211_143025_portfolio_analysis_test.md`
-3. 保存先パスをユーザーに通知
-   ```
-   レポートを保存しました: ./reports/20260211_143025_portfolio_analysis_test.md
-   ```
+3. 保存先パスをメインに返す（メインがユーザーに通知）
 
-**注意**: `reports/` は `.gitignore` に追加済み（レポートファイルはGit管理対象外）。未追加の場合は以下で追加:
-```bash
-grep -q '^reports/' .gitignore || echo 'reports/' >> .gitignore
-```
+**注意**: `reports/` は `.gitignore` に追加済み。
 
-**注意**: レポート保存はPhase 3の統合レポート作成が完了した後に実施する。保存に失敗した場合でも、レポート自体はチャット上で表示されるため、分析結果が失われることはない。
+統合エージェントの詳細指示は `agent-instructions.md` の「Phase 3+4: 統合レポート作成・保存」セクションを参照。
 
 ## エージェント設定
 
@@ -258,6 +303,7 @@ grep -q '^reports/' .gitignore || echo 'reports/' >> .gitignore
 | score-analyst | general-purpose | sonnet | スコア・モメンタム分析 |
 | allocation-analyst | general-purpose | sonnet | アセットアロケーション分析（必要時） |
 | データ収集 | Bash | - | API/DB一括データ取得 |
+| 統合レポート | general-purpose | sonnet | 全分析結果の統合・クロスレビュー・レポート作成・保存 |
 
 ### 議論重視モード
 
@@ -267,13 +313,14 @@ grep -q '^reports/' .gitignore || echo 'reports/' >> .gitignore
 | analyst-B | general-purpose | sonnet | 独立分析者B（全項目分析） |
 | analyst-C | general-purpose | sonnet | 独立分析者C（銘柄数が多い場合のみ） |
 | データ収集 | Bash | - | API/DB一括データ取得 |
+| 統合レポート | general-purpose | sonnet | 全分析結果の統合・クロスレビュー・レポート作成・保存 |
 
 ## 関連ファイル
 
 | ファイル | 役割 |
 |---------|------|
-| `agent-instructions.md` | Phase 0a/0/1/2の詳細指示（サブエージェントへ渡す情報） |
-| `report-template.md` | Phase 3統合レポートの出力形式テンプレート |
+| `agent-instructions.md` | Phase 0a/0/1/2/3+4の詳細指示（サブエージェントへ渡す情報） |
+| `report-template.md` | Phase 3+4統合レポートの出力形式テンプレート |
 | CLAUDE.md「株式分割の管理」セクション | 分割調整の仕組み |
 | CLAUDE.md「テストユーザー」セクション | 認証情報 |
 | docs/08_おすすめ銘柄設計.md | 5軸評価・6視点の詳細 |

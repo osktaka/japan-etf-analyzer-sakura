@@ -5,6 +5,7 @@
 >
 > 前提情報:
 > - データソース一覧・スキップ判断基準・株式分割の注意事項・APIアクセス方法は `SKILL.md` を参照
+> - 作業ディレクトリ（WORK_DIR）の仕様は `SKILL.md` の「コンテキスト管理ルール」セクションを参照
 > - 統合レポートの出力形式テンプレートは `report-template.md` を参照
 
 ---
@@ -31,7 +32,9 @@
 
 ### 収集結果の保存先
 
-`/tmp/portfolio_analysis/market_environment.md` に一時保存し、Phase 1の各エージェントに共有。
+`{WORK_DIR}/market_environment.md` に保存する。Phase 1の各エージェントがこのファイルを直接読み込む。
+
+**メインへの戻り値**: 「市場環境調査完了」の1行のみ。サマリー全文を返さないこと。
 
 ---
 
@@ -46,8 +49,12 @@ import os
 from pathlib import Path
 import sys
 
-# 一時ファイル保存ディレクトリ
-os.makedirs('/tmp/portfolio_analysis', exist_ok=True)
+# 作業ディレクトリ（引数から取得）
+if len(sys.argv) < 2:
+    print("Usage: python script.py <WORK_DIR>")
+    sys.exit(1)
+WORK_DIR = Path(sys.argv[1])
+WORK_DIR.mkdir(parents=True, exist_ok=True)
 
 # プロジェクトルート設定
 PROJECT_ROOT = Path('/app')
@@ -200,10 +207,13 @@ output = {
     'compare_scores': compare_scores_list if compare_scores_list else None,
 }
 
-with open('/tmp/portfolio_analysis/portfolio_data.json', 'w', encoding='utf-8') as f:
+output_path = WORK_DIR / 'portfolio_data.json'
+with open(output_path, 'w', encoding='utf-8') as f:
     json.dump(output, f, ensure_ascii=False, indent=2, default=str)
 
-print("データ収集完了: /tmp/portfolio_analysis/portfolio_data.json")
+# メインへの要約出力（この1行のみがメインのコンテキストに入る）
+total_value = summary.get('total_valuation', 0) if summary else 0
+print(f"データ収集完了: {len(etf_codes)}銘柄、総評価額{total_value:,.0f}円")
 ```
 
 ---
@@ -214,9 +224,17 @@ TeamCreateでチームを作成し、以下の3名を並行起動する。
 
 ### エージェント1: quant-analyst（定量リスク・リターン分析）
 
+**入力ファイル**:
+- `{WORK_DIR}/portfolio_data.json` - 全収集データ
+- `{WORK_DIR}/market_environment.md` - 市場環境サマリー
+
+**出力ファイル**: `{WORK_DIR}/quant_analysis.md`
+
+**メインへの戻り値**: 「quant-analyst分析完了」の1行のみ。分析結果全文を返さないこと。
+
 **役割**: シャープレシオ、相関分析、最大ドローダウン、ストレスシナリオの計算
 
-**共通指示**: Phase 0aで収集した市場環境サマリー（`/tmp/portfolio_analysis/market_environment.md`）の情報も分析の判断材料に含めること。特に金利動向、為替トレンド、地政学リスクがリスク・リターン評価に影響する場合は明示的に言及すること。
+**共通指示**: Phase 0aで収集した市場環境サマリー（`{WORK_DIR}/market_environment.md`）の情報も分析の判断材料に含めること。特に金利動向、為替トレンド、地政学リスクがリスク・リターン評価に影響する場合は明示的に言及すること。
 
 **分析項目**:
 
@@ -302,9 +320,17 @@ TeamCreateでチームを作成し、以下の3名を並行起動する。
 
 ### エージェント2: score-analyst（スコア・モメンタム分析）
 
+**入力ファイル**:
+- `{WORK_DIR}/portfolio_data.json` - 全収集データ
+- `{WORK_DIR}/market_environment.md` - 市場環境サマリー
+
+**出力ファイル**: `{WORK_DIR}/score_analysis.md`
+
+**メインへの戻り値**: 「score-analyst分析完了」の1行のみ。分析結果全文を返さないこと。
+
 **役割**: 5軸スコア分析、モメンタム分析、代替銘柄提案
 
-**共通指示**: Phase 0aで収集した市場環境サマリー（`/tmp/portfolio_analysis/market_environment.md`）の情報も分析の判断材料に含めること。特に市場テーマ（AI・半導体ブーム、高配当人気等）やセクターローテーションの動向がスコア評価・代替銘柄選定に影響する場合は明示的に言及すること。
+**共通指示**: Phase 0aで収集した市場環境サマリー（`{WORK_DIR}/market_environment.md`）の情報も分析の判断材料に含めること。特に市場テーマ（AI・半導体ブーム、高配当人気等）やセクターローテーションの動向がスコア評価・代替銘柄選定に影響する場合は明示的に言及すること。
 
 **分析項目**:
 
@@ -435,9 +461,17 @@ manager別の銘柄数・評価額比率。
 
 ### エージェント3: allocation-analyst（アセットアロケーション分析）
 
+**入力ファイル**:
+- `{WORK_DIR}/portfolio_data.json` - 全収集データ
+- `{WORK_DIR}/market_environment.md` - 市場環境サマリー
+
+**出力ファイル**: `{WORK_DIR}/allocation_analysis.md`
+
+**メインへの戻り値**: 「allocation-analyst分析完了」の1行のみ。分析結果全文を返さないこと。
+
 **役割**: 地域・セクター・テーマ別の配分分析、欠落アセットクラスの特定
 
-**共通指示**: Phase 0aで収集した市場環境サマリー（`/tmp/portfolio_analysis/market_environment.md`）の情報も分析の判断材料に含めること。特に為替動向（円安/円高）が地域配分の評価に、政策動向（金融緩和/引き締め）がアセットクラス推奨に影響する場合は明示的に言及すること。
+**共通指示**: Phase 0aで収集した市場環境サマリー（`{WORK_DIR}/market_environment.md`）の情報も分析の判断材料に含めること。特に為替動向（円安/円高）が地域配分の評価に、政策動向（金融緩和/引き締め）がアセットクラス推奨に影響する場合は明示的に言及すること。
 
 **分析項目**:
 
@@ -620,6 +654,17 @@ Phase 1の結果を各エージェントに送り、相手の分析をレビュ�
 
 ### 各エージェント共通指示
 
+**入力ファイル（全エージェント共通）**:
+- `{WORK_DIR}/portfolio_data.json` - 全収集データ
+- `{WORK_DIR}/market_environment.md` - 市場環境サマリー
+
+**出力ファイル**:
+- analyst-A: `{WORK_DIR}/analyst_a_analysis.md`
+- analyst-B: `{WORK_DIR}/analyst_b_analysis.md`
+- analyst-C: `{WORK_DIR}/analyst_c_analysis.md`
+
+**メインへの戻り値**: 「{analyst名}分析完了」の1行のみ。
+
 議論重視モードでは、各エージェント（analyst-A, analyst-B, analyst-C）が**同じデータセット**を受け取り、独立に全項目を分析する。
 
 **分析項目**（全エージェント共通）:
@@ -703,3 +748,62 @@ Phase 1の結果を各エージェントに送り、相手の分析をレビュ�
 - **全エージェント合意**: そのアクションを「合意度100%」としてレポートに記載
 - **過半数合意**: 「合意度XX%」として記載。反対意見も併記
 - **全エージェント不合意**: 各見解を併記し、ユーザーに判断を委ねる
+
+---
+
+## Phase 3+4: 統合レポート作成・保存
+
+### 統合エージェントの役割
+
+統合エージェント（general-purpose）は、`{WORK_DIR}` 配下の全分析結果ファイルを読み込み、`report-template.md` のテンプレートに従ってレポートを作成・保存する。
+
+### 入力ファイル
+
+| ファイル | 内容 |
+|---------|------|
+| `{WORK_DIR}/market_environment.md` | 市場環境サマリー |
+| `{WORK_DIR}/portfolio_data.json` | 全収集データ |
+| `{WORK_DIR}/quant_analysis.md` | 定量リスク・リターン分析結果 |
+| `{WORK_DIR}/score_analysis.md` | スコア・モメンタム分析結果 |
+| `{WORK_DIR}/allocation_analysis.md` | アセットアロケーション分析結果（存在する場合） |
+| `{skill_dir}/report-template.md` | レポート出力形式テンプレート |
+
+議論重視モードの場合:
+
+| ファイル | 内容 |
+|---------|------|
+| `{WORK_DIR}/analyst_a_analysis.md` | analyst-A分析結果 |
+| `{WORK_DIR}/analyst_b_analysis.md` | analyst-B分析結果 |
+| `{WORK_DIR}/analyst_c_analysis.md` | analyst-C分析結果（存在する場合） |
+
+### クロスレビュー（統合エージェント内で実施）
+
+**速度重視モード**: スキップ。セクション9に「速度重視モードのためスキップ」と記載。
+
+**ノーマルモード**: 以下の観点で分析結果間の矛盾・整合性を検証し、セクション9に記載:
+
+1. **スコアとシャープレシオの乖離**: スコア高/シャープ低、またはその逆のケースを特定し、解釈を記載
+2. **代替銘柄提案の定量的妥当性**: 提案銘柄のシャープレシオ・相関係数を確認
+3. **失速銘柄のリスク整合性**: モメンタムとボラティリティの整合性を確認
+4. **相関分析とタグ分類の整合性**: 高相関ペアが同一地域/セクターか確認
+5. **スコア上の見落としリスク**: シャープは高いが信託報酬が高い、純資産が小さい等
+
+**議論重視モード**: 各独立分析者（analyst-A/B/C）の見解の相違・合意点を特定し、セクション9に議論の経緯を詳細に記載:
+- 見解の相違点とその根拠
+- 合意された点
+- 各アクションの合意度（100%/過半数/不合意）
+
+### 出力
+
+1. レポートファイル: `./reports/YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md`
+2. **メインへの戻り値**: 「レポート保存完了: ./reports/YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md」の1行のみ
+
+### レポート作成手順
+
+1. `{WORK_DIR}/` 配下の全ファイルを読み込む
+2. `{skill_dir}/report-template.md` を読み込む
+3. テンプレートに従い、各セクションを実データで埋める
+4. クロスレビュー（該当モードの場合）を実施し、セクション9に記載
+5. `./reports/` ディレクトリを作成（存在しない場合）
+6. レポートを保存
+7. メインに保存先パスのみ返す
