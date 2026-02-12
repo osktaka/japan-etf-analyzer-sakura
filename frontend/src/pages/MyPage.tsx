@@ -114,8 +114,8 @@ export function MyPage() {
   const sortedFavorites = useMemo(() => {
     if (!sortEnabled) return favorites
     return [...favorites].sort((a, b) => {
-      const scoreA = a.etf.score ?? 0
-      const scoreB = b.etf.score ?? 0
+      const scoreA = a.etf?.score ?? 0
+      const scoreB = b.etf?.score ?? 0
       return scoreB - scoreA // 降順
     })
   }, [favorites, sortEnabled])

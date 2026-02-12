@@ -69,16 +69,16 @@ export function useFavorites(
       if (!isAuthenticated) return false
 
       try {
-        const newFavorite = await favoritesApi.add(etfCode)
-        setFavorites((prev) => [newFavorite, ...prev])
+        await favoritesApi.add(etfCode)
         setFavoriteCodes((prev) => new Set(prev).add(etfCode))
+        await fetchFavorites()
         return true
       } catch (err) {
         console.error('Failed to add favorite:', err)
         return false
       }
     },
-    [isAuthenticated]
+    [isAuthenticated, fetchFavorites]
   )
 
   const removeFavorite = useCallback(
