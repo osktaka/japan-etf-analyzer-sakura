@@ -1,6 +1,6 @@
 /** Demo page component */
 import { useState, useMemo, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { ETFCard } from '../components/etf/ETFCard'
 import { ETFDetailModal } from '../components/modal'
 import {
@@ -12,23 +12,12 @@ import {
 import { PerspectiveTabs } from '../components/recommend'
 import { useDemoPortfolio } from '../hooks/useDemoPortfolio'
 import { useDemoFavorites } from '../hooks/useDemoFavorites'
-import { useAuth } from '../hooks/useAuth'
 import { ETFSummary, Perspective } from '../api/types'
 import { recommendApi } from '../api/recommend'
 import { ROUTES } from '../utils'
 import styles from './DemoPage.module.css'
 
 export function DemoPage() {
-  const navigate = useNavigate()
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
-
-  // ログイン済みユーザーはマイページへリダイレクト
-  useEffect(() => {
-    if (!authLoading && isAuthenticated) {
-      navigate(ROUTES.MYPAGE, { replace: true })
-    }
-  }, [authLoading, isAuthenticated, navigate])
-
   const [perspective, setPerspective] = useState<string>('balance')
   const [perspectives, setPerspectives] = useState<Perspective[]>([])
 
@@ -75,8 +64,6 @@ export function DemoPage() {
   const handleHoldingClick = (code: string) => {
     setSelectedETFCode(code)
   }
-
-  if (authLoading) return null
 
   return (
     <div className={styles.container}>
