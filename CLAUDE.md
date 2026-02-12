@@ -158,6 +158,9 @@ ApacheのDocumentRootから`frontend/dist/`内のファイルにアクセスす�
 
 - `index.html` → `frontend/dist/index.html`
 - `assets/` → `frontend/dist/assets/`
+- `robots.txt` → `frontend/dist/robots.txt`
+- `sitemap.xml` → `frontend/dist/sitemap.xml`
+- `notes/` → `frontend/dist/notes/`
 
 `setup.sh`で自動作成されます。
 

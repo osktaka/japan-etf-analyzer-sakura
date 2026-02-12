@@ -80,6 +80,9 @@ echo ""
 echo "[6/6] Creating frontend symbolic links..."
 ln -sf frontend/dist/index.html index.html
 ln -sf frontend/dist/assets assets
+ln -sf frontend/dist/robots.txt robots.txt
+ln -sf frontend/dist/sitemap.xml sitemap.xml
+ln -sf frontend/dist/notes notes
 echo "  ✓ Symbolic links created"
 
 echo ""

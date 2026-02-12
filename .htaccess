@@ -15,6 +15,9 @@ RewriteBase /japan-etf-analyzer/
 RewriteCond %{REQUEST_URI} !index\.cgi
 RewriteRule ^api/(.*)$ api/index.cgi/$1 [L,QSA]
 
+# ノートページ プリレンダーHTML配信（OGP対応）
+RewriteRule ^notes/([^/.]+)$ notes/$1.html [L]
+
 # SPAルーティング（フロントエンド）
 # 既存ファイル・ディレクトリは直接配信
 RewriteCond %{REQUEST_FILENAME} !-f
