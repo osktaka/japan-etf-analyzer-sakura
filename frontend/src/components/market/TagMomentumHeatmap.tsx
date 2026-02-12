@@ -133,6 +133,7 @@ function CustomContent(props: CustomContentProps) {
             fill={textColor}
             fontSize={nameFontSize}
             fontWeight={600}
+            style={{ pointerEvents: 'none' }}
           >
             {name}
           </text>
@@ -142,6 +143,7 @@ function CustomContent(props: CustomContentProps) {
             textAnchor="middle"
             fill={textColor}
             fontSize={countFontSize}
+            style={{ pointerEvents: 'none' }}
           >
             {etf_count}銘柄
           </text>
@@ -155,6 +157,7 @@ function CustomContent(props: CustomContentProps) {
           fill={textColor}
           fontSize={nameOnlyFontSize}
           fontWeight={600}
+          style={{ pointerEvents: 'none' }}
         >
           {name}
         </text>
