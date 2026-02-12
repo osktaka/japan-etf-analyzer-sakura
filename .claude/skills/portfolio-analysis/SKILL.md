@@ -50,6 +50,7 @@ mkdir -p "${WORK_DIR}"
 ├── quant_analysis.md        # Phase 1: quant-analyst出力
 ├── score_analysis.md        # Phase 1: score-analyst出力
 ├── allocation_analysis.md   # Phase 1: allocation-analyst出力
+└── timing.json              # 各フェーズの実行時間
 ```
 
 ## モード選択
@@ -189,6 +190,52 @@ print(resp.json())
 ※テストユーザーの認証情報はCLAUDE.mdの「テストユーザー」セクションを参照。
 
 ## 実行フロー
+
+### 実行時間計測
+
+各フェーズの開始・終了時刻をメインエージェントが記録し、`{WORK_DIR}/timing.json` に保存する。統合エージェントがこのファイルを読み込み、レポート末尾に実行時間セクションを出力する。
+
+**記録タイミング**:
+
+| イベント | 記録タイミング |
+|---------|--------------|
+| skill_start | スキル実行開始時（WORK_DIR作成直後） |
+| phase_0a_start | Phase 0aサブエージェント起動直前 |
+| phase_0_start | Phase 0サブエージェント起動直前 |
+| phase_0a_end | Phase 0aサブエージェント完了時 |
+| phase_0_end | Phase 0サブエージェント完了時 |
+| phase_1_start | Phase 1サブエージェント起動直前 |
+| phase_1_end | Phase 1全サブエージェント完了時 |
+| phase_3_start | Phase 3+4統合エージェント起動直前 |
+| phase_3_end | Phase 3+4統合エージェント完了時 |
+| skill_end | スキル完了時 |
+
+**記録方法**: Bashツールでタイムスタンプを追記する。
+
+初期作成（skill_start時）:
+```bash
+echo '{}' > {WORK_DIR}/timing.json
+python3 -c "
+import json, datetime
+data = {'skill_start': datetime.datetime.now().isoformat()}
+with open('{WORK_DIR}/timing.json', 'w') as f:
+    json.dump(data, f, indent=2)
+"
+```
+
+各フェーズの記録:
+```bash
+python3 -c "
+import json, datetime
+with open('{WORK_DIR}/timing.json') as f:
+    data = json.load(f)
+data['phase_0a_start'] = datetime.datetime.now().isoformat()
+with open('{WORK_DIR}/timing.json', 'w') as f:
+    json.dump(data, f, indent=2)
+"
+```
+
+**注意**: timing.json の保存は Phase 3+4 起動前に完了させること（phase_3_start と skill_end は統合エージェント内で記録）。
 
 ### Phase 0a: 市場環境調査（general-purposeエージェントに委譲）
 

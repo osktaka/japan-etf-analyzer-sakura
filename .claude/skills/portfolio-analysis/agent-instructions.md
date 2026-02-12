@@ -766,6 +766,7 @@ Phase 1の結果を各エージェントに送り、相手の分析をレビュ�
 | `{WORK_DIR}/quant_analysis.md` | 定量リスク・リターン分析結果 |
 | `{WORK_DIR}/score_analysis.md` | スコア・モメンタム分析結果 |
 | `{WORK_DIR}/allocation_analysis.md` | アセットアロケーション分析結果（存在する場合） |
+| `{WORK_DIR}/timing.json` | 各フェーズの実行時間記録 |
 | `{skill_dir}/report-template.md` | レポート出力形式テンプレート |
 
 議論重視モードの場合:
@@ -804,6 +805,14 @@ Phase 1の結果を各エージェントに送り、相手の分析をレビュ�
 2. `{skill_dir}/report-template.md` を読み込む
 3. テンプレートに従い、各セクションを実データで埋める
 4. クロスレビュー（該当モードの場合）を実施し、セクション9に記載
-5. `./reports/` ディレクトリを作成（存在しない場合）
-6. レポートを保存
-7. メインに保存先パスのみ返す
+5. `{WORK_DIR}/timing.json` を読み込み、Phase 3+4の開始時刻（phase_3_start）と完了時刻（phase_3_end, skill_end）を自身で記録した上で、所要時間を計算し「実行時間」セクション（セクション14）に記載する
+6. `./reports/` ディレクトリを作成（存在しない場合）
+7. レポートを保存
+8. メインに保存先パスのみ返す
+
+**実行時間の計算方法**:
+- 各フェーズの所要時間 = end - start（秒単位で計算し、X分XX秒で表示）
+- Phase 0a+0 合計 = max(phase_0a_end, phase_0_end) - min(phase_0a_start, phase_0_start)（並行実行のため）
+- 合計 = skill_end - skill_start
+- phase_3_start: timing.jsonを読み込んだ直後に現在時刻を記録
+- phase_3_end / skill_end: レポート保存直前に現在時刻を記録
