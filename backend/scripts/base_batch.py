@@ -5,7 +5,7 @@ import logging
 import os
 import sys
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -39,6 +39,10 @@ class BaseBatchScript(ABC):
     enable_resume: bool = False
     progress_interval: int = 10  # 何件ごとに進捗更新するか
 
+    # 依存チェック
+    depends_on: list = []          # 前提バッチ名リスト（AND条件）
+    check_window: tuple = None     # ("16:30", "22:00") JST
+
     def __init__(self):
         self.logger = self._setup_logging()
         self.app = None
@@ -68,6 +72,12 @@ class BaseBatchScript(ABC):
             help="Show what would be done without making changes",
         )
 
+        parser.add_argument(
+            "--skip-dep-check",
+            action="store_true",
+            help="Skip dependency check (for direct execution)",
+        )
+
         # resume機能有効時のみ追加
         if self.enable_resume:
             parser.add_argument(
@@ -93,6 +103,61 @@ class BaseBatchScript(ABC):
         """Flask app context終了"""
         if self.ctx:
             self.ctx.pop()
+
+    def _check_dependencies(self) -> bool:
+        """依存バッチの完了チェック.
+
+        Returns:
+            実行可能な場合True、スキップすべき場合False
+        """
+        # depends_onが空ならチェック不要
+        if not self.depends_on:
+            return True
+
+        # --skip-dep-checkフラグあり
+        if self.args.skip_dep_check:
+            return True
+
+        # --resumeフラグあり（リトライ時はスキップ）
+        if self.enable_resume and getattr(self.args, "resume", None):
+            return True
+
+        # check_window指定あり → 現在時刻(JST)が範囲外ならスキップ
+        if self.check_window:
+            jst = timezone(timedelta(hours=9))
+            now_jst = datetime.now(jst)
+            start_str, end_str = self.check_window
+            start_h, start_m = map(int, start_str.split(":"))
+            end_h, end_m = map(int, end_str.split(":"))
+            start_time = now_jst.replace(
+                hour=start_h, minute=start_m, second=0, microsecond=0
+            )
+            end_time = now_jst.replace(
+                hour=end_h, minute=end_m, second=0, microsecond=0
+            )
+            if not (start_time <= now_jst <= end_time):
+                self.logger.info(
+                    f"Outside check window {start_str}-{end_str} JST, skipping"
+                )
+                return False
+
+        # 自バッチが今日既に実行済みならスキップ
+        repo = BatchLogRepository()
+        if repo.has_run_today(self.batch_name):
+            self.logger.info(
+                f"{self.batch_name} already run today, skipping"
+            )
+            return False
+
+        # 依存バッチが全て今日成功しているかチェック
+        for dep_name in self.depends_on:
+            if not repo.has_succeeded_today(dep_name):
+                self.logger.info(
+                    f"Dependency '{dep_name}' not completed today, skipping"
+                )
+                return False
+
+        return True
 
     def _start_batch_log(self, total_count: int = 0) -> None:
         """バッチログ開始"""
@@ -197,6 +262,11 @@ class BaseBatchScript(ABC):
         try:
             # Flask app context開始
             self._enter_context()
+
+            # 依存チェック（depends_on設定時のみ）
+            if self.depends_on:
+                if not self._check_dependencies():
+                    return 0  # スキップ（正常終了）
 
             # メイン処理実行
             exit_code = self.execute()

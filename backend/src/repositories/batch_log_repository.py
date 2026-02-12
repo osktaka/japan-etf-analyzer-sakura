@@ -1,5 +1,5 @@
 """BatchLog repository for database operations."""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 
 from src.models import db
@@ -216,6 +216,62 @@ class BatchLogRepository(BaseRepository[BatchLog]):
         db.session.add(retry_log)
         db.session.commit()
         return retry_log
+
+    def has_succeeded_today(self, batch_name: str) -> bool:
+        """
+        指定されたbatch_nameで今日（JST）に成功したジョブがあるかチェック.
+
+        Args:
+            batch_name: バッチ名
+
+        Returns:
+            今日成功したジョブがある場合True
+        """
+        # JST今日0:00 = 前日15:00 UTC
+        jst = timezone(timedelta(hours=9))
+        now_jst = datetime.now(jst)
+        today_start_jst = now_jst.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start_utc = today_start_jst.astimezone(timezone.utc).replace(tzinfo=None)
+
+        return (
+            db.session.query(BatchLog)
+            .filter(
+                BatchLog.batch_name == batch_name,
+                BatchLog.status == BatchLog.STATUS_SUCCESS,
+                BatchLog.started_at >= today_start_utc,
+            )
+            .first()
+            is not None
+        )
+
+    def has_run_today(self, batch_name: str) -> bool:
+        """
+        指定されたbatch_nameで今日（JST）に実行中または成功したジョブがあるかチェック.
+
+        Args:
+            batch_name: バッチ名
+
+        Returns:
+            今日実行中または成功したジョブがある場合True
+        """
+        # JST今日0:00 = 前日15:00 UTC
+        jst = timezone(timedelta(hours=9))
+        now_jst = datetime.now(jst)
+        today_start_jst = now_jst.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start_utc = today_start_jst.astimezone(timezone.utc).replace(tzinfo=None)
+
+        return (
+            db.session.query(BatchLog)
+            .filter(
+                BatchLog.batch_name == batch_name,
+                BatchLog.status.in_(
+                    [BatchLog.STATUS_SUCCESS, BatchLog.STATUS_RUNNING]
+                ),
+                BatchLog.started_at >= today_start_utc,
+            )
+            .first()
+            is not None
+        )
 
     def has_running_job(self, batch_name: str) -> bool:
         """
