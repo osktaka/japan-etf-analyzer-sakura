@@ -112,6 +112,7 @@ function CustomContent(props: CustomContentProps) {
             fill={textColor}
             fontSize={codeFontSize}
             fontWeight={600}
+            style={{ pointerEvents: 'none' }}
           >
             {name}
           </text>
@@ -121,6 +122,7 @@ function CustomContent(props: CustomContentProps) {
             textAnchor="middle"
             fill={textColor}
             fontSize={ratioFontSize}
+            style={{ pointerEvents: 'none' }}
           >
             {ratio}%
           </text>
@@ -134,6 +136,7 @@ function CustomContent(props: CustomContentProps) {
           fill={textColor}
           fontSize={codeOnlyFontSize}
           fontWeight={600}
+          style={{ pointerEvents: 'none' }}
         >
           {name}
         </text>
