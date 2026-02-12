@@ -62,6 +62,7 @@ worklogs/
 reports/*
 !reports/demo/
 reports/demo/HISTORY.md
+reports/demo/HISTORY.md.bak
 
 # ポートフォリオ分析の一時ファイル
 .tmp/
