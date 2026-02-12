@@ -190,59 +190,52 @@ export function HoldingsList({
     return <div className={styles.error}>{error}</div>
   }
 
-  if (holdings.length === 0) {
-    return (
-      <div className={styles.empty}>
-        <p>保有銘柄がありません</p>
-        <p className={styles.hint}>取引を登録すると保有銘柄が表示されます</p>
-      </div>
-    )
-  }
-
   return (
     <div className={styles.container}>
       <div className={styles.toolbar}>
-        <div className={styles.toolbarLeft}>
-          <div className={styles.viewModeToggle}>
-            <button
-              type="button"
-              className={`${styles.toggleBtn} ${viewMode === 'card' ? styles.toggleBtnActive : ''}`}
-              onClick={() => handleViewModeChange('card')}
-              aria-label="カード形式で表示"
-              title="カード形式"
-            >
-              カード
-            </button>
-            <button
-              type="button"
-              className={`${styles.toggleBtn} ${viewMode === 'table' ? styles.toggleBtnActive : ''}`}
-              onClick={() => handleViewModeChange('table')}
-              aria-label="表形式で表示"
-              title="表形式"
-            >
-              表
-            </button>
+        {holdings.length > 0 && (
+          <div className={styles.toolbarLeft}>
+            <div className={styles.viewModeToggle}>
+              <button
+                type="button"
+                className={`${styles.toggleBtn} ${viewMode === 'card' ? styles.toggleBtnActive : ''}`}
+                onClick={() => handleViewModeChange('card')}
+                aria-label="カード形式で表示"
+                title="カード形式"
+              >
+                カード
+              </button>
+              <button
+                type="button"
+                className={`${styles.toggleBtn} ${viewMode === 'table' ? styles.toggleBtnActive : ''}`}
+                onClick={() => handleViewModeChange('table')}
+                aria-label="表形式で表示"
+                title="表形式"
+              >
+                表
+              </button>
+            </div>
+            {viewMode === 'card' && (
+              <select
+                className={styles.sortSelect}
+                value={`${sortKey}-${sortOrder}`}
+                onChange={handleSortSelectChange}
+                aria-label="並び替え"
+              >
+                {CARD_SORT_KEYS.map((key) => (
+                  <optgroup key={key} label={SORT_LABELS[key]}>
+                    <option value={`${key}-desc`}>
+                      {SORT_LABELS[key]} (大→小)
+                    </option>
+                    <option value={`${key}-asc`}>
+                      {SORT_LABELS[key]} (小→大)
+                    </option>
+                  </optgroup>
+                ))}
+              </select>
+            )}
           </div>
-          {viewMode === 'card' && (
-            <select
-              className={styles.sortSelect}
-              value={`${sortKey}-${sortOrder}`}
-              onChange={handleSortSelectChange}
-              aria-label="並び替え"
-            >
-              {CARD_SORT_KEYS.map((key) => (
-                <optgroup key={key} label={SORT_LABELS[key]}>
-                  <option value={`${key}-desc`}>
-                    {SORT_LABELS[key]} (大→小)
-                  </option>
-                  <option value={`${key}-asc`}>
-                    {SORT_LABELS[key]} (小→大)
-                  </option>
-                </optgroup>
-              ))}
-            </select>
-          )}
-        </div>
+        )}
         {(readOnly || onTradeHistory || onAddTrade || onAddCashFlow) && (
           <div className={styles.tradeButtons}>
             {(readOnly || onTradeHistory) && (
@@ -279,7 +272,8 @@ export function HoldingsList({
         )}
       </div>
 
-      {viewMode === 'table' ? (
+      {holdings.length > 0 ? (
+        viewMode === 'table' ? (
         <table className={styles.table}>
           <thead>
             <tr>
@@ -462,32 +456,38 @@ export function HoldingsList({
             })}
           </tbody>
         </table>
+        ) : (
+          <div className={styles.cardGrid}>
+            {sortedHoldings.map((holding) => (
+              <HoldingCard
+                key={holding.etf_code}
+                holding={holding}
+                onClick={() => onETFClick?.(holding.etf_code)}
+                onHistoryClick={
+                  onHistoryClick
+                    ? () => onHistoryClick(holding.etf_code)
+                    : undefined
+                }
+                onAddTrade={
+                  onAddTrade
+                    ? () => onAddTrade(holding.etf_code)
+                    : undefined
+                }
+                isInCompare={isInCompare?.(holding.etf_code)}
+                onCompareToggle={
+                  onCompareToggle
+                    ? () => onCompareToggle(holding.etf_code)
+                    : undefined
+                }
+                readOnly={readOnly}
+              />
+            ))}
+          </div>
+        )
       ) : (
-        <div className={styles.cardGrid}>
-          {sortedHoldings.map((holding) => (
-            <HoldingCard
-              key={holding.etf_code}
-              holding={holding}
-              onClick={() => onETFClick?.(holding.etf_code)}
-              onHistoryClick={
-                onHistoryClick
-                  ? () => onHistoryClick(holding.etf_code)
-                  : undefined
-              }
-              onAddTrade={
-                onAddTrade
-                  ? () => onAddTrade(holding.etf_code)
-                  : undefined
-              }
-              isInCompare={isInCompare?.(holding.etf_code)}
-              onCompareToggle={
-                onCompareToggle
-                  ? () => onCompareToggle(holding.etf_code)
-                  : undefined
-              }
-              readOnly={readOnly}
-            />
-          ))}
+        <div className={styles.empty}>
+          <p>保有銘柄がありません</p>
+          <p className={styles.hint}>取引を登録すると保有銘柄が表示されます</p>
         </div>
       )}
     </div>

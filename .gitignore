@@ -59,7 +59,9 @@ temp/
 
 # Work logs
 worklogs/
-reports/
+reports/*
+!reports/demo/
+reports/demo/HISTORY.md
 
 # ポートフォリオ分析の一時ファイル
 .tmp/
