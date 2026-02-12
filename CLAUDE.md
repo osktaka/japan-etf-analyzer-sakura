@@ -25,6 +25,7 @@
 | バッチ処理設計を確認したい | docs/10_バッチ処理設計.md | スケジュール、依存関係、障害時対応 |
 | デモユーザーの取引分析をしたい | reports/demo/PROMPT.md | portfolio-analysisスキルによる週次運用 |
 | 分析レポートをノート記事にしたい | .claude/skills/publish-report/SKILL.md | /publish-reportスキルで記事化 |
+| ノート記事のネタを記録したい | .claude/note-ideas.md | 独立記事ネタの蓄積・管理 |
 
 ## 開発環境
 
