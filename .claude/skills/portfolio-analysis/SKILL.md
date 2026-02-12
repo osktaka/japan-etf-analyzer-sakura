@@ -5,7 +5,7 @@
 name: portfolio-analysis
 description: ポートフォリオ定量分析・最適化（システム全データ活用）
 user-invocable: true
-allowed-tools: Read, Grep, Glob, Bash, Task, TaskCreate, TaskUpdate, TaskList, TeamCreate, TeamDelete, SendMessage, WebSearch, WebFetch, AskUserQuestion, Write
+allowed-tools: Read, Grep, Glob, Bash, Task, WebSearch, WebFetch, AskUserQuestion, Write
 aliases: ["/portfolio-analysis", "/pf-analysis"]
 ---
 ```
@@ -40,6 +40,12 @@ mkdir -p "${WORK_DIR}"
 | 要約のみ返却 | サブエージェントはメインに1-2行の完了報告のみ返す。分析結果・データの全文を返さない |
 | 統合エージェント | Phase 3のレポート作成はメインが行わず、統合エージェントがファイルから直接読み込んで作成する |
 | 禁止事項 | サブエージェントがJSONデータの全体や分析テーブル全文をメインへの戻り値に含めること |
+
+### メインエージェントの制約
+
+- `agent-instructions/` 配下のファイルは**メインエージェントが読み込まない**
+- メインはサブエージェントのプロンプトに**指示ファイルパスとWORK_DIR**を渡すだけ
+- サブエージェントが自分の指示ファイルを直接読み込んで実行する
 
 ### ファイル構成
 
@@ -241,24 +247,25 @@ with open('{WORK_DIR}/timing.json', 'w') as f:
 
 レポートの冒頭に掲載する「市場環境サマリー」の情報を収集する。**general-purposeサブエージェント**に委譲し、Phase 0と並行実行する。
 
-**サブエージェントへの指示**:
-- WebSearch/WebFetchで市場環境情報を収集
-- 結果を `{WORK_DIR}/market_environment.md` に保存
+**サブエージェントへの指示**: プロンプトに以下を含める:
+- 指示ファイル: `{skill_dir}/agent-instructions/phase0a-market-research.md` を読んで実行
+- WORK_DIR: `{WORK_DIR}`
 - **メインへの戻り値は「市場環境調査完了」の1行のみ**
 
-詳細な収集手順・まとめ形式は `agent-instructions.md` の「Phase 0a: 市場環境調査」セクションを参照。
+**メインエージェントは指示ファイルの内容を読み込まない**。サブエージェントが直接読み込む。
 
 ### Phase 0: データ収集（Bashエージェントに委譲）
 
 以下のデータを一括取得し、`{WORK_DIR}/portfolio_data.json` に保存する。対象銘柄はAPI取得後の保有銘柄リストから動的に決定。
 
-**サブエージェントへの指示**:
-- Docker内でPythonスクリプトを実行してデータ収集
-- 結果を `{WORK_DIR}/portfolio_data.json` に保存
+**サブエージェントへの指示**: プロンプトに以下を含める:
+- 指示ファイル: `{skill_dir}/agent-instructions/phase0-data-collection.md` を読んで実行
+- WORK_DIR: `{WORK_DIR}`
 - **メインへの戻り値は「データ収集完了: N銘柄、総評価額XXX万円」の要約1行のみ**
-- JSONデータの全文をprint出力しないこと
 
-**収集データリスト**:
+**メインエージェントは指示ファイルの内容を読み込まない**。サブエージェントが直接読み込む。
+
+**収集データリスト**（メインの完了確認用）:
 1. APIからポートフォリオデータ取得（ログイン → holdings → summary）
 2. performance_cache（全保有銘柄の8期間リターン・ボラティリティ・回帰率）
 3. score_cache（全保有銘柄の5軸×6視点スコア）
@@ -269,105 +276,99 @@ with open('{WORK_DIR}/timing.json', 'w') as f:
 8. おすすめ銘柄API（balance, dividend, low-cost の各視点トップ10）
 9. 比較API（保有銘柄同士のperformance, scores）
 
-詳細なスクリプト例は `agent-instructions.md` の「Phase 0: データ収集」セクションを参照。
+### Phase 1: 並行分析（並列Task）
 
-### Phase 1: 並行分析（エージェントチーム）
+Taskツールで複数のサブエージェントを**同一ターンで並列発行**する。エージェント間通信は不要（ファイルベース通信のみ）。
 
-TeamCreateでチームを作成し、エージェントを並行起動する。各エージェントはファイルからデータを読み込み、分析結果をファイルに出力する。
-
-**サブエージェント共通指示**:
-- **入力**: `{WORK_DIR}/portfolio_data.json` および `{WORK_DIR}/market_environment.md` を直接読み込む
-- **出力**: 分析結果を `{WORK_DIR}/{agent_name}_analysis.md` に保存
-- **メインへの戻り値は「{agent_name}分析完了」の1行のみ**
-
-各エージェントの詳細な分析項目・計算方法・出力形式は `agent-instructions.md` の「Phase 1: 並行分析」セクションを参照。
+**サブエージェントへの指示方法**: 各サブエージェントのプロンプトに指示ファイルパスとWORK_DIRを渡す。**メインエージェントは指示ファイルの内容を読み込まない**。
 
 #### 速度重視・ノーマルモード: タスク分割型
 
-3エージェントがそれぞれ**異なるタスク**を並行実行（現在の構成と同じ）。
+3エージェントがそれぞれ**異なるタスク**を並行実行。
 
-| エージェント | 役割 | 分析項目 |
-|-------------|------|---------|
-| quant-analyst | 定量リスク・リターン分析 | シャープレシオ、相関分析、最大ドローダウン、ストレスシナリオ、リスク調整後ランキング |
-| score-analyst | スコア・モメンタム分析 | 加重平均スコア、モメンタム分析、低スコア銘柄深掘り、代替銘柄提案、運用会社集中リスク、タグベース分散度 |
-| allocation-analyst | アセットアロケーション分析 | 地域別配分、セクター別配分、テーマ別配分、欠落アセットクラス、現金比率、集中度ヒートマップ |
+| エージェント | 指示ファイル | 出力ファイル |
+|-------------|------------|------------|
+| quant-analyst | `{skill_dir}/agent-instructions/phase1-quant-analyst.md` | `{WORK_DIR}/quant_analysis.md` |
+| score-analyst | `{skill_dir}/agent-instructions/phase1-score-analyst.md` | `{WORK_DIR}/score_analysis.md` |
+| allocation-analyst | `{skill_dir}/agent-instructions/phase1-allocation-analyst.md` | `{WORK_DIR}/allocation_analysis.md` |
 
-**注意**: allocation-analystは、保有銘柄が5銘柄以上の場合に起動。4銘柄以下の場合はquant-analystまたはscore-analystに統合。
+**注意**: allocation-analystは、保有銘柄が5銘柄以上の場合に起動。4銘柄以下の場合はスキップ。
 
 #### 議論重視モード: 独立分析型
 
 2-3エージェントが**同じ全データ**を受け取り、それぞれ独立に全項目を分析。
-各エージェントは自分なりの優先順位付け・総合判断を行い、最終的に議論で合意を形成する。
 
-| エージェント | 役割 | 分析範囲 |
-|-------------|------|---------|
-| analyst-A | 独立分析者A | 全項目（リスク、スコア、配分） |
-| analyst-B | 独立分析者B | 全項目（リスク、スコア、配分） |
-| analyst-C（任意） | 独立分析者C | 全項目（リスク、スコア、配分）※銘柄数が多い場合のみ |
+| エージェント | 指示ファイル | 出力ファイル |
+|-------------|------------|------------|
+| analyst-A | debate-common + quant + score + allocation（4ファイル） | `{WORK_DIR}/analyst_a_analysis.md` |
+| analyst-B | 同上 | `{WORK_DIR}/analyst_b_analysis.md` |
+| analyst-C（任意） | 同上 | `{WORK_DIR}/analyst_c_analysis.md` |
 
-詳細は `agent-instructions.md` の「議論重視モード: 独立分析の指示」セクションを参照。
+各エージェントは自分なりの優先順位付け・総合判断を行い、最終的に統合エージェントが合意形成する。
 
 ### Phase 2: クロスレビュー（統合エージェントに吸収）
 
-クロスレビューは独立フェーズとして実行せず、Phase 3の統合エージェントの責務として実施する。統合エージェントが全分析結果ファイルを横断的に読み、矛盾・相違点を自ら特定してレポートのセクション9に記載する。
+クロスレビューは独立フェーズとして実行せず、Phase 3+4の統合エージェントの責務として実施する。統合エージェントがモード別のクロスレビュー指示ファイルを読み込む。
 
-**速度重視モード**: クロスレビューなし（セクション9は「速度重視モードのためスキップ」と記載）。
-**ノーマルモード**: 統合エージェントが分析間の矛盾・整合性を検証し、セクション9に記載。
-**議論重視モード**: 統合エージェントが各独立分析者の見解の相違・合意点を特定し、セクション9に議論の経緯を詳細に記載。
-
-レビュー観点の詳細は `agent-instructions.md` の「Phase 2: クロスレビュー」セクションを参照（統合エージェントがこの観点を適用する）。
+- **速度重視モード**: クロスレビューなし（セクション9は「速度重視モードのためスキップ」と記載）
+- **ノーマルモード**: 統合エージェントが `{skill_dir}/agent-instructions/phase2-crossreview-normal.md` を参照
+- **議論重視モード**: 統合エージェントが `{skill_dir}/agent-instructions/phase2-crossreview-debate.md` を参照
 
 ### Phase 3+4: 統合レポート作成・保存（統合エージェントに委譲）
 
-レポートの作成・保存はメインエージェントが行わず、**統合エージェント（general-purpose）**に委譲する。これによりメインのコンテキスト消費を最小化する。
+レポートの作成・保存はメインエージェントが行わず、**統合エージェント（general-purpose）**に委譲する。
 
-**統合エージェントへの指示**:
-1. `{WORK_DIR}/` 配下の全ファイルを読み込む（market_environment.md, portfolio_data.json, *_analysis.md）
-2. `report-template.md`（`{skill_dir}/report-template.md`）のテンプレートに従ってレポートを作成
-3. クロスレビュー（ノーマル/議論重視モードの場合）: 分析結果間の矛盾・整合性を検証し、セクション9に記載
-4. `./reports/YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md` に保存
-5. **メインへの戻り値は「レポート保存完了: ./reports/YYYYMMDD_....md」の1行のみ**
+**サブエージェントへの指示**: プロンプトに以下を含める:
+- 指示ファイル: `{skill_dir}/agent-instructions/phase34-integration.md` を読んで実行
+- WORK_DIR: `{WORK_DIR}`
+- モード: `{mode}`（speed/normal/debate）
+- skill_dir: `{skill_dir}`
+- **メインへの戻り値は「レポート保存完了: ./reports/YYYYMMDD_....md」の1行のみ**
 
-**手順**:
-
-1. `./reports/` ディレクトリが存在しない場合は作成
-2. レポートを作成・保存
-   - ファイル名形式: `YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md`
-   - username未指定時: `YYYYMMDD_HHMMSS_portfolio_analysis.md`
-3. 保存先パスをメインに返す（メインがユーザーに通知）
+**メインエージェントは指示ファイルの内容を読み込まない**。統合エージェントが直接読み込む。
 
 **注意**: `reports/` は `.gitignore` に追加済み。
 
-統合エージェントの詳細指示は `agent-instructions.md` の「Phase 3+4: 統合レポート作成・保存」セクションを参照。
-
 ## エージェント設定
+
+全エージェントはTaskツールで起動する（TeamCreateは使用しない）。
 
 ### 速度重視・ノーマルモード
 
-| エージェント | subagent_type | model | 役割 |
-|-------------|---------------|-------|------|
-| quant-analyst | general-purpose | sonnet | 定量リスク・リターン分析 |
-| score-analyst | general-purpose | sonnet | スコア・モメンタム分析 |
-| allocation-analyst | general-purpose | sonnet | アセットアロケーション分析（必要時） |
-| データ収集 | Bash | - | API/DB一括データ取得 |
-| 統合レポート | general-purpose | sonnet | 全分析結果の統合・クロスレビュー・レポート作成・保存 |
+| エージェント | subagent_type | model | 指示ファイル |
+|-------------|---------------|-------|------------|
+| 市場環境調査 | general-purpose | sonnet | `agent-instructions/phase0a-market-research.md` |
+| データ収集 | Bash | - | `agent-instructions/phase0-data-collection.md` |
+| quant-analyst | general-purpose | sonnet | `agent-instructions/phase1-quant-analyst.md` |
+| score-analyst | general-purpose | sonnet | `agent-instructions/phase1-score-analyst.md` |
+| allocation-analyst | general-purpose | sonnet | `agent-instructions/phase1-allocation-analyst.md` |
+| 統合レポート | general-purpose | sonnet | `agent-instructions/phase34-integration.md` |
 
 ### 議論重視モード
 
-| エージェント | subagent_type | model | 役割 |
-|-------------|---------------|-------|------|
-| analyst-A | general-purpose | sonnet | 独立分析者A（全項目分析） |
-| analyst-B | general-purpose | sonnet | 独立分析者B（全項目分析） |
-| analyst-C | general-purpose | sonnet | 独立分析者C（銘柄数が多い場合のみ） |
-| データ収集 | Bash | - | API/DB一括データ取得 |
-| 統合レポート | general-purpose | sonnet | 全分析結果の統合・クロスレビュー・レポート作成・保存 |
+| エージェント | subagent_type | model | 指示ファイル |
+|-------------|---------------|-------|------------|
+| 市場環境調査 | general-purpose | sonnet | `agent-instructions/phase0a-market-research.md` |
+| データ収集 | Bash | - | `agent-instructions/phase0-data-collection.md` |
+| analyst-A | general-purpose | sonnet | `agent-instructions/phase1-debate-common.md` + quant/score/allocation |
+| analyst-B | general-purpose | sonnet | 同上 |
+| analyst-C（任意） | general-purpose | sonnet | 同上 |
+| 統合レポート | general-purpose | sonnet | `agent-instructions/phase34-integration.md` |
 
 ## 関連ファイル
 
 | ファイル | 役割 |
 |---------|------|
-| `agent-instructions.md` | Phase 0a/0/1/2/3+4の詳細指示（サブエージェントへ渡す情報） |
-| `report-template.md` | Phase 3+4統合レポートの出力形式テンプレート |
+| `agent-instructions/phase0a-market-research.md` | Phase 0a サブエージェント指示 |
+| `agent-instructions/phase0-data-collection.md` | Phase 0 サブエージェント指示 |
+| `agent-instructions/phase1-quant-analyst.md` | quant-analyst 指示 |
+| `agent-instructions/phase1-score-analyst.md` | score-analyst 指示 |
+| `agent-instructions/phase1-allocation-analyst.md` | allocation-analyst 指示 |
+| `agent-instructions/phase1-debate-common.md` | debate モード共通指示 |
+| `agent-instructions/phase2-crossreview-normal.md` | ノーマル クロスレビュー観点 |
+| `agent-instructions/phase2-crossreview-debate.md` | debate クロスレビュー観点 |
+| `agent-instructions/phase34-integration.md` | 統合レポート作成指示 |
+| `report-template.md` | レポート出力テンプレート |
 | CLAUDE.md「株式分割の管理」セクション | 分割調整の仕組み |
 | CLAUDE.md「テストユーザー」セクション | 認証情報 |
 | docs/08_おすすめ銘柄設計.md | 5軸評価・6視点の詳細 |
