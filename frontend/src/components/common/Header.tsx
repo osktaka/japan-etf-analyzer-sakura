@@ -130,12 +130,6 @@ export function Header() {
           >
             市場分析
           </Link>
-          <Link
-            to={ROUTES.NOTES}
-            className={`${styles.navLink} ${location.pathname.startsWith(ROUTES.NOTES) ? styles.active : ''}`}
-          >
-            ノート
-          </Link>
           {!isLoading && (
             <>
               {isAuthenticated ? (
@@ -145,6 +139,12 @@ export function Header() {
                     className={`${styles.navLink} ${location.pathname === ROUTES.MYPAGE ? styles.active : ''}`}
                   >
                     マイページ
+                  </Link>
+                  <Link
+                    to={ROUTES.NOTES}
+                    className={`${styles.navLink} ${location.pathname.startsWith(ROUTES.NOTES) ? styles.active : ''}`}
+                  >
+                    ノート
                   </Link>
                   <Link
                     to={ROUTES.GUIDE}
@@ -190,6 +190,12 @@ export function Header() {
                 </>
               ) : (
                 <>
+                  <Link
+                    to={ROUTES.NOTES}
+                    className={`${styles.navLink} ${location.pathname.startsWith(ROUTES.NOTES) ? styles.active : ''}`}
+                  >
+                    ノート
+                  </Link>
                   <Link
                     to={ROUTES.GUIDE}
                     className={`${styles.navLink} ${location.pathname.startsWith(ROUTES.GUIDE) ? styles.active : ''}`}
@@ -273,14 +279,6 @@ export function Header() {
           >
             市場分析
           </Link>
-          <Link
-            to={ROUTES.NOTES}
-            className={`${styles.mobileNavLink} ${location.pathname.startsWith(ROUTES.NOTES) ? styles.active : ''}`}
-            role="menuitem"
-            onClick={closeMobileMenu}
-          >
-            ノート
-          </Link>
           {!isLoading && (
             <>
               {isAuthenticated ? (
@@ -292,6 +290,14 @@ export function Header() {
                     onClick={closeMobileMenu}
                   >
                     マイページ
+                  </Link>
+                  <Link
+                    to={ROUTES.NOTES}
+                    className={`${styles.mobileNavLink} ${location.pathname.startsWith(ROUTES.NOTES) ? styles.active : ''}`}
+                    role="menuitem"
+                    onClick={closeMobileMenu}
+                  >
+                    ノート
                   </Link>
                   <Link
                     to={ROUTES.GUIDE}
@@ -336,6 +342,14 @@ export function Header() {
                 </>
               ) : (
                 <>
+                  <Link
+                    to={ROUTES.NOTES}
+                    className={`${styles.mobileNavLink} ${location.pathname.startsWith(ROUTES.NOTES) ? styles.active : ''}`}
+                    role="menuitem"
+                    onClick={closeMobileMenu}
+                  >
+                    ノート
+                  </Link>
                   <Link
                     to={ROUTES.GUIDE}
                     className={`${styles.mobileNavLink} ${location.pathname.startsWith(ROUTES.GUIDE) ? styles.active : ''}`}
