@@ -56,6 +56,14 @@ class UpdateScoresBatch(BaseBatchScript):
 
     def execute(self) -> int:
         """メイン処理"""
+        # 営業日チェック（祝日・土日はスキップ）
+        import jpholiday
+
+        today = date.today()
+        if today.weekday() >= 5 or jpholiday.is_holiday(today):
+            self.logger.info(f"Non-market day ({today}), skipping score update")
+            return 0
+
         etf_repo = ETFRepository()
         score_cache_repo = ScoreCacheRepository()
         scoring_service = ScoringService()
