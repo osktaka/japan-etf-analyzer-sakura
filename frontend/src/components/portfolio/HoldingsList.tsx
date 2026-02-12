@@ -55,6 +55,7 @@ interface HoldingsListProps {
   onTradeHistory?: () => void
   onAddTrade?: (code: string) => void
   onAddCashFlow?: () => void
+  readOnly?: boolean
 }
 
 export function HoldingsList({
@@ -68,6 +69,7 @@ export function HoldingsList({
   onTradeHistory,
   onAddTrade,
   onAddCashFlow,
+  readOnly,
 }: HoldingsListProps) {
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const stored = localStorage.getItem(STORAGE_KEY)
@@ -241,31 +243,34 @@ export function HoldingsList({
             </select>
           )}
         </div>
-        {(onTradeHistory || onAddTrade || onAddCashFlow) && (
+        {(readOnly || onTradeHistory || onAddTrade || onAddCashFlow) && (
           <div className={styles.tradeButtons}>
-            {onTradeHistory && (
+            {(readOnly || onTradeHistory) && (
               <button
                 type="button"
                 className={styles.tradeHistoryBtn}
-                onClick={onTradeHistory}
+                onClick={() => onTradeHistory?.()}
+                disabled={readOnly}
               >
                 取引履歴
               </button>
             )}
-            {onAddTrade && (
+            {(readOnly || onAddTrade) && (
               <button
                 type="button"
                 className={styles.addTradeBtn}
-                onClick={() => onAddTrade('')}
+                onClick={() => onAddTrade?.('')}
+                disabled={readOnly}
               >
                 取引を追加
               </button>
             )}
-            {onAddCashFlow && (
+            {(readOnly || onAddCashFlow) && (
               <button
                 type="button"
                 className={styles.addCashFlowBtn}
-                onClick={onAddCashFlow}
+                onClick={() => onAddCashFlow?.()}
+                disabled={readOnly}
               >
                 入出金
               </button>
@@ -340,7 +345,7 @@ export function HoldingsList({
               >
                 年率リターン{getSortIndicator('annualized_return')}
               </th>
-              {(onHistoryClick || onAddTrade) && <th className={styles.center}>操作</th>}
+              {(readOnly || onHistoryClick || onAddTrade) && <th className={styles.center}>操作</th>}
               {onCompareToggle && <th className={styles.center}>比較</th>}
             </tr>
           </thead>
@@ -409,28 +414,30 @@ export function HoldingsList({
                       ? `${holding.annualized_return >= 0 ? '+' : ''}${holding.annualized_return.toFixed(2)}%`
                       : '-'}
                   </td>
-                  {(onHistoryClick || onAddTrade) && (
+                  {(readOnly || onHistoryClick || onAddTrade) && (
                     <td
                       className={styles.center}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                        {onHistoryClick && (
+                        {(readOnly || onHistoryClick) && (
                           <button
                             className={styles.historyBtn}
-                            onClick={() => onHistoryClick(holding.etf_code)}
+                            onClick={() => onHistoryClick?.(holding.etf_code)}
                             type="button"
                             title="取引履歴"
+                            disabled={readOnly}
                           >
                             履歴
                           </button>
                         )}
-                        {onAddTrade && (
+                        {(readOnly || onAddTrade) && (
                           <button
                             className={styles.tradeBtn}
-                            onClick={() => onAddTrade(holding.etf_code)}
+                            onClick={() => onAddTrade?.(holding.etf_code)}
                             type="button"
                             title="取引登録"
+                            disabled={readOnly}
                           >
                             取引
                           </button>
@@ -478,6 +485,7 @@ export function HoldingsList({
                   ? () => onCompareToggle(holding.etf_code)
                   : undefined
               }
+              readOnly={readOnly}
             />
           ))}
         </div>

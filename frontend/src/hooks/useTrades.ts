@@ -1,7 +1,13 @@
 /** Trades hook for managing user's trade records */
 import { useCallback, useEffect, useState } from 'react'
+import { apiClient } from '../api/client'
 import { tradesApi } from '../api/trades'
-import { Trade, CreateTradeRequest, UpdateTradeRequest } from '../api/types'
+import {
+  ApiResponse,
+  Trade,
+  CreateTradeRequest,
+  UpdateTradeRequest,
+} from '../api/types'
 import { useAuth } from './useAuth'
 
 interface UseTradesReturn {
@@ -16,7 +22,7 @@ interface UseTradesReturn {
 
 export function useTrades(
   etfCode?: string,
-  options?: { enabled?: boolean }
+  options?: { enabled?: boolean; apiBasePath?: string }
 ): UseTradesReturn {
   const { isAuthenticated } = useAuth()
   const [trades, setTrades] = useState<Trade[]>([])
@@ -24,7 +30,7 @@ export function useTrades(
   const [error, setError] = useState<string | null>(null)
 
   const fetchTrades = useCallback(async () => {
-    if (!isAuthenticated || options?.enabled === false) {
+    if (!options?.apiBasePath && (!isAuthenticated || options?.enabled === false)) {
       setTrades([])
       return
     }
@@ -33,15 +39,22 @@ export function useTrades(
     setError(null)
 
     try {
-      const data = await tradesApi.getAll(etfCode)
-      setTrades(data)
+      if (options?.apiBasePath) {
+        const response = await apiClient.get<ApiResponse<Trade[]>>(
+          options.apiBasePath
+        )
+        setTrades(response.data.data)
+      } else {
+        const data = await tradesApi.getAll(etfCode)
+        setTrades(data)
+      }
     } catch (err) {
       setError('取引履歴の取得に失敗しました')
       console.error('Failed to fetch trades:', err)
     } finally {
       setIsLoading(false)
     }
-  }, [isAuthenticated, etfCode, options?.enabled])
+  }, [isAuthenticated, etfCode, options?.enabled, options?.apiBasePath])
 
   useEffect(() => {
     fetchTrades()

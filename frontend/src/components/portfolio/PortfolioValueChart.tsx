@@ -37,9 +37,20 @@ interface PopoverState {
   position: { x: number; y: number; markerY: number }
 }
 
-export function PortfolioValueChart() {
-  const { data, isLoading, error, period, setPeriod } = usePortfolioHistory()
-  const { trades } = useTrades()
+interface PortfolioValueChartProps {
+  demoMode?: boolean
+}
+
+export function PortfolioValueChart({ demoMode }: PortfolioValueChartProps = {}) {
+  const historyApiBasePath = demoMode
+    ? '/demo/portfolio/valuation-history'
+    : undefined
+  const tradesApiBasePath = demoMode ? '/demo/trades' : undefined
+  const { data, isLoading, error, period, setPeriod } = usePortfolioHistory(
+    '1y',
+    historyApiBasePath
+  )
+  const { trades } = useTrades(undefined, { apiBasePath: tradesApiBasePath })
   const [popover, setPopover] = useState<PopoverState | null>(null)
   const [isMobile, setIsMobile] = useState(
     () => window.matchMedia('(max-width: 640px)').matches

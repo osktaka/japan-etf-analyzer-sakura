@@ -1,0 +1,136 @@
+/** Demo page styles */
+.container {
+  padding: 2rem 0;
+}
+
+.banner {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #78350f;
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.bannerLink {
+  color: #92400e;
+  font-weight: 700;
+  text-decoration: underline;
+  margin: 0 0.25rem;
+}
+
+.bannerLink:hover {
+  color: #78350f;
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+}
+
+.section {
+  background: var(--color-surface);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+}
+
+.section:last-child {
+  margin-bottom: 0;
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-text-secondary);
+}
+
+.error {
+  text-align: center;
+  padding: 2rem;
+  color: #dc2626;
+  background: #fef2f2;
+  border-radius: 4px;
+}
+
+.empty {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--color-text-secondary);
+}
+
+.empty p {
+  margin-bottom: 0.5rem;
+}
+
+.favoritesControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.chartSection {
+  margin: 1.5rem 0;
+  display: flex;
+  gap: 1.5rem;
+}
+
+.chartSection > *:first-child {
+  flex: 3;
+  min-width: 0;
+}
+
+.chartSection > *:last-child {
+  flex: 2;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .chartSection {
+    flex-direction: column;
+  }
+
+  .container {
+    padding: 1rem 0;
+  }
+
+  .section {
+    padding: 1rem;
+  }
+
+  .favoritesControls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

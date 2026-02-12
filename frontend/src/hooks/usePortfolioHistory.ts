@@ -1,7 +1,12 @@
 /** Hook for fetching portfolio valuation history */
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { apiClient } from '../api/client'
 import { portfolioApi } from '../api/portfolio'
-import { ValuationHistory, ValuationHistoryPeriod } from '../api/types'
+import {
+  ApiResponse,
+  ValuationHistory,
+  ValuationHistoryPeriod,
+} from '../api/types'
 import { useAuth } from './useAuth'
 
 interface UsePortfolioHistoryReturn {
@@ -14,7 +19,8 @@ interface UsePortfolioHistoryReturn {
 }
 
 export function usePortfolioHistory(
-  initialPeriod: ValuationHistoryPeriod = '1y'
+  initialPeriod: ValuationHistoryPeriod = '1y',
+  apiBasePath?: string
 ): UsePortfolioHistoryReturn {
   const { isAuthenticated } = useAuth()
   const [data, setData] = useState<ValuationHistory>([])
@@ -58,7 +64,7 @@ export function usePortfolioHistory(
   )
 
   const fetchHistory = useCallback(async () => {
-    if (!isAuthenticated) {
+    if (!apiBasePath && !isAuthenticated) {
       setData([])
       return
     }
@@ -75,7 +81,15 @@ export function usePortfolioHistory(
     setError(null)
 
     try {
-      const history = await portfolioApi.getValuationHistory(period)
+      let history: ValuationHistory
+      if (apiBasePath) {
+        const response = await apiClient.get<ApiResponse<ValuationHistory>>(
+          `${apiBasePath}?period=${period}`
+        )
+        history = response.data.data
+      } else {
+        history = await portfolioApi.getValuationHistory(period)
+      }
       setData(history)
       // キャッシュに保存
       cacheRef.current.set(period, history)
@@ -85,7 +99,7 @@ export function usePortfolioHistory(
     } finally {
       setIsLoading(false)
     }
-  }, [isAuthenticated, period])
+  }, [isAuthenticated, period, apiBasePath])
 
   useEffect(() => {
     fetchHistory()

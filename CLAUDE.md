@@ -66,9 +66,10 @@ make help
 
 ## テストユーザー
 
-| User ID | Password | Username |
-|---------|----------|----------|
-| test | testpass123 | test |
+| User ID | Password | Username | 備考 |
+|---------|----------|----------|------|
+| test | testpass123 | test | テスト用 |
+| demo | （スクリプト内定義） | demo | デモ表示用（ログイン不要） |
 
 ## ディレクトリ構成
 
@@ -272,6 +273,31 @@ rm -rf backend/venv && ./setup.sh
 | backend/src/services/portfolio_service.py | 分割考慮の損益計算 |
 | backend/src/services/chart_service.py | チャート分割調整 |
 | backend/src/external/yahoo_finance.py | yfinance取得（auto_adjust=True） |
+
+## デモユーザー
+
+デモユーザー（user_id='demo'）は未ログインユーザーにMyPageのプレビューを提供するための特殊ユーザー。
+
+### デモデータの投入
+
+```bash
+# 開発環境
+docker compose exec backend python scripts/seed_demo_data.py
+
+# 本番環境
+cd ~/www/japan-etf-analyzer
+source backend/venv/bin/activate
+python backend/scripts/seed_demo_data.py
+```
+
+- スクリプトは冪等（既存データがあれば削除して再作成）
+- デモユーザーのパスワードはスクリプト内にハードコードされている（ログイン用途ではない）
+
+### デモAPI
+
+- パス: `/api/v1/demo/*`（全て認証不要・GET only）
+- 実装: `backend/src/routes/demo_routes.py`
+- デモユーザーが存在しない場合は空データを返す（エラーにならない）
 
 ## 運用ルール
 

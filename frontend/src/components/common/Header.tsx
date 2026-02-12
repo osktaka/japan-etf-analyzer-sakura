@@ -191,6 +191,12 @@ export function Header() {
               ) : (
                 <>
                   <Link
+                    to={ROUTES.DEMO}
+                    className={`${styles.navLink} ${location.pathname === ROUTES.DEMO ? styles.active : ''}`}
+                  >
+                    マイページ(デモ)
+                  </Link>
+                  <Link
                     to={ROUTES.NOTES}
                     className={`${styles.navLink} ${location.pathname.startsWith(ROUTES.NOTES) ? styles.active : ''}`}
                   >
@@ -342,6 +348,14 @@ export function Header() {
                 </>
               ) : (
                 <>
+                  <Link
+                    to={ROUTES.DEMO}
+                    className={`${styles.mobileNavLink} ${location.pathname === ROUTES.DEMO ? styles.active : ''}`}
+                    role="menuitem"
+                    onClick={closeMobileMenu}
+                  >
+                    マイページ(デモ)
+                  </Link>
                   <Link
                     to={ROUTES.NOTES}
                     className={`${styles.mobileNavLink} ${location.pathname.startsWith(ROUTES.NOTES) ? styles.active : ''}`}

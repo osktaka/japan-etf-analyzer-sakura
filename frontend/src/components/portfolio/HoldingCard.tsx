@@ -12,6 +12,7 @@ interface HoldingCardProps {
   onAddTrade?: () => void
   isInCompare?: boolean
   onCompareToggle?: () => void
+  readOnly?: boolean
 }
 
 export function HoldingCard({
@@ -21,6 +22,7 @@ export function HoldingCard({
   onAddTrade,
   isInCompare,
   onCompareToggle,
+  readOnly,
 }: HoldingCardProps) {
   const pnlClass =
     holding.unrealized_pnl >= 0 ? styles.positive : styles.negative
@@ -116,30 +118,32 @@ export function HoldingCard({
           </span>
         </div>
       </div>
-      {(onHistoryClick || onAddTrade) && (
+      {(readOnly || onHistoryClick || onAddTrade) && (
         <div className={styles.actions}>
-          {onHistoryClick && (
+          {(readOnly || onHistoryClick) && (
             <button
               className={styles.historyBtn}
               onClick={(e) => {
                 e.stopPropagation()
-                onHistoryClick()
+                onHistoryClick?.()
               }}
               type="button"
               title="取引履歴"
+              disabled={readOnly}
             >
               履歴
             </button>
           )}
-          {onAddTrade && (
+          {(readOnly || onAddTrade) && (
             <button
               className={styles.tradeBtn}
               onClick={(e) => {
                 e.stopPropagation()
-                onAddTrade()
+                onAddTrade?.()
               }}
               type="button"
               title="取引登録"
+              disabled={readOnly}
             >
               取引
             </button>

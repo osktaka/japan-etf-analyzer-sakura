@@ -17,6 +17,7 @@ interface ETFCardProps {
   onFavoriteToggle?: () => void
   isHolding?: boolean
   perspective?: string
+  readOnly?: boolean
 }
 
 export function ETFCard({
@@ -29,6 +30,7 @@ export function ETFCard({
   onFavoriteToggle,
   isHolding,
   perspective,
+  readOnly,
 }: ETFCardProps) {
   const scoreGradient = perspective
     ? PERSPECTIVE_GRADIENTS[perspective] || PERSPECTIVE_GRADIENTS.balance
@@ -43,12 +45,13 @@ export function ETFCard({
       onKeyDown={(e) => e.key === 'Enter' && onClick?.()}
     >
       <div className={styles.header}>
-        {onFavoriteToggle && (
+        {(readOnly || onFavoriteToggle) && (
           <FavoriteButton
             isFavorite={isFavorite ?? false}
-            onClick={onFavoriteToggle}
+            onClick={() => onFavoriteToggle?.()}
             size="sm"
             isHolding={isHolding}
+            disabled={readOnly}
           />
         )}
         <span className={styles.code}>{etf.code}</span>

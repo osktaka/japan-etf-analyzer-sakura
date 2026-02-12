@@ -9,6 +9,7 @@ def register_routes(app):
     from .cash_flow_routes import create_cash_flow_bp
     from .category_routes import create_category_bp
     from .compare_routes import create_compare_bp
+    from .demo_routes import create_demo_bp
     from .etf_routes import create_etf_bp
     from .favorite_routes import create_favorite_bp
     from .market_routes import create_market_bp
@@ -25,6 +26,7 @@ def register_routes(app):
     api_v1.register_blueprint(create_cash_flow_bp())
     api_v1.register_blueprint(create_category_bp())
     api_v1.register_blueprint(create_compare_bp())
+    api_v1.register_blueprint(create_demo_bp())
     api_v1.register_blueprint(create_tag_bp())
     api_v1.register_blueprint(create_etf_bp())
     api_v1.register_blueprint(create_recommend_bp())

@@ -16,6 +16,7 @@ import {
   LoginPage,
   RegisterPage,
   MyPage,
+  DemoPage,
   PortfolioPage,
   AdminPage,
   GuideTopPage,
@@ -79,6 +80,7 @@ export default function App() {
                 <Route path={ROUTES.MARKET} element={<MarketPage />} />
                 <Route path={ROUTES.NOTES} element={<NotesPage />} />
                 <Route path={`${ROUTES.NOTES}/:slug`} element={<NoteDetailPage />} />
+                <Route path={ROUTES.DEMO} element={<DemoPage />} />
                 <Route path={ROUTES.LOGIN} element={<LoginPage />} />
                 <Route path={ROUTES.REGISTER} element={<RegisterPage />} />
                 <Route
