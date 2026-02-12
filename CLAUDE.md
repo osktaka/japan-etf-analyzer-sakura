@@ -24,6 +24,7 @@
 | タグ付けルールを確認したい | docs/09_タグ付けルール.md | 6カテゴリ49タグ、付与基準 |
 | バッチ処理設計を確認したい | docs/10_バッチ処理設計.md | スケジュール、依存関係、障害時対応 |
 | デモユーザーの取引分析をしたい | reports/demo/PROMPT.md | portfolio-analysisスキルによる週次運用 |
+| 分析レポートをノート記事にしたい | .claude/skills/publish-report/SKILL.md | /publish-reportスキルで記事化 |
 
 ## 開発環境
 
