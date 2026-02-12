@@ -18,12 +18,14 @@ interface TradeHistoryModalProps {
   isOpen: boolean
   onClose: () => void
   initialSearch?: string
+  onSuccess?: () => void
 }
 
 export function TradeHistoryModal({
   isOpen,
   onClose,
   initialSearch = '',
+  onSuccess,
 }: TradeHistoryModalProps) {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
@@ -71,13 +73,17 @@ export function TradeHistoryModal({
           cashFlowOptions.endDate = endDate
         }
 
+        // 銘柄検索時は入出金を含めない（入出金は銘柄に紐付かないため）
+        const shouldFetchCashFlows = !currentSearch.trim()
         const [tradesData, cashFlowsData] = await Promise.all([
           tradesApi.getAll(undefined, tradeOptions),
-          cashFlowsApi.getAll(
-            Object.keys(cashFlowOptions).length > 0
-              ? cashFlowOptions
-              : undefined
-          ),
+          shouldFetchCashFlows
+            ? cashFlowsApi.getAll(
+                Object.keys(cashFlowOptions).length > 0
+                  ? cashFlowOptions
+                  : undefined
+              )
+            : Promise.resolve([]),
         ])
         setTrades(tradesData)
         setCashFlows(cashFlowsData)
@@ -150,6 +156,7 @@ export function TradeHistoryModal({
     setEditingCashFlow(null)
     setIsAddFormOpen(false)
     setIsCashFlowFormOpen(false)
+    onSuccess?.()
   }
 
   const handleDelete = async (id: number) => {
@@ -159,6 +166,7 @@ export function TradeHistoryModal({
     try {
       await tradesApi.delete(id)
       await fetchData()
+      onSuccess?.()
     } catch {
       setError('削除に失敗しました')
     } finally {
@@ -173,6 +181,7 @@ export function TradeHistoryModal({
     try {
       await cashFlowsApi.delete(id)
       await fetchData()
+      onSuccess?.()
     } catch {
       setError('削除に失敗しました')
     } finally {

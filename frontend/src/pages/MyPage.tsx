@@ -302,6 +302,7 @@ export function MyPage() {
         isOpen={showTradeHistoryModal}
         onClose={handleCloseTradeHistory}
         initialSearch={tradeHistoryCode}
+        onSuccess={refreshPortfolio}
       />
 
       <CashFlowFormModal
