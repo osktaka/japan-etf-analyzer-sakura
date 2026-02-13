@@ -16,8 +16,8 @@
 # NAME: 株式分割データ更新（毎週日曜 2:00）
 0 2 * * 0 cd /app && /usr/local/bin/python3 scripts/sync_historical_splits.py --all --rate-limit 5.0 >> /app/logs/split_sync.log 2>&1
 
-# NAME: ログローテーション（毎週日曜 5:00）
-0 5 * * 0 cd /app && /usr/local/bin/python3 scripts/rotate_logs.py >> /app/logs/rotate.log 2>&1
+# NAME: ログローテーション（毎日 5:00）
+0 5 * * * cd /app && /usr/local/bin/python3 scripts/rotate_logs.py >> /app/logs/rotate.log 2>&1
 
 # NAME: バッチ監視・自動リトライ（5分間隔）
 */5 * * * * cd /app && /usr/local/bin/python3 scripts/batch_monitor.py >> /app/logs/batch_monitor.log 2>&1
