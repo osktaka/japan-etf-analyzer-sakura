@@ -381,3 +381,26 @@ https://kima3.net/japan-etf-analyzer/notes/20260212_demo-portfolio-initial-const
 ```
 
 ---
+
+### 2026-02-13
+
+- パターン: 課題解決型（ノート記事告知）
+- 文字数: 264カウント
+- テーマ: TOPIX vs 日経225ノート記事の告知
+- 投稿文:
+```
+ノート記事を公開しました📝
+
+「TOPIX vs 日経225」
+
+TOPIX連動と日経225連動、なんとなく選んでいませんか？
+
+実は構成も値動きの性質もかなり違います。日経225はたった1社で指数全体が動くことも…
+
+違いを知ると見え方が変わるかもしれません👇
+https://kima3.net/japan-etf-analyzer/notes/20260213_topix-vs-nikkei225
+
+#ETF #投資 #日本株
+```
+
+---
