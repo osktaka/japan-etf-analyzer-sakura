@@ -22,6 +22,17 @@ function parseFrontmatter(raw: string): { meta: Record<string, string>; content:
   return { meta, content: match[2] }
 }
 
+/** publishedAtが現在日時以前かを判定（JST基準） */
+function isPublished(publishedAt: string): boolean {
+  // 現在の日時をJST文字列として取得（YYYY-MM-DD HH:mm:ss形式）
+  const nowJST = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Tokyo' })
+  // publishedAtを正規化（YYYY-MM-DDのみなら00:00:00、HH:mmなら:00を付与）
+  const normalized = publishedAt.includes(' ')
+    ? publishedAt + ':00'
+    : publishedAt + ' 00:00:00'
+  return nowJST >= normalized
+}
+
 /** MDファイルを一括読み込み */
 const mdModules = import.meta.glob('./*.md', {
   query: '?raw',
@@ -43,17 +54,21 @@ const notes: Note[] = Object.entries(mdModules).map(([path, raw]) => {
   }
 })
 
-/** 全ノートを公開日降順で取得 */
+/** 全ノートを公開日降順で取得（未公開記事を除外） */
 export function getAllNotes(): Note[] {
-  return [...notes].sort((a, b) => {
-    const timeA = new Date(a.publishedAt).getTime()
-    const timeB = new Date(b.publishedAt).getTime()
-    if (isNaN(timeA) || isNaN(timeB)) return 0
-    return timeB - timeA
-  })
+  return [...notes]
+    .filter((note) => isPublished(note.publishedAt))
+    .sort((a, b) => {
+      const timeA = new Date(a.publishedAt).getTime()
+      const timeB = new Date(b.publishedAt).getTime()
+      if (isNaN(timeA) || isNaN(timeB)) return 0
+      return timeB - timeA
+    })
 }
 
-/** スラッグでノートを検索 */
+/** スラッグでノートを検索（未公開記事はundefined） */
 export function getNoteBySlug(slug: string): Note | undefined {
-  return notes.find((note) => note.slug === slug)
+  const note = notes.find((n) => n.slug === slug)
+  if (!note || !isPublished(note.publishedAt)) return undefined
+  return note
 }

@@ -23,7 +23,7 @@ export function NotesPage() {
             to={`${ROUTES.NOTES}/${note.slug}`}
             className={styles.noteCard}
           >
-            <div className={styles.noteDate}>{note.publishedAt}</div>
+            <div className={styles.noteDate}>{note.publishedAt.slice(0, 10)}</div>
             <h3 className={styles.noteTitle}>{note.title}</h3>
             <p className={styles.noteSummary}>{note.summary}</p>
           </Link>

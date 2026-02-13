@@ -31,6 +31,17 @@ function parseFrontmatter(raw: string): { meta: Record<string, string>; content:
   return { meta, content: match[2] }
 }
 
+/** publishedAtがビルド時の日時以前かを判定（JST基準） */
+function isPublished(publishedAt: string): boolean {
+  // ビルド時の日時をJST文字列として取得（YYYY-MM-DD HH:mm:ss形式）
+  const nowJST = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Tokyo' })
+  // publishedAtを正規化（YYYY-MM-DDのみなら00:00:00、HH:mmなら:00を付与）
+  const normalized = publishedAt.includes(' ')
+    ? publishedAt + ':00'
+    : publishedAt + ' 00:00:00'
+  return nowJST >= normalized
+}
+
 /** ビルド時にsitemap.xmlを自動生成するプラグイン */
 function sitemapGeneratorPlugin(): Plugin {
   return {
@@ -39,13 +50,16 @@ function sitemapGeneratorPlugin(): Plugin {
       const siteUrl = 'https://kima3.net/japan-etf-analyzer'
       const staticPages = ['/', '/compare', '/market', '/notes']
 
-      // content/notes/*.md からノートURLを収集
+      // content/notes/*.md からノートURLを収集（未公開記事を除外）
       const notesDir = path.resolve(__dirname, 'src/content/notes')
       const noteUrls: string[] = []
       if (fs.existsSync(notesDir)) {
         fs.readdirSync(notesDir)
           .filter((f) => f.endsWith('.md'))
           .forEach((f) => {
+            const raw = fs.readFileSync(path.resolve(notesDir, f), 'utf-8')
+            const { meta } = parseFrontmatter(raw)
+            if (!isPublished(meta.publishedAt ?? '')) return
             const slug = f.replace('.md', '')
             noteUrls.push(`/notes/${slug}`)
           })
@@ -116,9 +130,11 @@ function ogpPrerenderPlugin(): Plugin {
       let count = 0
 
       mdFiles.forEach((f) => {
-        const slug = f.replace('.md', '')
         const raw = fs.readFileSync(path.resolve(notesDir, f), 'utf-8')
         const { meta } = parseFrontmatter(raw)
+        // 未公開記事はプリレンダーHTMLを生成しない
+        if (!isPublished(meta.publishedAt ?? '')) return
+        const slug = f.replace('.md', '')
         const title = `${meta.title ?? slug} - Japan ETF Analyzer`
         const summary = meta.summary ?? ''
         const url = `${siteUrl}/notes/${slug}`

@@ -39,7 +39,7 @@ export function NoteDetailPage() {
         <header className={styles.header}>
           <h1 className={styles.articleTitle}>{note.title}</h1>
           <div className={styles.meta}>
-            <time dateTime={note.publishedAt}>{note.publishedAt}</time>
+            <time dateTime={note.publishedAt}>{note.publishedAt.slice(0, 10)}</time>
             {note.updatedAt && (
               <span className={styles.updated}>（更新: {note.updatedAt}）</span>
             )}
