@@ -4,7 +4,7 @@
 
 - 作業ディレクトリ: `{WORK_DIR}`（メインエージェントから渡される）
 - Docker内パス: `/app/{WORK_DIR}`
-- 認証情報: user_id=`test`, password=`testpass123`
+- 認証情報: user_id=`{USER_ID}`, password=`{PASSWORD}`（メインエージェントから渡される）
 - APIベースURL: `http://localhost:8902`
 
 ## データ受け渡しルール
@@ -45,7 +45,7 @@ from src.models import db
 # API認証
 session = requests.Session()
 login_resp = session.post('http://localhost:8902/api/v1/auth/login',
-                          json={'user_id': 'test', 'password': 'testpass123'})
+                          json={'user_id': '{USER_ID}', 'password': '{PASSWORD}'})
 if login_resp.status_code != 200:
     print(f"認証エラー: {login_resp.status_code} {login_resp.text}")
     sys.exit(1)

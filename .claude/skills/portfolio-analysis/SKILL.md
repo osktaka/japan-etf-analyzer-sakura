@@ -187,7 +187,7 @@ docker compose exec backend python -c "
 import requests
 session = requests.Session()
 session.post('http://localhost:8902/api/v1/auth/login',
-  json={'user_id': 'test', 'password': 'testpass123'})
+  json={'user_id': '{USER_ID}', 'password': '{PASSWORD}'})
 resp = session.get('http://localhost:8902/api/v1/portfolio/holdings')
 print(resp.json())
 "
@@ -261,6 +261,7 @@ with open('{WORK_DIR}/timing.json', 'w') as f:
 **サブエージェントへの指示**: プロンプトに以下を含める:
 - 指示ファイル: `{skill_dir}/agent-instructions/phase0-data-collection.md` を読んで実行
 - WORK_DIR: `{WORK_DIR}`
+- 対象ユーザー: `{USER_ID}`（user_id）、パスワード: `{PASSWORD}`
 - **メインへの戻り値は「データ収集完了: N銘柄、総評価額XXX万円」の要約1行のみ**
 
 **メインエージェントは指示ファイルの内容を読み込まない**。サブエージェントが直接読み込む。
