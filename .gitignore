@@ -63,6 +63,7 @@ reports/*
 !reports/demo/
 reports/demo/HISTORY.md
 reports/demo/HISTORY.md.bak
+reports/demo/history/
 
 # ポートフォリオ分析の一時ファイル
 .tmp/

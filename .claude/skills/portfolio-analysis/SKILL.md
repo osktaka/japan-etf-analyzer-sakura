@@ -58,13 +58,15 @@ mkdir -p "${WORK_DIR}"
 ├── allocation_analysis.md   # Phase 1: allocation-analyst出力
 └── timing.json              # 各フェーズの実行時間
 
-reports/demo/
-├── PROMPT.md                # 週次分析プロジェクト定義
-├── HISTORY.md               # 最新の分析履歴（更新される）
-└── history/
-    ├── 20260212.md          # 2/12時点のスナップショット（不変）
-    ├── 20260213.md          # 2/13時点のスナップショット（不変）
-    └── ...
+reports/
+├── YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md  # レポート本体（全ユーザー共通、reports/直下）
+└── demo/
+    ├── PROMPT.md                # 週次分析プロジェクト定義
+    ├── HISTORY.md               # 最新の分析履歴（更新される）
+    └── history/
+        ├── 20260212.md          # 2/12時点のスナップショット（不変）
+        ├── 20260213.md          # 2/13時点のスナップショット（不変）
+        └── ...
 ```
 
 ## モード選択
