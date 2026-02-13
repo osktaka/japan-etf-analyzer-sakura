@@ -426,3 +426,29 @@ https://kima3.net/japan-etf-analyzer/notes/20260213_high-dividend-etf-guide
 ```
 
 ---
+
+### 2026-02-14
+
+- パターン: 数字インパクト型（ノート記事告知）
+- 文字数: 258カウント
+- テーマ: AI・半導体ETFの選び方ノート記事の告知
+- 投稿文:
+```
+ノート記事を公開しました📝
+
+「AI・半導体ETFの選び方」
+
+東証にも多くあるAI・半導体ETF。
+3タイプに分けると選び方がクリアになりそう✨
+
+① 国内指数連動型（コスト重視）
+② テーマ指数型（集中投資）
+③ 海外型（NVIDIA・TSMC）
+
+👇
+https://kima3.net/japan-etf-analyzer/notes/20260214_ai-semiconductor-etf-guide
+
+#ETF #投資 #半導体
+```
+
+---
