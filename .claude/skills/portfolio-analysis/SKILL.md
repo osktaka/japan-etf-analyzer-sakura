@@ -57,6 +57,14 @@ mkdir -p "${WORK_DIR}"
 ├── score_analysis.md        # Phase 1: score-analyst出力
 ├── allocation_analysis.md   # Phase 1: allocation-analyst出力
 └── timing.json              # 各フェーズの実行時間
+
+reports/demo/
+├── PROMPT.md                # 週次分析プロジェクト定義
+├── HISTORY.md               # 最新の分析履歴（更新される）
+└── history/
+    ├── 20260212.md          # 2/12時点のスナップショット（不変）
+    ├── 20260213.md          # 2/13時点のスナップショット（不変）
+    └── ...
 ```
 
 ## モード選択
