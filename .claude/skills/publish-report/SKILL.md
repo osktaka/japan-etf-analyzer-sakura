@@ -10,12 +10,15 @@ aliases: ["/publish-report", "/pub-report"]
 
 - `/portfolio-analysis` スキルの出力レポート（600行超）を、一般読者向けの1500-2000字のノート記事に変換
 - 記事は `frontend/src/content/notes/` に配置（Viteのimport.meta.globで自動認識）
+- **ドラフトモード**と**確定モード**の2段階で運用
 
 ## 使用方法
 
 ```
-/publish-report                 # 最新のdemoレポートを自動検出して記事化
-/publish-report [レポートパス]   # 指定レポートを記事化
+/publish-report                 # ドラフト作成（最新のdemoレポートを自動検出）
+/publish-report draft           # ドラフト作成（同上）
+/publish-report [レポートパス]   # 指定レポートでドラフト作成
+/publish-report confirm         # ドラフトを確定・公開
 ```
 
 ## 記事トーン
@@ -26,7 +29,7 @@ aliases: ["/publish-report", "/pub-report"]
 - 投資判断は読者に委ねる（推奨・助言にならない表現）
 - 「〇〇すべき」「〇〇が有望」のような断定は避ける
 
-## 実行フロー（4Phase）
+## ドラフトモード（Phase 1-3）
 
 ### Phase 1 - 素材収集（Read only）
 
@@ -42,18 +45,36 @@ aliases: ["/publish-report", "/pub-report"]
 - 改善点がない週は「現状維持が最善である根拠」を記事にする
 - 初回構築レポートの場合: 「なぜこの銘柄構成にしたか」の構築根拠を記事にする（前回比は使わない）
 
-### Phase 3 - 記事生成 → プレビュー（まだ書き込まない）
+### Phase 3 - 記事生成 → ドラフト保存
 
-- `article-template.md` に従い1500-2000字の記事を生成
-- slugはSEO重視形式（例: `20260212_demo-portfolio-bank-etf-momentum.md`）
-- frontmatter: title, summary, publishedAt
-- 記事末尾に免責文を必ず含める
-- AskUserQuestionで全文プレビューを提示 → OK/修正指示を判断
+1. `article-template.md` に従い1500-2000字の記事を生成
+2. slugはSEO重視形式（例: `20260212_demo-portfolio-bank-etf-momentum.md`）
+3. frontmatter: title, summary, publishedAt
+4. 記事末尾に免責文を必ず含める
+5. AskUserQuestionで全文プレビューを提示 → OK/修正指示を判断
+6. OKなら `reports/demo/drafts/YYYYMMDD_draft.md` に保存
+7. **この段階では HISTORY.md を触らない**
+8. 完了メッセージで次のアクションを案内する（「ドラフトを確認して、確定する場合は `/publish-report confirm` と指示してください。修正が必要な場合は再度 `/publish-report` を実行してください。」）
 
-### Phase 4 - 保存・検証（ユーザーOK後）
+## 確定モード（Phase 4-5）
 
-- `frontend/src/content/notes/` にWrite
-- ビルド確認: `docker compose exec frontend npm run build`
+### Phase 4 - ドラフト確認
+
+1. `reports/demo/drafts/` から最新のドラフトファイルを読み込み
+2. AskUserQuestionでドラフト内容を提示し最終確認
+
+### Phase 5 - 公開・検証・HISTORY更新
+
+1. `frontend/src/content/notes/` にWrite
+2. ビルド確認: `docker compose exec frontend npm run build`
+3. HISTORY.md 更新:
+   - **スナップショット保存**: 当日のスナップショットが無ければ `HISTORY.md` を `history/YYYYMMDD.md` として保存（過去のスナップショットは変更・削除しない）
+   - **バックアップ**: `HISTORY.md` を `HISTORY.md.bak` にコピー
+   - **分析履歴テーブル**: 新しい行を追記
+   - **現在のポートフォリオ**: 最新の保有状態で上書き
+   - **未実行アクション**: 今回の提案で更新（実行済みは削除、新規提案を追加）
+4. `reports/demo/drafts/` のドラフトファイルを削除
+5. 完了メッセージで次のアクションを案内する（「記事を公開しました。変更をコミットする場合は `/commit` と指示してください。」）
 
 ## タイトルの付け方
 
@@ -107,17 +128,49 @@ publishedAt: 2026-02-20 09:00
 
 ## 完了条件
 
+### ドラフトモード
+
+- `reports/demo/drafts/YYYYMMDD_draft.md` にファイルが保存されている
 - レポートの数値を正確に引用している
 - 1500-2000字の範囲内
 - frontmatterが正しいYAML形式
+
+### 確定モード
+
+- `frontend/src/content/notes/` に記事が配置されている
 - Viteビルドが通る
+- HISTORY.md が更新されている
+- `reports/demo/drafts/` のドラフトが削除されている
 
 ## 出力形式
 
-```markdown
-## /publish-report 結果
+### ドラフトモード
 
-### 生成記事
+```markdown
+## /publish-report draft 結果
+
+### ドラフト記事
+- ファイル: `reports/demo/drafts/{ファイル名}`
+- タイトル: {タイトル}
+- 文字数: {N}字
+
+### 品質チェック
+| 項目 | 結果 |
+|------|------|
+| frontmatter形式 | OK/NG |
+| 文字数範囲 | OK/NG（N字） |
+| 数値正確性 | OK/NG |
+
+### 次のアクション
+ドラフトを確認して、確定する場合は `/publish-report confirm` と指示してください。修正が必要な場合は再度 `/publish-report` を実行してください。
+```
+
+### 確定モード
+
+```markdown
+## /publish-report confirm 結果
+
+### 公開記事
 - ファイル: `frontend/src/content/notes/{ファイル名}`
 - タイトル: {タイトル}
 - 文字数: {N}字
@@ -129,6 +182,11 @@ publishedAt: 2026-02-20 09:00
 | 文字数範囲 | OK/NG（N字） |
 | 数値正確性 | OK/NG |
 | ビルド確認 | OK/NG |
+| HISTORY.md更新 | OK/NG |
+| ドラフト削除 | OK/NG |
+
+### 次のアクション
+記事を公開しました。変更をコミットする場合は `/commit` と指示してください。
 ```
 
 ## 関連スキル
@@ -142,5 +200,6 @@ publishedAt: 2026-02-20 09:00
 |----------|------|
 | `reports/*_portfolio_analysis_demo.md` | 入力レポート |
 | `reports/demo/HISTORY.md` | ポートフォリオ履歴 |
-| `frontend/src/content/notes/` | 出力先ディレクトリ |
+| `reports/demo/drafts/` | ドラフト保存先 |
+| `frontend/src/content/notes/` | 公開先ディレクトリ |
 | `frontend/src/content/notes/index.ts` | ノートローダー（frontmatter形式の制約元） |
