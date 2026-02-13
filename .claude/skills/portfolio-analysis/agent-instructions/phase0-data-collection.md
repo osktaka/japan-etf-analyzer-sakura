@@ -17,6 +17,54 @@
 
 このフェーズにスキップ条件はない。常に実行する。
 
+## `_metadata`セクションの出力（必須）
+
+`portfolio_data.json` の先頭に `_metadata` キーを追加し、各データセクションのスキーマ情報を含めること。アナリストエージェントはこの `_metadata` を最初に読み、正しいフィールド名を確定してからスクリプトを書く。
+
+**`_metadata`に含める情報（各データセクション）**:
+- `count`: データ件数（`len(data)`）
+- `columns`: 最初のレコードのキー一覧
+- `sample`: 最初のレコードをそのまま出力
+- セクション固有の情報（`perspectives`, `periods`等はユニーク値を抽出）
+
+**対象セクション**: `score_cache`, `performance_cache`, `price_data`, `etf_data`, `tag_data`, `etf_codes`
+
+**出力例**:
+```json
+{
+  "_metadata": {
+    "score_cache": {
+      "count": 30,
+      "perspectives": ["balance", "dividend", "low-cost", "stability", "volume", "growth"],
+      "axes": ["dividend_power", "cost_efficiency", "scale_reliability", "trading_quality", "return_performance"],
+      "columns": ["etf_code", "perspective", "total_score", "dividend_power", "cost_efficiency", "scale_reliability", "trading_quality", "return_performance"],
+      "sample": { "etf_code": "1475", "perspective": "balance", "total_score": 76.4 }
+    },
+    "performance_cache": {
+      "count": 40,
+      "periods": ["1m", "3m", "6m", "1y", "3y", "5y", "10y", "20y"],
+      "columns": ["etf_code", "period", "return_rate", "volatility", "regression_rate"],
+      "sample": { "etf_code": "1475", "period": "1y", "return_rate": 0.4014 }
+    },
+    "price_data": {
+      "count": 65,
+      "columns": ["etf_code", "date", "close"]
+    },
+    "etf_data": {
+      "count": 5,
+      "columns": ["code", "momentum_label", "manager", "listing_date", "deviation_rate"]
+    },
+    "tag_data": {
+      "count": 25,
+      "columns": ["etf_code", "name", "category"]
+    },
+    "etf_codes": ["1475", "1329", "1615", "1489", "1597"]
+  },
+  "holdings": { ... },
+  ...
+}
+```
+
 ---
 
 ## データ収集スクリプト例
@@ -171,8 +219,34 @@ if len(etf_codes) >= 2:
                 print(f"比較API（scores）エラー: {compare_score_resp.status_code}（スキップ）")
                 compare_scores_list.append(None)
 
+# _metadata生成（アナリストがフィールド名を正確に把握するため）
+def build_metadata(data, extra_info=None):
+    if not data:
+        return {"count": 0, "columns": [], "sample": None}
+    first = data[0] if isinstance(data, list) else data
+    first_dict = dict(first._mapping) if hasattr(first, '_mapping') else first
+    meta = {"count": len(data), "columns": list(first_dict.keys()), "sample": {k: str(v) if not isinstance(v, (int, float, bool, type(None))) else v for k, v in first_dict.items()}}
+    if extra_info:
+        meta.update(extra_info)
+    return meta
+
+_metadata = {
+    "score_cache": build_metadata(score_data, {
+        "perspectives": sorted(set(dict(r._mapping)['perspective'] for r in score_data)) if score_data else [],
+        "axes": ["dividend_power", "cost_efficiency", "scale_reliability", "trading_quality", "return_performance"]
+    }),
+    "performance_cache": build_metadata(performance_data, {
+        "periods": sorted(set(dict(r._mapping)['period'] for r in performance_data)) if performance_data else []
+    }),
+    "price_data": build_metadata(price_data),
+    "etf_data": build_metadata(etf_data),
+    "tag_data": build_metadata(tag_data),
+    "etf_codes": etf_codes
+}
+
 # データ保存
 output = {
+    '_metadata': _metadata,
     'holdings': holdings,
     'summary': summary,
     'valuation_history': valuation_history,
