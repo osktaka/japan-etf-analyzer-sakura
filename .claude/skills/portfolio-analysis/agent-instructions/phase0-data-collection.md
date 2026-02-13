@@ -57,7 +57,7 @@ if holdings_resp.status_code != 200:
     print(f"保有銘柄取得エラー: {holdings_resp.status_code} {holdings_resp.text}")
     sys.exit(1)
 holdings = holdings_resp.json()
-etf_codes = [h['code'] for h in holdings['holdings']]
+etf_codes = [h['etf_code'] for h in holdings['data']]
 print(f"保有銘柄数: {len(etf_codes)}")
 
 # 2. サマリー取得
@@ -100,8 +100,8 @@ try:
 
         # score_cache
         score_result = db.session.execute(db.text(f"""
-            SELECT etf_code, perspective,
-                   dividend_score, cost_score, scale_score, liquidity_score, return_score
+            SELECT etf_code, perspective, total_score,
+                   dividend_power, cost_efficiency, scale_reliability, trading_quality, return_performance
             FROM score_cache
             WHERE etf_code IN ({placeholders})
         """), params)
@@ -130,7 +130,7 @@ try:
         price_params = {f'code_{i}': code for i, code in enumerate(etf_codes)}
         price_placeholders = ', '.join([f':code_{i}' for i in range(len(etf_codes))])
         price_result = db.session.execute(db.text(f"""
-            SELECT etf_code, date, closing_price
+            SELECT etf_code, date, close
             FROM price_histories
             WHERE etf_code IN ({price_placeholders})
             AND date >= date('now', '-13 months')
@@ -143,7 +143,7 @@ except Exception as e:
 # 5. おすすめAPI
 recommendations = {}
 for perspective in ['balance', 'dividend', 'low-cost']:
-    rec_resp = session.get(f'http://localhost:8902/api/v1/recommend/recommendations?perspective={perspective}')
+    rec_resp = session.get(f'http://localhost:8902/api/v1/recommendations?perspective={perspective}')
     if rec_resp.status_code == 200:
         recommendations[perspective] = rec_resp.json()
     else:
@@ -176,8 +176,8 @@ output = {
     'holdings': holdings,
     'summary': summary,
     'valuation_history': valuation_history,
-    'performance_data': [dict(row._mapping) for row in performance_data] if performance_data else None,
-    'score_data': [dict(row._mapping) for row in score_data] if score_data else None,
+    'performance_cache': [dict(row._mapping) for row in performance_data] if performance_data else None,
+    'score_cache': [dict(row._mapping) for row in score_data] if score_data else None,
     'etf_data': [dict(row._mapping) for row in etf_data] if etf_data else None,
     'tag_data': [dict(row._mapping) for row in tag_data] if tag_data else None,
     'price_data': [dict(row._mapping) for row in price_data] if price_data else None,
@@ -191,6 +191,7 @@ with open(output_path, 'w', encoding='utf-8') as f:
     json.dump(output, f, ensure_ascii=False, indent=2, default=str)
 
 # メインへの要約出力（この1行のみがメインのコンテキストに入る）
-total_value = summary.get('total_valuation', 0) if summary else 0
+summary_data = summary.get('data', {}) if summary else {}
+total_value = summary_data.get('total_value', 0)
 print(f"データ収集完了: {len(etf_codes)}銘柄、総評価額{total_value:,.0f}円")
 ```
