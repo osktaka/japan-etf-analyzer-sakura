@@ -61,6 +61,7 @@ temp/
 worklogs/
 reports/*
 !reports/demo/
+reports/demo/drafts/
 reports/demo/HISTORY.md
 reports/demo/HISTORY.md.bak
 reports/demo/history/
