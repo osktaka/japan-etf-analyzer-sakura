@@ -141,13 +141,13 @@ Phase 4: レポート保存
 
 3つの異なる視点を持つペルソナが独立分析→クロスレビュー→合意形成を行うことで、単一視点では見落としがちなリスクや機会を多角的に発見する。
 
-| ペルソナ | 役割 | 重視する観点 |
-|---------|------|------------|
-| analyst-A: リスク管理者 | 下振れリスクの定量評価 | ドローダウン・相関・ストレスシナリオ |
-| analyst-B: グロース追求派 | 機会損失とリターン最大化 | モメンタム・代替銘柄・欠落アセット |
-| analyst-C: バランス重視派 | 全体最適と分散度の維持 | スコア整合性・配分バランス・運用会社集中 |
+| ペルソナ | 役割 | 推論手法 | 重視する観点 |
+|---------|------|---------|------------|
+| analyst-A: ファンダメンタルズアナリスト | 企業価値・財務指標に基づく評価 | 演繹的推論（指標→結論） | スコア・シャープレシオ・低スコア銘柄 |
+| analyst-B: マーケットストラテジスト | マクロ経済・市場トレンドからの評価 | 帰納的推論（パターン→予測） | モメンタム・セクター配分・欠落アセット |
+| analyst-C: リスクマネージャー | リスク・リターン効率とポートフォリオ全体最適 | 反実仮想分析（最悪シナリオ→対策） | ドローダウン・ストレスシナリオ・相関 |
 
-**議論の流れ**: Phase 1で各ペルソナが独立に全項目を分析 → Phase 2aで相互レビュー（他ペルソナの分析に対する矛盾の指摘） → Phase 2bで反論と合意形成 → Phase 3で統合エージェントが議論の経緯を含むレポートを作成
+**議論の流れ**: Phase 1で各ペルソナ（ファンダメンタルズアナリスト/マーケットストラテジスト/リスクマネージャー）が独立に全項目を分析 → Phase 2aで相互レビュー（他ペルソナの分析に対する矛盾の指摘） → Phase 2bで反論と合意形成 → Phase 3で統合エージェントが議論の経緯を含むレポートを作成
 
 ## 分析で活用するデータソース
 
@@ -400,9 +400,9 @@ Taskツールで複数のサブエージェントを**同一ターンで並列�
 |-------------|---------------|-------|------------|
 | 市場環境調査 | general-purpose | sonnet | `agent-instructions/phase0a-market-research.md` |
 | データ収集 | Bash | - | `agent-instructions/phase0-data-collection.md` |
-| analyst-A | general-purpose | sonnet | `agent-instructions/phase1-debate-common.md` + quant/score/allocation |
-| analyst-B | general-purpose | sonnet | 同上 |
-| analyst-C（任意） | general-purpose | sonnet | 同上 |
+| analyst-A（ファンダメンタルズアナリスト） | general-purpose | sonnet | `agent-instructions/phase1-debate-common.md` + quant/score/allocation |
+| analyst-B（マーケットストラテジスト） | general-purpose | sonnet | 同上 |
+| analyst-C（リスクマネージャー、任意） | general-purpose | sonnet | 同上 |
 | 統合レポート | general-purpose | sonnet | `agent-instructions/phase34-integration.md` |
 
 ## 関連ファイル
