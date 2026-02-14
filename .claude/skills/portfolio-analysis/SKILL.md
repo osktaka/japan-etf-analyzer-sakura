@@ -96,7 +96,7 @@ Phase 1: タスク分割型並行分析（3エージェントが別々のタス�
 Phase 3+4: 統合レポート作成・保存（クロスレビューなし）
 ```
 
-- Phase 0aとPhase 0を並行実行（通常は0a→0の順序だが、速度重視では同時開始）
+- Phase 0aとPhase 0を並行実行
 - クロスレビューを完全スキップ
 - レポートのセクション9「クロスレビューで発見された矛盾と洞察」は「速度重視モードのためスキップ」と記載
 
@@ -137,8 +137,6 @@ Phase 3+4: 統合レポート作成・保存（クロスレビュー2ラウン�
 | analyst-B: マーケットストラテジスト | マクロ経済・市場トレンドからの評価 | 帰納的推論（パターン→予測） | モメンタム・セクター配分・欠落アセット |
 | analyst-C: リスクマネージャー | リスク・リターン効率とポートフォリオ全体最適 | 反実仮想分析（最悪シナリオ→対策） | ドローダウン・ストレスシナリオ・相関 |
 
-**議論の流れ**: Phase 1で各ペルソナ（ファンダメンタルズアナリスト/マーケットストラテジスト/リスクマネージャー）が独立に全項目を分析 → Phase 3+4の統合エージェント内でクロスレビュー2ラウンド（相互レビュー→反論→合意形成）を実施し、議論の経緯を含むレポートを作成・保存
-
 ## 分析で活用するデータソース
 
 | データソース | テーブル/API | 用途 |
@@ -163,18 +161,20 @@ Phase 3+4: 統合レポート作成・保存（クロスレビュー2ラウン�
 
 分析項目ごとにデータの充足度を事前に確認し、十分な計算・分析ができない場合は無理に実行せずスキップすること。
 
+> **注記**: 各分析項目の詳細なスキップ条件は、各エージェント指示書（`agent-instructions/phase1-*.md`）が正（single source of truth）。以下のテーブルはメインエージェントの完了確認用サマリーである。
+
 **スキップ判断基準**:
 
-| 分析項目 | 必要データ | スキップ条件 |
-|---------|-----------|-------------|
-| シャープレシオ | 1年リターン、ボラティリティ | `_data_status.performance_cache`がerror/empty、またはperiodsに1yが含まれない |
-| 相関分析 | 月次価格データ（最低6ヶ月） | `_data_status.price_data`がerror/empty、価格履歴が6ヶ月未満、または保有銘柄が1銘柄のみ |
-| 最大ドローダウン | 資産推移データ | `_data_status.valuation_history`がerror/empty、またはデータポイントが10件未満 |
-| ストレスシナリオ | ボラティリティ、保有比率 | シャープレシオ算出がスキップされた場合 |
-| スコア分析 | score_cache | `_data_status.score_cache`がerror/empty、またはスコアキャッシュが未生成の銘柄 |
-| モメンタム分析 | momentum_label | `_data_status.etf_data`がerror/empty、またはラベルが全銘柄NULL |
-| 現金比率 | ポートフォリオサマリー | `_data_status.summary`がerror/empty、またはsummaryにcash_balanceが含まれない |
-| クロスレビュー | Phase 1の分析結果 | レビュー対象の分析がスキップされた場合 |
+| 分析項目 | スキップ条件 |
+|---------|-------------|
+| シャープレシオ | `_data_status.performance_cache`がerror/empty、またはperiodsに1yが含まれない |
+| 相関分析 | `_data_status.price_data`がerror/empty、価格履歴が6ヶ月未満、または保有銘柄が1銘柄のみ |
+| 最大ドローダウン | `_data_status.valuation_history`がerror/empty、またはデータポイントが10件未満 |
+| ストレスシナリオ | シャープレシオ算出がスキップされた場合 |
+| スコア分析 | `_data_status.score_cache`がerror/empty、またはスコアキャッシュが未生成の銘柄 |
+| モメンタム分析 | `_data_status.etf_data`がerror/empty、またはラベルが全銘柄NULL |
+| 現金比率 | `_data_status.summary`がerror/empty、またはsummaryにcash_balanceが含まれない |
+| クロスレビュー | レビュー対象の分析がスキップされた場合 |
 
 **スキップ時の対応**:
 1. レポートの該当セクションにスキップ理由を以下の3分類で明記する:
@@ -317,6 +317,8 @@ with open('{WORK_DIR}/timing.json', 'w') as f:
 
 ### Phase 1: 並行分析（並列Task）
 
+**開始条件**: Phase 0aとPhase 0の**両方が完了**してからPhase 1を起動する。
+
 Taskツールで複数のサブエージェントを**同一ターンで並列発行**する。エージェント間通信は不要（ファイルベース通信のみ）。
 
 **サブエージェントへの指示方法**: 各サブエージェントのプロンプトに指示ファイルパスとWORK_DIRを渡す。**メインエージェントは指示ファイルの内容を読み込まない**。
@@ -333,7 +335,7 @@ Taskツールで複数のサブエージェントを**同一ターンで並列�
 | score-analyst | `{skill_dir}/agent-instructions/phase1-score-analyst.md` | `{WORK_DIR}/score_analysis.md` |
 | allocation-analyst | `{skill_dir}/agent-instructions/phase1-allocation-analyst.md` | `{WORK_DIR}/allocation_analysis.md` |
 
-**注意**: allocation-analystは、保有銘柄が5銘柄以上の場合に起動。4銘柄以下の場合はスキップ。
+**注意**: allocation-analystは常に起動。5銘柄未満の場合は項目A(地域別)/B(セクター別)/C(テーマ別)/F(集中度ヒートマップ)をスキップし、D(欠落アセットクラス)/E(現金比率)のみ実施。
 
 #### 議論重視モード: 独立分析型
 
@@ -347,15 +349,13 @@ Taskツールで複数のサブエージェントを**同一ターンで並列�
 
 各エージェントは自分なりの優先順位付け・総合判断を行い、最終的に統合エージェントが合意形成する。
 
-**5銘柄未満時のallocationルール**: 保有銘柄が5銘柄未満の場合、allocation関連項目（地域・セクター・テーマ別配分）は簡略化（タグ分散度のみ実施）。欠落アセットクラス・現金比率は通常通り実施。
-
-### Phase 2: クロスレビュー（統合エージェントに吸収）
+### クロスレビュー（統合エージェントに吸収）
 
 クロスレビューは独立フェーズとして実行せず、Phase 3+4の統合エージェントの責務として実施する。統合エージェントがモード別のクロスレビュー指示ファイルを読み込む。
 
 - **速度重視モード**: クロスレビューなし（セクション9は「速度重視モードのためスキップ」と記載）
-- **ノーマルモード**: 統合エージェントが `{skill_dir}/agent-instructions/phase2-crossreview-normal.md` を参照
-- **議論重視モード**: 統合エージェントが `{skill_dir}/agent-instructions/phase2-crossreview-debate.md` を参照
+- **ノーマルモード**: 統合エージェントが `{skill_dir}/agent-instructions/crossreview-normal.md` を参照
+- **議論重視モード**: 統合エージェントが `{skill_dir}/agent-instructions/crossreview-debate.md` を参照
 
 ### Phase 3+4: 統合レポート作成・保存（統合エージェントに委譲）
 
@@ -378,43 +378,24 @@ Taskツールで複数のサブエージェントを**同一ターンで並列�
 
 全エージェントはTaskツールで起動する（TeamCreateは使用しない）。
 
-### 速度重視・ノーマルモード
-
-| エージェント | subagent_type | model | 指示ファイル |
-|-------------|---------------|-------|------------|
-| 市場環境調査 | general-purpose | sonnet | `agent-instructions/phase0a-market-research.md` |
-| データ収集 | Bash | - | `agent-instructions/phase0-data-collection.md` |
-| quant-analyst | general-purpose | sonnet | `agent-instructions/phase1-quant-analyst.md` |
-| score-analyst | general-purpose | sonnet | `agent-instructions/phase1-score-analyst.md` |
-| allocation-analyst | general-purpose | sonnet | `agent-instructions/phase1-allocation-analyst.md` |
-| 統合レポート | general-purpose | sonnet | `agent-instructions/phase34-integration.md` |
-
-### 議論重視モード
-
-| エージェント | subagent_type | model | 指示ファイル |
-|-------------|---------------|-------|------------|
-| 市場環境調査 | general-purpose | sonnet | `agent-instructions/phase0a-market-research.md` |
-| データ収集 | Bash | - | `agent-instructions/phase0-data-collection.md` |
-| analyst-A（ファンダメンタルズアナリスト） | general-purpose | sonnet | `agent-instructions/phase1-debate-common.md` + quant/score/allocation |
-| analyst-B（マーケットストラテジスト） | general-purpose | sonnet | 同上 |
-| analyst-C（リスクマネージャー） | general-purpose | sonnet | 同上 |
-| 統合レポート | general-purpose | sonnet | `agent-instructions/phase34-integration.md` |
+| フェーズ | エージェント | subagent_type | model | 指示ファイル |
+|---------|------------|---------------|-------|------------|
+| Phase 0a | 市場環境調査 | general-purpose | sonnet | `agent-instructions/phase0a-market-research.md` |
+| Phase 0 | データ収集 | Bash | - | `agent-instructions/phase0-data-collection.md` |
+| Phase 1 (speed/normal) | quant-analyst | general-purpose | sonnet | `agent-instructions/phase1-quant-analyst.md` |
+| Phase 1 (speed/normal) | score-analyst | general-purpose | sonnet | `agent-instructions/phase1-score-analyst.md` |
+| Phase 1 (speed/normal) | allocation-analyst | general-purpose | sonnet | `agent-instructions/phase1-allocation-analyst.md` |
+| Phase 1 (debate) | analyst-A/B/C | general-purpose | sonnet | `agent-instructions/phase1-debate-common.md` + quant/score/allocation |
+| Phase 3+4 | 統合レポート | general-purpose | sonnet | `agent-instructions/phase34-integration.md` |
 
 ## 関連ファイル
 
 | ファイル | 役割 |
 |---------|------|
-| `agent-instructions/phase0a-market-research.md` | Phase 0a サブエージェント指示 |
-| `agent-instructions/phase0-data-collection.md` | Phase 0 サブエージェント指示 |
-| `agent-instructions/phase1-quant-analyst.md` | quant-analyst 指示 |
-| `agent-instructions/phase1-score-analyst.md` | score-analyst 指示 |
-| `agent-instructions/phase1-allocation-analyst.md` | allocation-analyst 指示 |
-| `agent-instructions/phase1-debate-common.md` | debate モード共通指示 |
-| `agent-instructions/phase2-crossreview-normal.md` | ノーマル クロスレビュー観点 |
-| `agent-instructions/phase2-crossreview-debate.md` | debate クロスレビュー観点 |
-| `agent-instructions/phase34-integration.md` | 統合レポート作成指示 |
 | `report-template.md` | レポート出力テンプレート |
 | `report-writing-guide.md` | レポート書き方ガイド（補足・議論重視ルール） |
+| `agent-instructions/crossreview-normal.md` | ノーマル クロスレビュー観点 |
+| `agent-instructions/crossreview-debate.md` | debate クロスレビュー観点 |
 | CLAUDE.md「株式分割の管理」セクション | 分割調整の仕組み |
 | CLAUDE.md「テストユーザー」セクション | 認証情報 |
 | docs/08_おすすめ銘柄設計.md | 5軸評価・6視点の詳細 |
