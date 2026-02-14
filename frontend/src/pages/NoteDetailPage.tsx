@@ -2,14 +2,16 @@ import { Link, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { SEOHead } from '../components/common/SEOHead'
-import { getNoteBySlug } from '../content/notes'
+import { getNoteBySlug, isPublished } from '../content/notes'
+import { useAuth } from '../hooks/useAuth'
 import { ROUTES } from '../utils/constants'
 import styles from './NoteDetailPage.module.css'
 
 /** Note detail page */
 export function NoteDetailPage() {
   const { slug } = useParams<{ slug: string }>()
-  const note = slug ? getNoteBySlug(slug) : undefined
+  const { isAdmin } = useAuth()
+  const note = slug ? getNoteBySlug(slug, isAdmin) : undefined
 
   if (!note) {
     return (
@@ -42,6 +44,9 @@ export function NoteDetailPage() {
             <time dateTime={note.publishedAt}>{note.publishedAt.slice(0, 10)}</time>
             {note.updatedAt && (
               <span className={styles.updated}>（更新: {note.updatedAt}）</span>
+            )}
+            {!isPublished(note.publishedAt) && (
+              <span className={styles.unpublishedBadge}>未公開</span>
             )}
           </div>
         </header>

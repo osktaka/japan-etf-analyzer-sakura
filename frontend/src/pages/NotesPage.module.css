@@ -57,6 +57,17 @@
   margin: 0;
 }
 
+.unpublishedBadge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--color-warning);
+  background-color: color-mix(in srgb, var(--color-warning) 15%, transparent);
+  border-radius: 9999px;
+}
+
 @media (max-width: 640px) {
   .container {
     padding: 1rem 0;

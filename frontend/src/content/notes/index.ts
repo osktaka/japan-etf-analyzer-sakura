@@ -23,7 +23,7 @@ function parseFrontmatter(raw: string): { meta: Record<string, string>; content:
 }
 
 /** publishedAtが現在日時以前かを判定（JST基準） */
-function isPublished(publishedAt: string): boolean {
+export function isPublished(publishedAt: string): boolean {
   // 現在の日時をJST文字列として取得（YYYY-MM-DD HH:mm:ss形式）
   const nowJST = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Tokyo' })
   // publishedAtを正規化（YYYY-MM-DDのみなら00:00:00、HH:mmなら:00を付与）
@@ -54,10 +54,10 @@ const notes: Note[] = Object.entries(mdModules).map(([path, raw]) => {
   }
 })
 
-/** 全ノートを公開日降順で取得（未公開記事を除外） */
-export function getAllNotes(): Note[] {
+/** 全ノートを公開日降順で取得（デフォルトで未公開記事を除外） */
+export function getAllNotes(includeUnpublished = false): Note[] {
   return [...notes]
-    .filter((note) => isPublished(note.publishedAt))
+    .filter((note) => includeUnpublished || isPublished(note.publishedAt))
     .sort((a, b) => {
       const timeA = new Date(a.publishedAt).getTime()
       const timeB = new Date(b.publishedAt).getTime()
@@ -66,9 +66,9 @@ export function getAllNotes(): Note[] {
     })
 }
 
-/** スラッグでノートを検索（未公開記事はundefined） */
-export function getNoteBySlug(slug: string): Note | undefined {
+/** スラッグでノートを検索（デフォルトで未公開記事はundefined） */
+export function getNoteBySlug(slug: string, includeUnpublished = false): Note | undefined {
   const note = notes.find((n) => n.slug === slug)
-  if (!note || !isPublished(note.publishedAt)) return undefined
+  if (!note || (!includeUnpublished && !isPublished(note.publishedAt))) return undefined
   return note
 }
