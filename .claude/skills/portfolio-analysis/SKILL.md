@@ -214,6 +214,7 @@ Phase 0のデータ収集は、**必ず** `phase0-collection-template.py` をベ
 | 相関分析 | `_data_status.price_data`がerror/empty、価格履歴が6ヶ月未満、または保有銘柄が1銘柄のみ |
 | 最大ドローダウン | `_data_status.valuation_history`がerror/empty、またはデータポイントが10件未満 |
 | ストレスシナリオ | シャープレシオ算出がスキップされた場合 |
+| VaR/CVaR | 月次リターンデータが6ヶ月未満の場合スキップ。6-11ヶ月は参考値として算出 |
 | スコア分析 | `_data_status.score_cache`がerror/empty、またはスコアキャッシュが未生成の銘柄 |
 | モメンタム分析 | `_data_status.etf_data`がerror/empty、またはラベルが全銘柄NULL |
 | 現金比率 | `_data_status.summary`がerror/empty、またはsummaryにcash_balanceが含まれない |
@@ -524,6 +525,7 @@ Round 1の全レビュー結果ファイルが出揃った後、3エージェン
 - [ ] シャープレシオを全保有銘柄で算出した
 - [ ] 相関分析（月次リターンベース）を実施した
 - [ ] 最大ドローダウンを実データから算出した
+- [ ] VaR/CVaR分析を実施した（月次データ6ヶ月以上の場合）
 - [ ] 5軸×6視点のスコア分析を実施した
 - [ ] モメンタム（勢いラベル）分析を実施した
 - [ ] クロスレビューで矛盾・洞察を発見した（ノーマル・議論重視モードのみ。速度重視モードではスキップ）
