@@ -102,16 +102,10 @@
 4. クロスレビュー（該当モードの場合）を実施し、セクション9に記載
 5. `{WORK_DIR}/timing.json` を読み込み、Phase 3+4の開始時刻（phase_3_start）と完了時刻（phase_3_end, skill_end）を自身で記録した上で、所要時間を計算し「実行時間」セクション（セクション14）に記載する
 6. `./reports/` ディレクトリを作成（存在しない場合）
-7. **レポート本体を保存**: `./reports/YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md`（**注意**: demoユーザーであっても`reports/demo/`配下には保存しない。`reports/demo/`はHISTORY.mdとスナップショットのみ）
-8. **demoユーザーの場合のみ**: HISTORY.md を以下の手順で更新する（レポート保存とは別の手順）
-   a. `reports/demo/history/` ディレクトリを作成（存在しない場合）
-   b. 当日のスナップショットファイル `reports/demo/history/YYYYMMDD.md` が存在しない場合、現在の `reports/demo/HISTORY.md` を該当日付でコピーする（既存のスナップショットは上書き・削除しない）
-   c. 現在の `HISTORY.md` を `HISTORY.md.bak` にコピーする（互換性維持）
-   d. HISTORY.md を最新の分析結果で更新:
-      - 分析履歴テーブルに新しい行を追記
-      - 現在のポートフォリオを上書き
-      - 未実行アクションを更新（実行済みは削除、新規提案を追加）
-9. メインに保存先パスのみ返す
+7. **レポート本体を保存**: `./reports/YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md`
+8. メインに保存先パスのみ返す
+
+**注意**: HISTORY.mdの更新やhistory/スナップショットの作成はこのスキルでは行わない。これらは `/publish-report confirm`（記事確定時）に実行される。記事化しない場合はユーザーが手動で更新を指示する。詳細は `reports/demo/PROMPT.md` の「週次分析フロー」を参照
 
 ---
 
