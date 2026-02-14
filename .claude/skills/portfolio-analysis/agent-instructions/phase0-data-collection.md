@@ -17,6 +17,44 @@
 
 このフェーズにスキップ条件はない。常に実行する。
 
+## 株式分割調整データの検証（必須）
+
+**背景**: 2026-02-14に、DBクエリ経由で取得した数量・取得単価が株式分割調整前のデータとなり、API（PortfolioService）経由の分割調整済みデータと不一致が発生した。これにより総資産が約3万円過小評価され、レポート全体を破棄する事態となった。
+
+**原則**: 保有銘柄の数量・取得単価・評価額・損益率は**必ずAPI `/api/v1/portfolio/holdings` のレスポンスを正とする**。DBの `trades` テーブルを直接クエリして数量・単価を取得してはならない。
+
+**検証手順**: データ収集完了後、以下を実行する。
+
+1. `portfolio_data.json` の `holdings` セクションから各銘柄の `quantity`, `average_cost`, `current_price`, `market_value` を抽出
+2. `quantity × current_price = market_value` が成立することを確認
+3. 全銘柄の `market_value` 合計 + `cash_balance` = `summary.total_value` が成立することを確認
+4. 不一致がある場合、エラーメッセージを出力してスクリプトを停止する（不正確なデータでの分析を防止）
+
+**確認コード例**:
+```python
+# データ収集後の検証
+holdings_data = holdings.get('data', [])
+summary_data = summary.get('data', {})
+cash = summary_data.get('cash_balance', 0)
+total_from_summary = summary_data.get('total_value', 0)
+
+total_market_value = 0
+for h in holdings_data:
+    qty = h.get('quantity', 0)
+    price = h.get('current_price', 0)
+    mv = h.get('market_value', 0)
+    calc_mv = qty * price
+    if abs(calc_mv - mv) > 1:  # 1円以上の誤差
+        print(f"警告: {h['etf_code']} の評価額不整合: {qty}口×{price}円={calc_mv}円 ≠ {mv}円")
+    total_market_value += mv
+
+calc_total = total_market_value + cash
+if abs(calc_total - total_from_summary) > 10:  # 10円以上の誤差
+    print(f"エラー: 総資産不整合: 銘柄合計{total_market_value}円 + 現金{cash}円 = {calc_total}円 ≠ サマリー{total_from_summary}円")
+    sys.exit(1)
+print(f"検証OK: 総資産{total_from_summary:,.0f}円（銘柄{total_market_value:,.0f}円 + 現金{cash:,.0f}円）")
+```
+
 ## `_metadata`セクションの出力（必須）
 
 `portfolio_data.json` の先頭に `_metadata` キーを追加し、各データセクションのスキーマ情報を含めること。アナリストエージェントはこの `_metadata` を最初に読み、正しいフィールド名を確定してからスクリプトを書く。
