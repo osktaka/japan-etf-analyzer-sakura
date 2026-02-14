@@ -7,7 +7,7 @@
 
 ## データ受け渡しルール
 
-- **入力**: `{WORK_DIR}/` 配下の全分析結果ファイル、`{skill_dir}/report-template.md`
+- **入力**: `{WORK_DIR}/` 配下の全分析結果ファイル、`{skill_dir}/report-template.md`、`{skill_dir}/report-writing-guide.md`
 - **出力**: `./reports/YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md`
 - **メインへの戻り値**: 「レポート保存完了: ./reports/YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md」の1行のみ。データ全文やテーブル全体を返さないこと
 
@@ -27,6 +27,7 @@
 | `{WORK_DIR}/portfolio_data.json` | 全収集データ |
 | `{WORK_DIR}/timing.json` | 各フェーズの実行時間記録 |
 | `{skill_dir}/report-template.md` | レポート出力形式テンプレート |
+| `{skill_dir}/report-writing-guide.md` | レポート書き方ガイド（注意事項・記載例） |
 
 ### speed/normalモード
 
@@ -84,13 +85,13 @@
 議論重視モードでは、3つのペルソナ（ファンダメンタルズアナリスト/マーケットストラテジスト/リスクマネージャー）の分析結果を統合する。
 
 **統合の原則**:
-1. **全ペルソナ合意の項目**: レポートで「全視点一致」と明記し、高い確信度で推奨
+1. **全ペルソナ合意の項目**: レポートで「全ペルソナ一致」と明記し、高い確信度で推奨
 2. **過半数合意の項目**: 多数派の結論を採用しつつ、少数派の懸念を付記
 3. **全ペルソナ不合意の項目**: 各ペルソナの見解を併記し、読者に判断を委ねる
 
 **合意度の記載方法**:
 - 各分析セクションの結論部分に `【合意度】` を付記する
-- 形式: `【合意度: 全視点一致 / 2/3合意 / 見解分かれる】`
+- 形式: `【合意度: 全ペルソナ一致 / 2/3合意 / 見解分かれる】`
 - 不合意の場合は各ペルソナの立場を1行で要約する
 
 ---
@@ -105,7 +106,7 @@
 ## レポート作成手順
 
 1. `{WORK_DIR}/` 配下の全ファイルを読み込む
-2. `{skill_dir}/report-template.md` を読み込む
+2. `{skill_dir}/report-template.md` と `{skill_dir}/report-writing-guide.md` を読み込む
 2a. `portfolio_data.json` の `_metadata._data_status` を読み込み、各データソースの取得状態を確認する。Phase 1各アナリストの出力ファイルに記載されたスキップ理由と突合し、「データ活用状況」テーブルを以下のルールで生成する:
     - `_data_status.{source}.status == "ok"` かつ Phase 1で活用された → ✓
     - `_data_status.{source}.status == "ok"` だがPhase 1でデータ不足（条件未充足）によりスキップ → △
