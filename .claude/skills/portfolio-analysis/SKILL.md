@@ -54,6 +54,7 @@ mkdir -p "${WORK_DIR}"
 ├── market_environment.md    # Phase 0a出力
 ├── portfolio_data.json      # Phase 0出力
 ├── portfolio_reference.md   # Phase 0出力（セクション1・11.2用テーブル）
+├── shared_calculations.md   # Phase 0.5出力（debateモード限定、共通定量計算結果）
 ├── quant_analysis.md        # Phase 1: quant-analyst出力
 ├── score_analysis.md        # Phase 1: score-analyst出力
 ├── allocation_analysis.md   # Phase 1: allocation-analyst出力
@@ -118,12 +119,16 @@ Phase 3+4: 統合レポート作成・保存（クロスレビュー含む）
 ```
 Phase 0a + Phase 0: 市場環境調査 + データ収集
     ↓
-Phase 1: 独立分析（3エージェントが同じデータを独立に分析）
+Phase 0.5: 共通定量計算（debateモード限定）
+    ↓
+Phase 1: ペルソナ別解釈・判断（3エージェントが同じデータ+共通計算結果を独立に分析）
     ↓
 Phase 3+4: 統合レポート作成・保存（クロスレビュー2ラウンド含む）
 ```
 
-- Phase 1では3エージェントが**同じ全データ**を受け取り、それぞれ独立に分析
+- Phase 0完了後、Phase 0.5で共通定量計算を1エージェント（general-purpose, sonnet）で実行し、決定論的な計算結果（シャープレシオ、相関係数、ドローダウン等）を `shared_calculations.md` に出力する
+- Phase 1では3エージェントが**同じ全データ+共通計算結果**を受け取り、計算の再実行なしにペルソナごとの解釈・見解・提言を独立に行う
+- Phase 0.5はdebateモード限定。normalモード/speedモードには影響しない
 - クロスレビュー（2ラウンド: 相互レビュー→反論→合意形成）は統合エージェント内で実施
 - レポートのセクション9に議論の経緯を詳細に記載
 
@@ -247,6 +252,8 @@ print(resp.json())
 | phase_0_start | Phase 0サブエージェント起動直前 |
 | phase_0a_end | Phase 0aサブエージェント完了時 |
 | phase_0_end | Phase 0サブエージェント完了時 |
+| phase_05_start | Phase 0.5サブエージェント起動直前（debateモード時のみ） |
+| phase_05_end | Phase 0.5サブエージェント完了時（debateモード時のみ） |
 | phase_1_start | Phase 1サブエージェント起動直前 |
 | phase_1_end | Phase 1全サブエージェント完了時 |
 | phase_3_start | Phase 3+4統合エージェント起動直前 |
@@ -315,9 +322,22 @@ with open('{WORK_DIR}/timing.json', 'w') as f:
 9. 比較API（保有銘柄同士のperformance, scores）
 10. `portfolio_reference.md`の生成（セクション1・11.2用のmarkdownテーブルをPythonで自動生成）
 
+### Phase 0.5: 共通定量計算（debateモード限定）
+
+**開始条件**: Phase 0aとPhase 0の**両方が完了**してから起動する。
+**実行条件**: debateモードのみ。speed/normalモードでは実行しない。
+
+決定論的な計算（シャープレシオ、相関係数、ドローダウン等）を1エージェントで実行し、Phase 1の3ペルソナエージェントが計算を重複実行することを防ぐ。
+
+**サブエージェントへの指示**: プロンプトに以下を含める:
+- 指示ファイル: `{skill_dir}/agent-instructions/phase05-shared-calculations.md` を読んで実行
+- WORK_DIR: `{WORK_DIR}`
+- skill_dir: `{skill_dir}`
+- **メインへの戻り値は「共通定量計算完了」の1行のみ**
+
 ### Phase 1: 並行分析（並列Task）
 
-**開始条件**: Phase 0aとPhase 0の**両方が完了**してからPhase 1を起動する。
+**開始条件**: Phase 0aとPhase 0の**両方が完了**してからPhase 1を起動する。debateモードの場合は、さらにPhase 0.5の完了も必要。
 
 Taskツールで複数のサブエージェントを**同一ターンで並列発行**する。エージェント間通信は不要（ファイルベース通信のみ）。
 
@@ -382,6 +402,7 @@ Taskツールで複数のサブエージェントを**同一ターンで並列�
 |---------|------------|---------------|-------|------------|
 | Phase 0a | 市場環境調査 | general-purpose | sonnet | `agent-instructions/phase0a-market-research.md` |
 | Phase 0 | データ収集 | Bash | - | `agent-instructions/phase0-data-collection.md` |
+| Phase 0.5 (debate) | 共通定量計算 | general-purpose | sonnet | `agent-instructions/phase05-shared-calculations.md` |
 | Phase 1 (speed/normal) | quant-analyst | general-purpose | sonnet | `agent-instructions/phase1-quant-analyst.md` |
 | Phase 1 (speed/normal) | score-analyst | general-purpose | sonnet | `agent-instructions/phase1-score-analyst.md` |
 | Phase 1 (speed/normal) | allocation-analyst | general-purpose | sonnet | `agent-instructions/phase1-allocation-analyst.md` |

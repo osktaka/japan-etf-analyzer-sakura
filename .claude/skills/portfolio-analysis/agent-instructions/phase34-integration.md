@@ -42,6 +42,7 @@
 
 | ファイル | 内容 |
 |---------|------|
+| `{WORK_DIR}/shared_calculations.md` | 共通定量計算結果（Phase 0.5で生成） |
 | `{WORK_DIR}/analyst_a_analysis.md` | analyst-A分析結果 |
 | `{WORK_DIR}/analyst_b_analysis.md` | analyst-B分析結果 |
 | `{WORK_DIR}/analyst_c_analysis.md` | analyst-C分析結果（存在する場合） |
@@ -67,6 +68,11 @@
 以下のファイルを読み込み、記載された手順で2ラウンドのクロスレビューを実施する:
 
 - **参照ファイル**: `{skill_dir}/agent-instructions/crossreview-debate.md`
+
+**独立性維持ルール**:
+- `crossreview-debate.md` の独立性維持ルールに従うこと
+- 各ペルソナの★★★重点項目に基づいてレビューを実施すること
+- 「全ペルソナ同意」と記載する前に、反対できる根拠がないか各ペルソナ視点で検証すること
 
 セクション9には議論の経緯を詳細に記載:
 - 見解の相違点とその根拠
