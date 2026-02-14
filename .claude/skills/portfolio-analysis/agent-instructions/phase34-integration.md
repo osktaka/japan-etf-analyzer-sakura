@@ -92,6 +92,12 @@
 
 1. `{WORK_DIR}/` 配下の全ファイルを読み込む
 2. `{skill_dir}/report-template.md` を読み込む
+2a. `portfolio_data.json` の `_metadata._data_status` を読み込み、各データソースの取得状態を確認する。Phase 1各アナリストの出力ファイルに記載されたスキップ理由と突合し、「データ活用状況」テーブルを以下のルールで生成する:
+    - `_data_status.{source}.status == "ok"` かつ Phase 1で活用された → ✓
+    - `_data_status.{source}.status == "ok"` だがPhase 1でデータ不足（条件未充足）によりスキップ → △
+    - `_data_status.{source}.status == "empty"` → △（備考: 「空レスポンス」）
+    - `_data_status.{source}.status == "error"` → ✗（備考: エラー詳細を転記）
+    - Phase 0で取得対象外（条件に該当せず） → -
 3. テンプレートに従い、各セクションを実データで埋める
 4. クロスレビュー（該当モードの場合）を実施し、セクション9に記載
 5. `{WORK_DIR}/timing.json` を読み込み、Phase 3+4の開始時刻（phase_3_start）と完了時刻（phase_3_end, skill_end）を自身で記録した上で、所要時間を計算し「実行時間」セクション（セクション14）に記載する

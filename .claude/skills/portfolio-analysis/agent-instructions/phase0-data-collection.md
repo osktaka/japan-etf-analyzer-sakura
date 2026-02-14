@@ -27,7 +27,18 @@
 - `sample`: 最初のレコードをそのまま出力
 - セクション固有の情報（`perspectives`, `periods`等はユニーク値を抽出）
 
-**対象セクション**: `score_cache`, `performance_cache`, `price_data`, `etf_data`, `tag_data`, `etf_codes`
+### `_data_status`セクション（必須）
+
+`_metadata` に `_data_status` キーを追加し、全データソースの取得状態を記録すること。Phase 1アナリストはこの情報を使ってスキップ判断を行う。
+
+**記録対象**: holdings, summary, valuation_history, performance_cache, score_cache, etf_data, tag_data, price_data, recommendations_balance, recommendations_dividend, recommendations_low-cost, compare_performance, compare_scores
+
+**ステータス値**:
+- `"ok"`: 正常取得（件数付き）
+- `"empty"`: HTTP 200だがデータが空
+- `"error"`: 取得失敗（エラー詳細付き）
+
+**対象セクション**: `score_cache`, `performance_cache`, `price_data`, `etf_data`, `tag_data`, `etf_codes`, `_data_status`
 
 **出力例**:
 ```json
@@ -58,7 +69,22 @@
       "count": 25,
       "columns": ["etf_code", "name", "category"]
     },
-    "etf_codes": ["1475", "1329", "1615", "1489", "1597"]
+    "etf_codes": ["1475", "1329", "1615", "1489", "1597"],
+    "_data_status": {
+      "holdings": {"status": "ok", "count": 5},
+      "summary": {"status": "ok", "count": 1},
+      "valuation_history": {"status": "empty", "detail": "レスポンス200だが中身が空"},
+      "performance_cache": {"status": "ok", "count": 40},
+      "score_cache": {"status": "ok", "count": 30},
+      "etf_data": {"status": "ok", "count": 5},
+      "tag_data": {"status": "ok", "count": 25},
+      "price_data": {"status": "ok", "count": 65},
+      "recommendations_balance": {"status": "ok", "count": 10},
+      "recommendations_dividend": {"status": "ok", "count": 10},
+      "recommendations_low-cost": {"status": "error", "http_status": 500, "error": "Internal Server Error"},
+      "compare_performance": {"status": "ok", "count": 1},
+      "compare_scores": {"status": "ok", "count": 1}
+    }
   },
   "holdings": { ... },
   ...
@@ -90,6 +116,21 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from src.app import create_app
 from src.models import db
 
+# データソースの取得状態を記録
+data_status = {}
+
+def record_status(name, resp=None, data=None, error=None):
+    """データソースの取得状態を記録"""
+    if error:
+        data_status[name] = {"status": "error", "error": str(error)[:200]}
+    elif resp is not None and resp.status_code != 200:
+        data_status[name] = {"status": "error", "http_status": resp.status_code, "error": resp.text[:200]}
+    elif data is None or (isinstance(data, list) and len(data) == 0) or (isinstance(data, dict) and len(data) == 0):
+        data_status[name] = {"status": "empty", "detail": "レスポンス200だが中身が空"}
+    else:
+        count = len(data) if isinstance(data, (list, dict)) else 1
+        data_status[name] = {"status": "ok", "count": count}
+
 # API認証
 session = requests.Session()
 login_resp = session.post('http://localhost:8902/api/v1/auth/login',
@@ -106,17 +147,20 @@ if holdings_resp.status_code != 200:
     sys.exit(1)
 holdings = holdings_resp.json()
 etf_codes = [h['etf_code'] for h in holdings['data']]
+record_status('holdings', data=holdings.get('data', []))
 print(f"保有銘柄数: {len(etf_codes)}")
 
 # 2. サマリー取得
 summary_resp = session.get('http://localhost:8902/api/v1/portfolio')
 summary = summary_resp.json() if summary_resp.status_code == 200 else None
+record_status('summary', resp=summary_resp, data=summary.get('data') if summary else None)
 if summary is None:
     print(f"サマリー取得エラー: {summary_resp.status_code}（スキップ）")
 
 # 3. 資産推移取得
 valuation_resp = session.get('http://localhost:8902/api/v1/portfolio/valuation-history?period=3y')
 valuation_history = valuation_resp.json() if valuation_resp.status_code == 200 else None
+record_status('valuation_history', resp=valuation_resp, data=valuation_history.get('data', []) if valuation_history else None)
 if valuation_history is None:
     print(f"資産推移取得エラー: {valuation_resp.status_code}（スキップ）")
 
@@ -139,54 +183,82 @@ try:
         placeholders, params = build_in_clause(etf_codes)
 
         # performance_cache
-        perf_result = db.session.execute(db.text(f"""
-            SELECT etf_code, period, return_rate, volatility, regression_rate
-            FROM performance_cache
-            WHERE etf_code IN ({placeholders})
-        """), params)
-        performance_data = perf_result.fetchall()
+        try:
+            perf_result = db.session.execute(db.text(f"""
+                SELECT etf_code, period, return_rate, volatility, regression_rate
+                FROM performance_cache
+                WHERE etf_code IN ({placeholders})
+            """), params)
+            performance_data = perf_result.fetchall()
+            record_status('performance_cache', data=performance_data)
+        except Exception as e:
+            print(f"performance_cache取得エラー: {e}")
+            record_status('performance_cache', error=e)
 
         # score_cache
-        score_result = db.session.execute(db.text(f"""
-            SELECT etf_code, perspective, total_score,
-                   dividend_power, cost_efficiency, scale_reliability, trading_quality, return_performance
-            FROM score_cache
-            WHERE etf_code IN ({placeholders})
-        """), params)
-        score_data = score_result.fetchall()
+        try:
+            score_result = db.session.execute(db.text(f"""
+                SELECT etf_code, perspective, total_score,
+                       dividend_power, cost_efficiency, scale_reliability, trading_quality, return_performance
+                FROM score_cache
+                WHERE etf_code IN ({placeholders})
+            """), params)
+            score_data = score_result.fetchall()
+            record_status('score_cache', data=score_data)
+        except Exception as e:
+            print(f"score_cache取得エラー: {e}")
+            record_status('score_cache', error=e)
 
         # etfs
-        etf_result = db.session.execute(db.text(f"""
-            SELECT code, momentum_label, manager, listing_date, deviation_rate
-            FROM etfs
-            WHERE code IN ({placeholders})
-        """), params)
-        etf_data = etf_result.fetchall()
+        try:
+            etf_result = db.session.execute(db.text(f"""
+                SELECT code, momentum_label, manager, listing_date, deviation_rate
+                FROM etfs
+                WHERE code IN ({placeholders})
+            """), params)
+            etf_data = etf_result.fetchall()
+            record_status('etf_data', data=etf_data)
+        except Exception as e:
+            print(f"etf_data取得エラー: {e}")
+            record_status('etf_data', error=e)
 
         # tags
-        tag_params = {f'code_{i}': code for i, code in enumerate(etf_codes)}
-        tag_placeholders = ', '.join([f':code_{i}' for i in range(len(etf_codes))])
-        tag_result = db.session.execute(db.text(f"""
-            SELECT etr.etf_code, t.name, t.category
-            FROM etf_tag_relations etr
-            JOIN tags t ON etr.tag_id = t.id
-            WHERE etr.etf_code IN ({tag_placeholders})
-        """), tag_params)
-        tag_data = tag_result.fetchall()
+        try:
+            tag_params = {f'code_{i}': code for i, code in enumerate(etf_codes)}
+            tag_placeholders = ', '.join([f':code_{i}' for i in range(len(etf_codes))])
+            tag_result = db.session.execute(db.text(f"""
+                SELECT etr.etf_code, t.name, t.category
+                FROM etf_tag_relations etr
+                JOIN tags t ON etr.tag_id = t.id
+                WHERE etr.etf_code IN ({tag_placeholders})
+            """), tag_params)
+            tag_data = tag_result.fetchall()
+            record_status('tag_data', data=tag_data)
+        except Exception as e:
+            print(f"tag_data取得エラー: {e}")
+            record_status('tag_data', error=e)
 
         # price_histories（月次リターン用）
-        price_params = {f'code_{i}': code for i, code in enumerate(etf_codes)}
-        price_placeholders = ', '.join([f':code_{i}' for i in range(len(etf_codes))])
-        price_result = db.session.execute(db.text(f"""
-            SELECT etf_code, date, close
-            FROM price_histories
-            WHERE etf_code IN ({price_placeholders})
-            AND date >= date('now', '-13 months')
-            ORDER BY etf_code, date
-        """), price_params)
-        price_data = price_result.fetchall()
+        try:
+            price_params = {f'code_{i}': code for i, code in enumerate(etf_codes)}
+            price_placeholders = ', '.join([f':code_{i}' for i in range(len(etf_codes))])
+            price_result = db.session.execute(db.text(f"""
+                SELECT etf_code, date, close
+                FROM price_histories
+                WHERE etf_code IN ({price_placeholders})
+                AND date >= date('now', '-13 months')
+                ORDER BY etf_code, date
+            """), price_params)
+            price_data = price_result.fetchall()
+            record_status('price_data', data=price_data)
+        except Exception as e:
+            print(f"price_data取得エラー: {e}")
+            record_status('price_data', error=e)
 except Exception as e:
     print(f"DB接続エラー: {e}（DBデータはスキップ）")
+    for name in ['performance_cache', 'score_cache', 'etf_data', 'tag_data', 'price_data']:
+        if name not in data_status:
+            record_status(name, error=e)
 
 # 5. おすすめAPI
 recommendations = {}
@@ -194,9 +266,11 @@ for perspective in ['balance', 'dividend', 'low-cost']:
     rec_resp = session.get(f'http://localhost:8902/api/v1/recommendations?perspective={perspective}')
     if rec_resp.status_code == 200:
         recommendations[perspective] = rec_resp.json()
+        record_status(f'recommendations_{perspective}', data=recommendations[perspective].get('data', []))
     else:
         print(f"おすすめAPI取得エラー（{perspective}）: {rec_resp.status_code}（スキップ）")
         recommendations[perspective] = None
+        record_status(f'recommendations_{perspective}', resp=rec_resp)
 
 # 6. 比較API（保有銘柄同士、5銘柄ずつ分割して取得）
 compare_performance_list = []
@@ -208,16 +282,22 @@ if len(etf_codes) >= 2:
             compare_codes = ','.join(chunk)
             compare_perf_resp = session.get(f'http://localhost:8902/api/v1/compare/performance?codes={compare_codes}')
             if compare_perf_resp.status_code == 200:
-                compare_performance_list.append(compare_perf_resp.json())
+                perf_json = compare_perf_resp.json()
+                compare_performance_list.append(perf_json)
+                record_status('compare_performance', data=perf_json.get('data', {}))
             else:
                 print(f"比較API（performance）エラー: {compare_perf_resp.status_code}（スキップ）")
                 compare_performance_list.append(None)
+                record_status('compare_performance', resp=compare_perf_resp)
             compare_score_resp = session.get(f'http://localhost:8902/api/v1/compare/scores?codes={compare_codes}')
             if compare_score_resp.status_code == 200:
-                compare_scores_list.append(compare_score_resp.json())
+                score_json = compare_score_resp.json()
+                compare_scores_list.append(score_json)
+                record_status('compare_scores', data=score_json.get('data', {}))
             else:
                 print(f"比較API（scores）エラー: {compare_score_resp.status_code}（スキップ）")
                 compare_scores_list.append(None)
+                record_status('compare_scores', resp=compare_score_resp)
 
 # _metadata生成（アナリストがフィールド名を正確に把握するため）
 def build_metadata(data, extra_info=None):
@@ -241,7 +321,8 @@ _metadata = {
     "price_data": build_metadata(price_data),
     "etf_data": build_metadata(etf_data),
     "tag_data": build_metadata(tag_data),
-    "etf_codes": etf_codes
+    "etf_codes": etf_codes,
+    "_data_status": data_status
 }
 
 # データ保存

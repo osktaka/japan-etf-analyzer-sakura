@@ -149,10 +149,10 @@ Phase 4: レポート保存
 | 日次価格履歴 | price_histories テーブル | 相関分析用（月次リターン計算） |
 | 資産推移 | GET /api/v1/portfolio/valuation-history?period=3y | 最大ドローダウン、回復期間 |
 | 比較API | GET /api/v1/compare/performance, /scores | 銘柄間パフォーマンス・スコア比較 |
-| おすすめAPI | GET /api/v1/recommend/recommendations?perspective=... | 代替銘柄候補（balance, dividend, low-cost視点） |
+| おすすめAPI | GET /api/v1/recommendations?perspective=... | 代替銘柄候補（balance, dividend, low-cost視点） |
 | タグ情報 | etf_tag_relations + tags テーブル | セクター/地域/テーマ分類 |
 | ETF詳細 | etfs テーブル | 信託報酬、配当利回り、純資産、運用会社、上場日 |
-| 入出金記録 | cash_flows テーブル | 現金残高計算 |
+| 現金残高 | summaryのcash_balance（PortfolioService経由） | 現金比率算出 |
 | 市場環境調査 | WebSearch + WebFetch | 主要指標・政治経済トピック・分析への示唆 |
 
 ## 重要な注意事項
@@ -165,18 +165,21 @@ Phase 4: レポート保存
 
 | 分析項目 | 必要データ | スキップ条件 |
 |---------|-----------|-------------|
-| シャープレシオ | 1年リターン、ボラティリティ | performance_cacheに1年データが存在しない銘柄 |
-| 相関分析 | 月次価格データ（最低6ヶ月） | 価格履歴が6ヶ月未満、または保有銘柄が1銘柄のみ |
-| 最大ドローダウン | 資産推移データ | valuation-historyのデータポイントが10件未満 |
+| シャープレシオ | 1年リターン、ボラティリティ | `_data_status.performance_cache`がerror/empty、またはperiodsに1yが含まれない |
+| 相関分析 | 月次価格データ（最低6ヶ月） | `_data_status.price_data`がerror/empty、価格履歴が6ヶ月未満、または保有銘柄が1銘柄のみ |
+| 最大ドローダウン | 資産推移データ | `_data_status.valuation_history`がerror/empty、またはデータポイントが10件未満 |
 | ストレスシナリオ | ボラティリティ、保有比率 | シャープレシオ算出がスキップされた場合 |
-| スコア分析 | score_cache | スコアキャッシュが未生成の銘柄 |
-| モメンタム分析 | momentum_label | ラベルがNULLの銘柄 |
-| 現金比率 | cash_flows | 入出金記録が0件 |
+| スコア分析 | score_cache | `_data_status.score_cache`がerror/empty、またはスコアキャッシュが未生成の銘柄 |
+| モメンタム分析 | momentum_label | `_data_status.etf_data`がerror/empty、またはラベルが全銘柄NULL |
+| 現金比率 | ポートフォリオサマリー | `_data_status.summary`がerror/empty、またはsummaryにcash_balanceが含まれない |
 | クロスレビュー | Phase 1の分析結果 | レビュー対象の分析がスキップされた場合 |
 
 **スキップ時の対応**:
-1. レポートの該当セクションに「データ不足のためスキップ」と明記し、不足データの内容を記載する
-2. 完了条件のチェックリストでも「データ不足によりスキップ」と注記する
+1. レポートの該当セクションにスキップ理由を以下の3分類で明記する:
+   - 「取得失敗（API/DBエラー）」: `_data_status`のstatusが"error"の場合。エラー詳細も記載する
+   - 「データ不足（空レスポンス）」: `_data_status`のstatusが"empty"の場合
+   - 「データ不足（条件未充足）」: データは存在するが分析条件を満たさない場合（例: performance_cacheはあるが1yデータがない）
+2. 完了条件のチェックリストでも上記3分類でスキップ理由を注記する
 3. スキップした項目数が全体の半数を超える場合は、ユーザーにデータ蓄積を待つことを提案する
 
 ### スキップ前の原因調査（必須）
