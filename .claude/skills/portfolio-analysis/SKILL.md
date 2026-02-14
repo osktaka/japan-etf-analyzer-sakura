@@ -162,6 +162,25 @@ Phase 3+4: 統合レポート作成・保存（クロスレビュー2ラウン�
 
 ## 重要な注意事項
 
+### フェーズレベルの失敗時フォールバックポリシー
+
+個別データのスキップ判断（下記セクション参照）とは別に、フェーズ全体が失敗した場合の対応を以下に定義する。
+
+| フェーズ | 失敗条件 | 対応 |
+|---------|---------|------|
+| Phase 0a | WebSearch/WebFetch全て失敗 | market_environment.md なしで続行。Phase 1は市場環境言及をスキップ。レポートのセクション0に「市場環境調査失敗」と記載 |
+| Phase 0 | API認証失敗、またはholdings取得失敗 | **スキル全体を中止**。ユーザーにエラー内容を報告 |
+| Phase 0 | holdings成功だがDB系データが全て失敗 | portfolio_data.json をAPI取得分のみで保存して続行。Phase 1は `_data_status` に基づき個別にスキップ |
+| Phase 0.5 (debate) | スクリプト実行失敗 | Phase 1のペルソナエージェントが各自で計算を実行（shared_calculations.md が存在しなければ自力計算にフォールバック） |
+| Phase 1 | 3体中1体が失敗 | 残り2体の結果で続行。レポートの該当セクションに「分析失敗のため省略」と記載 |
+| Phase 1 | 3体中2体以上が失敗 | **スキル全体を中止**。ユーザーにエラー内容を報告 |
+| Phase 3+4 | レポート作成失敗 | メインエージェントがユーザーにエラー報告。WORK_DIR内の中間ファイルパスを提示し、手動確認を促す |
+
+**メインエージェントの判断フロー**:
+1. 各フェーズのサブエージェント完了後、出力ファイルの存在を確認
+2. 上記テーブルに従い、続行/中止を判断
+3. 中止する場合、ユーザーにエラー内容と推奨アクション（「Docker環境を確認する」「APIサーバーの起動状態を確認する」等）を報告
+
 ### データ不十分時のスキップ判断
 
 分析項目ごとにデータの充足度を事前に確認し、十分な計算・分析ができない場合は無理に実行せずスキップすること。
@@ -398,16 +417,24 @@ Taskツールで複数のサブエージェントを**同一ターンで並列�
 
 全エージェントはTaskツールで起動する（TeamCreateは使用しない）。
 
-| フェーズ | エージェント | subagent_type | model | 指示ファイル |
-|---------|------------|---------------|-------|------------|
-| Phase 0a | 市場環境調査 | general-purpose | sonnet | `agent-instructions/phase0a-market-research.md` |
-| Phase 0 | データ収集 | Bash | - | `agent-instructions/phase0-data-collection.md` |
-| Phase 0.5 (debate) | 共通定量計算 | general-purpose | sonnet | `agent-instructions/phase05-shared-calculations.md` |
-| Phase 1 (speed/normal) | quant-analyst | general-purpose | sonnet | `agent-instructions/phase1-quant-analyst.md` |
-| Phase 1 (speed/normal) | score-analyst | general-purpose | sonnet | `agent-instructions/phase1-score-analyst.md` |
-| Phase 1 (speed/normal) | allocation-analyst | general-purpose | sonnet | `agent-instructions/phase1-allocation-analyst.md` |
-| Phase 1 (debate) | analyst-A/B/C | general-purpose | sonnet | `agent-instructions/phase1-debate-common.md` + quant/score/allocation |
-| Phase 3+4 | 統合レポート | general-purpose | sonnet | `agent-instructions/phase34-integration.md` |
+| フェーズ | エージェント | subagent_type | model | タイムアウト | 指示ファイル |
+|---------|------------|---------------|-------|------------|------------|
+| Phase 0a | 市場環境調査 | general-purpose | sonnet | 3分 | `agent-instructions/phase0a-market-research.md` |
+| Phase 0 | データ収集 | Bash | - | 2分 | `agent-instructions/phase0-data-collection.md` |
+| Phase 0.5 (debate) | 共通定量計算 | general-purpose | sonnet | 3分 | `agent-instructions/phase05-shared-calculations.md` |
+| Phase 1 (speed/normal) | quant-analyst | general-purpose | sonnet | 5分 | `agent-instructions/phase1-quant-analyst.md` |
+| Phase 1 (speed/normal) | score-analyst | general-purpose | sonnet | 5分 | `agent-instructions/phase1-score-analyst.md` |
+| Phase 1 (speed/normal) | allocation-analyst | general-purpose | sonnet | 5分 | `agent-instructions/phase1-allocation-analyst.md` |
+| Phase 1 (debate) | analyst-A/B/C | general-purpose | sonnet | 8分 | `agent-instructions/phase1-debate-common.md` + quant/score/allocation |
+| Phase 3+4 | 統合レポート | general-purpose | sonnet | 10分 | `agent-instructions/phase34-integration.md` |
+
+### タイムアウト補足
+
+- 上記タイムアウトはサブエージェント起動時の目安。超過時はフォールバックポリシーの「失敗」として扱う
+- Phase 0のHTTP通信設定（phase0-collection-template.py参照）:
+  - リクエストタイムアウト: 30秒/リクエスト
+  - リトライ上限: 3回（指数バックオフ: 1秒→2秒→4秒）
+  - 認証リクエスト: リトライなし（即座に失敗）
 
 ## 関連ファイル
 

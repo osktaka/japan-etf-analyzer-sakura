@@ -11,10 +11,12 @@ Phase 0: データ収集テンプレートスクリプト
 
 注意: このテンプレートをコピーして使う場合、上記プレースホルダーを実際の値に置換すること。
 サブエージェントが実装する場合は、メインから渡された引数で動的に置換する。
-株式分割検証コードは phase0-data-collection.md の「確認コード例」セクションを参照のこと。
+株式分割検証コードは本テンプレート末尾に組込済み。検証失敗時はスクリプトが停止する。
 """
 
 import requests
+from urllib3.util.retry import Retry
+from requests.adapters import HTTPAdapter
 import json
 import os
 from pathlib import Path
@@ -49,14 +51,20 @@ def record_status(name, resp=None, data=None, error=None):
         count = len(data) if isinstance(data, (list, dict)) else 1
         data_status[name] = {"status": "ok", "count": count}
 
-# API認証
+# API認証（認証リクエストはリトライなし・即座に失敗）
 session = requests.Session()
-login_resp = session.post('http://localhost:8902/api/v1/auth/login',
+login_resp = session.post('http://localhost:8902/api/v1/auth/login', timeout=30,
                           json={'user_id': '{USER_ID}', 'password': '{PASSWORD}'})
 if login_resp.status_code != 200:
     print(f"認証エラー: {login_resp.status_code} {login_resp.text}")
     sys.exit(1)
 print(f"Login: {login_resp.status_code}")
+
+# リトライ設定（認証成功後のデータ取得リクエストに適用）
+retry_strategy = Retry(total=3, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
+adapter = HTTPAdapter(max_retries=retry_strategy)
+session.mount("http://", adapter)
+session.mount("https://", adapter)
 
 # 1. 保有銘柄取得
 holdings_resp = session.get('http://localhost:8902/api/v1/portfolio/holdings')
@@ -337,6 +345,46 @@ ref_path = WORK_DIR / 'portfolio_reference.md'
 with open(ref_path, 'w', encoding='utf-8') as f:
     f.write('\n'.join(ref_lines))
 print(f"参照データ生成: {ref_path}")
+
+# === 株式分割調整データの検証（必須） ===
+print("--- データ整合性検証 ---")
+holdings_data_v = (holdings or {}).get('data', [])
+if not holdings_data_v:
+    print("検証エラー: holdingsデータが空です。スキル全体を中止します。")
+    sys.exit(1)
+summary_data_v = (summary or {}).get('data', {})
+cash_v = summary_data_v.get('cash_balance', 0)
+total_asset_v = summary_data_v.get('total_asset', 0)
+
+validation_errors = []
+total_cv_v = 0
+for h in holdings_data_v:
+    qty = h.get('quantity', 0)
+    price = h.get('current_price', 0)
+    cv = h.get('current_value', 0)
+    calc_cv = qty * price
+    if abs(calc_cv - cv) > 1:  # 1円以上の誤差
+        validation_errors.append(
+            f"評価額不整合: {h['etf_code']} {qty}口×{price}円={calc_cv}円 ≠ {cv}円"
+        )
+    total_cv_v += cv
+
+calc_total_v = total_cv_v + cash_v
+if abs(calc_total_v - total_asset_v) > 10:  # 10円以上の誤差
+    validation_errors.append(
+        f"総資産不整合: 銘柄合計{total_cv_v}円 + 現金{cash_v}円 "
+        f"= {calc_total_v}円 ≠ サマリー{total_asset_v}円"
+    )
+
+if validation_errors:
+    print("データ検証エラー:")
+    for err in validation_errors:
+        print(f"  - {err}")
+    print("不正確なデータでの分析を防止するため、スクリプトを停止します。")
+    sys.exit(1)
+
+print(f"検証OK: 総資産{total_asset_v:,.0f}円"
+      f"（銘柄{total_cv_v:,.0f}円 + 現金{cash_v:,.0f}円）")
 
 # メインへの要約出力（この1行のみがメインのコンテキストに入る）
 summary_data = summary.get('data', {}) if summary else {}
