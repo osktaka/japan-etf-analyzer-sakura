@@ -1,5 +1,5 @@
 .container {
-  max-width: 780px;
+  max-width: 860px;
   margin: 0 auto;
   padding: 1.5rem 0;
 }
@@ -48,12 +48,13 @@
 
 /* Markdown content styles */
 .content {
+  font-size: 1.125rem;
   line-height: 1.8;
   color: var(--color-text);
 }
 
 .content h2 {
-  font-size: 1.25rem;
+  font-size: 1.375rem;
   font-weight: 700;
   color: var(--color-text);
   margin-top: 2rem;
@@ -63,7 +64,7 @@
 }
 
 .content h3 {
-  font-size: 1.0625rem;
+  font-size: 1.125rem;
   font-weight: 700;
   color: var(--color-text);
   margin-top: 1.5rem;
