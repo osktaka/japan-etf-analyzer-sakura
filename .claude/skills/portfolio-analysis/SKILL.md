@@ -53,6 +53,7 @@ mkdir -p "${WORK_DIR}"
 {WORK_DIR}/
 ├── market_environment.md    # Phase 0a出力
 ├── portfolio_data.json      # Phase 0出力
+├── portfolio_reference.md   # Phase 0出力（セクション1・11.2用テーブル）
 ├── quant_analysis.md        # Phase 1: quant-analyst出力
 ├── score_analysis.md        # Phase 1: score-analyst出力
 ├── allocation_analysis.md   # Phase 1: allocation-analyst出力
@@ -312,6 +313,7 @@ with open('{WORK_DIR}/timing.json', 'w') as f:
 7. タグ情報（etf_tag_relations JOIN tags）
 8. おすすめ銘柄API（balance, dividend, low-cost の各視点トップ10）
 9. 比較API（保有銘柄同士のperformance, scores）
+10. `portfolio_reference.md`の生成（セクション1・11.2用のmarkdownテーブルをPythonで自動生成）
 
 ### Phase 1: 並行分析（並列Task）
 
@@ -435,3 +437,4 @@ Taskツールで複数のサブエージェントを**同一ターンで並列�
 - [ ] 最適化前後の比較表（指標比較+保有銘柄の改善前後比較）を作成した
 - [ ] アクションアイテムを優先度別に整理した
 - [ ] レポートファイルが `./reports/` ディレクトリに保存された
+- [ ] レポート保存後の数値整合性チェック（portfolio_reference.mdとの照合）がパスした

@@ -10,7 +10,9 @@
 ## データ受け渡しルール
 
 - **入力**: なし（API/DB直接アクセス）
-- **出力**: 収集データを `{WORK_DIR}/portfolio_data.json` に保存
+- **出力**:
+  - `{WORK_DIR}/portfolio_data.json` — 全収集データ
+  - `{WORK_DIR}/portfolio_reference.md` — セクション1・11.2用markdownテーブル(プログラマティック生成。Phase 3+4統合エージェントがそのまま転記する)
 - **メインへの戻り値**: 完了メッセージ1行のみ。データ全文やテーブル全体を返さないこと
 
 ## スキップ判断基準
@@ -25,9 +27,9 @@
 
 **検証手順**: データ収集完了後、以下を実行する。
 
-1. `portfolio_data.json` の `holdings` セクションから各銘柄の `quantity`, `average_cost`, `current_price`, `market_value` を抽出
-2. `quantity × current_price = market_value` が成立することを確認
-3. 全銘柄の `market_value` 合計 + `cash_balance` = `summary.total_value` が成立することを確認
+1. `portfolio_data.json` の `holdings` セクションから各銘柄の `quantity`, `average_cost`, `current_price`, `current_value` を抽出
+2. `quantity × current_price = current_value` が成立することを確認
+3. 全銘柄の `current_value` 合計 + `cash_balance` = `summary.total_asset` が成立することを確認
 4. 不一致がある場合、エラーメッセージを出力してスクリプトを停止する（不正確なデータでの分析を防止）
 
 **確認コード例**:
@@ -36,23 +38,23 @@
 holdings_data = holdings.get('data', [])
 summary_data = summary.get('data', {})
 cash = summary_data.get('cash_balance', 0)
-total_from_summary = summary_data.get('total_value', 0)
+total_asset_from_summary = summary_data.get('total_asset', 0)
 
-total_market_value = 0
+total_current_value = 0
 for h in holdings_data:
     qty = h.get('quantity', 0)
     price = h.get('current_price', 0)
-    mv = h.get('market_value', 0)
-    calc_mv = qty * price
-    if abs(calc_mv - mv) > 1:  # 1円以上の誤差
-        print(f"警告: {h['etf_code']} の評価額不整合: {qty}口×{price}円={calc_mv}円 ≠ {mv}円")
-    total_market_value += mv
+    cv = h.get('current_value', 0)
+    calc_cv = qty * price
+    if abs(calc_cv - cv) > 1:  # 1円以上の誤差
+        print(f"警告: {h['etf_code']} の評価額不整合: {qty}口×{price}円={calc_cv}円 ≠ {cv}円")
+    total_current_value += cv
 
-calc_total = total_market_value + cash
-if abs(calc_total - total_from_summary) > 10:  # 10円以上の誤差
-    print(f"エラー: 総資産不整合: 銘柄合計{total_market_value}円 + 現金{cash}円 = {calc_total}円 ≠ サマリー{total_from_summary}円")
+calc_total = total_current_value + cash
+if abs(calc_total - total_asset_from_summary) > 10:  # 10円以上の誤差
+    print(f"エラー: 総資産不整合: 銘柄合計{total_current_value}円 + 現金{cash}円 = {calc_total}円 ≠ サマリー{total_asset_from_summary}円")
     sys.exit(1)
-print(f"検証OK: 総資産{total_from_summary:,.0f}円（銘柄{total_market_value:,.0f}円 + 現金{cash:,.0f}円）")
+print(f"検証OK: 総資産{total_asset_from_summary:,.0f}円（銘柄{total_current_value:,.0f}円 + 現金{cash:,.0f}円）")
 ```
 
 ## `_metadata`セクションの出力（必須）

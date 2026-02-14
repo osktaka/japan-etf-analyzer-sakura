@@ -264,6 +264,80 @@ output_path = WORK_DIR / 'portfolio_data.json'
 with open(output_path, 'w', encoding='utf-8') as f:
     json.dump(output, f, ensure_ascii=False, indent=2, default=str)
 
+# portfolio_reference.md の生成（レポートのセクション1・11.2で使用するmarkdownテーブル）
+holdings_data = holdings.get('data', [])
+summary_data = summary.get('data', {}) if summary else {}
+cash = summary_data.get('cash_balance', 0)
+total_asset_from_summary = summary_data.get('total_asset', 0)
+
+total_cv = sum(h.get('current_value', 0) for h in holdings_data)
+total_pnl = sum(h.get('unrealized_pnl', 0) for h in holdings_data)
+total_cost = sum(h.get('total_cost', 0) for h in holdings_data)
+total_pnl_pct = (total_pnl / total_cost * 100) if total_cost > 0 else 0
+
+ref_lines = []
+ref_lines.append("# ポートフォリオ参照データ（プログラマティック生成）")
+ref_lines.append("")
+ref_lines.append("> このファイルはPhase 0のPythonスクリプトで自動生成されました。")
+ref_lines.append("> Phase 3+4統合エージェントは、セクション1.1/1.2/11.2をこのファイルからそのまま転記してください。")
+ref_lines.append("> 数値の丸め・フォーマット変更は禁止です。")
+ref_lines.append("")
+
+# セクション1.1用テーブル
+ref_lines.append("## セクション1.1: 銘柄別保有状況")
+ref_lines.append("")
+ref_lines.append("| コード | 銘柄名 | 保有数量 | 平均取得単価 | 現在価格 | 評価額 | 損益 | 損益率 | 保有比率 |")
+ref_lines.append("|-------|--------|---------|------------|---------|-------|------|-------|---------|")
+for h in holdings_data:
+    code = h['etf_code']
+    etf_info = h.get('etf', {})
+    name = etf_info.get('name', code) if isinstance(etf_info, dict) else code
+    qty = h.get('quantity', 0)
+    avg_cost = h.get('average_cost', 0)
+    price = h.get('current_price', 0)
+    cv = h.get('current_value', 0)
+    pnl = h.get('unrealized_pnl', 0)
+    pnl_pct = h.get('unrealized_pnl_percent', 0)
+    ratio = (cv / total_cv * 100) if total_cv > 0 else 0
+    pnl_sign = "+" if pnl >= 0 else ""
+    pnl_pct_sign = "+" if pnl_pct >= 0 else ""
+    ref_lines.append(
+        f"| {code} | {name} | {qty:,.0f}口 | {avg_cost:,.1f}円 | {price:,.0f}円 | {cv:,.0f}円 | {pnl_sign}{pnl:,.0f}円 | {pnl_pct_sign}{pnl_pct:.1f}% | {ratio:.1f}% |"
+    )
+ref_lines.append("")
+
+# セクション1.2用サマリー
+ref_lines.append("## セクション1.2: サマリー")
+ref_lines.append("")
+ref_lines.append("```")
+ref_lines.append(f"合計評価額: {total_cv:,.0f}円")
+ref_lines.append(f"現金残高: {cash:,.0f}円")
+ref_lines.append(f"総資産: {total_asset_from_summary:,.0f}円")
+pnl_sign = "+" if total_pnl >= 0 else ""
+pnl_pct_sign = "+" if total_pnl_pct >= 0 else ""
+ref_lines.append(f"含み損益合計: {pnl_sign}{total_pnl:,.0f}円（{pnl_pct_sign}{total_pnl_pct:.1f}%）")
+ref_lines.append("```")
+ref_lines.append("")
+
+# セクション11.2用注記
+ref_lines.append("## セクション11.2: 現行ポートフォリオ（改善前）")
+ref_lines.append("")
+ref_lines.append("> セクション1.1のテーブルと同一内容をそのまま転記してください。")
+ref_lines.append("")
+
+# チェック値（検証用）
+ref_lines.append("## チェック値")
+ref_lines.append("")
+ref_lines.append(f"- 銘柄数: {len(holdings_data)}")
+ref_lines.append(f"- 合計評価額: {total_cv:,.0f}円")
+ref_lines.append(f"- 現金残高: {cash:,.0f}円")
+ref_lines.append(f"- 総資産: {total_asset_from_summary:,.0f}円")
+
+ref_path = WORK_DIR / 'portfolio_reference.md'
+with open(ref_path, 'w', encoding='utf-8') as f:
+    f.write('\n'.join(ref_lines))
+print(f"参照データ生成: {ref_path}")
+
 # メインへの要約出力（この1行のみがメインのコンテキストに入る）
 summary_data = summary.get('data', {}) if summary else {}
 total_value = summary_data.get('total_value', 0)

@@ -26,6 +26,7 @@
 | `{WORK_DIR}/market_environment.md` | 市場環境サマリー |
 | `{WORK_DIR}/portfolio_data.json` | 全収集データ |
 | `{WORK_DIR}/timing.json` | 各フェーズの実行時間記録 |
+| `{WORK_DIR}/portfolio_reference.md` | セクション1・11.2用markdownテーブル（プログラマティック生成） |
 | `{skill_dir}/report-template.md` | レポート出力形式テンプレート |
 | `{skill_dir}/report-writing-guide.md` | レポート書き方ガイド（注意事項・記載例） |
 
@@ -114,10 +115,53 @@
     - `_data_status.{source}.status == "error"` → ✗（備考: エラー詳細を転記）
     - Phase 0で取得対象外（条件に該当せず） → -
 3. テンプレートに従い、各セクションを実データで埋める
+   - **セクション1.1（銘柄別保有状況）**: `{WORK_DIR}/portfolio_reference.md` の「セクション1.1」テーブルをそのまま転記する。数値の丸め・フォーマット変更は禁止
+   - **セクション1.2（サマリー）**: `{WORK_DIR}/portfolio_reference.md` の「セクション1.2」をそのまま転記する
+   - **セクション11.2（現行ポートフォリオ・改善前）**: `{WORK_DIR}/portfolio_reference.md` の「セクション1.1」テーブルをそのまま転記する（セクション11.2の注記参照）
+   - **上記以外のセクション**: Phase 1の各分析ファイルと `portfolio_data.json` から統合して記載する
 4. クロスレビュー（該当モードの場合）を実施し、セクション9に記載
 5. `{WORK_DIR}/timing.json` を読み込み、Phase 3+4の開始時刻（phase_3_start）と完了時刻（phase_3_end, skill_end）を自身で記録した上で、所要時間を計算し「実行時間」セクション（セクション14）に記載する
 6. `./reports/` ディレクトリを作成（存在しない場合）
 7. **レポート本体を保存**: `./reports/YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md`
+7a. **数値整合性チェック（必須）**: レポート保存後、`{WORK_DIR}/portfolio_reference.md` のチェック値セクションとレポート内の数値を照合する。以下のBashコマンドを実行:
+
+    ```bash
+    python3 -c "
+    import re, sys
+
+    with open('/app/{WORK_DIR}/portfolio_reference.md', encoding='utf-8') as f:
+        ref = f.read()
+    with open('./reports/{REPORT_FILENAME}', encoding='utf-8') as f:
+        report = f.read()
+
+    # チェック値セクションから期待値を抽出
+    ref_total = re.search(r'合計評価額:\s*([\d,]+)円', ref)
+    ref_asset = re.search(r'総資産:\s*([\d,]+)円', ref)
+
+    # レポートのセクション1.2から実値を抽出
+    report_total = re.search(r'合計評価額:\s*([\d,]+)円', report)
+    report_asset = re.search(r'総資産:\s*([\d,]+)円', report)
+
+    errors = []
+    if ref_total and report_total:
+        if ref_total.group(1) != report_total.group(1):
+            errors.append(f'合計評価額: 参照={ref_total.group(1)}円 vs レポート={report_total.group(1)}円')
+    if ref_asset and report_asset:
+        if ref_asset.group(1) != report_asset.group(1):
+            errors.append(f'総資産: 参照={ref_asset.group(1)}円 vs レポート={report_asset.group(1)}円')
+
+    if errors:
+        print('数値整合性エラー:')
+        for e in errors:
+            print(f'  - {e}')
+        print('portfolio_reference.md から再転記して修正してください')
+        sys.exit(1)
+    else:
+        print('数値整合性チェック: OK')
+    "
+    ```
+
+    **不一致があった場合**: レポートのセクション1.1/1.2/11.2を `portfolio_reference.md` の値で上書きし、再度保存する。
 8. メインに保存先パスのみ返す
 
 ### まとめ（初心者向け）の作成指示
