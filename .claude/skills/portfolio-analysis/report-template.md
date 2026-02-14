@@ -364,7 +364,9 @@
 | Phase 0: データ収集 | X分XX秒 | API/DB一括取得 |
 | Phase 0a+0 合計（並行実行） | X分XX秒 | 並行実行のため長い方の時間 |
 | Phase 1: 並行分析 | X分XX秒 | N名のエージェントが並行実行 |
-| Phase 3+4: 統合レポート | X分XX秒 | クロスレビュー含む |
+| Phase 3: クロスレビュー（Round 1） | X分XX秒 | debateモード時のみ（3エージェント並行） |
+| Phase 3: クロスレビュー（Round 2） | X分XX秒 | debateモード時のみ（3エージェント並行） |
+| Phase 4: 統合レポート | X分XX秒 | speed/normalはPhase 3+4として記載 |
 | **合計** | **X分XX秒** | skill_start → skill_end |
 
 ---

@@ -46,6 +46,12 @@
 | `{WORK_DIR}/analyst_a_analysis.md` | analyst-A分析結果 |
 | `{WORK_DIR}/analyst_b_analysis.md` | analyst-B分析結果 |
 | `{WORK_DIR}/analyst_c_analysis.md` | analyst-C分析結果（存在する場合） |
+| `{WORK_DIR}/crossreview_round1_a.md` | analyst-A Round 1 レビュー（Phase 3で生成） |
+| `{WORK_DIR}/crossreview_round1_b.md` | analyst-B Round 1 レビュー（Phase 3で生成） |
+| `{WORK_DIR}/crossreview_round1_c.md` | analyst-C Round 1 レビュー（Phase 3で生成） |
+| `{WORK_DIR}/crossreview_round2_a.md` | analyst-A Round 2 反論・合意（Phase 3で生成） |
+| `{WORK_DIR}/crossreview_round2_b.md` | analyst-B Round 2 反論・合意（Phase 3で生成） |
+| `{WORK_DIR}/crossreview_round2_c.md` | analyst-C Round 2 反論・合意（Phase 3で生成） |
 
 ---
 
@@ -65,14 +71,15 @@
 
 ### debateモード
 
-以下のファイルを読み込み、記載された手順で2ラウンドのクロスレビューを実施する:
+Phase 3で独立エージェントが実施したクロスレビュー結果を読み込み、`crossreview-debate.md`の統合手順に従いセクション9を構成する。クロスレビュー自体の実施は不要（Phase 3で完了済み）。
 
 - **参照ファイル**: `{skill_dir}/agent-instructions/crossreview-debate.md`
+- **クロスレビュー結果ファイル**: `{WORK_DIR}/crossreview_round1_{a,b,c}.md`, `{WORK_DIR}/crossreview_round2_{a,b,c}.md`
 
-**独立性維持ルール**:
-- `crossreview-debate.md` の独立性維持ルールに従うこと
-- 各ペルソナの★★★重点項目に基づいてレビューを実施すること
-- 「全ペルソナ同意」と記載する前に、反対できる根拠がないか各ペルソナ視点で検証すること
+**統合時の注意事項**:
+- Phase 3で各エージェントが独立に出力したレビュー結果を忠実に反映すること
+- 各ペルソナの★★★重点項目に基づくレビュー内容をそのまま活用すること
+- 「全ペルソナ同意」と記載する前に、Round 2の反論・合意ファイルで実際に合意が形成されているか確認すること
 
 セクション9には議論の経緯を詳細に記載:
 - 見解の相違点とその根拠
@@ -119,7 +126,10 @@
    - **セクション1.2（サマリー）**: `{WORK_DIR}/portfolio_reference.md` の「セクション1.2」をそのまま転記する
    - **セクション11.2（現行ポートフォリオ・改善前）**: `{WORK_DIR}/portfolio_reference.md` の「セクション1.1」テーブルをそのまま転記する（セクション11.2の注記参照）
    - **上記以外のセクション**: Phase 1の各分析ファイルと `portfolio_data.json` から統合して記載する
-4. クロスレビュー（該当モードの場合）を実施し、セクション9に記載
+4. クロスレビュー結果をセクション9に記載:
+   - **speedモード**: 「速度重視モードのためスキップ」と記載
+   - **normalモード**: `crossreview-normal.md` に従い分析結果間の矛盾・整合性を検証し記載
+   - **debateモード**: Phase 3のクロスレビュー結果ファイル（6ファイル）を読み込み、`crossreview-debate.md`の統合手順に従いセクション9を構成する
 5. `{WORK_DIR}/timing.json` を読み込み、Phase 3+4の開始時刻（phase_3_start）と完了時刻（phase_3_end, skill_end）を自身で記録した上で、所要時間を計算し「実行時間」セクション（セクション14）に記載する
 6. `./reports/` ディレクトリを作成（存在しない場合）
 7. **レポート本体を保存**: `./reports/YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md`

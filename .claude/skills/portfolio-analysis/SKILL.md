@@ -58,6 +58,12 @@ mkdir -p "${WORK_DIR}"
 ├── quant_analysis.md        # Phase 1: quant-analyst出力
 ├── score_analysis.md        # Phase 1: score-analyst出力
 ├── allocation_analysis.md   # Phase 1: allocation-analyst出力
+├── crossreview_round1_a.md # Phase 3出力（debateモード限定、analyst-A Round 1レビュー）
+├── crossreview_round1_b.md # Phase 3出力（debateモード限定、analyst-B Round 1レビュー）
+├── crossreview_round1_c.md # Phase 3出力（debateモード限定、analyst-C Round 1レビュー）
+├── crossreview_round2_a.md # Phase 3出力（debateモード限定、analyst-A Round 2反論・合意）
+├── crossreview_round2_b.md # Phase 3出力（debateモード限定、analyst-B Round 2反論・合意）
+├── crossreview_round2_c.md # Phase 3出力（debateモード限定、analyst-C Round 2反論・合意）
 └── timing.json              # 各フェーズの実行時間
 
 reports/
@@ -123,13 +129,15 @@ Phase 0.5: 共通定量計算（debateモード限定）
     ↓
 Phase 1: ペルソナ別解釈・判断（3エージェントが同じデータ+共通計算結果を独立に分析）
     ↓
-Phase 3+4: 統合レポート作成・保存（クロスレビュー2ラウンド含む）
+Phase 3: クロスレビュー2ラウンド（3エージェント並列 x 2ラウンド、メインがオーケストレーション）
+    ↓
+Phase 4: 統合レポート作成・保存（クロスレビュー結果を読み込み統合）
 ```
 
 - Phase 0完了後、Phase 0.5で共通定量計算を1エージェント（general-purpose, sonnet）で実行し、決定論的な計算結果（シャープレシオ、相関係数、ドローダウン等）を `shared_calculations.md` に出力する
 - Phase 1では3エージェントが**同じ全データ+共通計算結果**を受け取り、計算の再実行なしにペルソナごとの解釈・見解・提言を独立に行う
 - Phase 0.5はdebateモード限定。normalモード/speedモードには影響しない
-- クロスレビュー（2ラウンド: 相互レビュー→反論→合意形成）は統合エージェント内で実施
+- クロスレビュー（2ラウンド: 相互レビュー→反論→合意形成）はPhase 3で独立エージェントが実施し、Phase 4の統合エージェントが結果を読み込み統合する
 - レポートのセクション9に議論の経緯を詳細に記載
 
 **議論重視モードのペルソナ構成**:
@@ -183,7 +191,9 @@ Phase 0のデータ収集は、**必ず** `phase0-collection-template.py` をベ
 | Phase 0.5 (debate) | スクリプト実行失敗 | Phase 1のペルソナエージェントが各自で計算を実行（shared_calculations.md が存在しなければ自力計算にフォールバック） |
 | Phase 1 | 3体中1体が失敗 | 残り2体の結果で続行。レポートの該当セクションに「分析失敗のため省略」と記載 |
 | Phase 1 | 3体中2体以上が失敗 | **スキル全体を中止**。ユーザーにエラー内容を報告 |
-| Phase 3+4 | レポート作成失敗 | メインエージェントがユーザーにエラー報告。WORK_DIR内の中間ファイルパスを提示し、手動確認を促す |
+| Phase 3 (debate) | 3体中1体が失敗 | 残り2体のレビュー結果で続行。セクション9の該当ペルソナの議論を「レビュー失敗のため省略」と記載 |
+| Phase 3 (debate) | 3体中2体以上が失敗 | Phase 3をスキップし、Phase 4の統合エージェント内でクロスレビューをシミュレート（従来方式にフォールバック）。セクション9に「独立クロスレビュー失敗のためシミュレート実施」と記載 |
+| Phase 4 | レポート作成失敗 | メインエージェントがユーザーにエラー報告。WORK_DIR内の中間ファイルパスを提示し、手動確認を促す |
 
 **メインエージェントの判断フロー**:
 1. 各フェーズのサブエージェント完了後、出力ファイルの存在を確認
@@ -284,8 +294,14 @@ print(resp.json())
 | phase_05_end | Phase 0.5サブエージェント完了時（debateモード時のみ） |
 | phase_1_start | Phase 1サブエージェント起動直前 |
 | phase_1_end | Phase 1全サブエージェント完了時 |
-| phase_3_start | Phase 3+4統合エージェント起動直前 |
-| phase_3_end | Phase 3+4統合エージェント完了時 |
+| phase_3_round1_start | Phase 3 Round 1エージェント起動直前（debateモード時） |
+| phase_3_round1_end | Phase 3 Round 1全エージェント完了時（debateモード時） |
+| phase_3_round2_start | Phase 3 Round 2エージェント起動直前（debateモード時） |
+| phase_3_round2_end | Phase 3 Round 2全エージェント完了時（debateモード時） |
+| phase_4_start | Phase 4統合エージェント起動直前 |
+| phase_4_end | Phase 4統合エージェント完了時 |
+| phase_3_start | Phase 3+4統合エージェント起動直前（speed/normalモード時。後方互換のため名称維持） |
+| phase_3_end | Phase 3+4統合エージェント完了時（speed/normalモード時。後方互換のため名称維持） |
 | skill_end | スキル完了時 |
 
 **記録方法**: Bashツールでタイムスタンプを追記する。
@@ -399,17 +415,53 @@ Taskツールで複数のサブエージェントを**同一ターンで並列�
 
 各エージェントは自分なりの優先順位付け・総合判断を行い、最終的に統合エージェントが合意形成する。
 
-### クロスレビュー（統合エージェントに吸収）
-
-クロスレビューは独立フェーズとして実行せず、Phase 3+4の統合エージェントの責務として実施する。統合エージェントがモード別のクロスレビュー指示ファイルを読み込む。
+### クロスレビュー
 
 - **速度重視モード**: クロスレビューなし（セクション9は「速度重視モードのためスキップ」と記載）
-- **ノーマルモード**: 統合エージェントが `{skill_dir}/agent-instructions/crossreview-normal.md` を参照
-- **議論重視モード**: 統合エージェントが `{skill_dir}/agent-instructions/crossreview-debate.md` を参照
+- **ノーマルモード**: 統合エージェント内で実施。統合エージェントが `{skill_dir}/agent-instructions/crossreview-normal.md` を参照
+- **議論重視モード**: Phase 3として独立実行。メインエージェントが3エージェントによる2ラウンドのクロスレビューをオーケストレーション（詳細は「Phase 3: クロスレビュー」セクション参照）。統合エージェントは `{skill_dir}/agent-instructions/crossreview-debate.md`（統合ガイド）を参照して結果を統合
 
-### Phase 3+4: 統合レポート作成・保存（統合エージェントに委譲）
+### Phase 3: クロスレビュー（debateモード限定）
+
+**実行条件**: debateモードのみ。speed/normalモードでは実行しない。
+**開始条件**: Phase 1の3エージェント全員が完了してから起動する。
+
+メインエージェントが multi-persona パターン（Task + run_in_background + TaskOutput）で2ラウンドのクロスレビューをオーケストレーションする。
+
+#### Round 1: 相互レビュー
+
+3エージェントを**同一ターンで並列起動**（run_in_background: true）。各エージェントは他2名の分析結果を読み込み、自身のペルソナの視点でレビューを行う。
+
+**サブエージェントへの指示**: プロンプトに以下を含める:
+- 指示ファイル: `{skill_dir}/agent-instructions/crossreview-debate-agent.md` を読んで実行
+- WORK_DIR: `{WORK_DIR}`
+- ペルソナ: `{persona}`（analyst-A / analyst-B / analyst-C）
+- ラウンド: `1`
+- skill_dir: `{skill_dir}`
+- **メインへの戻り値は「{ペルソナ名} Round 1 レビュー完了」の1行のみ**
+
+メインエージェントは `TaskOutput` で3エージェントの完了を待機。
+
+#### Round 2: 反論・合意形成
+
+Round 1の全レビュー結果ファイルが出揃った後、3エージェントを再度**同一ターンで並列起動**（run_in_background: true）。各エージェントは自分へのレビュー結果を読み込み、反論・合意を表明する。
+
+**サブエージェントへの指示**: プロンプトに以下を含める:
+- 指示ファイル: `{skill_dir}/agent-instructions/crossreview-debate-agent.md` を読んで実行
+- WORK_DIR: `{WORK_DIR}`
+- ペルソナ: `{persona}`（analyst-A / analyst-B / analyst-C）
+- ラウンド: `2`
+- skill_dir: `{skill_dir}`
+- **メインへの戻り値は「{ペルソナ名} Round 2 合意形成完了」の1行のみ**
+
+メインエージェントは `TaskOutput` で3エージェントの完了を待機。
+
+### Phase 4: 統合レポート作成・保存（統合エージェントに委譲）
 
 レポートの作成・保存はメインエージェントが行わず、**統合エージェント（general-purpose）**に委譲する。
+
+- **speed/normalモード**: Phase 1の分析結果を統合し、クロスレビュー（normalの場合）も統合エージェント内で実施
+- **debateモード**: Phase 1の分析結果 + Phase 3のクロスレビュー結果を読み込み、レポートに統合（クロスレビュー自体はPhase 3で完了済み）
 
 **サブエージェントへの指示**: プロンプトに以下を含める:
 - 指示ファイル: `{skill_dir}/agent-instructions/phase34-integration.md` を読んで実行
@@ -437,7 +489,9 @@ Taskツールで複数のサブエージェントを**同一ターンで並列�
 | Phase 1 (speed/normal) | score-analyst | general-purpose | sonnet | 5分 | `agent-instructions/phase1-score-analyst.md` |
 | Phase 1 (speed/normal) | allocation-analyst | general-purpose | sonnet | 5分 | `agent-instructions/phase1-allocation-analyst.md` |
 | Phase 1 (debate) | analyst-A/B/C | general-purpose | sonnet | 8分 | `agent-instructions/phase1-debate-common.md` + quant/score/allocation |
-| Phase 3+4 | 統合レポート | general-purpose | sonnet | 10分 | `agent-instructions/phase34-integration.md` |
+| Phase 3 (debate) Round 1 | analyst-A/B/C レビュー | general-purpose | sonnet | 5分 | `agent-instructions/crossreview-debate-agent.md` |
+| Phase 3 (debate) Round 2 | analyst-A/B/C 反論・合意 | general-purpose | sonnet | 5分 | `agent-instructions/crossreview-debate-agent.md` |
+| Phase 4 | 統合レポート | general-purpose | sonnet | 10分 | `agent-instructions/phase34-integration.md` |
 
 ### タイムアウト補足
 
