@@ -131,6 +131,7 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
    - **normalモード**: `crossreview-normal.md` に従い分析結果間の矛盾・整合性を検証し記載
    - **debateモード**: Phase 3のクロスレビュー結果ファイル（6ファイル）を読み込み、`crossreview-debate.md`の統合手順に従いセクション9を構成する
 5. `{WORK_DIR}/timing.json` を読み込み、Phase 3+4の開始時刻（phase_3_start）と完了時刻（phase_3_end, skill_end）を自身で記録した上で、所要時間を計算し「実行時間」セクション（セクション14）に記載する
+5a. コンテキスト使用量の集計: timing.json の `session_jsonl_path` と `session_jsonl_start_line` を読み込み、セッションJSONLの開始行以降のusageデータを集計して「コンテキスト使用量」テーブル（セクション14内）に記載する。集計方法は後述の「コンテキスト使用量の集計方法」を参照。
 6. `./reports/` ディレクトリを作成（存在しない場合）
 7. **レポート本体を保存**: `./reports/YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md`
 7a. **数値整合性チェック（必須）**: レポート保存後、`{WORK_DIR}/portfolio_reference.md` のチェック値セクションとレポート内の数値を照合する。以下のBashコマンドを実行:
@@ -193,3 +194,39 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
 - 合計 = skill_end - skill_start
 - phase_3_start: timing.jsonを読み込んだ直後に現在時刻を記録
 - phase_3_end / skill_end: レポート保存直前に現在時刻を記録
+
+## コンテキスト使用量の集計方法
+
+timing.json から `session_jsonl_path` と `session_jsonl_start_line` を読み込む。
+
+```bash
+python3 -c "
+import json
+with open('{WORK_DIR}/timing.json') as f:
+    timing = json.load(f)
+jsonl_path = timing.get('session_jsonl_path', '')
+start_line = timing.get('session_jsonl_start_line', 0)
+if not jsonl_path:
+    print('session_jsonl_path not found')
+else:
+    totals = {'input_tokens': 0, 'output_tokens': 0, 'cache_read_input_tokens': 0, 'cache_creation_input_tokens': 0}
+    try:
+        with open(jsonl_path) as f:
+            for i, line in enumerate(f):
+                if i <= start_line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                    usage = entry.get('message', {}).get('usage', {})
+                    for key in totals:
+                        totals[key] += usage.get(key, 0)
+                except (json.JSONDecodeError, KeyError):
+                    pass
+        for key, val in totals.items():
+            print(f'{key}: {val:,}')
+    except (FileNotFoundError, PermissionError) as e:
+        print(f'Error: {e}')
+"
+```
+
+集計結果をレポートの「コンテキスト使用量」テーブルに記入する。トークン数はカンマ区切り（例: 1,234,567）で表示する。session_jsonl_pathが未設定の場合は「（計測データなし）」と記載する。

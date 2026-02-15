@@ -189,10 +189,26 @@ print(resp.json())
 メインエージェントは `{WORK_DIR}/timing.json` に実行時間を記録する。
 
 **メインの記録タイミング（2回のみ）**:
-1. WORK_DIR作成時: `skill_start` を記録（mkdir と同一Bashコマンド内）
+1. WORK_DIR作成時: `skill_start` とセッションJSONLの現在行数を記録（mkdir と同一Bashコマンド内）
 2. Phase 1完了後: 中間ファイルの更新時刻（`stat`）から各フェーズの完了時刻を取得し一括書き込み
 
 **Phase 3/4のtiming**: Phase 3+4オーケストレーター（debateモード）または統合エージェント（speed/normalモード）が内部で記録。
+
+**timing.json 初期化**: WORK_DIR作成と同時に `skill_start` に加え、セッションJSONLの情報を記録する:
+```bash
+PROJECT_HASH=$(pwd | sed 's|/|-|g' | sed 's/^-//')
+SESSION_JSONL=$(ls -t ~/.claude/projects/${PROJECT_HASH}/*.jsonl 2>/dev/null | head -1)
+SESSION_START_LINE=$(wc -l < "$SESSION_JSONL" 2>/dev/null || echo "0")
+```
+
+timing.json の初期値:
+```json
+{
+  "skill_start": "2026-02-15T10:00:00",
+  "session_jsonl_path": "/home/t_osaka/.claude/projects/.../<session>.jsonl",
+  "session_jsonl_start_line": 12345
+}
+```
 
 **一括書き込みコード例**:
 ```bash
