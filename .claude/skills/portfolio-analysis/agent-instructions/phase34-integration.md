@@ -7,7 +7,7 @@
 
 ## データ受け渡しルール
 
-- **入力**: `{WORK_DIR}/` 配下の全分析結果ファイル、`{skill_dir}/report-template.md`、`{skill_dir}/report-writing-guide.md`
+- **入力**: `{WORK_DIR}/` 配下の全分析結果ファイル、`{skill_dir}/report-guide.md`
 - **出力**: `./reports/YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md`
 - **メインへの戻り値**: 「レポート保存完了: ./reports/YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md」の1行のみ。データ全文やテーブル全体を返さないこと
 
@@ -15,7 +15,7 @@
 
 ## 統合エージェントの役割
 
-統合エージェント（general-purpose）は、`{WORK_DIR}` 配下の全分析結果ファイルを読み込み、`report-template.md` のテンプレートに従ってレポートを作成・保存する。
+統合エージェント（general-purpose）は、`{WORK_DIR}` 配下の全分析結果ファイルを読み込み、`report-guide.md` のテンプレートに従ってレポートを作成・保存する。
 
 ## 入力ファイル
 
@@ -27,8 +27,7 @@
 | `{WORK_DIR}/portfolio_data.json` | 全収集データ |
 | `{WORK_DIR}/timing.json` | 各フェーズの実行時間記録 |
 | `{WORK_DIR}/portfolio_reference.md` | セクション1・11.2用markdownテーブル（プログラマティック生成） |
-| `{skill_dir}/report-template.md` | レポート出力形式テンプレート |
-| `{skill_dir}/report-writing-guide.md` | レポート書き方ガイド（注意事項・記載例） |
+| `{skill_dir}/report-guide.md` | レポートガイド（テンプレート＋書き方） |
 
 ### speed/normalモード
 
@@ -114,7 +113,7 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
 ## レポート作成手順
 
 1. `{WORK_DIR}/` 配下の全ファイルを読み込む
-2. `{skill_dir}/report-template.md` と `{skill_dir}/report-writing-guide.md` を読み込む
+2. `{skill_dir}/report-guide.md` を読み込む
 2a. `portfolio_data.json` の `_metadata._data_status` を読み込み、各データソースの取得状態を確認する。Phase 1各アナリストの出力ファイルに記載されたスキップ理由と突合し、「データ活用状況」テーブルを以下のルールで生成する:
     - `_data_status.{source}.status == "ok"` かつ Phase 1で活用された → ✓
     - `_data_status.{source}.status == "ok"` だがPhase 1でデータ不足（条件未充足）によりスキップ → △
@@ -181,7 +180,7 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
 
 ### まとめ（初心者向け）の作成指示
 
-`report-writing-guide.md` の「まとめ（初心者向け）の作成指示」に従って作成する。
+`report-guide.md` の「注記（まとめ）」に従って作成する。
 
 **注意**: HISTORY.mdの更新やhistory/スナップショットの作成はこのスキルでは行わない。これらは `/publish-report confirm`（記事確定時）に実行される。記事化しない場合はユーザーが手動で更新を指示する。詳細は `reports/demo/PROMPT.md` の「週次分析フロー」を参照
 
