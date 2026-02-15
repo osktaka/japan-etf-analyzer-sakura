@@ -41,6 +41,13 @@ mkdir -p "${WORK_DIR}"
 | 統合エージェント | Phase 3のレポート作成はメインが行わず、統合エージェントがファイルから直接読み込んで作成する |
 | 禁止事項 | サブエージェントがJSONデータの全体や分析テーブル全文をメインへの戻り値に含めること |
 
+### ツール使用制約
+
+| ルール | 説明 |
+|--------|------|
+| TaskOutput blocking必須 | TaskOutput は blocking モード（デフォルト）のみ使用する。non-blocking（block=false）による進捗ポーリングは禁止（コンテキスト消費の無駄） |
+| timing.json バッチ更新 | timing.json の更新は Phase 1完了後の一括書き込み1回のみ（初期化は WORK_DIR作成と同時）。フェーズ毎の個別更新は禁止 |
+
 ### メインエージェントの制約
 
 - `agent-instructions/` 配下のファイルは**メインエージェントが読み込まない**
@@ -179,9 +186,38 @@ print(resp.json())
 
 ### 実行時間計測
 
-メインエージェントが各フェーズ完了時に開始・終了時刻を `{WORK_DIR}/timing.json` に記録する。具体的なイベント名（phase_0a_start等）・記録方法・コード例は `./execution-details.md` の「実行時間計測」を参照。
+メインエージェントは `{WORK_DIR}/timing.json` に実行時間を記録する。
 
-**注意**: timing.json の保存は Phase 3+4 起動前に完了させること（phase_3_start と skill_end は統合エージェント内で記録）。
+**メインの記録タイミング（2回のみ）**:
+1. WORK_DIR作成時: `skill_start` を記録（mkdir と同一Bashコマンド内）
+2. Phase 1完了後: 中間ファイルの更新時刻（`stat`）から各フェーズの完了時刻を取得し一括書き込み
+
+**Phase 3/4のtiming**: Phase 3+4オーケストレーター（debateモード）または統合エージェント（speed/normalモード）が内部で記録。
+
+**一括書き込みコード例**:
+```bash
+python3 -c "
+import json, os, datetime
+wd = '{WORK_DIR}'
+def mtime(f):
+    try: return datetime.datetime.fromtimestamp(os.path.getmtime(os.path.join(wd, f))).isoformat()
+    except: return None
+with open(os.path.join(wd, 'timing.json')) as f:
+    data = json.load(f)
+updates = {
+    'phase_0a_end': mtime('market_environment.md'),
+    'phase_0_end': mtime('portfolio_data.json'),
+    'phase_05_end': mtime('shared_calculations.md'),
+    'phase_1_end': datetime.datetime.now().isoformat()
+}
+data.update({k:v for k,v in updates.items() if v})
+with open(os.path.join(wd, 'timing.json'), 'w') as f:
+    json.dump(data, f, indent=2)
+print('timing updated')
+"
+```
+
+**注意**: 各フェーズの `_start` イベントは精度が低下するため記録しない。`_end` イベントのみファイル更新時刻から取得する。
 
 ### Phase 0a: 市場環境調査（general-purposeエージェントに委譲）
 
@@ -273,19 +309,25 @@ Taskツールで複数のサブエージェントを**同一ターンで並列�
 - **ノーマルモード**: 統合エージェント内で実施。統合エージェントが `{skill_dir}/agent-instructions/crossreview-normal.md` を参照
 - **議論重視モード**: Phase 3として独立実行。メインエージェントが3エージェントによる2ラウンドのクロスレビューをオーケストレーション（詳細は「Phase 3: クロスレビュー」セクション参照）。統合エージェントは `{skill_dir}/agent-instructions/crossreview-debate.md`（統合ガイド）を参照して結果を統合
 
-### Phase 3: クロスレビュー（debateモード限定）
+### Phase 3+4: オーケストレーター委譲（debateモード限定）
 
-**実行条件**: debateモードのみ。speed/normalモードでは実行しない。
-**開始条件**: Phase 1の3エージェント全員が完了してから起動する。
+**実行条件**: debateモードのみ。speed/normalモードでは Phase 3+4 統合エージェントを直接起動（従来通り）。
+**開始条件**: Phase 1の3エージェント全員が完了し、timing.json一括書き込みが完了してから起動する。
 
-メインエージェントが multi-persona パターン（Task + run_in_background + TaskOutput）で2ラウンドのクロスレビューをオーケストレーションする。Round 1（相互レビュー）→ Round 2（反論・合意形成）の順に、それぞれ3エージェントを並列起動。
+debateモードでは、Phase 3（クロスレビュー2ラウンド）+ Phase 4（統合レポート）を **1体のgeneral-purposeサブエージェント（オーケストレーター）** に委譲する。メインエージェントのコンテキスト消費を抑制するため、Phase 3+4の全てのTask起動・待機・ファイル確認をオーケストレーター内で完結させる。
 
-指示ファイル: `{skill_dir}/agent-instructions/crossreview-debate-agent.md`
-プロンプトに渡すパラメータ: WORK_DIR, ペルソナ（analyst-A/B/C）, ラウンド（1 or 2）, skill_dir
+**サブエージェントへの指示**: プロンプトに以下を含める:
+- 指示ファイル: `{skill_dir}/agent-instructions/phase34-debate-orchestrator.md` を読んで実行
+- WORK_DIR: `{WORK_DIR}`
+- mode: `debate`
+- skill_dir: `{skill_dir}`
+- **メインへの戻り値は「Phase 3+4完了: ./reports/YYYYMMDD_....md」の1行のみ**
 
-詳細（Round 1/2の具体的な指示内容）は `./execution-details.md` の「Phase 3: クロスレビュー詳細」を参照。
+**メインエージェントは指示ファイルの内容を読み込まない**。オーケストレーターが直接読み込む。
 
 ### Phase 4: 統合レポート作成・保存（統合エージェントに委譲）
+
+**debateモード**: Phase 4はPhase 3+4オーケストレーターが起動するため、メインエージェントは直接起動しない。以下はspeed/normalモードの場合の手順。
 
 レポートの作成・保存はメインエージェントが行わず、**統合エージェント（general-purpose）**に委譲する。
 

@@ -55,92 +55,27 @@ reports/
 
 ## 実行時間計測
 
-各フェーズの開始・終了時刻をメインエージェントが記録し、`{WORK_DIR}/timing.json` に保存する。統合エージェントがこのファイルを読み込み、レポート末尾に実行時間セクションを出力する。
+各フェーズの完了時刻を `{WORK_DIR}/timing.json` に記録する。
 
-**記録タイミング**:
+**メインエージェントの記録** (2回のBash):
+1. WORK_DIR作成時: `{"skill_start": "..."}` で初期化
+2. Phase 1完了後: 中間ファイルの更新時刻（`stat`）から `phase_0a_end`, `phase_0_end`, `phase_05_end`（debate時）, `phase_1_end` を一括書き込み
 
-| イベント | 記録タイミング |
-|---------|--------------|
-| skill_start | スキル実行開始時（WORK_DIR作成直後） |
-| phase_0a_start | Phase 0aサブエージェント起動直前 |
-| phase_0_start | Phase 0サブエージェント起動直前 |
-| phase_0a_end | Phase 0aサブエージェント完了時 |
-| phase_0_end | Phase 0サブエージェント完了時 |
-| phase_05_start | Phase 0.5サブエージェント起動直前（debateモード時のみ） |
-| phase_05_end | Phase 0.5サブエージェント完了時（debateモード時のみ） |
-| phase_1_start | Phase 1サブエージェント起動直前 |
-| phase_1_end | Phase 1全サブエージェント完了時 |
-| phase_3_round1_start | Phase 3 Round 1エージェント起動直前（debateモード時） |
-| phase_3_round1_end | Phase 3 Round 1全エージェント完了時（debateモード時） |
-| phase_3_round2_start | Phase 3 Round 2エージェント起動直前（debateモード時） |
-| phase_3_round2_end | Phase 3 Round 2全エージェント完了時（debateモード時） |
-| phase_4_start | Phase 4統合エージェント起動直前 |
-| phase_4_end | Phase 4統合エージェント完了時 |
-| phase_3_start | Phase 3+4統合エージェント起動直前（speed/normalモード時。後方互換のため名称維持） |
-| phase_3_end | Phase 3+4統合エージェント完了時（speed/normalモード時。後方互換のため名称維持） |
-| skill_end | スキル完了時 |
+**Phase 3+4の記録**:
+- debateモード: オーケストレーターが `phase_3_round1_end`, `phase_3_round2_end`, `phase_4_end`, `skill_end` をファイル更新時刻から記録
+- speed/normalモード: 統合エージェントが `phase_3_start`, `phase_3_end`, `skill_end` を記録（従来通り）
 
-**記録方法**: Bashツールでタイムスタンプを追記する。
-
-初期作成（skill_start時）:
-```bash
-echo '{}' > {WORK_DIR}/timing.json
-python3 -c "
-import json, datetime
-data = {'skill_start': datetime.datetime.now().isoformat()}
-with open('{WORK_DIR}/timing.json', 'w') as f:
-    json.dump(data, f, indent=2)
-"
-```
-
-各フェーズの記録:
-```bash
-python3 -c "
-import json, datetime
-with open('{WORK_DIR}/timing.json') as f:
-    data = json.load(f)
-data['phase_0a_start'] = datetime.datetime.now().isoformat()
-with open('{WORK_DIR}/timing.json', 'w') as f:
-    json.dump(data, f, indent=2)
-"
-```
-
-**注意**: timing.json の保存は Phase 3+4 起動前に完了させること（phase_3_start と skill_end は統合エージェント内で記録）。
+**注意**: `_start` イベントはファイル更新時刻から推定できないため記録しない。精度はレポートの実行時間セクションとして十分。
 
 ## Phase 3: クロスレビュー詳細（debateモード限定）
 
-**実行条件**: debateモードのみ。speed/normalモードでは実行しない。
-**開始条件**: Phase 1の3エージェント全員が完了してから起動する。
+**debateモードではPhase 3+4オーケストレーターに委譲**。詳細は `agent-instructions/phase34-debate-orchestrator.md` を参照。
 
-メインエージェントが multi-persona パターン（Task + run_in_background + TaskOutput）で2ラウンドのクロスレビューをオーケストレーションする。
-
-### Round 1: 相互レビュー
-
-3エージェントを**同一ターンで並列起動**（run_in_background: true）。各エージェントは他2名の分析結果を読み込み、自身のペルソナの視点でレビューを行う。
-
-**サブエージェントへの指示**: プロンプトに以下を含める:
-- 指示ファイル: `{skill_dir}/agent-instructions/crossreview-debate-agent.md` を読んで実行
-- WORK_DIR: `{WORK_DIR}`
-- ペルソナ: `{persona}`（analyst-A / analyst-B / analyst-C）
-- ラウンド: `1`
-- skill_dir: `{skill_dir}`
-- **メインへの戻り値は「{ペルソナ名} Round 1 レビュー完了」の1行のみ**
-
-メインエージェントは `TaskOutput` で3エージェントの完了を待機。
-
-### Round 2: 反論・合意形成
-
-Round 1の全レビュー結果ファイルが出揃った後、3エージェントを再度**同一ターンで並列起動**（run_in_background: true）。各エージェントは自分へのレビュー結果を読み込み、反論・合意を表明する。
-
-**サブエージェントへの指示**: プロンプトに以下を含める:
-- 指示ファイル: `{skill_dir}/agent-instructions/crossreview-debate-agent.md` を読んで実行
-- WORK_DIR: `{WORK_DIR}`
-- ペルソナ: `{persona}`（analyst-A / analyst-B / analyst-C）
-- ラウンド: `2`
-- skill_dir: `{skill_dir}`
-- **メインへの戻り値は「{ペルソナ名} Round 2 合意形成完了」の1行のみ**
-
-メインエージェントは `TaskOutput` で3エージェントの完了を待機。
+オーケストレーターが内部で以下を実行:
+- Round 1: 3エージェント並列起動（相互レビュー）
+- Round 2: 3エージェント並列起動（反論・合意形成）
+- Phase 4: 統合エージェント起動
+- timing.json の Phase 3/4 イベント記録
 
 ## エージェント設定
 
@@ -157,6 +92,7 @@ Round 1の全レビュー結果ファイルが出揃った後、3エージェン
 | Phase 1 (debate) | analyst-A/B/C | general-purpose | sonnet | 8分 | `agent-instructions/phase1-debate-common.md` + quant/score/allocation |
 | Phase 3 (debate) Round 1 | analyst-A/B/C レビュー | general-purpose | sonnet | 5分 | `agent-instructions/crossreview-debate-agent.md` |
 | Phase 3 (debate) Round 2 | analyst-A/B/C 反論・合意 | general-purpose | sonnet | 5分 | `agent-instructions/crossreview-debate-agent.md` |
+| Phase 3+4 (debate) | オーケストレーター | general-purpose | sonnet | 20分 | `agent-instructions/phase34-debate-orchestrator.md` |
 | Phase 4 | 統合レポート | general-purpose | sonnet | 10分 | `agent-instructions/phase34-integration.md` |
 
 ### タイムアウト補足
