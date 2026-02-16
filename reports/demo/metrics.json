@@ -1,7 +1,7 @@
 [
   {
     "date": "2026-02-12",
-    "report_path": "reports/20260212_demo.md",
+    "report_path": "reports/demo/20260212_demo.md",
     "mode": "normal",
     "total_asset": 1000000,
     "cash_balance": 9000,
@@ -44,7 +44,7 @@
   },
   {
     "date": "2026-02-14",
-    "report_path": "reports/20260214_demo.md",
+    "report_path": "reports/demo/20260214_demo.md",
     "mode": "normal",
     "total_asset": 991130,
     "cash_balance": 15780,
@@ -123,7 +123,7 @@
   },
   {
     "date": "2026-02-15",
-    "report_path": "reports/20260215_demo.md",
+    "report_path": "reports/demo/20260215_demo.md",
     "mode": "debate",
     "total_asset": 991130,
     "cash_balance": 15780,
@@ -202,7 +202,7 @@
   },
   {
     "date": "2026-02-16",
-    "report_path": "reports/20260216_demo.md",
+    "report_path": "reports/demo/20260216_demo.md",
     "mode": "debate",
     "total_asset": 982629,
     "cash_balance": 23559,

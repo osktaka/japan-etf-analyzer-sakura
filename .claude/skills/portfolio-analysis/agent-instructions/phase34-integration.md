@@ -8,8 +8,8 @@
 ## データ受け渡しルール
 
 - **入力**: `{WORK_DIR}/` 配下の全分析結果ファイル、`{skill_dir}/report-guide.md`
-- **出力**: `./reports/YYYYMMDD_{username}.md`
-- **メインへの戻り値**: 「レポート保存完了: ./reports/YYYYMMDD_{username}.md」の1行のみ。データ全文やテーブル全体を返さないこと
+- **出力**: `./reports/{username}/YYYYMMDD_{username}.md`
+- **メインへの戻り値**: 「レポート保存完了: ./reports/{username}/YYYYMMDD_{username}.md」の1行のみ。データ全文やテーブル全体を返さないこと
 
 ---
 
@@ -106,8 +106,8 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
 
 ## 出力
 
-1. レポートファイル: `./reports/YYYYMMDD_{username}.md`（**全ユーザー共通で`reports/`直下に保存**）
-2. **メインへの戻り値**: 「レポート保存完了: ./reports/YYYYMMDD_{username}.md」の1行のみ
+1. レポートファイル: `./reports/{username}/YYYYMMDD_{username}.md`（**`reports/{username}/` ディレクトリに保存**）
+2. **メインへの戻り値**: 「レポート保存完了: ./reports/{username}/YYYYMMDD_{username}.md」の1行のみ
 
 ---
 
@@ -134,8 +134,8 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
    - **debateモード**: Phase 3のクロスレビュー結果ファイル（6ファイル）を読み込み、`crossreview-debate.md`の統合手順に従いセクション9を構成する
 5. `{WORK_DIR}/timing.json` を読み込み、Phase 3+4の開始時刻（phase_3_start）と完了時刻（phase_3_end, skill_end）を自身で記録した上で、所要時間を計算し「実行時間」セクション（セクション14）に記載する
 5a. コンテキスト使用量の集計: timing.json の `session_jsonl_path` と `session_jsonl_start_line` を読み込み、セッションJSONLの開始行以降のusageデータを集計して「コンテキスト使用量」テーブル（セクション14内）に記載する。集計方法は後述の「コンテキスト使用量の集計方法」を参照。
-6. `./reports/` ディレクトリを作成（存在しない場合）
-7. **レポート本体を保存**: `./reports/YYYYMMDD_{username}.md`
+6. `./reports/{username}/` ディレクトリを作成（存在しない場合）
+7. **レポート本体を保存**: `./reports/{username}/YYYYMMDD_{username}.md`
 7a. **metrics.json への追記（必須）**: レポート作成時に保持しているコンテキスト（portfolio_data.json、各analysis.md等）からメトリクスを抽出し、`reports/{username}/metrics.json` に追記する。
 
     **手順**:
@@ -145,7 +145,7 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
        ```json
        {
          "date": "YYYY-MM-DD",
-         "report_path": "reports/YYYYMMDD_{username}.md",
+         "report_path": "reports/{username}/YYYYMMDD_{username}.md",
          "mode": "speed|normal|debate",
          "total_asset": 999999,
          "cash_balance": 99999,
@@ -191,7 +191,7 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
 
     with open('/app/{WORK_DIR}/portfolio_reference.md', encoding='utf-8') as f:
         ref = f.read()
-    with open('./reports/{REPORT_FILENAME}', encoding='utf-8') as f:
+    with open('./reports/{username}/{REPORT_FILENAME}', encoding='utf-8') as f:
         report = f.read()
 
     # チェック値セクションから期待値を抽出

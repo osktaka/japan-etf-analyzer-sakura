@@ -21,7 +21,8 @@ from pathlib import Path
 def find_reports(reports_dir: Path, user: str) -> list[Path]:
     """レポートディレクトリからユーザーのレポートファイルを日付順で取得する。"""
     pattern = f"*_{user}.md"
-    reports = sorted(reports_dir.glob(pattern))
+    user_dir = reports_dir / user
+    reports = sorted(user_dir.glob(pattern)) if user_dir.exists() else []
     return reports
 
 
@@ -278,7 +279,7 @@ def extract_key_risks(content: str) -> list[str]:
     return risks
 
 
-def extract_metrics_from_report(filepath: Path) -> dict | None:
+def extract_metrics_from_report(filepath: Path, user: str) -> dict | None:
     """1つのレポートファイルからメトリクスを抽出する。"""
     content = filepath.read_text(encoding="utf-8")
 
@@ -287,7 +288,7 @@ def extract_metrics_from_report(filepath: Path) -> dict | None:
         print(f"警告: 日付を抽出できませんでした: {filepath.name}", file=sys.stderr)
         return None
 
-    report_path = f"reports/{filepath.name}"
+    report_path = f"reports/{user}/{filepath.name}"
     mode = extract_mode(content)
     total_asset = extract_total_asset(content)
     cash_balance = extract_cash_balance(content)
@@ -356,7 +357,7 @@ def main():
 
     reports = find_reports(reports_dir, user)
     if not reports:
-        print(f"エラー: レポートが見つかりません: {reports_dir}/*_{user}.md", file=sys.stderr)
+        print(f"エラー: レポートが見つかりません: {reports_dir}/{user}/*_{user}.md", file=sys.stderr)
         sys.exit(1)
 
     print(f"レポート {len(reports)} 件を処理中...", file=sys.stderr)
@@ -364,7 +365,7 @@ def main():
     metrics = []
     for report_path in reports:
         print(f"  抽出中: {report_path.name}", file=sys.stderr)
-        entry = extract_metrics_from_report(report_path)
+        entry = extract_metrics_from_report(report_path, user)
         if entry:
             metrics.append(entry)
 

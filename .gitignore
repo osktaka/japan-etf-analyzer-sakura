@@ -65,6 +65,10 @@ reports/demo/drafts/
 reports/demo/HISTORY.md
 reports/demo/HISTORY.md.bak
 reports/demo/history/
+reports/demo/[0-9]*_*.md
+
+# バックテスト出力
+backend/scripts/output/
 
 # ポートフォリオ分析の一時ファイル
 .tmp/

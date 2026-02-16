@@ -49,7 +49,7 @@ metrics.jsonはトップレベルが配列（`analyses`ラッパーなし）。�
 [
   {
     "date": "2026-02-14",
-    "report_path": "reports/20260214_demo.md",
+    "report_path": "reports/demo/20260214_demo.md",
     "mode": "normal",
     "total_asset": 991130,
     "cash_balance": 15780,

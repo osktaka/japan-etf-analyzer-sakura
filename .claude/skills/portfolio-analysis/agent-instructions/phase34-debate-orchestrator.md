@@ -74,7 +74,7 @@ timing.json に `phase_4_start` を記録してから起動する。
   - WORK_DIR: `{WORK_DIR}`
   - モード: `debate`
   - skill_dir: `{skill_dir}`
-  - **メインへの戻り値は「レポート保存完了: ./reports/YYYYMMDD_....md」の1行のみ**
+  - **メインへの戻り値は「レポート保存完了: ./reports/{username}/YYYYMMDD_....md」の1行のみ**
 
 TaskOutput(blocking) で完了を待機し、戻り値からレポートパスを取得する。
 
@@ -109,7 +109,7 @@ execution-details.md のフォールバックポリシーに従う:
 
 ## コンテキスト管理ルール
 
-- **メインへの戻り値**: 「Phase 3+4完了: ./reports/YYYYMMDD_....md」の1行のみ返す
+- **メインへの戻り値**: 「Phase 3+4完了: ./reports/{username}/YYYYMMDD_....md」の1行のみ返す
 - 中間データは WORK_DIR 内のファイルに保存。メインへの戻り値にデータ全文を含めない
 - TaskOutput は **blocking モードのみ** 使用（non-blocking 禁止）
 - 指示ファイル（crossreview-debate-agent.md, phase34-integration.md）の内容はサブエージェントが直接読み込む。このファイルでは内容を重複記載しない

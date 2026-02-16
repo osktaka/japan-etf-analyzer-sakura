@@ -352,7 +352,8 @@ debateモードでは、Phase 3（クロスレビュー2ラウンド）+ Phase 4
 - WORK_DIR: `{WORK_DIR}`
 - mode: `debate`
 - skill_dir: `{skill_dir}`
-- **メインへの戻り値は「Phase 3+4完了: ./reports/YYYYMMDD_....md」の1行のみ**
+- 対象ユーザー: `{USER_ID}`（レポートファイル名 `YYYYMMDD_{USER_ID}.md` および `reports/{USER_ID}/` パス構築に使用）
+- **メインへの戻り値は「Phase 3+4完了: ./reports/{USER_ID}/YYYYMMDD_....md」の1行のみ**
 
 **メインエージェントは指示ファイルの内容を読み込まない**。オーケストレーターが直接読み込む。
 
@@ -370,7 +371,8 @@ debateモードでは、Phase 3（クロスレビュー2ラウンド）+ Phase 4
 - WORK_DIR: `{WORK_DIR}`
 - モード: `{mode}`（speed/normal/debate）
 - skill_dir: `{skill_dir}`
-- **メインへの戻り値は「レポート保存完了: ./reports/YYYYMMDD_....md」の1行のみ**
+- 対象ユーザー: `{USER_ID}`（レポートファイル名 `YYYYMMDD_{USER_ID}.md` および `reports/{USER_ID}/` パス構築に使用）
+- **メインへの戻り値は「レポート保存完了: ./reports/{USER_ID}/YYYYMMDD_....md」の1行のみ**
 
 **メインエージェントは指示ファイルの内容を読み込まない**。統合エージェントが直接読み込む。
 
@@ -397,5 +399,5 @@ debateモードでは、Phase 3（クロスレビュー2ラウンド）+ Phase 4
 - [ ] 合意度100%の推奨アクションを明示した
 - [ ] 最適化前後の比較表（指標比較+保有銘柄の改善前後比較）を作成した
 - [ ] アクションアイテムを優先度別に整理した
-- [ ] レポートファイルが `./reports/` ディレクトリに保存された
+- [ ] レポートファイルが `./reports/{USER_ID}/` ディレクトリに保存された
 - [ ] レポート保存後の数値整合性チェック（portfolio_reference.mdとの照合）がパスした

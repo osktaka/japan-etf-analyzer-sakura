@@ -254,6 +254,7 @@ _metadata = {
 
 # データ保存
 output = {
+    'user_id': '{USER_ID}',
     '_metadata': _metadata,
     'holdings': holdings,
     'summary': summary,
