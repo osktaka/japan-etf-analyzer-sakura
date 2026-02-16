@@ -76,19 +76,19 @@ mkdir -p "${WORK_DIR}"
 
 #### 速度重視（speed）
 
-Phase 0a + Phase 0（並行）→ Phase 1（タスク分割型並行、3エージェント別タスク）→ Phase 3+4（統合、クロスレビューなし）
+Phase 0a + Phase 0 + Phase 0b（並行）→ Phase 1（タスク分割型並行、3エージェント別タスク）→ Phase 3+4（統合、クロスレビューなし）
 
 - クロスレビューを完全スキップ。セクション9は「速度重視モードのためスキップ」と記載
 
 #### ノーマル（normal）
 
-Phase 0a + Phase 0（並行）→ Phase 1（タスク分割型並行、3エージェント別タスク）→ Phase 3+4（統合、クロスレビュー含む）
+Phase 0a + Phase 0 + Phase 0b（並行）→ Phase 1（タスク分割型並行、3エージェント別タスク）→ Phase 3+4（統合、クロスレビュー含む）
 
 - クロスレビューは統合エージェント内で実施（独立フェーズではない）
 
 #### 議論重視（debate）
 
-Phase 0a + Phase 0（並行）→ Phase 0.5（共通定量計算）→ Phase 1（ペルソナ別独立分析）→ Phase 3（クロスレビュー2ラウンド）→ Phase 4（統合）
+Phase 0a + Phase 0 + Phase 0b（並行）→ Phase 0.5（共通定量計算）→ Phase 1（ペルソナ別独立分析）→ Phase 3（クロスレビュー2ラウンド）→ Phase 4（統合）
 
 - Phase 0.5で決定論的な計算結果（シャープレシオ、相関係数、ドローダウン等）を `shared_calculations.md` に出力
 - Phase 1では3エージェントが**同じ全データ+共通計算結果**を受け取り、ペルソナごとの解釈・見解・提言を独立に行う
@@ -222,6 +222,7 @@ with open(os.path.join(wd, 'timing.json')) as f:
     data = json.load(f)
 updates = {
     'phase_0a_end': mtime('market_environment.md'),
+    'phase_0b_end': mtime('trend_summary.md'),
     'phase_0_end': mtime('portfolio_data.json'),
     'phase_05_end': mtime('shared_calculations.md'),
     'phase_1_end': datetime.datetime.now().isoformat()
@@ -243,6 +244,20 @@ print('timing updated')
 - 指示ファイル: `{skill_dir}/agent-instructions/phase0a-market-research.md` を読んで実行
 - WORK_DIR: `{WORK_DIR}`
 - **メインへの戻り値は「市場環境調査完了」の1行のみ**
+
+**メインエージェントは指示ファイルの内容を読み込まない**。サブエージェントが直接読み込む。
+
+### Phase 0b: トレンドサマリー生成（general-purposeエージェントに委譲）
+
+過去の分析履歴（metrics.json）とHISTORY.mdから、資産推移・スコア推移・アクション実行状況等のトレンドサマリーを生成する。**general-purposeサブエージェント**に委譲し、Phase 0/0aと並行実行する。
+
+**当該実行のPhase 0出力（portfolio_data.json等）には依存しない**。過去の蓄積データのみを入力とする。
+
+**サブエージェントへの指示**: プロンプトに以下を含める:
+- 指示ファイル: `{skill_dir}/agent-instructions/phase0b-trend-summary.md` を読んで実行
+- WORK_DIR: `{WORK_DIR}`
+- 対象ユーザー: `{USER_ID}`（user_id。`reports/{USER_ID}/` のパス構築に使用）
+- **メインへの戻り値は「トレンドサマリー完了」の1行のみ**
 
 **メインエージェントは指示ファイルの内容を読み込まない**。サブエージェントが直接読み込む。
 

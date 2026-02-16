@@ -7,6 +7,7 @@ SKILL.md から分離した実行詳細情報。メインエージェントが�
 ```
 {WORK_DIR}/
 ├── market_environment.md    # Phase 0a出力
+├── trend_summary.md         # Phase 0b出力（過去分析のトレンドサマリー）
 ├── portfolio_data.json      # Phase 0出力
 ├── portfolio_reference.md   # Phase 0出力（セクション1・11.2用テーブル）
 ├── shared_calculations.md   # Phase 0.5出力（debateモード限定、共通定量計算結果）
@@ -39,6 +40,7 @@ reports/
 | フェーズ | 失敗条件 | 対応 |
 |---------|---------|------|
 | Phase 0a | WebSearch/WebFetch全て失敗 | market_environment.md なしで続行。Phase 1は市場環境言及をスキップ。レポートのセクション0に「市場環境調査失敗」と記載 |
+| Phase 0b | metrics.json非存在/パースエラー/reports/{USER}/未作成 | 「初回分析のためトレンドデータなし」と記載して**正常完了**。trend_summary.md は生成される（フォールバック内容） |
 | Phase 0 | API認証失敗、またはholdings取得失敗 | **スキル全体を中止**。ユーザーにエラー内容を報告 |
 | Phase 0 | holdings成功だがDB系データが全て失敗 | portfolio_data.json をAPI取得分のみで保存して続行。Phase 1は `_data_status` に基づき個別にスキップ |
 | Phase 0.5 (debate) | スクリプト実行失敗 | Phase 1のペルソナエージェントが各自で計算を実行（shared_calculations.md が存在しなければ自力計算にフォールバック） |
@@ -59,7 +61,7 @@ reports/
 
 **メインエージェントの記録** (2回のBash):
 1. WORK_DIR作成時: `{"skill_start": "..."}` で初期化
-2. Phase 1完了後: 中間ファイルの更新時刻（`stat`）から `phase_0a_end`, `phase_0_end`, `phase_05_end`（debate時）, `phase_1_end` を一括書き込み
+2. Phase 1完了後: 中間ファイルの更新時刻（`stat`）から `phase_0a_end`, `phase_0b_end`, `phase_0_end`, `phase_05_end`（debate時）, `phase_1_end` を一括書き込み
 
 **Phase 3+4の記録**:
 - debateモード: オーケストレーターが `phase_3_round1_end`, `phase_3_round2_end`, `phase_4_end`, `skill_end` をファイル更新時刻から記録
@@ -84,6 +86,7 @@ reports/
 | フェーズ | エージェント | subagent_type | model | タイムアウト | 指示ファイル |
 |---------|------------|---------------|-------|------------|------------|
 | Phase 0a | 市場環境調査 | general-purpose | sonnet | 3分 | `agent-instructions/phase0a-market-research.md` |
+| Phase 0b | トレンドサマリー | general-purpose | sonnet | 2分 | `agent-instructions/phase0b-trend-summary.md` |
 | Phase 0 | データ収集 | Bash | - | 2分 | `agent-instructions/phase0-data-collection.md` |
 | Phase 0.5 (debate) | 共通定量計算 | general-purpose | sonnet | 3分 | `agent-instructions/phase05-shared-calculations.md` |
 | Phase 1 (speed/normal) | quant-analyst | general-purpose | sonnet | 5分 | `agent-instructions/phase1-quant-analyst.md` |

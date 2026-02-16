@@ -25,6 +25,7 @@
 |---------|------|
 | `{WORK_DIR}/market_environment.md` | 市場環境サマリー |
 | `{WORK_DIR}/portfolio_data.json` | 全収集データ |
+| `{WORK_DIR}/trend_summary.md` | トレンドデータ（存在する場合のみ。セクション0.5用） |
 | `{WORK_DIR}/timing.json` | 各フェーズの実行時間記録 |
 | `{WORK_DIR}/portfolio_reference.md` | セクション1・11.2用markdownテーブル（プログラマティック生成） |
 | `{skill_dir}/report-guide.md` | レポートガイド（テンプレート＋書き方） |
@@ -120,6 +121,7 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
     - `_data_status.{source}.status == "empty"` → △（備考: 「空レスポンス」）
     - `_data_status.{source}.status == "error"` → ✗（備考: エラー詳細を転記）
     - Phase 0で取得対象外（条件に該当せず） → -
+2b. `{WORK_DIR}/trend_summary.md` が存在する場合、読み込んでセクション0.5（トレンド分析）を記載する。存在しない場合は「（初回分析のためトレンドデータなし）」と記載してセクション0.5をスキップする
 3. テンプレートに従い、各セクションを実データで埋める
    - **セクション1.1（銘柄別保有状況）**: `{WORK_DIR}/portfolio_reference.md` の「セクション1.1」テーブルをそのまま転記する。数値の丸め・フォーマット変更は禁止
    - **セクション1.2（サマリー）**: `{WORK_DIR}/portfolio_reference.md` の「セクション1.2」をそのまま転記する
@@ -134,7 +136,54 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
 5a. コンテキスト使用量の集計: timing.json の `session_jsonl_path` と `session_jsonl_start_line` を読み込み、セッションJSONLの開始行以降のusageデータを集計して「コンテキスト使用量」テーブル（セクション14内）に記載する。集計方法は後述の「コンテキスト使用量の集計方法」を参照。
 6. `./reports/` ディレクトリを作成（存在しない場合）
 7. **レポート本体を保存**: `./reports/YYYYMMDD_{username}.md`
-7a. **数値整合性チェック（必須）**: レポート保存後、`{WORK_DIR}/portfolio_reference.md` のチェック値セクションとレポート内の数値を照合する。以下のBashコマンドを実行:
+7a. **metrics.json への追記（必須）**: レポート作成時に保持しているコンテキスト（portfolio_data.json、各analysis.md等）からメトリクスを抽出し、`reports/{username}/metrics.json` に追記する。
+
+    **手順**:
+    1. `reports/{username}/` ディレクトリが存在しない場合は作成する
+    2. `reports/{username}/metrics.json` を読み込む（ファイルが存在しない場合は空配列 `[]` で初期化）
+    3. 以下のJSONエントリを構築する:
+       ```json
+       {
+         "date": "YYYY-MM-DD",
+         "report_path": "reports/YYYYMMDD_{username}.md",
+         "mode": "speed|normal|debate",
+         "total_asset": 999999,
+         "cash_balance": 99999,
+         "cash_ratio": 0.0159,
+         "holdings_count": 9,
+         "holdings": [
+           {"etf_code": "1475", "name": "銘柄名", "weight": 0.322, "pnl_rate": -0.009, "current_value": 313600}
+         ],
+         "overall_score": 99.9,
+         "sharpe_ratio_portfolio": 9.99,
+         "max_drawdown": -0.0228,
+         "var_95": -0.016,
+         "score_axes": {"dividend_power": 72, "cost_efficiency": 84, "scale_reliability": 96, "trading_quality": 95, "return_performance": 79},
+         "top_actions": [{"action": "アクション名", "priority": "highest", "consensus": 100}],
+         "key_risks": ["リスク1", "リスク2"]
+       }
+       ```
+    4. 同日（date一致）のエントリが既に存在する場合は上書き、存在しない場合は追加する
+    5. 配列を日付昇順でソートして保存する
+
+    **メトリクス抽出元**:
+    - `date`: レポートファイル名から抽出（YYYYMMDD → YYYY-MM-DD）
+    - `report_path`: 保存したレポートファイルのパス
+    - `mode`: 分析モード（speed/normal/debate）
+    - `total_asset`: `portfolio_data.json` の `summary` セクション（総資産）
+    - `cash_balance`: `portfolio_data.json` の `summary` セクション（現金残高）
+    - `cash_ratio`: cash_balance / total_asset で算出
+    - `holdings_count`, `holdings`: `portfolio_data.json` の `holdings` セクション（etf_code, name, weight, pnl_rate, current_value を含むオブジェクト配列）
+    - `overall_score`: score_analysis.md（またはanalyst_*_analysis.md）の総合評価スコア
+    - `sharpe_ratio_portfolio`: quant_analysis.md（またはanalyst_*_analysis.md、shared_calculations.md）のポートフォリオ加重シャープレシオ
+    - `max_drawdown`, `var_95`: 同上の各リスク指標
+    - `score_axes`: 5軸スコア（dividend_power, cost_efficiency, scale_reliability, trading_quality, return_performance）
+    - `top_actions`: 最優先アクション（action, priority, consensus）
+    - `key_risks`: 主要リスク（文字列配列）
+
+    **注意**: 値が算出できなかった指標（データ不足でスキップされた場合等）は `null` を設定する。
+
+7b. **数値整合性チェック（必須）**: レポート保存後、`{WORK_DIR}/portfolio_reference.md` のチェック値セクションとレポート内の数値を照合する。以下のBashコマンドを実行:
 
     ```bash
     python3 -c "
@@ -173,7 +222,7 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
     ```
 
     **不一致があった場合**: レポートのセクション1.1/1.2/11.2を `portfolio_reference.md` の値で上書きし、再度保存する。
-7b. **定量目標の整合性チェック（必須）**: セクション10の各Phase提案に記載された定量目標と、セクション11.1の指標比較テーブルの値が整合しているか確認する。
+7c. **定量目標の整合性チェック（必須）**: セクション10の各Phase提案に記載された定量目標と、セクション11.1の指標比較テーブルの値が整合しているか確認する。
     - Phase 3後の最終目標値 = セクション11.1の「改善後」の値であること
     - 全Phase完了時の定量目標サマリーテーブルの最終目標値が11.1と一致すること
     - 不一致があった場合: セクション10の定量目標をセクション11.1の値に合わせて修正する
