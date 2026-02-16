@@ -22,7 +22,7 @@ SKILL.md から分離した実行詳細情報。メインエージェントが�
 └── timing.json              # 各フェーズの実行時間
 
 reports/
-├── YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md  # レポート本体（全ユーザー共通、reports/直下）
+├── YYYYMMDD_{username}.md  # レポート本体（全ユーザー共通、reports/直下）
 └── demo/
     ├── PROMPT.md                # 週次分析プロジェクト定義
     ├── HISTORY.md               # 最新の分析履歴（更新される）

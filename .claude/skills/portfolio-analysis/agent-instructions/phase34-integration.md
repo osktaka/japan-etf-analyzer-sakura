@@ -8,8 +8,8 @@
 ## データ受け渡しルール
 
 - **入力**: `{WORK_DIR}/` 配下の全分析結果ファイル、`{skill_dir}/report-guide.md`
-- **出力**: `./reports/YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md`
-- **メインへの戻り値**: 「レポート保存完了: ./reports/YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md」の1行のみ。データ全文やテーブル全体を返さないこと
+- **出力**: `./reports/YYYYMMDD_{username}.md`
+- **メインへの戻り値**: 「レポート保存完了: ./reports/YYYYMMDD_{username}.md」の1行のみ。データ全文やテーブル全体を返さないこと
 
 ---
 
@@ -105,8 +105,8 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
 
 ## 出力
 
-1. レポートファイル: `./reports/YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md`（**全ユーザー共通で`reports/`直下に保存**）
-2. **メインへの戻り値**: 「レポート保存完了: ./reports/YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md」の1行のみ
+1. レポートファイル: `./reports/YYYYMMDD_{username}.md`（**全ユーザー共通で`reports/`直下に保存**）
+2. **メインへの戻り値**: 「レポート保存完了: ./reports/YYYYMMDD_{username}.md」の1行のみ
 
 ---
 
@@ -133,7 +133,7 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
 5. `{WORK_DIR}/timing.json` を読み込み、Phase 3+4の開始時刻（phase_3_start）と完了時刻（phase_3_end, skill_end）を自身で記録した上で、所要時間を計算し「実行時間」セクション（セクション14）に記載する
 5a. コンテキスト使用量の集計: timing.json の `session_jsonl_path` と `session_jsonl_start_line` を読み込み、セッションJSONLの開始行以降のusageデータを集計して「コンテキスト使用量」テーブル（セクション14内）に記載する。集計方法は後述の「コンテキスト使用量の集計方法」を参照。
 6. `./reports/` ディレクトリを作成（存在しない場合）
-7. **レポート本体を保存**: `./reports/YYYYMMDD_HHMMSS_portfolio_analysis_{username}.md`
+7. **レポート本体を保存**: `./reports/YYYYMMDD_{username}.md`
 7a. **数値整合性チェック（必須）**: レポート保存後、`{WORK_DIR}/portfolio_reference.md` のチェック値セクションとレポート内の数値を照合する。以下のBashコマンドを実行:
 
     ```bash

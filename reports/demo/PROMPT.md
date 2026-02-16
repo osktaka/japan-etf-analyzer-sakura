@@ -43,7 +43,7 @@
 分析レポートはスキルの既定動作により `reports/` 直下に保存される:
 
 ```
-reports/YYYYMMDD_HHMMSS_portfolio_analysis_demo.md
+reports/YYYYMMDD_demo.md
 ```
 
 → **次のアクション**: 記事を作成する場合は `/publish-report` でドラフトを作成してください。分析のみで記事化しない場合は HISTORY.md を直接更新してください。
