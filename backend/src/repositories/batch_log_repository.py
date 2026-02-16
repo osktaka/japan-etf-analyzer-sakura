@@ -244,6 +244,35 @@ class BatchLogRepository(BaseRepository[BatchLog]):
             is not None
         )
 
+    def get_latest_success_time(self, batch_name: str) -> Optional[datetime]:
+        """
+        今日（JST）の指定バッチの最新成功ログの finished_at を返す.
+
+        Args:
+            batch_name: バッチ名
+
+        Returns:
+            最新成功ログの finished_at（naive UTC）。なければ None
+        """
+        # JST今日0:00 = 前日15:00 UTC
+        jst = timezone(timedelta(hours=9))
+        now_jst = datetime.now(jst)
+        today_start_jst = now_jst.replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start_utc = today_start_jst.astimezone(timezone.utc).replace(tzinfo=None)
+
+        log = (
+            db.session.query(BatchLog)
+            .filter(
+                BatchLog.batch_name == batch_name,
+                BatchLog.status == BatchLog.STATUS_SUCCESS,
+                BatchLog.started_at >= today_start_utc,
+                BatchLog.finished_at.isnot(None),
+            )
+            .order_by(BatchLog.finished_at.desc())
+            .first()
+        )
+        return log.finished_at if log else None
+
     def has_run_today(self, batch_name: str) -> bool:
         """
         指定されたbatch_nameで今日（JST）に実行中または成功したジョブがあるかチェック.

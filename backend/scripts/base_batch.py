@@ -141,19 +141,30 @@ class BaseBatchScript(ABC):
                 )
                 return False
 
-        # 自バッチが今日既に実行済みならスキップ
         repo = BatchLogRepository()
-        if repo.has_run_today(self.batch_name):
-            self.logger.info(
-                f"{self.batch_name} already run today, skipping"
-            )
-            return False
 
         # 依存バッチが全て今日成功しているかチェック
         for dep_name in self.depends_on:
             if not repo.has_succeeded_today(dep_name):
                 self.logger.info(
                     f"Dependency '{dep_name}' not completed today, skipping"
+                )
+                return False
+
+        # 自バッチの今日の最新成功時刻を取得
+        my_latest = repo.get_latest_success_time(self.batch_name)
+        if my_latest is not None:
+            # 依存バッチの最新成功時刻と比較
+            # いずれかの依存が自バッチより新しければ実行（新データあり）
+            has_newer_dep = False
+            for dep_name in self.depends_on:
+                dep_latest = repo.get_latest_success_time(dep_name)
+                if dep_latest and dep_latest > my_latest:
+                    has_newer_dep = True
+                    break
+            if not has_newer_dep:
+                self.logger.info(
+                    f"{self.batch_name} already processed latest dependency data, skipping"
                 )
                 return False
 
