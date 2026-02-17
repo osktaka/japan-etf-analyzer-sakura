@@ -285,5 +285,91 @@
       "現金比率2.40%でディフェンシブ機能不足",
       "月次VaR(95%) -1.60%（-15,382円）"
     ]
+  },
+  {
+    "date": "2026-02-17",
+    "report_path": "reports/demo/20260217_demo.md",
+    "mode": "debate",
+    "total_asset": 975198,
+    "cash_balance": 23559,
+    "cash_ratio": 0.0242,
+    "holdings_count": 6,
+    "holdings": [
+      {
+        "etf_code": "1475",
+        "name": "iシェアーズ・コア TOPIX ETF",
+        "weight": 0.324,
+        "pnl_rate": -0.024,
+        "current_value": 308800
+      },
+      {
+        "etf_code": "1329",
+        "name": "iシェアーズ・コア 日経225 ETF",
+        "weight": 0.227,
+        "pnl_rate": -0.019,
+        "current_value": 216154
+      },
+      {
+        "etf_code": "1489",
+        "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信",
+        "weight": 0.136,
+        "pnl_rate": -0.018,
+        "current_value": 129880
+      },
+      {
+        "etf_code": "1615",
+        "name": "NEXT FUNDS 東証銀行業株価指数連動型上場投信",
+        "weight": 0.132,
+        "pnl_rate": -0.061,
+        "current_value": 125860
+      },
+      {
+        "etf_code": "2558",
+        "name": "MAXIS米国株式（S&P500）上場投信",
+        "weight": 0.126,
+        "pnl_rate": -0.005,
+        "current_value": 119620
+      },
+      {
+        "etf_code": "1597",
+        "name": "MAXIS Jリート上場投信",
+        "weight": 0.054,
+        "pnl_rate": -0.012,
+        "current_value": 51325
+      }
+    ],
+    "overall_score": 57,
+    "sharpe_ratio_portfolio": 1.58,
+    "max_drawdown": -0.0302,
+    "var_95": -0.0212,
+    "score_axes": {
+      "dividend_power": 58.0,
+      "cost_efficiency": 85.1,
+      "scale_reliability": 95.3,
+      "trading_quality": 93.9,
+      "return_performance": 77.2
+    },
+    "top_actions": [
+      {
+        "action": "1597（Jリート）段階的縮小（5.4%→2-3%）で現金比率4-5%確保",
+        "priority": "highest",
+        "consensus": 100
+      },
+      {
+        "action": "1475段階的縮小（32.4%→25%）による構造改善",
+        "priority": "high",
+        "consensus": 67
+      },
+      {
+        "action": "地域分散推進（国内87.4%→75%目標）",
+        "priority": "high",
+        "consensus": 100
+      }
+    ],
+    "key_risks": [
+      "国内集中87.4%と景気敏感銘柄68.8%の構造的偏り",
+      "現金比率2.42%でディフェンシブ機能不足",
+      "月次VaR(95%) -2.12%（-20,181円）"
+    ]
   }
 ]
