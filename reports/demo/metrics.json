@@ -338,7 +338,7 @@
         "current_value": 51325
       }
     ],
-    "overall_score": 57,
+    "overall_score": 52,
     "sharpe_ratio_portfolio": 1.58,
     "max_drawdown": -0.0302,
     "var_95": -0.0212,
@@ -351,17 +351,17 @@
     },
     "top_actions": [
       {
-        "action": "1597（Jリート）段階的縮小（5.4%→2-3%）で現金比率4-5%確保",
+        "action": "1597（Jリート）段階的縮小（5.4%→2-3%）で現金比率5%確保",
         "priority": "highest",
         "consensus": 100
       },
       {
-        "action": "1475段階的縮小（32.4%→25%）による構造改善",
+        "action": "1475段階的縮小（32.4%→25%）によるブラックロック集中・重複解消",
         "priority": "high",
-        "consensus": 67
+        "consensus": 100
       },
       {
-        "action": "地域分散推進（国内87.4%→75%目標）",
+        "action": "ゴールドETF（1540）5%組み入れ（時期分散条件付き）",
         "priority": "high",
         "consensus": 100
       }
