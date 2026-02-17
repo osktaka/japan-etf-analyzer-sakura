@@ -167,7 +167,7 @@
       }
     ],
     "overall_score": 62,
-    "sharpe_ratio_portfolio": 1.90,
+    "sharpe_ratio_portfolio": 1.9,
     "max_drawdown": -0.0144,
     "var_95": -0.0099,
     "score_axes": {
@@ -234,7 +234,7 @@
         "etf_code": "1615",
         "name": "NEXT FUNDS 東証銀行業株価指数連動型上場投信",
         "weight": 0.134,
-        "pnl_rate": -0.040,
+        "pnl_rate": -0.04,
         "current_value": 128580
       },
       {
@@ -252,7 +252,7 @@
         "current_value": 51300
       }
     ],
-    "overall_score": 62,
+    "overall_score": 60,
     "sharpe_ratio_portfolio": 1.58,
     "max_drawdown": -0.0228,
     "var_95": -0.016,
@@ -265,25 +265,25 @@
     },
     "top_actions": [
       {
-        "action": "2558（S&P500）の部分縮小と現金確保（50%売却→現金30,000円+1615部分振替30,000円）",
+        "action": "現金比率4-5%への引き上げ（1597段階的縮小）",
         "priority": "highest",
-        "consensus": 67
-      },
-      {
-        "action": "1597（Jリート）の観察リスト入り（1ヶ月後に入替判断）",
-        "priority": "high",
         "consensus": 100
       },
       {
-        "action": "次回資金追加時に地域分散・非株式アセット追加（先進国株式ETFまたは金ETF）",
+        "action": "1597（Jリート）段階的縮小（5.3%→2-3%）",
+        "priority": "highest",
+        "consensus": 100
+      },
+      {
+        "action": "2558（米国株S&P500）3ヶ月観察期間設定",
         "priority": "high",
         "consensus": 100
       }
     ],
     "key_risks": [
       "国内株式87.4%・景気敏感68.7%の二重集中",
-      "月次VaR(95%) -1.60%（-15,382円）",
-      "現金比率2.40%で買い増し余力不足"
+      "現金比率2.40%でディフェンシブ機能不足",
+      "月次VaR(95%) -1.60%（-15,382円）"
     ]
   }
 ]
