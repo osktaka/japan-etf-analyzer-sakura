@@ -158,6 +158,30 @@ Phase 0aで収集した市場環境サマリー（`{WORK_DIR}/market_environment
 - 逆風が明確な場合は「現時点では見送り推奨」と判定可能
 - フィルタ後も候補が不足する場合は「市場環境リスク付きで提案」と明記
 
+#### Phase 2向け入替候補サマリー（必須）
+
+出力ファイル（`{WORK_DIR}/allocation_analysis.md`）の末尾に、以下のマーカー付きブロックで入替候補を構造化出力すること。Phase 2（入替候補の外部検証）エージェントがパースして使用する。
+
+allocation-analystは欠落アセットクラスの追加を提案するため、ADD_CLASS行が中心となる。
+
+**フォーマット**:
+```
+<!-- PHASE2_CANDIDATES_START -->
+- ADD_CLASS: {アセットクラス名} | REASON: {1行理由} | CANDIDATE: {etf_code} {name}
+<!-- PHASE2_CANDIDATES_END -->
+```
+
+**ルール**:
+- 項目D（欠落アセットクラス）で特定した欠落資産クラスと推奨銘柄をもとに候補を列挙する
+- ADD_CLASS: 欠落している資産クラス名、追加理由、具体的な候補銘柄を記載する
+- 市場環境フィルタリングで「現時点では見送り推奨」と判定した候補も記載し、REASONに見送り理由を含める（Phase 2で中長期的に再検証するため）
+- 候補銘柄がない場合（全アセットクラスをカバー済み、または現金比率で十分な場合等）は以下のように記載する:
+```
+<!-- PHASE2_CANDIDATES_START -->
+候補なし
+<!-- PHASE2_CANDIDATES_END -->
+```
+
 ### E. 現金比率の妥当性評価
 summaryのcash_balanceとtotal_valueから現金比率を算出、適正比率と比較。
 

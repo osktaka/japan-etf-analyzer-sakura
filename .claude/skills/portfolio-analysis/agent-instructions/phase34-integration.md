@@ -37,6 +37,7 @@
 | `{WORK_DIR}/quant_analysis.md` | 定量リスク・リターン分析結果 |
 | `{WORK_DIR}/score_analysis.md` | スコア・モメンタム分析結果 |
 | `{WORK_DIR}/allocation_analysis.md` | アセットアロケーション分析結果（存在する場合） |
+| `{WORK_DIR}/candidate_verification.md` | Phase 2 入替候補の外部検証結果（存在する場合のみ。speedモードでは生成されない） |
 
 ### debateモード
 
@@ -52,6 +53,7 @@
 | `{WORK_DIR}/crossreview_round2_a.md` | analyst-A Round 2 反論・合意（Phase 3で生成） |
 | `{WORK_DIR}/crossreview_round2_b.md` | analyst-B Round 2 反論・合意（Phase 3で生成） |
 | `{WORK_DIR}/crossreview_round2_c.md` | analyst-C Round 2 反論・合意（Phase 3で生成） |
+| `{WORK_DIR}/candidate_verification.md` | Phase 2 入替候補の外部検証結果（存在する場合のみ。speedモードでは生成されない） |
 
 ---
 
@@ -132,6 +134,11 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
    - **speedモード**: 「速度重視モードのためスキップ」と記載
    - **normalモード**: `crossreview-normal.md` に従い分析結果間の矛盾・整合性を検証し記載
    - **debateモード**: Phase 3のクロスレビュー結果ファイル（6ファイル）を読み込み、`crossreview-debate.md`の統合手順に従いセクション9を構成する
+4a. セクション10（最適化提案）の各入替提案に外部検証結果を反映する:
+   - `{WORK_DIR}/candidate_verification.md` が存在する場合: 各入替提案テンプレートの **合意度** 行の後に `**外部検証**: {判定}（{リスク付記}）` 行を追加する。判定・リスク付記は candidate_verification.md の各候補の検証結果から転記する
+   - 検証結果が「要再検討」「非推奨」の場合: 提案に注記を付ける（例: 「※外部検証で構造的逆風が指摘されています」）
+   - `{WORK_DIR}/candidate_verification.md` が存在しない場合（speedモード等）: 入替提案の外部検証行に「**外部検証**: 速度重視モードのためスキップ」と記載する
+   - 入替提案でない項目（買い増し停止、現金運用等）には外部検証行は不要
 5. `{WORK_DIR}/timing.json` を読み込み、Phase 3+4の開始時刻（phase_3_start）と完了時刻（phase_3_end, skill_end）を自身で記録した上で、所要時間を計算し「実行時間」セクション（セクション14）に記載する
 5a. コンテキスト使用量の集計: timing.json の `session_jsonl_path` と `session_jsonl_start_line` を読み込み、セッションJSONLの開始行以降のusageデータを集計して「コンテキスト使用量」テーブル（セクション14内）に記載する。集計方法は後述の「コンテキスト使用量の集計方法」を参照。
 6. `./reports/{username}/` ディレクトリを作成（存在しない場合）

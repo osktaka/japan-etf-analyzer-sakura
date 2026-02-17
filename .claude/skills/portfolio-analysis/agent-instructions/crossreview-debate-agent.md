@@ -58,12 +58,16 @@
 | `{WORK_DIR}/analyst_b_analysis.md` | analyst-B（堅実派）の分析結果 |
 | `{WORK_DIR}/analyst_c_analysis.md` | analyst-C（異論派）の分析結果 |
 | `{WORK_DIR}/shared_calculations.md` | 共通定量計算結果（転記数値の照合用） |
+| `{WORK_DIR}/candidate_verification.md` | Phase 2 入替候補の外部検証結果（存在する場合のみ） |
 
 ### 手順
 
 1. 自分以外の2名の分析結果を読み込む（レビューは1対1。独立性維持ルール#1遵守）
 2. 各分析に対し、見解の相違・見落とし・データ解釈の妥当性・総合判断の優先順位をレビュー
-3. 出力形式に従って記載する
+3. Phase 2の外部検証結果との整合性を確認する（candidate_verification.mdが存在する場合）:
+   - Phase 1で推奨した入替候補がPhase 2で「要再検討」「非推奨」と判定された場合、その根拠を踏まえてレビューに反映する
+   - Phase 2で「構造的リスク」が指摘された候補について、他のペルソナの推奨理由が短期的材料のみに基づいていないか検証する
+4. 出力形式に従って記載する
 
 ### 出力ファイル
 
@@ -105,6 +109,7 @@
 | `{WORK_DIR}/crossreview_round1_a.md` | analyst-A の Round 1 レビュー結果 |
 | `{WORK_DIR}/crossreview_round1_b.md` | analyst-B の Round 1 レビュー結果 |
 | `{WORK_DIR}/crossreview_round1_c.md` | analyst-C の Round 1 レビュー結果 |
+| `{WORK_DIR}/candidate_verification.md` | Phase 2 入替候補の外部検証結果（存在する場合のみ） |
 
 ### 手順
 

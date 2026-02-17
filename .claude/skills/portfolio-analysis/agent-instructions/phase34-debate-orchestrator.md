@@ -16,6 +16,8 @@
 
 timing.json に `phase_3_round1_start` を記録してから起動する。
 
+**注意**: Phase 2はメインエージェントが起動済みであり、`{WORK_DIR}/candidate_verification.md` が存在する場合はPhase 3のクロスレビューエージェントに渡すこと。
+
 **Taskツールで起動（3回、同一ターン）**:
 - subagent_type: general-purpose
 - model: sonnet
@@ -25,6 +27,7 @@ timing.json に `phase_3_round1_start` を記録してから起動する。
   - ペルソナ: `analyst-A` / `analyst-B` / `analyst-C`（各エージェントに1つ）
   - ラウンド: `1`
   - skill_dir: `{skill_dir}`
+  - 入力ファイル: `{WORK_DIR}/candidate_verification.md`（存在する場合のみ）
   - **メインへの戻り値は「{ペルソナ名} Round 1 レビュー完了」の1行のみ**
 
 TaskOutput(blocking) で3体の完了を待機する。

@@ -46,7 +46,7 @@ mkdir -p "${WORK_DIR}"
 | ルール | 説明 |
 |--------|------|
 | TaskOutput blocking必須 | TaskOutput は blocking モード（デフォルト）のみ使用する。non-blocking（block=false）による進捗ポーリングは禁止（コンテキスト消費の無駄） |
-| timing.json バッチ更新 | timing.json の更新は Phase 1完了後の一括書き込み1回のみ（初期化は WORK_DIR作成と同時）。フェーズ毎の個別更新は禁止 |
+| timing.json バッチ更新 | timing.json の更新はメインエージェントが行う: (1) Phase 1完了後の一括書き込み、(2) Phase 2完了後の追加書き込み（normal/debateのみ）。初期化はWORK_DIR作成と同時。上記以外のフェーズ毎の個別更新は禁止 |
 
 ### メインエージェントの制約
 
@@ -76,19 +76,20 @@ mkdir -p "${WORK_DIR}"
 
 #### 速度重視（speed）
 
-Phase 0a + Phase 0 + Phase 0b（並行）→ Phase 1（タスク分割型並行、3エージェント別タスク）→ Phase 3+4（統合、クロスレビューなし）
+Phase 0a + Phase 0 + Phase 0b（並行）→ Phase 1（タスク分割型並行、3エージェント別タスク）→ Phase 2: スキップ → Phase 3+4（統合、クロスレビューなし）
 
 - クロスレビューを完全スキップ。セクション9は「速度重視モードのためスキップ」と記載
+- Phase 2（入替候補の外部検証）はスキップ
 
 #### ノーマル（normal）
 
-Phase 0a + Phase 0 + Phase 0b（並行）→ Phase 1（タスク分割型並行、3エージェント別タスク）→ Phase 3+4（統合、クロスレビュー含む）
+Phase 0a + Phase 0 + Phase 0b（並行）→ Phase 1（タスク分割型並行、3エージェント別タスク）→ Phase 2（入替候補の外部検証）→ Phase 3+4（統合、クロスレビュー含む）
 
 - クロスレビューは統合エージェント内で実施（独立フェーズではない）
 
 #### 議論重視（debate）
 
-Phase 0a + Phase 0 + Phase 0b（並行）→ Phase 0.5（共通定量計算）→ Phase 1（ペルソナ別独立分析）→ Phase 3（クロスレビュー2ラウンド）→ Phase 4（統合）
+Phase 0a + Phase 0 + Phase 0b（並行）→ Phase 0.5（共通定量計算）→ Phase 1（ペルソナ別独立分析）→ Phase 2（入替候補の外部検証）→ Phase 3（クロスレビュー2ラウンド）→ Phase 4（統合）
 
 - Phase 0.5で決定論的な計算結果（シャープレシオ、相関係数、ドローダウン等）を `shared_calculations.md` に出力
 - Phase 1では3エージェントが**同じ全データ+共通計算結果**を受け取り、ペルソナごとの解釈・見解・提言を独立に行う
@@ -192,9 +193,10 @@ print(resp.json())
 
 メインエージェントは `{WORK_DIR}/timing.json` に実行時間を記録する。
 
-**メインの記録タイミング（2回のみ）**:
+**メインの記録タイミング（2回+α）**:
 1. WORK_DIR作成時: `skill_start` とセッションJSONLの現在行数を記録（mkdir と同一Bashコマンド内）
 2. Phase 1完了後: 中間ファイルの更新時刻（`stat`）から各フェーズの完了時刻を取得し一括書き込み
+3. Phase 2完了後（normal/debateのみ）: `phase_2_end` を追加書き込み（Phase 2セクションのコード例を参照）
 
 **Phase 3/4のtiming**: Phase 3+4オーケストレーター（debateモード）または統合エージェント（speed/normalモード）が内部で記録。
 
@@ -338,6 +340,43 @@ Taskツールで複数のサブエージェントを**同一ターンで並列�
 
 各エージェントは自分なりの優先順位付け・総合判断を行い、最終的に統合エージェントが合意形成する。
 
+### Phase 2: 入替候補の外部検証（general-purposeエージェントに委譲）
+
+**実行条件**: normal/debateモードのみ。speedモードではスキップ。
+**開始条件**: Phase 1の全エージェント完了後に起動。debateモードの場合はtiming.json一括書き込み後。
+
+Phase 1で生成された入替候補銘柄に対して、WebSearchで中長期トレンド・構造的リスク・専門家見通しを調査する。
+
+**サブエージェントへの指示**: プロンプトに以下を含める:
+- 指示ファイル: `{skill_dir}/agent-instructions/phase2-candidate-verification.md` を読んで実行
+- WORK_DIR: `{WORK_DIR}`
+- mode: `{mode}`（normal/debate）
+- **メインへの戻り値は「Phase 2完了: N件検証」の要約1行のみ**
+
+**メインエージェントは指示ファイルの内容を読み込まない**。サブエージェントが直接読み込む。
+
+**Phase 2完了後の検証**: `{WORK_DIR}/candidate_verification.md` の存在確認（200バイト以上）。
+
+**失敗時**: スキル全体の中止理由にならない。外部検証なしで続行。
+
+**timing**: Phase 2完了後に追加の1回書き込みで `phase_2_end` を記録:
+```bash
+python3 -c "
+import json, os, datetime
+wd = '{WORK_DIR}'
+with open(os.path.join(wd, 'timing.json')) as f:
+    data = json.load(f)
+cv = os.path.join(wd, 'candidate_verification.md')
+if os.path.exists(cv):
+    data['phase_2_end'] = datetime.datetime.fromtimestamp(os.path.getmtime(cv)).isoformat()
+    with open(os.path.join(wd, 'timing.json'), 'w') as f:
+        json.dump(data, f, indent=2)
+    print('phase_2 timing updated')
+else:
+    print('candidate_verification.md not found, skipping timing update')
+"
+```
+
 ### クロスレビュー
 
 - **速度重視モード**: クロスレビューなし（セクション9は「速度重視モードのためスキップ」と記載）
@@ -399,6 +438,7 @@ debateモードでは、Phase 3（クロスレビュー2ラウンド）+ Phase 4
 - [ ] VaR/CVaR分析を実施した（月次データ6ヶ月以上の場合）
 - [ ] 5軸×6視点のスコア分析を実施した
 - [ ] モメンタム（勢いラベル）分析を実施した
+- [ ] 入替候補の外部検証を実施した（normal/debateのみ。speedはスキップ）
 - [ ] クロスレビューで矛盾・洞察を発見した（ノーマル・議論重視モードのみ。速度重視モードではスキップ）
 - [ ] 合意度100%の推奨アクションを明示した
 - [ ] 最適化前後の比較表（指標比較+保有銘柄の改善前後比較）を作成した

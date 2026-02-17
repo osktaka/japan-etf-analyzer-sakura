@@ -11,6 +11,7 @@ SKILL.md から分離した実行詳細情報。メインエージェントが�
 ├── portfolio_data.json      # Phase 0出力
 ├── portfolio_reference.md   # Phase 0出力（セクション1・11.2用テーブル）
 ├── shared_calculations.md   # Phase 0.5出力（debateモード限定、共通定量計算結果）
+├── candidate_verification.md # Phase 2出力（入替候補の外部検証結果、normal/debateモード）
 ├── quant_analysis.md        # Phase 1: quant-analyst出力
 ├── score_analysis.md        # Phase 1: score-analyst出力
 ├── allocation_analysis.md   # Phase 1: allocation-analyst出力
@@ -45,6 +46,8 @@ reports/
 | Phase 0 | holdings成功だがDB系データが**全て**失敗 | **スキル全体を中止**。シャープレシオ・相関分析・スコア分析が全スキップとなり有用なレポートを生成できないため。ユーザーにDB接続エラーの確認を促す |
 | Phase 0 | holdings成功だがDB系データが**一部**失敗 | portfolio_data.json をAPI取得分+成功DB分で保存して続行。Phase 1は `_data_status` に基づき個別にスキップ |
 | Phase 0.5 (debate) | スクリプト実行失敗 | Phase 1のペルソナエージェントが各自で計算を実行（shared_calculations.md が存在しなければ自力計算にフォールバック） |
+| Phase 2 | WebSearch全失敗/タイムアウト | 外部検証なしで続行。セクション10に「外部検証: 未実施」と記載 |
+| Phase 2 | 入替候補0件 | 正常完了（検証対象なし） |
 | Phase 1 | 3体中1体が失敗 | 残り2体の結果で続行。レポートの該当セクションに「分析失敗のため省略」と記載 |
 | Phase 1 | 3体中2体以上が失敗 | **スキル全体を中止**。ユーザーにエラー内容を報告 |
 | Phase 3 (debate) | 3体中1体が失敗 | 残り2体のレビュー結果で続行。セクション9の該当ペルソナの議論を「レビュー失敗のため省略」と記載 |
@@ -60,9 +63,10 @@ reports/
 
 各フェーズの完了時刻を `{WORK_DIR}/timing.json` に記録する。
 
-**メインエージェントの記録** (2回のBash):
+**メインエージェントの記録** (2回+αのBash):
 1. WORK_DIR作成時: `{"skill_start": "..."}` で初期化
 2. Phase 1完了後: 中間ファイルの更新時刻（`stat`）から `phase_0a_end`, `phase_0b_end`, `phase_0_end`, `phase_05_end`（debate時）, `phase_1_end` を一括書き込み
+3. Phase 2完了後（normal/debateのみ）: `phase_2_end` を追加書き込み
 
 **Phase 3+4の記録**:
 - debateモード: オーケストレーターが `phase_3_round1_end`, `phase_3_round2_end`, `phase_4_end`, `skill_end` をファイル更新時刻から記録
@@ -94,6 +98,7 @@ reports/
 | Phase 1 (speed/normal) | score-analyst | general-purpose | sonnet | 5分 | `agent-instructions/phase1-score-analyst.md` |
 | Phase 1 (speed/normal) | allocation-analyst | general-purpose | sonnet | 5分 | `agent-instructions/phase1-allocation-analyst.md` |
 | Phase 1 (debate) | analyst-A/B/C | general-purpose | sonnet | 8分 | `agent-instructions/phase1-debate-common.md` + quant/score/allocation |
+| Phase 2 (normal/debate) | phase2-verifier | general-purpose | sonnet | 3分 | `agent-instructions/phase2-candidate-verification.md` |
 | Phase 3 (debate) Round 1 | analyst-A/B/C レビュー | general-purpose | sonnet | 5分 | `agent-instructions/crossreview-debate-agent.md` |
 | Phase 3 (debate) Round 2 | analyst-A/B/C 反論・合意 | general-purpose | sonnet | 5分 | `agent-instructions/crossreview-debate-agent.md` |
 | Phase 3+4 (debate) | オーケストレーター | general-purpose | sonnet | 20分 | `agent-instructions/phase34-debate-orchestrator.md` |
