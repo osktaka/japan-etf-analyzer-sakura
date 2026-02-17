@@ -15,6 +15,7 @@ import {
   HoldingsList,
   PortfolioValueChart,
   HoldingsTreeMap,
+  HoldingsChartGrid,
 } from '../components/portfolio'
 import { PerspectiveTabs } from '../components/recommend'
 import { useFavorites } from '../hooks/useFavorites'
@@ -59,7 +60,9 @@ export function MyPage() {
   const [showTradeHistoryModal, setShowTradeHistoryModal] = useState(false)
   const [showCashFlowFormModal, setShowCashFlowFormModal] = useState(false)
   const [tradeHistoryCode, setTradeHistoryCode] = useState<string>('')
-  const [tradeFormCode, setTradeFormCode] = useState<string | undefined>(undefined)
+  const [tradeFormCode, setTradeFormCode] = useState<string | undefined>(
+    undefined
+  )
 
   // Save perspective to localStorage
   useEffect(() => {
@@ -205,6 +208,12 @@ export function MyPage() {
           }}
           onAddCashFlow={() => setShowCashFlowFormModal(true)}
         />
+        {holdings.length > 0 && (
+          <HoldingsChartGrid
+            holdings={holdings}
+            onETFClick={handleHoldingClick}
+          />
+        )}
       </section>
 
       <section className={styles.section}>

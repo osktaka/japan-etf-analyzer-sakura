@@ -5,6 +5,7 @@ import {
   Favorite,
   Holding,
   PortfolioSummary,
+  Trade,
 } from './types'
 
 export const demoApi = {
@@ -18,6 +19,11 @@ export const demoApi = {
     const response = await apiClient.get<ApiResponse<Holding[]>>(
       '/demo/portfolio/holdings'
     )
+    return response.data.data
+  },
+
+  async getTrades(): Promise<Trade[]> {
+    const response = await apiClient.get<ApiResponse<Trade[]>>('/demo/trades')
     return response.data.data
   },
 

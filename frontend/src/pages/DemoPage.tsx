@@ -8,6 +8,7 @@ import {
   HoldingsList,
   PortfolioValueChart,
   HoldingsTreeMap,
+  HoldingsChartGrid,
 } from '../components/portfolio'
 import { PerspectiveTabs } from '../components/recommend'
 import { useDemoPortfolio } from '../hooks/useDemoPortfolio'
@@ -21,8 +22,12 @@ export function DemoPage() {
   const [perspective, setPerspective] = useState<string>('balance')
   const [perspectives, setPerspectives] = useState<Perspective[]>([])
 
-  const { holdings, summary, isLoading: portfolioLoading, error: portfolioError } =
-    useDemoPortfolio()
+  const {
+    holdings,
+    summary,
+    isLoading: portfolioLoading,
+    error: portfolioError,
+  } = useDemoPortfolio()
   const {
     favorites,
     isLoading: favoritesLoading,
@@ -69,7 +74,9 @@ export function DemoPage() {
     <div className={styles.container}>
       <div className={styles.banner}>
         これはデモデータです。実際のポートフォリオを管理するには
-        <Link to={ROUTES.LOGIN} className={styles.bannerLink}>ログイン</Link>
+        <Link to={ROUTES.LOGIN} className={styles.bannerLink}>
+          ログイン
+        </Link>
         してください。
       </div>
 
@@ -100,6 +107,13 @@ export function DemoPage() {
           onETFClick={handleHoldingClick}
           readOnly
         />
+        {holdings.length > 0 && (
+          <HoldingsChartGrid
+            holdings={holdings}
+            demoMode
+            onETFClick={handleHoldingClick}
+          />
+        )}
       </section>
 
       <section className={styles.section}>
@@ -143,12 +157,7 @@ export function DemoPage() {
       {(() => {
         const modalCode = selectedETF?.code ?? selectedETFCode
         if (!modalCode) return null
-        return (
-          <ETFDetailModal
-            code={modalCode}
-            onClose={handleCloseModal}
-          />
-        )
+        return <ETFDetailModal code={modalCode} onClose={handleCloseModal} />
       })()}
     </div>
   )
