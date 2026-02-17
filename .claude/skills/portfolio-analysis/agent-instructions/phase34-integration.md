@@ -139,8 +139,8 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
    - 検証結果が「要再検討」「非推奨」の場合: 提案に注記を付ける（例: 「※外部検証で構造的逆風が指摘されています」）
    - `{WORK_DIR}/candidate_verification.md` が存在しない場合（speedモード等）: 入替提案の外部検証行に「**外部検証**: 速度重視モードのためスキップ」と記載する
    - 入替提案でない項目（買い増し停止、現金運用等）には外部検証行は不要
-5. `{WORK_DIR}/timing.json` を読み込み、Phase 3+4の開始時刻（phase_3_start）と完了時刻（phase_3_end, skill_end）を自身で記録した上で、所要時間を計算し「実行時間」セクション（セクション14）に記載する
-5a. コンテキスト使用量の集計: timing.json の `session_jsonl_path` と `session_jsonl_start_line` を読み込み、セッションJSONLの開始行以降のusageデータを集計して「コンテキスト使用量」テーブル（セクション14内）に記載する。集計方法は後述の「コンテキスト使用量の集計方法」を参照。
+5. `{WORK_DIR}/timing.json` を読み込み、Phase 3+4の開始時刻（phase_3_start）と完了時刻（phase_3_end, skill_end）を自身で記録した上で、所要時間を計算し「実行時間」セクション（セクション15）に記載する
+5a. コンテキスト使用量の集計: timing.json の `session_jsonl_path` と `session_jsonl_start_line` を読み込み、セッションJSONLの開始行以降のusageデータを集計して「コンテキスト使用量」テーブル（セクション15内）に記載する。集計方法は後述の「コンテキスト使用量の集計方法」を参照。
 6. `./reports/{username}/` ディレクトリを作成（存在しない場合）
 7. **レポート本体を保存**: `./reports/{username}/YYYYMMDD_{username}.md`
 7a. **metrics.json への追記（必須）**: レポート作成時に保持しているコンテキスト（portfolio_data.json、各analysis.md等）からメトリクスを抽出し、`reports/{username}/metrics.json` に追記する。
