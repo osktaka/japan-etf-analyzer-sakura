@@ -78,10 +78,13 @@ print(f"保有銘柄数: {len(etf_codes)}")
 
 # 2. サマリー取得
 summary_resp = session.get('http://localhost:8902/api/v1/portfolio')
-summary = summary_resp.json() if summary_resp.status_code == 200 else None
-record_status('summary', resp=summary_resp, data=summary.get('data') if summary else None)
-if summary is None:
-    print(f"サマリー取得エラー: {summary_resp.status_code}（スキップ）")
+if summary_resp.status_code != 200:
+    record_status('summary', resp=summary_resp)
+    print(f"サマリー取得エラー: {summary_resp.status_code}")
+    print("サマリーデータなしでは総資産検証が不可能。スクリプトを停止します。")
+    sys.exit(1)
+summary = summary_resp.json()
+record_status('summary', data=summary.get('data'))
 
 # 3. 資産推移取得
 valuation_resp = session.get('http://localhost:8902/api/v1/portfolio/valuation-history?period=3y')
@@ -252,6 +255,61 @@ _metadata = {
     "_data_status": data_status
 }
 
+# === DB系データ全失敗チェック ===
+db_sources = ['performance_cache', 'score_cache', 'etf_data', 'tag_data', 'price_data']
+db_all_failed = all(data_status.get(s, {}).get('status') == 'error' for s in db_sources)
+if db_all_failed:
+    print("DB系データが全て取得失敗。有用な分析レポートを生成できません。")
+    print("推奨: Docker環境・DBの状態を確認してください。")
+    sys.exit(1)
+
+# === 株式分割調整データの検証（必須） ===
+print("--- データ整合性検証 ---")
+holdings_data_v = (holdings or {}).get('data', [])
+if not holdings_data_v:
+    print("検証エラー: holdingsデータが空です。スキル全体を中止します。")
+    sys.exit(1)
+summary_data_v = (summary or {}).get('data', {})
+cash_v = summary_data_v.get('cash_balance', 0)
+total_asset_v = summary_data_v.get('total_asset', 0)
+
+validation_errors = []
+total_cv_v = 0
+for h in holdings_data_v:
+    qty = h.get('quantity', 0)
+    price = h.get('current_price', 0)
+    cv = h.get('current_value', 0)
+    calc_cv = qty * price
+    if abs(calc_cv - cv) > 1:  # 1円以上の誤差
+        validation_errors.append(
+            f"評価額不整合: {h['etf_code']} {qty}口×{price}円={calc_cv}円 ≠ {cv}円"
+        )
+    avg_cost = h.get('average_cost', 0)
+    total_cost_h = h.get('total_cost', 0)
+    calc_tc = round(avg_cost * qty, 2)
+    if abs(calc_tc - total_cost_h) > 1:
+        validation_errors.append(
+            f"取得原価不整合: {h['etf_code']} {avg_cost}円×{qty}口={calc_tc}円 ≠ {total_cost_h}円"
+        )
+    total_cv_v += cv
+
+calc_total_v = total_cv_v + cash_v
+if abs(calc_total_v - total_asset_v) > 10:  # 10円以上の誤差
+    validation_errors.append(
+        f"総資産不整合: 銘柄合計{total_cv_v}円 + 現金{cash_v}円 "
+        f"= {calc_total_v}円 ≠ サマリー{total_asset_v}円"
+    )
+
+if validation_errors:
+    print("データ検証エラー:")
+    for err in validation_errors:
+        print(f"  - {err}")
+    print("不正確なデータでの分析を防止するため、スクリプトを停止します。")
+    sys.exit(1)
+
+print(f"検証OK: 総資産{total_asset_v:,.0f}円"
+      f"（銘柄{total_cv_v:,.0f}円 + 現金{cash_v:,.0f}円）")
+
 # データ保存
 output = {
     'user_id': '{USER_ID}',
@@ -346,46 +404,6 @@ ref_path = WORK_DIR / 'portfolio_reference.md'
 with open(ref_path, 'w', encoding='utf-8') as f:
     f.write('\n'.join(ref_lines))
 print(f"参照データ生成: {ref_path}")
-
-# === 株式分割調整データの検証（必須） ===
-print("--- データ整合性検証 ---")
-holdings_data_v = (holdings or {}).get('data', [])
-if not holdings_data_v:
-    print("検証エラー: holdingsデータが空です。スキル全体を中止します。")
-    sys.exit(1)
-summary_data_v = (summary or {}).get('data', {})
-cash_v = summary_data_v.get('cash_balance', 0)
-total_asset_v = summary_data_v.get('total_asset', 0)
-
-validation_errors = []
-total_cv_v = 0
-for h in holdings_data_v:
-    qty = h.get('quantity', 0)
-    price = h.get('current_price', 0)
-    cv = h.get('current_value', 0)
-    calc_cv = qty * price
-    if abs(calc_cv - cv) > 1:  # 1円以上の誤差
-        validation_errors.append(
-            f"評価額不整合: {h['etf_code']} {qty}口×{price}円={calc_cv}円 ≠ {cv}円"
-        )
-    total_cv_v += cv
-
-calc_total_v = total_cv_v + cash_v
-if abs(calc_total_v - total_asset_v) > 10:  # 10円以上の誤差
-    validation_errors.append(
-        f"総資産不整合: 銘柄合計{total_cv_v}円 + 現金{cash_v}円 "
-        f"= {calc_total_v}円 ≠ サマリー{total_asset_v}円"
-    )
-
-if validation_errors:
-    print("データ検証エラー:")
-    for err in validation_errors:
-        print(f"  - {err}")
-    print("不正確なデータでの分析を防止するため、スクリプトを停止します。")
-    sys.exit(1)
-
-print(f"検証OK: 総資産{total_asset_v:,.0f}円"
-      f"（銘柄{total_cv_v:,.0f}円 + 現金{cash_v:,.0f}円）")
 
 # メインへの要約出力（この1行のみがメインのコンテキストに入る）
 summary_data = summary.get('data', {}) if summary else {}

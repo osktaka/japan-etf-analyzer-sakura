@@ -25,6 +25,8 @@
 
 **原則**: 保有銘柄の数量・取得単価・評価額・損益率は**必ずAPI `/api/v1/portfolio/holdings` のレスポンスを正とする**。DBの `trades` テーブルを直接クエリして数量・単価を取得してはならない。
 
+> **補足**: 「DB直接クエリ禁止」の対象は `trades` テーブルのみ。performance_cache, score_cache, etfs, tags, price_histories はキャッシュ/マスタデータであり、株式分割調整の影響を受けないため直接クエリを許容する。
+
 **検証手順**: データ収集完了後、以下を実行する。
 
 1. `portfolio_data.json` の `holdings` セクションから各銘柄の `quantity`, `average_cost`, `current_price`, `current_value` を抽出

@@ -197,10 +197,14 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
     # チェック値セクションから期待値を抽出
     ref_total = re.search(r'合計評価額:\s*([\d,]+)円', ref)
     ref_asset = re.search(r'総資産:\s*([\d,]+)円', ref)
+    ref_count = re.search(r'銘柄数:\s*(\d+)', ref)
+    ref_cash = re.search(r'現金残高:\s*([\d,]+)円', ref)
 
     # レポートのセクション1.2から実値を抽出
     report_total = re.search(r'合計評価額:\s*([\d,]+)円', report)
     report_asset = re.search(r'総資産:\s*([\d,]+)円', report)
+    report_count = re.search(r'保有銘柄数:\s*(\d+)', report)
+    report_cash = re.search(r'現金残高:\s*([\d,]+)円', report)
 
     errors = []
     if ref_total and report_total:
@@ -209,6 +213,12 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
     if ref_asset and report_asset:
         if ref_asset.group(1) != report_asset.group(1):
             errors.append(f'総資産: 参照={ref_asset.group(1)}円 vs レポート={report_asset.group(1)}円')
+    if ref_count and report_count:
+        if ref_count.group(1) != report_count.group(1):
+            errors.append(f'銘柄数: 参照={ref_count.group(1)} vs レポート={report_count.group(1)}')
+    if ref_cash and report_cash:
+        if ref_cash.group(1) != report_cash.group(1):
+            errors.append(f'現金残高: 参照={ref_cash.group(1)}円 vs レポート={report_cash.group(1)}円')
 
     if errors:
         print('数値整合性エラー:')

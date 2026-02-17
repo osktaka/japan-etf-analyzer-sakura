@@ -110,7 +110,7 @@ Phase 0aで収集した市場環境サマリー（`{WORK_DIR}/market_environment
 
 `{WORK_DIR}/shared_calculations.md` が存在する場合（debateモード、Phase 0.5実行済み）:
 
-- 項目1-6について、`shared_calculations.md` の計算結果（`<!-- DO_NOT_RECALCULATE -->` または `<!-- DO_NOT_RECALCULATE: var_cvar -->` マーカー付き）を**そのまま転記**する
+- 項目1-6について、`shared_calculations.md` の計算結果（`<!-- DO_NOT_RECALCULATE: {識別子} -->` マーカー付き（識別子: sharpe_ratio, correlation, max_drawdown, stress_scenario, weighted_score, momentum, var_cvar））を**そのまま転記**する
 - **数値の変更は一切禁止**。シャープレシオ値、相関係数、ドローダウン率、VaR/CVaR値等の計算結果を修正・再計算しないこと
 - **計算を再実行しない**（シャープレシオの算出、相関係数の計算、ドローダウンの算出、VaR/CVaRの算出等を重複して行わない）
 - `shared_calculations.md` に記載されたリスクフリーレートの値をそのまま使用する

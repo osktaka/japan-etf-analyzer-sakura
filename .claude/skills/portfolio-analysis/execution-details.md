@@ -42,7 +42,8 @@ reports/
 | Phase 0a | WebSearch/WebFetch全て失敗 | market_environment.md なしで続行。Phase 1は市場環境言及をスキップ。レポートのセクション0に「市場環境調査失敗」と記載 |
 | Phase 0b | metrics.json非存在/パースエラー/reports/{USER}/未作成 | 「初回分析のためトレンドデータなし」と記載して**正常完了**。trend_summary.md は生成される（フォールバック内容） |
 | Phase 0 | API認証失敗、またはholdings取得失敗 | **スキル全体を中止**。ユーザーにエラー内容を報告 |
-| Phase 0 | holdings成功だがDB系データが全て失敗 | portfolio_data.json をAPI取得分のみで保存して続行。Phase 1は `_data_status` に基づき個別にスキップ |
+| Phase 0 | holdings成功だがDB系データが**全て**失敗 | **スキル全体を中止**。シャープレシオ・相関分析・スコア分析が全スキップとなり有用なレポートを生成できないため。ユーザーにDB接続エラーの確認を促す |
+| Phase 0 | holdings成功だがDB系データが**一部**失敗 | portfolio_data.json をAPI取得分+成功DB分で保存して続行。Phase 1は `_data_status` に基づき個別にスキップ |
 | Phase 0.5 (debate) | スクリプト実行失敗 | Phase 1のペルソナエージェントが各自で計算を実行（shared_calculations.md が存在しなければ自力計算にフォールバック） |
 | Phase 1 | 3体中1体が失敗 | 残り2体の結果で続行。レポートの該当セクションに「分析失敗のため省略」と記載 |
 | Phase 1 | 3体中2体以上が失敗 | **スキル全体を中止**。ユーザーにエラー内容を報告 |

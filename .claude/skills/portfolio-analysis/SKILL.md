@@ -145,6 +145,10 @@ Phase 0のデータ収集は、**必ず** `phase0-collection-template.py` をベ
 
 Phase 1完了後にメインエージェントが確認する。詳細は `./data-skip-rules.md` を参照。スキップ前に `_metadata` の確認が必須。`_metadata` を確認せずに「データ不足」と判断することは禁止。
 
+**Phase 1完了後の出力検証**:
+- 各分析出力ファイル（quant_analysis.md, score_analysis.md, allocation_analysis.md）のサイズが500バイト以上であること
+- 500バイト未満は実質空出力として「失敗」扱いとし、Phase 1の失敗カウントに加算する
+
 ### 株式分割の取り扱い
 
 **警告**: DBの生の取引データ（tradesテーブル）は分割前の元の数量・単価で記録されている。正確な損益はPortfolioService（API）経由で取得すること。

@@ -44,7 +44,7 @@ def main():
         import re
         if '## リスクフリーレート' in mkt_env:
             rf_section = mkt_env.split('## リスクフリーレート')[1].split('##')[0]
-            match = re.search(r'(\d+\.\d+)%', rf_section)
+            match = re.search(r'(\d+(?:\.\d+)?)%', rf_section)
             if match:
                 risk_free_rate = float(match.group(1))
                 rf_source = f"{risk_free_rate}%（日本国債10年利回り、market_environment.mdより）"
@@ -66,6 +66,10 @@ def main():
     holdings = get_data(pf_data['holdings'])
     total_value = sum(h['current_value'] for h in holdings)
     holding_ratios = {h['etf_code']: h['current_value'] / total_value for h in holdings}
+
+    ratio_sum = sum(holding_ratios.values())
+    if abs(ratio_sum - 1.0) > 0.01:
+        print(f"警告: 保有比率合計が1.0ではありません: {ratio_sum:.6f}")
 
     # etf_data: 銘柄情報マップ
     etf_data_list = get_data(pf_data['etf_data'])

@@ -15,7 +15,7 @@ SKILL.md から分離したスキップ判断の詳細ルール。メインエ�
 | 最大ドローダウン | `_data_status.valuation_history`がerror/empty、またはデータポイントが10件未満 |
 | ストレスシナリオ | シャープレシオ算出がスキップされた場合 |
 | VaR/CVaR | 月次リターンデータが6ヶ月未満の場合スキップ。6-11ヶ月は参考値として算出 |
-| スコア分析 | `_data_status.score_cache`がerror/empty、またはスコアキャッシュが未生成の銘柄 |
+| スコア分析 | 判定順: (1)`_data_status.score_cache`がerror → スキップ（取得失敗）。(2)`_data_status.score_cache`がempty → スキップ（データ不足）。(3)score_cacheは存在するが特定銘柄のスコアが欠落 → 欠落銘柄のみスキップし残りで分析続行 |
 | モメンタム分析 | `_data_status.etf_data`がerror/empty、またはラベルが全銘柄NULL |
 | 現金比率 | `_data_status.summary`がerror/empty、またはsummaryにcash_balanceが含まれない |
 | クロスレビュー | レビュー対象の分析がスキップされた場合 |
