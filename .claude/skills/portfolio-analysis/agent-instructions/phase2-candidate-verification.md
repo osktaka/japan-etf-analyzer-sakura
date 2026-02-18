@@ -7,8 +7,8 @@
 
 ## データ受け渡しルール
 
-- **入力**: Phase 1出力ファイル（下記参照）、`{WORK_DIR}/market_environment.md`（Phase 0aの市場環境サマリー）、`{WORK_DIR}/portfolio_data.json`（銘柄詳細情報の参照用）
-- **出力**: 検証結果を `{WORK_DIR}/candidate_verification.md` に保存
+- **入力**: Phase 1出力ファイル（下記参照）、`{WORK_DIR}/0a_market_environment.md`（Phase 0aの市場環境サマリー）、`{WORK_DIR}/00_portfolio_data.json`（銘柄詳細情報の参照用）
+- **出力**: 検証結果を `{WORK_DIR}/20_candidate_verification.md` に保存
 - **メインへの戻り値**: 「Phase 2完了: N件検証（支持X件、条件付きX件、要再検討X件、非推奨X件）」の1行のみ。分析結果全文を返さないこと
 
 ## スキップ判断基準
@@ -20,14 +20,16 @@
 ## Phase 1入力ファイル（モード別）
 
 ### normalモード / speedモード
-- `{WORK_DIR}/quant_analysis.md`
-- `{WORK_DIR}/score_analysis.md`
-- `{WORK_DIR}/allocation_analysis.md`
+- `{WORK_DIR}/10_quant_analysis.md`
+- `{WORK_DIR}/10_score_analysis.md`
+- `{WORK_DIR}/10_allocation_analysis.md`
 
 ### debateモード
-- `{WORK_DIR}/analyst_a_analysis.md`
-- `{WORK_DIR}/analyst_b_analysis.md`
-- `{WORK_DIR}/analyst_c_analysis.md`
+- `{WORK_DIR}/10_analyst_a_analysis.md`
+- `{WORK_DIR}/10_analyst_b_analysis.md`
+- `{WORK_DIR}/10_analyst_c_analysis.md`
+- `{WORK_DIR}/10_analyst_d_analysis.md`
+- `{WORK_DIR}/10_analyst_e_analysis.md`
 
 ---
 
@@ -44,7 +46,7 @@
 
 **debateモード**:
 - 2体以上のアナリストが推奨する候補を優先する
-- 優先度: 3体推奨 > 2体推奨 > 1体のみ推奨
+- 優先度: 5体推奨 > 4体推奨 > 3体推奨 > 2体推奨 > 1体のみ（上限5件）
 - 同一優先度内では、SELL > ADD_CLASS > BUY の順で優先する（既存銘柄の問題解決が先）
 - 上限5件に絞り込む
 
@@ -72,7 +74,7 @@
 
 ### Step 4: Phase 0aとの整合性検証
 
-`{WORK_DIR}/market_environment.md` の内容と外部調査結果を照合し、以下を検証する:
+`{WORK_DIR}/0a_market_environment.md` の内容と外部調査結果を照合し、以下を検証する:
 
 - Phase 0aの「分析への示唆」が短期材料のみに基づいていないか確認する
 - 中長期的な構造要因と矛盾していないか検証する
@@ -100,7 +102,7 @@ Phase 1で逆風と判定された候補であっても、Phase 2で中長期的
 
 ## 出力
 
-ファイル: `{WORK_DIR}/candidate_verification.md`
+ファイル: `{WORK_DIR}/20_candidate_verification.md`
 
 **フォーマット**:
 
@@ -155,7 +157,7 @@ Phase 1で逆風と判定された候補であっても、Phase 2で中長期的
 
 ## 候補が0件の場合
 
-Phase 1の全出力ファイルで「候補なし」と記載されている場合、以下の内容で `candidate_verification.md` を作成して正常完了する:
+Phase 1の全出力ファイルで「候補なし」と記載されている場合、以下の内容で `20_candidate_verification.md` を作成して正常完了する:
 
 ```markdown
 # Phase 2: 入替候補の外部検証レポート
@@ -174,7 +176,7 @@ Phase 1の全出力ファイルで「候補なし」と記載されている場�
 
 ### WebSearchが全て失敗した場合
 
-以下の内容で `candidate_verification.md` を作成して正常完了する:
+以下の内容で `20_candidate_verification.md` を作成して正常完了する:
 
 ```markdown
 # Phase 2: 入替候補の外部検証レポート
@@ -214,6 +216,6 @@ Phase 1の全出力ファイルで「候補なし」と記載されている場�
 
 ## 検証結果の保存先
 
-`{WORK_DIR}/candidate_verification.md` に保存する。Phase 3（統合レポート作成）でこのファイルを直接読み込む。
+`{WORK_DIR}/20_candidate_verification.md` に保存する。Phase 3（統合レポート作成）でこのファイルを直接読み込む。
 
 **メインへの戻り値**: 「Phase 2完了: N件検証（支持X件、条件付きX件、要再検討X件、非推奨X件）」の1行のみ。検証結果全文を返さないこと。

@@ -11,8 +11,8 @@
 
 - **入力**: なし（API/DB直接アクセス）
 - **出力**:
-  - `{WORK_DIR}/portfolio_data.json` — 全収集データ
-  - `{WORK_DIR}/portfolio_reference.md` — セクション1・11.2用markdownテーブル(プログラマティック生成。Phase 3+4統合エージェントがそのまま転記する)
+  - `{WORK_DIR}/00_portfolio_data.json` — 全収集データ
+  - `{WORK_DIR}/00_portfolio_reference.md` — セクション1・11.2用markdownテーブル(プログラマティック生成。Phase 3+4統合エージェントがそのまま転記する)
 - **メインへの戻り値**: 完了メッセージ1行のみ。データ全文やテーブル全体を返さないこと
 
 ## スキップ判断基準
@@ -29,7 +29,7 @@
 
 **検証手順**: データ収集完了後、以下を実行する。
 
-1. `portfolio_data.json` の `holdings` セクションから各銘柄の `quantity`, `average_cost`, `current_price`, `current_value` を抽出
+1. `00_portfolio_data.json` の `holdings` セクションから各銘柄の `quantity`, `average_cost`, `current_price`, `current_value` を抽出
 2. `quantity × current_price = current_value` が成立することを確認
 3. 全銘柄の `current_value` 合計 + `cash_balance` = `summary.total_asset` が成立することを確認
 4. 不一致がある場合、エラーメッセージを出力してスクリプトを停止する（不正確なデータでの分析を防止）
@@ -64,7 +64,7 @@ print(f"検証OK: 総資産{total_asset_from_summary:,.0f}円（銘柄{total_cur
 
 ## `_metadata`セクションの出力（必須）
 
-`portfolio_data.json` の先頭に `_metadata` キーを追加し、各データセクションのスキーマ情報を含めること。アナリストエージェントはこの `_metadata` を最初に読み、正しいフィールド名を確定してからスクリプトを書く。
+`00_portfolio_data.json` の先頭に `_metadata` キーを追加し、各データセクションのスキーマ情報を含めること。アナリストエージェントはこの `_metadata` を最初に読み、正しいフィールド名を確定してからスクリプトを書く。
 
 **`_metadata`に含める情報（各データセクション）**:
 - `count`: データ件数（`len(data)`）
@@ -142,7 +142,7 @@ print(f"検証OK: 総資産{total_asset_from_summary:,.0f}円（銘柄{total_cur
 ## スクリプトテンプレート
 
 実装時は以下のテンプレートを参照:
-`{skill_dir}/agent-instructions/phase0-collection-template.py`
+`{skill_dir}/agent-instructions/phase0-collection-template.py` (出力先: `{WORK_DIR}/00_portfolio_data.json`, `{WORK_DIR}/00_portfolio_reference.md`)
 
 プレースホルダーの置換:
 - `{USER_ID}` → 認証ユーザーID

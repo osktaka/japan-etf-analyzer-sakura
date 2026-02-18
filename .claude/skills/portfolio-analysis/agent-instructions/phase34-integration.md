@@ -23,37 +23,46 @@
 
 | ファイル | 内容 |
 |---------|------|
-| `{WORK_DIR}/market_environment.md` | 市場環境サマリー |
-| `{WORK_DIR}/portfolio_data.json` | 全収集データ |
-| `{WORK_DIR}/trend_summary.md` | トレンドデータ（存在する場合のみ。セクション0.5用） |
+| `{WORK_DIR}/0a_market_environment.md` | 市場環境サマリー |
+| `{WORK_DIR}/00_portfolio_data.json` | 全収集データ |
+| `{WORK_DIR}/0b_trend_summary.md` | トレンドデータ（存在する場合のみ。セクション0.5用） |
 | `{WORK_DIR}/timing.json` | 各フェーズの実行時間記録 |
-| `{WORK_DIR}/portfolio_reference.md` | セクション1・11.2用markdownテーブル（プログラマティック生成） |
+| `{WORK_DIR}/00_portfolio_reference.md` | セクション1・11.2用markdownテーブル（プログラマティック生成） |
 | `{skill_dir}/report-guide.md` | レポートガイド（テンプレート＋書き方） |
 
 ### speed/normalモード
 
 | ファイル | 内容 |
 |---------|------|
-| `{WORK_DIR}/quant_analysis.md` | 定量リスク・リターン分析結果 |
-| `{WORK_DIR}/score_analysis.md` | スコア・モメンタム分析結果 |
-| `{WORK_DIR}/allocation_analysis.md` | アセットアロケーション分析結果（存在する場合） |
-| `{WORK_DIR}/candidate_verification.md` | Phase 2 入替候補の外部検証結果（存在する場合のみ。speedモードでは生成されない） |
+| `{WORK_DIR}/10_quant_analysis.md` | 定量リスク・リターン分析結果 |
+| `{WORK_DIR}/10_score_analysis.md` | スコア・モメンタム分析結果 |
+| `{WORK_DIR}/10_allocation_analysis.md` | アセットアロケーション分析結果（存在する場合） |
+| `{WORK_DIR}/20_candidate_verification.md` | Phase 2 入替候補の外部検証結果（存在する場合のみ。speedモードでは生成されない） |
 
 ### debateモード
 
-| ファイル | 内容 |
-|---------|------|
-| `{WORK_DIR}/shared_calculations.md` | 共通定量計算結果（Phase 0.5で生成） |
-| `{WORK_DIR}/analyst_a_analysis.md` | analyst-A分析結果 |
-| `{WORK_DIR}/analyst_b_analysis.md` | analyst-B分析結果 |
-| `{WORK_DIR}/analyst_c_analysis.md` | analyst-C分析結果（存在する場合） |
-| `{WORK_DIR}/crossreview_round1_a.md` | analyst-A Round 1 レビュー（Phase 3で生成） |
-| `{WORK_DIR}/crossreview_round1_b.md` | analyst-B Round 1 レビュー（Phase 3で生成） |
-| `{WORK_DIR}/crossreview_round1_c.md` | analyst-C Round 1 レビュー（Phase 3で生成） |
-| `{WORK_DIR}/crossreview_round2_a.md` | analyst-A Round 2 反論・合意（Phase 3で生成） |
-| `{WORK_DIR}/crossreview_round2_b.md` | analyst-B Round 2 反論・合意（Phase 3で生成） |
-| `{WORK_DIR}/crossreview_round2_c.md` | analyst-C Round 2 反論・合意（Phase 3で生成） |
-| `{WORK_DIR}/candidate_verification.md` | Phase 2 入替候補の外部検証結果（存在する場合のみ。speedモードでは生成されない） |
+**注意**: 15ファイル入力でコンテキスト超過リスクがあるため、以下のルールを厳守すること。
+分析ファイル（`10_analyst_*.md`）は**総合判断セクション**のみ抜粋して読み込む。クロスレビューファイル（`31_crossreview_*.md`, `32_crossreview_*.md`）は**合意/反論結果**のみ抜粋して読み込む。全文読込は不要。
+
+| ファイル | 内容 | 読込範囲 |
+|---------|------|---------|
+| `{WORK_DIR}/05_shared_calculations.md` | 共通定量計算結果（Phase 0.5で生成） | 全文 |
+| `{WORK_DIR}/10_analyst_a_analysis.md` | analyst-A（積極派）分析結果 | 総合判断セクションのみ |
+| `{WORK_DIR}/10_analyst_b_analysis.md` | analyst-B（堅実派）分析結果 | 総合判断セクションのみ |
+| `{WORK_DIR}/10_analyst_c_analysis.md` | analyst-C（異論派）分析結果 | 総合判断セクションのみ |
+| `{WORK_DIR}/10_analyst_d_analysis.md` | analyst-D（マクロ戦略派）分析結果 | 総合判断セクションのみ |
+| `{WORK_DIR}/10_analyst_e_analysis.md` | analyst-E（長期構造派）分析結果 | 総合判断セクションのみ |
+| `{WORK_DIR}/31_crossreview_a.md` | analyst-A Round 1 レビュー（Phase 3で生成） | 合意/反論結果のみ |
+| `{WORK_DIR}/31_crossreview_b.md` | analyst-B Round 1 レビュー（Phase 3で生成） | 合意/反論結果のみ |
+| `{WORK_DIR}/31_crossreview_c.md` | analyst-C Round 1 レビュー（Phase 3で生成） | 合意/反論結果のみ |
+| `{WORK_DIR}/31_crossreview_d.md` | analyst-D Round 1 レビュー（Phase 3で生成） | 合意/反論結果のみ |
+| `{WORK_DIR}/31_crossreview_e.md` | analyst-E Round 1 レビュー（Phase 3で生成） | 合意/反論結果のみ |
+| `{WORK_DIR}/32_crossreview_a.md` | analyst-A Round 2 反論・合意（Phase 3で生成） | 合意/反論結果のみ |
+| `{WORK_DIR}/32_crossreview_b.md` | analyst-B Round 2 反論・合意（Phase 3で生成） | 合意/反論結果のみ |
+| `{WORK_DIR}/32_crossreview_c.md` | analyst-C Round 2 反論・合意（Phase 3で生成） | 合意/反論結果のみ |
+| `{WORK_DIR}/32_crossreview_d.md` | analyst-D Round 2 反論・合意（Phase 3で生成） | 合意/反論結果のみ |
+| `{WORK_DIR}/32_crossreview_e.md` | analyst-E Round 2 反論・合意（Phase 3で生成） | 合意/反論結果のみ |
+| `{WORK_DIR}/20_candidate_verification.md` | Phase 2 入替候補の外部検証結果（存在する場合のみ。speedモードでは生成されない） | 全文 |
 
 ---
 
@@ -76,7 +85,7 @@
 Phase 3で独立エージェントが実施したクロスレビュー結果を読み込み、`crossreview-debate.md`の統合手順に従いセクション9を構成する。クロスレビュー自体の実施は不要（Phase 3で完了済み）。
 
 - **参照ファイル**: `{skill_dir}/agent-instructions/crossreview-debate.md`
-- **クロスレビュー結果ファイル**: `{WORK_DIR}/crossreview_round1_{a,b,c}.md`, `{WORK_DIR}/crossreview_round2_{a,b,c}.md`
+- **クロスレビュー結果ファイル（抜粋読込）**: `{WORK_DIR}/31_crossreview_{a,b,c,d,e}.md`, `{WORK_DIR}/32_crossreview_{a,b,c,d,e}.md`
 
 **統合時の注意事項**:
 - Phase 3で各エージェントが独立に出力したレビュー結果を忠実に反映すること
@@ -86,23 +95,33 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
 セクション9には議論の経緯を詳細に記載:
 - 見解の相違点とその根拠
 - 合意された点
-- 各アクションの合意度（100% / 67% / 見解分かれる）
+- 各アクションの合意度（5段階: 100% / 80% / 60% / 40% / 20%以下）
 
 ### ペルソナ統合ガイド（議論重視モードのみ）
 
-議論重視モードでは、3つのペルソナ（積極派/堅実派/異論派）の分析結果を統合する。
+議論重視モードでは、5つのペルソナ（積極派A/堅実派B/異論派C/マクロ戦略派D/長期構造派E）の分析結果を統合する。
 
 **統合の原則**:
-1. **全ペルソナ合意の項目**: レポートで「全ペルソナ一致」と明記し、高い確信度で推奨
-2. **過半数合意の項目**: 多数派の結論を採用しつつ、少数派の懸念を付記
-3. **全ペルソナ不合意の項目**: 各ペルソナの見解を併記し、読者に判断を委ねる
+1. **全ペルソナ合意（100%）の項目**: レポートで「全ペルソナ一致」と明記し、高い確信度で推奨
+2. **過半数以上合意（80%/60%）の項目**: 多数派の結論を採用しつつ、少数派の懸念を付記
+3. **見解が割れる（40%/20%以下）の項目**: 各ペルソナの見解を併記し、読者に判断を委ねる
 
 **合意度の記載方法**:
 - 各分析セクションの結論部分に `【合意度】` を付記する
-- 形式: `【合意度: 100% / 67% / 見解分かれる】`
-- 100%: 全ペルソナ一致
-- 67%: 2ペルソナ合意、1ペルソナ反対・留保
-- 見解分かれる: 全ペルソナ不合意（各見解を併記し読者に判断を委ねる）
+- 形式: `【合意度: 100% / 80% / 60% / 40% / 20%以下】`
+
+| 合意数 | 合意度 | 扱い |
+|--------|-------|------|
+| 5/5 | 100% | 高確信度で推奨 |
+| 4/5 | 80% | 強い推奨（反対1名の懸念を付記） |
+| 3/5 | 60% | 条件付き推奨（反対2名の懸念を併記） |
+| 2/5 | 40% | 見解分かれる（各見解併記、読者に判断委ねる） |
+| 1/5以下 | 20%以下 | 非推奨（提案者の根拠のみ記録） |
+
+**5ペルソナの合意度を統合する手順**:
+1. 各アクションについて、各ペルソナ（A/B/C/D/E）の賛否を `31_crossreview_*.md` と `32_crossreview_*.md` から確認する
+2. 賛成数を集計し、上記テーブルの合意度を決定する
+3. 少数派（反対・留保）の意見をセクション9.4に記録する
 
 ---
 
@@ -115,29 +134,29 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
 
 ## レポート作成手順
 
-1. `{WORK_DIR}/` 配下の全ファイルを読み込む
+1. `{WORK_DIR}/` 配下のファイルを読み込む（debateモードでは入力ファイル表の読込範囲ルールに従い抜粋読込すること）
 2. `{skill_dir}/report-guide.md` を読み込む
-2a. `portfolio_data.json` の `_metadata._data_status` を読み込み、各データソースの取得状態を確認する。Phase 1各アナリストの出力ファイルに記載されたスキップ理由と突合し、「データ活用状況」テーブルを以下のルールで生成する:
+2a. `00_portfolio_data.json` の `_metadata._data_status` を読み込み、各データソースの取得状態を確認する。Phase 1各アナリストの出力ファイルに記載されたスキップ理由と突合し、「データ活用状況」テーブルを以下のルールで生成する:
     - `_data_status.{source}.status == "ok"` かつ Phase 1で活用された → ✓
     - `_data_status.{source}.status == "ok"` だがPhase 1でデータ不足（条件未充足）によりスキップ → △
     - `_data_status.{source}.status == "empty"` → △（備考: 「空レスポンス」）
     - `_data_status.{source}.status == "error"` → ✗（備考: エラー詳細を転記）
     - Phase 0で取得対象外（条件に該当せず） → -
-2b. `{WORK_DIR}/trend_summary.md` が存在する場合、読み込んでセクション0.5（トレンド分析）を記載する。存在しない場合は「（初回分析のためトレンドデータなし）」と記載してセクション0.5をスキップする
+2b. `{WORK_DIR}/0b_trend_summary.md` が存在する場合、読み込んでセクション0.5（トレンド分析）を記載する。存在しない場合は「（初回分析のためトレンドデータなし）」と記載してセクション0.5をスキップする
 3. テンプレートに従い、各セクションを実データで埋める
-   - **セクション1.1（銘柄別保有状況）**: `{WORK_DIR}/portfolio_reference.md` の「セクション1.1」テーブルをそのまま転記する。数値の丸め・フォーマット変更は禁止
-   - **セクション1.2（サマリー）**: `{WORK_DIR}/portfolio_reference.md` の「セクション1.2」をそのまま転記する
-   - **セクション11.2（現行ポートフォリオ・改善前）**: `{WORK_DIR}/portfolio_reference.md` の「セクション1.1」テーブルをそのまま転記する（セクション11.2の注記参照）
+   - **セクション1.1（銘柄別保有状況）**: `{WORK_DIR}/00_portfolio_reference.md` の「セクション1.1」テーブルをそのまま転記する。数値の丸め・フォーマット変更は禁止
+   - **セクション1.2（サマリー）**: `{WORK_DIR}/00_portfolio_reference.md` の「セクション1.2」をそのまま転記する
+   - **セクション11.2（現行ポートフォリオ・改善前）**: `{WORK_DIR}/00_portfolio_reference.md` の「セクション1.1」テーブルをそのまま転記する（セクション11.2の注記参照）
    - **セクション13.2（用語解説）**: テンプレートの基本用語テーブルをそのまま転記し、レポート本文で使用したその他の専門用語（リバランス、アセットアロケーション、ヘッジ等）を追記する
-   - **上記以外のセクション**: Phase 1の各分析ファイルと `portfolio_data.json` から統合して記載する
+   - **上記以外のセクション**: Phase 1の各分析ファイルと `00_portfolio_data.json` から統合して記載する
 4. クロスレビュー結果をセクション9に記載:
    - **speedモード**: 「速度重視モードのためスキップ」と記載
    - **normalモード**: `crossreview-normal.md` に従い分析結果間の矛盾・整合性を検証し記載
-   - **debateモード**: Phase 3のクロスレビュー結果ファイル（6ファイル）を読み込み、`crossreview-debate.md`の統合手順に従いセクション9を構成する
+   - **debateモード**: Phase 3のクロスレビュー結果ファイル（10ファイル）の合意/反論結果を抜粋して読み込み、`crossreview-debate.md`の統合手順に従いセクション9を構成する
 4a. セクション10（最適化提案）の各入替提案に外部検証結果を反映する:
-   - `{WORK_DIR}/candidate_verification.md` が存在する場合: 各入替提案テンプレートの **合意度** 行の後に `**外部検証**: {判定}（{リスク付記}）` 行を追加する。判定・リスク付記は candidate_verification.md の各候補の検証結果から転記する
+   - `{WORK_DIR}/20_candidate_verification.md` が存在する場合: 各入替提案テンプレートの **合意度** 行の後に `**外部検証**: {判定}（{リスク付記}）` 行を追加する。判定・リスク付記は 20_candidate_verification.md の各候補の検証結果から転記する
    - 検証結果が「要再検討」「非推奨」の場合: 提案に注記を付ける（例: 「※外部検証で構造的逆風が指摘されています」）
-   - `{WORK_DIR}/candidate_verification.md` が存在しない場合（speedモード等）: 入替提案の外部検証行に「**外部検証**: 速度重視モードのためスキップ」と記載する
+   - `{WORK_DIR}/20_candidate_verification.md` が存在しない場合（speedモード等）: 入替提案の外部検証行に「**外部検証**: 速度重視モードのためスキップ」と記載する
    - 入替提案でない項目（買い増し停止、現金運用等）には外部検証行は不要
 5. `{WORK_DIR}/timing.json` を読み込み、Phase 3+4の開始時刻（phase_3_start）と完了時刻（phase_3_end, skill_end）を自身で記録した上で、所要時間を計算し「実行時間」セクション（セクション15）に記載する
 5a. コンテキスト使用量の集計: timing.json の `session_jsonl_path` と `session_jsonl_start_line` を読み込み、セッションJSONLの開始行以降のusageデータを集計して「コンテキスト使用量」テーブル（セクション15内）に記載する。集計方法は後述の「コンテキスト使用量の集計方法」を参照。
@@ -177,12 +196,12 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
     - `date`: レポートファイル名から抽出（YYYYMMDD → YYYY-MM-DD）
     - `report_path`: 保存したレポートファイルのパス
     - `mode`: 分析モード（speed/normal/debate）
-    - `total_asset`: `portfolio_data.json` の `summary` セクション（総資産）
-    - `cash_balance`: `portfolio_data.json` の `summary` セクション（現金残高）
+    - `total_asset`: `00_portfolio_data.json` の `summary` セクション（総資産）
+    - `cash_balance`: `00_portfolio_data.json` の `summary` セクション（現金残高）
     - `cash_ratio`: cash_balance / total_asset で算出
-    - `holdings_count`, `holdings`: `portfolio_data.json` の `holdings` セクション（etf_code, name, weight, pnl_rate, current_value を含むオブジェクト配列）
-    - `overall_score`: score_analysis.md（またはanalyst_*_analysis.md）の総合評価スコア
-    - `sharpe_ratio_portfolio`: quant_analysis.md（またはanalyst_*_analysis.md、shared_calculations.md）のポートフォリオ加重シャープレシオ
+    - `holdings_count`, `holdings`: `00_portfolio_data.json` の `holdings` セクション（etf_code, name, weight, pnl_rate, current_value を含むオブジェクト配列）
+    - `overall_score`: `10_score_analysis.md`（またはdebateモードでは`10_analyst_*_analysis.md`）の総合評価スコア
+    - `sharpe_ratio_portfolio`: `10_quant_analysis.md`（またはdebateモードでは`10_analyst_*_analysis.md`、`05_shared_calculations.md`）のポートフォリオ加重シャープレシオ
     - `max_drawdown`, `var_95`: 同上の各リスク指標
     - `score_axes`: 5軸スコア（dividend_power, cost_efficiency, scale_reliability, trading_quality, return_performance）
     - `top_actions`: 最優先アクション（action, priority, consensus）
@@ -190,13 +209,13 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
 
     **注意**: 値が算出できなかった指標（データ不足でスキップされた場合等）は `null` を設定する。
 
-7b. **数値整合性チェック（必須）**: レポート保存後、`{WORK_DIR}/portfolio_reference.md` のチェック値セクションとレポート内の数値を照合する。以下のBashコマンドを実行:
+7b. **数値整合性チェック（必須）**: レポート保存後、`{WORK_DIR}/00_portfolio_reference.md` のチェック値セクションとレポート内の数値を照合する。以下のBashコマンドを実行:
 
     ```bash
     python3 -c "
     import re, sys
 
-    with open('/app/{WORK_DIR}/portfolio_reference.md', encoding='utf-8') as f:
+    with open('/app/{WORK_DIR}/00_portfolio_reference.md', encoding='utf-8') as f:
         ref = f.read()
     with open('./reports/{username}/{REPORT_FILENAME}', encoding='utf-8') as f:
         report = f.read()
@@ -231,14 +250,14 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
         print('数値整合性エラー:')
         for e in errors:
             print(f'  - {e}')
-        print('portfolio_reference.md から再転記して修正してください')
+        print('00_portfolio_reference.md から再転記して修正してください')
         sys.exit(1)
     else:
         print('数値整合性チェック: OK')
     "
     ```
 
-    **不一致があった場合**: レポートのセクション1.1/1.2/11.2を `portfolio_reference.md` の値で上書きし、再度保存する。
+    **不一致があった場合**: レポートのセクション1.1/1.2/11.2を `00_portfolio_reference.md` の値で上書きし、再度保存する。
 7c. **定量目標の整合性チェック（必須）**: セクション10の各Phase提案に記載された定量目標と、セクション11.1の指標比較テーブルの値が整合しているか確認する。
     - Phase 3後の最終目標値 = セクション11.1の「改善後」の値であること
     - 全Phase完了時の定量目標サマリーテーブルの最終目標値が11.1と一致すること

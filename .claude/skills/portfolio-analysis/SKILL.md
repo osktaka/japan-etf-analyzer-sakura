@@ -12,7 +12,7 @@ aliases: ["/portfolio-analysis", "/pf-analysis"]
 
 ## 概要
 
-このスキルは、ユーザーのETFポートフォリオをシステムが保持する全データを活用して定量分析し、最適化提案を行うワークフロー。エージェントチーム（3名体制）で並行分析→クロスレビュー→統合レポートを作成する。
+このスキルは、ユーザーのETFポートフォリオをシステムが保持する全データを活用して定量分析し、最適化提案を行うワークフロー。エージェントチーム（speed/normalは3名体制、debateは5名体制）で並行分析→クロスレビュー→統合レポートを作成する。
 
 ## コンテキスト管理ルール
 
@@ -56,7 +56,7 @@ mkdir -p "${WORK_DIR}"
 
 ### ファイル構成
 
-詳細は `./execution-details.md` の「ファイル構成」を参照。主要な出力ファイル: `portfolio_data.json`, `portfolio_reference.md`, `*_analysis.md`, `timing.json`
+詳細は `./execution-details.md` の「ファイル構成」を参照。主要な出力ファイル: `00_portfolio_data.json`, `00_portfolio_reference.md`, `*_analysis.md`, `timing.json`
 
 ## モード選択
 
@@ -70,7 +70,7 @@ mkdir -p "${WORK_DIR}"
 |-------|-------|------|------------|
 | speed | 速度重視 | タスクを分割して並行実行。クロスレビューなし。最短時間で結果を得る | 5-10分 |
 | normal | ノーマル（推奨） | タスク分割＋並行実行＋クロスレビュー1回。バランス重視 | 10-15分 |
-| debate | 議論重視 | 複数エージェントが同じデータを独立分析→議論→ブラッシュアップ。最も深い洞察 | 20-30分 |
+| debate | 議論重視 | 複数エージェントが同じデータを独立分析→議論→ブラッシュアップ。最も深い洞察 | 25-40分 |
 
 ### モード別実行フロー
 
@@ -91,20 +91,22 @@ Phase 0a + Phase 0 + Phase 0b（並行）→ Phase 1（タスク分割型並行�
 
 Phase 0a + Phase 0 + Phase 0b（並行）→ Phase 0.5（共通定量計算）→ Phase 1（ペルソナ別独立分析）→ Phase 2（入替候補の外部検証）→ Phase 3（クロスレビュー2ラウンド）→ Phase 4（統合）
 
-- Phase 0.5で決定論的な計算結果（シャープレシオ、相関係数、ドローダウン等）を `shared_calculations.md` に出力
-- Phase 1では3エージェントが**同じ全データ+共通計算結果**を受け取り、ペルソナごとの解釈・見解・提言を独立に行う
+- Phase 0.5で決定論的な計算結果（シャープレシオ、相関係数、ドローダウン等）を `05_shared_calculations.md` に出力
+- Phase 1では5エージェントが**同じ全データ+共通計算結果**を受け取り、ペルソナごとの解釈・見解・提言を独立に行う
 - クロスレビュー（2ラウンド: 相互レビュー→反論→合意形成）はPhase 3で独立エージェントが実施し、Phase 4で統合
 - レポートのセクション9に議論の経緯を詳細に記載
 
 **議論重視モードのペルソナ構成**:
 
-3つの異なる視点を持つペルソナが独立分析→クロスレビュー→合意形成を行うことで、単一視点では見落としがちなリスクや機会を多角的に発見する。
+5つの異なる視点を持つペルソナが独立分析→クロスレビュー→合意形成を行うことで、単一視点では見落としがちなリスクや機会を多角的に発見する。
 
 | ペルソナ | 役割 | 推論手法 | 重視する観点 |
 |---------|------|---------|------------|
 | analyst-A: 積極派 | 成長機会の最大化 | 機会探索型推論（トレンド→成長ポテンシャル→アクション） | モメンタム・シャープレシオ・低スコア銘柄入替 |
-| analyst-B: 堅実派 | 資産保全と安定運用 | 保守的推論（リスク→回避策→安全マージン確保） | ドローダウン・ストレスシナリオ・現金比率 |
+| analyst-B: 堅実派 | 資産保全と安定運用 | 保守的推論（リスク→回避策→安全マージン確保） | 最大ドローダウン・個別銘柄VaR/CVaR・現金比率 |
 | analyst-C: 異論派 | 見落とされた視点の掘り起こし | 反証主義的推論（結論→反例探索→盲点の発見） | 相関・タグ分散・運用会社集中リスク |
+| analyst-D: マクロ戦略派 | マクロ経済シナリオによる全体影響評価 | トップダウン推論（マクロ→セクター→ポートフォリオ） | マクロストレスシナリオ（金利急騰・為替ショック・地政学）・セクターローテーション・欠落アセットクラス |
+| analyst-E: 長期構造派 | 超長期視点での構造的優位性評価 | 構造的推論（人口動態/技術革新→長期トレンド→保有価値） | 信託報酬の長期複利効果・人口動態/技術革新・積立の時間分散 |
 
 ## 分析で活用するデータソース
 
@@ -138,7 +140,7 @@ Phase 0のデータ収集は、**必ず** `phase0-collection-template.py` をベ
 ### フェーズレベルの失敗時フォールバックポリシー
 
 詳細は `./execution-details.md` の「フェーズレベルの失敗時フォールバックポリシー」を参照。要点:
-- Phase 0の認証/holdings失敗、Phase 1の2体以上失敗は**スキル全体を中止**
+- Phase 0の認証/holdings失敗、Phase 1の3体以上失敗（過半数）は**スキル全体を中止**
 - Phase 0a失敗は市場環境なしで続行可
 - 各フェーズ完了後、出力ファイルの存在を確認して続行/中止を判断
 
@@ -147,8 +149,10 @@ Phase 0のデータ収集は、**必ず** `phase0-collection-template.py` をベ
 Phase 1完了後にメインエージェントが確認する。詳細は `./data-skip-rules.md` を参照。スキップ前に `_metadata` の確認が必須。`_metadata` を確認せずに「データ不足」と判断することは禁止。
 
 **Phase 1完了後の出力検証**:
-- 各分析出力ファイル（quant_analysis.md, score_analysis.md, allocation_analysis.md）のサイズが500バイト以上であること
+- speed/normalモード: 各分析出力ファイル（`10_quant_analysis.md`, `10_score_analysis.md`, `10_allocation_analysis.md`）のサイズが500バイト以上であること
+- debateモード: `10_analyst_a_analysis.md` ～ `10_analyst_e_analysis.md` の5ファイルが全て500バイト以上であること
 - 500バイト未満は実質空出力として「失敗」扱いとし、Phase 1の失敗カウントに加算する
+- **バリデーションはBashサブエージェントに委譲**: バリデーションサブエージェント（Bash）を起動し、`{skill_dir}/agent-instructions/validation-timing.md` の指示に従って実行する。戻り値フォーマット: 「検証完了: [各ファイル状態] timing更新済み」の1行
 
 ### 株式分割の取り扱い
 
@@ -193,10 +197,10 @@ print(resp.json())
 
 メインエージェントは `{WORK_DIR}/timing.json` に実行時間を記録する。
 
-**メインの記録タイミング（2回+α）**:
+**メインの記録タイミング（1回+サブエージェント委譲）**:
 1. WORK_DIR作成時: `skill_start` とセッションJSONLの現在行数を記録（mkdir と同一Bashコマンド内）
-2. Phase 1完了後: 中間ファイルの更新時刻（`stat`）から各フェーズの完了時刻を取得し一括書き込み
-3. Phase 2完了後（normal/debateのみ）: `phase_2_end` を追加書き込み（Phase 2セクションのコード例を参照）
+2. Phase 1完了後: バリデーションサブエージェント（Bash）に委譲（`validation-timing.md` 参照）。メインはインラインで書き込まない
+3. Phase 2完了後（normal/debateのみ）: 同様にバリデーションサブエージェントに委譲
 
 **Phase 3/4のtiming**: Phase 3+4オーケストレーター（debateモード）または統合エージェント（speed/normalモード）が内部で記録。
 
@@ -216,29 +220,11 @@ timing.json の初期値:
 }
 ```
 
-**一括書き込みコード例**:
-```bash
-python3 -c "
-import json, os, datetime
-wd = '{WORK_DIR}'
-def mtime(f):
-    try: return datetime.datetime.fromtimestamp(os.path.getmtime(os.path.join(wd, f))).isoformat()
-    except: return None
-with open(os.path.join(wd, 'timing.json')) as f:
-    data = json.load(f)
-updates = {
-    'phase_0a_end': mtime('market_environment.md'),
-    'phase_0b_end': mtime('trend_summary.md'),
-    'phase_0_end': mtime('portfolio_data.json'),
-    'phase_05_end': mtime('shared_calculations.md'),
-    'phase_1_end': datetime.datetime.now().isoformat()
-}
-data.update({k:v for k,v in updates.items() if v})
-with open(os.path.join(wd, 'timing.json'), 'w') as f:
-    json.dump(data, f, indent=2)
-print('timing updated')
-"
-```
+**Phase 1完了後のtiming更新とバリデーション**:
+
+timing.json の一括書き込みとPhase 1出力ファイルのバリデーションは、**バリデーションサブエージェント（Bash）に委譲**する。`{skill_dir}/agent-instructions/validation-timing.md` の指示に従って実行させること。戻り値フォーマット: 「検証完了: [各ファイル状態] timing更新済み」の1行。
+
+timing.json更新とPhase 2起動は**同一ターンで並列発行**してよい（バリデーションサブエージェントとPhase 2サブエージェントを同時に起動する）。
 
 **注意**: 各フェーズの `_start` イベントは精度が低下するため記録しない。`_end` イベントのみファイル更新時刻から取得する。
 
@@ -257,7 +243,7 @@ print('timing updated')
 
 過去の分析履歴（metrics.json）とHISTORY.mdから、資産推移・スコア推移・アクション実行状況等のトレンドサマリーを生成する。**general-purposeサブエージェント**に委譲し、Phase 0/0aと並行実行する。
 
-**当該実行のPhase 0出力（portfolio_data.json等）には依存しない**。過去の蓄積データのみを入力とする。
+**当該実行のPhase 0出力（`00_portfolio_data.json`等）には依存しない**。過去の蓄積データのみを入力とする。
 
 **サブエージェントへの指示**: プロンプトに以下を含める:
 - 指示ファイル: `{skill_dir}/agent-instructions/phase0b-trend-summary.md` を読んで実行
@@ -269,7 +255,7 @@ print('timing updated')
 
 ### Phase 0: データ収集（Bashエージェントに委譲）
 
-以下のデータを一括取得し、`{WORK_DIR}/portfolio_data.json` に保存する。対象銘柄はAPI取得後の保有銘柄リストから動的に決定。
+以下のデータを一括取得し、`{WORK_DIR}/00_portfolio_data.json` に保存する。対象銘柄はAPI取得後の保有銘柄リストから動的に決定。
 
 **サブエージェントへの指示**: プロンプトに以下を含める:
 - 指示ファイル: `{skill_dir}/agent-instructions/phase0-data-collection.md` を読んで実行
@@ -291,14 +277,14 @@ print('timing updated')
 7. タグ情報（etf_tag_relations JOIN tags）
 8. おすすめ銘柄API（balance, dividend, low-cost の各視点トップ10）
 9. 比較API（保有銘柄同士のperformance, scores）
-10. `portfolio_reference.md`の生成（セクション1・11.2用のmarkdownテーブルをPythonで自動生成。Phase 4統合エージェントがレポート作成時にこのファイルの表を読み込んで挿入する）
+10. `00_portfolio_reference.md`の生成（セクション1・11.2用のmarkdownテーブルをPythonで自動生成。Phase 4統合エージェントがレポート作成時にこのファイルの表を読み込んで挿入する）
 
 ### Phase 0.5: 共通定量計算（debateモード限定）
 
-**開始条件**: Phase 0aとPhase 0の**両方が完了**してから起動する。
+**開始条件**: Phase 0が完了した時点で即起動する（Phase 0aの完了を待たない。リスクフリーレートはフォールバック値0.5%を使用）。
 **実行条件**: debateモードのみ。speed/normalモードでは実行しない。
 
-決定論的な計算（シャープレシオ、相関係数、ドローダウン等）を1エージェントで実行し、Phase 1の3ペルソナエージェントが計算を重複実行することを防ぐ。
+決定論的な計算（シャープレシオ、相関係数、ドローダウン等）を1エージェントで実行し、Phase 1の5ペルソナエージェントが計算を重複実行することを防ぐ。
 
 **サブエージェントへの指示**: プロンプトに以下を含める:
 - 指示ファイル: `{skill_dir}/agent-instructions/phase05-shared-calculations.md` を読んで実行
@@ -308,13 +294,13 @@ print('timing updated')
 
 ### Phase 1: 並行分析（並列Task）
 
-**開始条件**: Phase 0aとPhase 0の**両方が完了**してからPhase 1を起動する。debateモードの場合は、さらにPhase 0.5の完了も必要。
+**開始条件**: Phase 0aとPhase 0の**両方が完了**してからPhase 1を起動する。debateモードの場合は、さらにPhase 0.5の完了も必要（Phase 0aはPhase 0.5と並行実行中でよい）。
 
 Taskツールで複数のサブエージェントを**同一ターンで並列発行**する。エージェント間通信は不要（ファイルベース通信のみ）。
 
 **サブエージェントへの指示方法**: 各サブエージェントのプロンプトに指示ファイルパスとWORK_DIRを渡す。**メインエージェントは指示ファイルの内容を読み込まない**。
 
-**共通指示**: 議論重視モードの各エージェント（analyst-A/B/C）は、個別指示ファイルの前に `{skill_dir}/agent-instructions/phase1-debate-common.md` を先に読み込むこと。
+**共通指示**: 議論重視モードの各エージェント（analyst-A/B/C/D/E）は、個別指示ファイルの前に `{skill_dir}/agent-instructions/phase1-debate-common.md` を先に読み込むこと。
 
 #### 速度重視・ノーマルモード: タスク分割型
 
@@ -322,23 +308,27 @@ Taskツールで複数のサブエージェントを**同一ターンで並列�
 
 | エージェント | 指示ファイル | 出力ファイル |
 |-------------|------------|------------|
-| quant-analyst | `{skill_dir}/agent-instructions/phase1-quant-analyst.md` | `{WORK_DIR}/quant_analysis.md` |
-| score-analyst | `{skill_dir}/agent-instructions/phase1-score-analyst.md` | `{WORK_DIR}/score_analysis.md` |
-| allocation-analyst | `{skill_dir}/agent-instructions/phase1-allocation-analyst.md` | `{WORK_DIR}/allocation_analysis.md` |
+| quant-analyst | `{skill_dir}/agent-instructions/phase1-quant-analyst.md` | `{WORK_DIR}/10_quant_analysis.md` |
+| score-analyst | `{skill_dir}/agent-instructions/phase1-score-analyst.md` | `{WORK_DIR}/10_score_analysis.md` |
+| allocation-analyst | `{skill_dir}/agent-instructions/phase1-allocation-analyst.md` | `{WORK_DIR}/10_allocation_analysis.md` |
 
 **注意**: allocation-analystは常に起動。5銘柄未満の場合は項目A(地域別)/B(セクター別)/C(テーマ別)/F(集中度ヒートマップ)をスキップし、D(欠落アセットクラス)/E(現金比率)のみ実施。
 
 #### 議論重視モード: 独立分析型
 
-**常に3体起動**。3エージェントが**同じ全データ**を受け取り、それぞれ独立に全項目を分析。
+**常に5体起動**。5エージェントが**同じ全データ**を受け取り、それぞれ独立に全項目を分析。
 
 | エージェント | 指示ファイル | 出力ファイル |
 |-------------|------------|------------|
-| analyst-A | debate-common + quant + score + allocation（4ファイル） | `{WORK_DIR}/analyst_a_analysis.md` |
-| analyst-B | 同上 | `{WORK_DIR}/analyst_b_analysis.md` |
-| analyst-C | 同上 | `{WORK_DIR}/analyst_c_analysis.md` |
+| analyst-A | debate-common + quant + score + allocation（4ファイル） | `{WORK_DIR}/10_analyst_a_analysis.md` |
+| analyst-B | 同上 | `{WORK_DIR}/10_analyst_b_analysis.md` |
+| analyst-C | 同上 | `{WORK_DIR}/10_analyst_c_analysis.md` |
+| analyst-D | 同上 | `{WORK_DIR}/10_analyst_d_analysis.md` |
+| analyst-E | 同上 | `{WORK_DIR}/10_analyst_e_analysis.md` |
 
 各エージェントは自分なりの優先順位付け・総合判断を行い、最終的に統合エージェントが合意形成する。
+
+**Phase 1完了後の出力確認**: debateモードでは `10_analyst_a_analysis.md` ～ `10_analyst_e_analysis.md` の5ファイルが存在し、各500バイト以上であることを確認する。
 
 ### Phase 2: 入替候補の外部検証（general-purposeエージェントに委譲）
 
@@ -355,38 +345,22 @@ Phase 1で生成された入替候補銘柄に対して、WebSearchで中長期�
 
 **メインエージェントは指示ファイルの内容を読み込まない**。サブエージェントが直接読み込む。
 
-**Phase 2完了後の検証**: `{WORK_DIR}/candidate_verification.md` の存在確認（200バイト以上）。
+**Phase 2完了後の検証**: `{WORK_DIR}/20_candidate_verification.md` の存在確認（200バイト以上）。
 
 **失敗時**: スキル全体の中止理由にならない。外部検証なしで続行。
 
-**timing**: Phase 2完了後に追加の1回書き込みで `phase_2_end` を記録:
-```bash
-python3 -c "
-import json, os, datetime
-wd = '{WORK_DIR}'
-with open(os.path.join(wd, 'timing.json')) as f:
-    data = json.load(f)
-cv = os.path.join(wd, 'candidate_verification.md')
-if os.path.exists(cv):
-    data['phase_2_end'] = datetime.datetime.fromtimestamp(os.path.getmtime(cv)).isoformat()
-    with open(os.path.join(wd, 'timing.json'), 'w') as f:
-        json.dump(data, f, indent=2)
-    print('phase_2 timing updated')
-else:
-    print('candidate_verification.md not found, skipping timing update')
-"
-```
+**timing**: Phase 2完了後の `phase_2_end` 追記も**バリデーションサブエージェント（Bash）に委譲**する。`{skill_dir}/agent-instructions/validation-timing.md` の指示に従って実行させること。戻り値フォーマット: 「検証完了: [各ファイル状態] timing更新済み」の1行。
 
 ### クロスレビュー
 
 - **速度重視モード**: クロスレビューなし（セクション9は「速度重視モードのためスキップ」と記載）
 - **ノーマルモード**: 統合エージェント内で実施。統合エージェントが `{skill_dir}/agent-instructions/crossreview-normal.md` を参照
-- **議論重視モード**: Phase 3として独立実行。メインエージェントが3エージェントによる2ラウンドのクロスレビューをオーケストレーション（詳細は「Phase 3: クロスレビュー」セクション参照）。統合エージェントは `{skill_dir}/agent-instructions/crossreview-debate.md`（統合ガイド）を参照して結果を統合
+- **議論重視モード**: Phase 3として独立実行。メインエージェントが5エージェントによる2ラウンドのクロスレビューをオーケストレーション（詳細は「Phase 3: クロスレビュー」セクション参照）。統合エージェントは `{skill_dir}/agent-instructions/crossreview-debate.md`（統合ガイド）を参照して結果を統合
 
 ### Phase 3+4: オーケストレーター委譲（debateモード限定）
 
 **実行条件**: debateモードのみ。speed/normalモードでは Phase 3+4 統合エージェントを直接起動（従来通り）。
-**開始条件**: Phase 1の3エージェント全員が完了し、timing.json一括書き込みが完了してから起動する。
+**開始条件**: Phase 1の5エージェント全員が完了し、バリデーションサブエージェントによるtiming.json更新が完了してから起動する。
 
 debateモードでは、Phase 3（クロスレビュー2ラウンド）+ Phase 4（統合レポート）を **1体のgeneral-purposeサブエージェント（オーケストレーター）** に委譲する。メインエージェントのコンテキスト消費を抑制するため、Phase 3+4の全てのTask起動・待機・ファイル確認をオーケストレーター内で完結させる。
 
@@ -396,6 +370,7 @@ debateモードでは、Phase 3（クロスレビュー2ラウンド）+ Phase 4
 - mode: `debate`
 - skill_dir: `{skill_dir}`
 - 対象ユーザー: `{USER_ID}`（レポートファイル名 `YYYYMMDD_{USER_ID}.md` および `reports/{USER_ID}/` パス構築に使用）
+- ペルソナ数: `5`（analyst-A/B/C/D/E）
 - **メインへの戻り値は「Phase 3+4完了: ./reports/{USER_ID}/YYYYMMDD_....md」の1行のみ**
 
 **メインエージェントは指示ファイルの内容を読み込まない**。オーケストレーターが直接読み込む。
@@ -444,4 +419,4 @@ debateモードでは、Phase 3（クロスレビュー2ラウンド）+ Phase 4
 - [ ] 最適化前後の比較表（指標比較+保有銘柄の改善前後比較）を作成した
 - [ ] アクションアイテムを優先度別に整理した
 - [ ] レポートファイルが `./reports/{USER_ID}/` ディレクトリに保存された
-- [ ] レポート保存後の数値整合性チェック（portfolio_reference.mdとの照合）がパスした
+- [ ] レポート保存後の数値整合性チェック（`00_portfolio_reference.md`との照合）がパスした

@@ -8,7 +8,7 @@
 ## データ受け渡しルール
 
 - **入力**: `reports/{USER}/metrics.json`（過去蓄積データ）+ `reports/{USER}/HISTORY.md`
-- **出力**: `{WORK_DIR}/trend_summary.md`
+- **出力**: `{WORK_DIR}/0b_trend_summary.md`
 - **メインへの戻り値**: 完了メッセージ1行のみ。データ全文やテーブル全体を返さないこと
 
 ## フォールバック
@@ -19,7 +19,7 @@
 - `reports/{USER}/metrics.json` が存在しない
 - `metrics.json` のパースエラー（不正なJSON等）
 
-**フォールバック出力**（`{WORK_DIR}/trend_summary.md` に書き込む）:
+**フォールバック出力**（`{WORK_DIR}/0b_trend_summary.md` に書き込む）:
 
 ```markdown
 # トレンドサマリー
@@ -92,7 +92,7 @@ metrics.jsonはトップレベルが配列（`analyses`ラッパーなし）。�
 
 ### 3. トレンドサマリーの生成
 
-`metrics.json` の配列から過去の分析データを読み取り、以下のフォーマットで `{WORK_DIR}/trend_summary.md` を生成する。
+`metrics.json` の配列から過去の分析データを読み取り、以下のフォーマットで `{WORK_DIR}/0b_trend_summary.md` を生成する。
 
 **分析回数N**: 配列の要素数
 
@@ -177,6 +177,6 @@ metrics.jsonはトップレベルが配列（`analyses`ラッパーなし）。�
 
 ## 収集結果の保存先
 
-`{WORK_DIR}/trend_summary.md` に保存する。Phase 4の統合エージェントがこのファイルを直接読み込む。
+`{WORK_DIR}/0b_trend_summary.md` に保存する。Phase 4の統合エージェントがこのファイルを直接読み込む。
 
 **メインへの戻り値**: 「トレンドサマリー完了（過去N回分析データ）」の1行のみ。サマリー全文を返さないこと。

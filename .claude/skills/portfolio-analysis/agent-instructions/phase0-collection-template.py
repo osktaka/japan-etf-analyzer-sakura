@@ -327,11 +327,11 @@ output = {
     'compare_scores': compare_scores_list if compare_scores_list else None,
 }
 
-output_path = WORK_DIR / 'portfolio_data.json'
+output_path = WORK_DIR / '00_portfolio_data.json'
 with open(output_path, 'w', encoding='utf-8') as f:
     json.dump(output, f, ensure_ascii=False, indent=2, default=str)
 
-# portfolio_reference.md の生成（レポートのセクション1・11.2で使用するmarkdownテーブル）
+# 00_portfolio_reference.md の生成（レポートのセクション1・11.2で使用するmarkdownテーブル）
 holdings_data = holdings.get('data', [])
 summary_data = summary.get('data', {}) if summary else {}
 cash = summary_data.get('cash_balance', 0)
@@ -400,7 +400,7 @@ ref_lines.append(f"- 合計評価額: {total_cv:,.0f}円")
 ref_lines.append(f"- 現金残高: {cash:,.0f}円")
 ref_lines.append(f"- 総資産: {total_asset_from_summary:,.0f}円")
 
-ref_path = WORK_DIR / 'portfolio_reference.md'
+ref_path = WORK_DIR / '00_portfolio_reference.md'
 with open(ref_path, 'w', encoding='utf-8') as f:
     f.write('\n'.join(ref_lines))
 print(f"参照データ生成: {ref_path}")
