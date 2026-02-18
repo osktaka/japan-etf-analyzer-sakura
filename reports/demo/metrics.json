@@ -371,5 +371,91 @@
       "現金比率2.42%でディフェンシブ機能不足",
       "月次VaR(95%) -2.12%（-20,181円）"
     ]
+  },
+  {
+    "date": "2026-02-18",
+    "report_path": "reports/demo/20260218_demo.md",
+    "mode": "debate",
+    "total_asset": 986861,
+    "cash_balance": 23559,
+    "cash_ratio": 0.0239,
+    "holdings_count": 6,
+    "holdings": [
+      {
+        "etf_code": "1475",
+        "name": "iシェアーズ・コア TOPIX ETF",
+        "weight": 0.324,
+        "pnl_rate": -0.012,
+        "current_value": 312560
+      },
+      {
+        "etf_code": "1329",
+        "name": "iシェアーズ・コア 日経225 ETF",
+        "weight": 0.227,
+        "pnl_rate": -0.008,
+        "current_value": 218707
+      },
+      {
+        "etf_code": "1489",
+        "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信",
+        "weight": 0.136,
+        "pnl_rate": -0.006,
+        "current_value": 131400
+      },
+      {
+        "etf_code": "1615",
+        "name": "NEXT FUNDS 東証銀行業株価指数連動型上場投信",
+        "weight": 0.133,
+        "pnl_rate": -0.045,
+        "current_value": 127900
+      },
+      {
+        "etf_code": "2558",
+        "name": "MAXIS米国株式（S&P500）上場投信",
+        "weight": 0.126,
+        "pnl_rate": 0.006,
+        "current_value": 120960
+      },
+      {
+        "etf_code": "1597",
+        "name": "MAXIS Jリート上場投信",
+        "weight": 0.054,
+        "pnl_rate": -0.003,
+        "current_value": 51775
+      }
+    ],
+    "overall_score": 51.0,
+    "sharpe_ratio_portfolio": 1.75,
+    "max_drawdown": -0.0302,
+    "var_95": -0.016,
+    "score_axes": {
+      "dividend_power": 58.0,
+      "cost_efficiency": 85.1,
+      "scale_reliability": 95.3,
+      "trading_quality": 93.9,
+      "return_performance": 77.2
+    },
+    "top_actions": [
+      {
+        "action": "1597（Jリート）段階的縮小（5.37%→2%）で現金比率5%確保",
+        "priority": "highest",
+        "consensus": 100
+      },
+      {
+        "action": "ゴールドETF（1540）5%組み入れ",
+        "priority": "highest",
+        "consensus": 100
+      },
+      {
+        "action": "1329段階的縮小（22.7%→15%）→1475集約",
+        "priority": "high",
+        "consensus": 80
+      }
+    ],
+    "key_risks": [
+      "国内集中87.4%と景気敏感68.8%の二重集中",
+      "現金比率2.39%でディフェンシブ機能不足（4回連続未改善）",
+      "VaR/CVaR 3回連続悪化（月次VaR -1.60%、CVaR -2.12%）"
+    ]
   }
 ]
