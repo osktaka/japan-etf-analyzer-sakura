@@ -19,11 +19,39 @@ show_help() {
     echo "  rebuild     - Rebuild and start all services"
     echo "  backend     - Enter the backend container"
     echo "  frontend    - Enter the frontend container"
-    echo "  db          - Enter the database container"
+    echo "  scheduler   - Enter the scheduler container"
+    echo "  status      - Show container status"
+    echo "  check       - Verify scheduler mount"
     echo "  lint        - Run linter"
     echo "  format      - Run formatter"
     echo "  test        - Run tests"
     echo ""
+}
+
+# schedulerコンテナのマウント検証
+verify_scheduler_mount() {
+    echo -e "${GREEN}Verifying scheduler mount...${NC}"
+    local file_count
+    file_count=$(docker compose exec scheduler sh -c 'ls /app/scripts/ 2>/dev/null | wc -l' 2>/dev/null || echo "0")
+    # 余分な空白を除去
+    file_count=$(echo "$file_count" | tr -d '[:space:]')
+
+    if [ "$file_count" = "0" ]; then
+        echo -e "${YELLOW}Warning: /app/scripts/ is empty in scheduler container.${NC}"
+        echo -e "${YELLOW}Attempting to recover by restarting scheduler...${NC}"
+        docker compose restart scheduler || true
+        sleep 3
+        file_count=$(docker compose exec scheduler sh -c 'ls /app/scripts/ 2>/dev/null | wc -l' 2>/dev/null || echo "0")
+        file_count=$(echo "$file_count" | tr -d '[:space:]')
+        if [ "$file_count" = "0" ]; then
+            echo -e "${RED}Recovery failed: /app/scripts/ is still empty.${NC}"
+            return 1
+        else
+            echo -e "${GREEN}Recovery succeeded: $file_count file(s) found in /app/scripts/.${NC}"
+        fi
+    else
+        echo -e "${GREEN}Scheduler mount OK: $file_count file(s) found in /app/scripts/.${NC}"
+    fi
 }
 
 case "$1" in
@@ -31,6 +59,17 @@ case "$1" in
         echo -e "${GREEN}Starting services...${NC}"
         docker compose up -d
         echo -e "${GREEN}Services started.${NC}"
+        sleep 3
+        # frontendパッケージ検証: ホスト側のpackage.jsonが更新されている場合に同期
+        echo -e "${GREEN}Verifying frontend packages...${NC}"
+        npm_output=$(docker compose exec frontend npm install --prefer-offline 2>&1 || true)
+        if echo "$npm_output" | grep -q "added"; then
+            echo -e "${YELLOW}New packages detected. Restarting frontend...${NC}"
+            docker compose restart frontend
+        else
+            echo -e "${GREEN}Frontend packages OK.${NC}"
+        fi
+        verify_scheduler_mount || true
         ;;
     down)
         echo -e "${YELLOW}Stopping services...${NC}"
@@ -46,6 +85,8 @@ case "$1" in
         docker compose build --no-cache
         docker compose up -d
         echo -e "${GREEN}Services rebuilt and started.${NC}"
+        sleep 3
+        verify_scheduler_mount || true
         ;;
     backend)
         echo -e "${GREEN}Entering backend container...${NC}"
@@ -55,9 +96,15 @@ case "$1" in
         echo -e "${GREEN}Entering frontend container...${NC}"
         docker compose exec frontend sh
         ;;
-    db)
-        echo -e "${GREEN}Entering database container...${NC}"
-        docker compose exec db mysql -u etf_user -petf_password etf_analyzer
+    scheduler)
+        echo -e "${GREEN}Entering scheduler container...${NC}"
+        docker compose exec scheduler bash
+        ;;
+    status)
+        docker compose ps
+        ;;
+    check)
+        verify_scheduler_mount
         ;;
     lint)
         echo -e "${GREEN}Running linter...${NC}"
