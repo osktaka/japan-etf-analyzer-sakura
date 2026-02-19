@@ -51,11 +51,41 @@
     "cash_ratio": 0.016,
     "holdings_count": 5,
     "holdings": [
-      {"etf_code": "1475", "name": "iシェアーズ・コア TOPIX ETF", "weight": 0.322, "pnl_rate": -0.009, "current_value": 313600},
-      {"etf_code": "1329", "name": "iシェアーズ・コア 日経225 ETF", "weight": 0.302, "pnl_rate": -0.012, "current_value": 294150},
-      {"etf_code": "1615", "name": "NEXT FUNDS 東証銀行業株価指数連動型上場投信", "weight": 0.137, "pnl_rate": -0.006, "current_value": 133240},
-      {"etf_code": "1489", "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信", "weight": 0.135, "pnl_rate": -0.006, "current_value": 131360},
-      {"etf_code": "1597", "name": "MAXIS Jリート上場投信", "weight": 0.106, "pnl_rate": -0.009, "current_value": 103000}
+      {
+        "etf_code": "1475",
+        "name": "iシェアーズ・コア TOPIX ETF",
+        "weight": 0.322,
+        "pnl_rate": -0.009,
+        "current_value": 313600
+      },
+      {
+        "etf_code": "1329",
+        "name": "iシェアーズ・コア 日経225 ETF",
+        "weight": 0.302,
+        "pnl_rate": -0.012,
+        "current_value": 294150
+      },
+      {
+        "etf_code": "1615",
+        "name": "NEXT FUNDS 東証銀行業株価指数連動型上場投信",
+        "weight": 0.137,
+        "pnl_rate": -0.006,
+        "current_value": 133240
+      },
+      {
+        "etf_code": "1489",
+        "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信",
+        "weight": 0.135,
+        "pnl_rate": -0.006,
+        "current_value": 131360
+      },
+      {
+        "etf_code": "1597",
+        "name": "MAXIS Jリート上場投信",
+        "weight": 0.106,
+        "pnl_rate": -0.009,
+        "current_value": 103000
+      }
     ],
     "overall_score": 64,
     "sharpe_ratio_portfolio": 1.97,
@@ -69,9 +99,21 @@
       "return_performance": 78.9
     },
     "top_actions": [
-      {"action": "地域分散の実現（国内100%→50-60%へ、米国株ETF30%追加）", "priority": "highest", "consensus": 100},
-      {"action": "運用会社集中リスクの解消（ブラックロック62.3%→40%以下へ）", "priority": "highest", "consensus": 100},
-      {"action": "現金比率の引き上げ（1.6%→5%）", "priority": "high", "consensus": 67}
+      {
+        "action": "地域分散の実現（国内100%→50-60%へ、米国株ETF30%追加）",
+        "priority": "highest",
+        "consensus": 100
+      },
+      {
+        "action": "運用会社集中リスクの解消（ブラックロック62.3%→40%以下へ）",
+        "priority": "highest",
+        "consensus": 100
+      },
+      {
+        "action": "現金比率の引き上げ（1.6%→5%）",
+        "priority": "high",
+        "consensus": 67
+      }
     ],
     "key_risks": [
       "地域100%国内集中による地政学リスク",
@@ -88,11 +130,41 @@
     "cash_ratio": 0.0159,
     "holdings_count": 5,
     "holdings": [
-      {"etf_code": "1475", "name": "iシェアーズ・コア TOPIX ETF", "weight": 0.322, "pnl_rate": -0.009, "current_value": 313600},
-      {"etf_code": "1329", "name": "iシェアーズ・コア 日経225 ETF", "weight": 0.302, "pnl_rate": -0.012, "current_value": 294150},
-      {"etf_code": "1615", "name": "NEXT FUNDS 東証銀行業株価指数連動型上場投信", "weight": 0.137, "pnl_rate": -0.006, "current_value": 133240},
-      {"etf_code": "1489", "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信", "weight": 0.135, "pnl_rate": -0.006, "current_value": 131360},
-      {"etf_code": "1597", "name": "MAXIS Jリート上場投信", "weight": 0.106, "pnl_rate": -0.009, "current_value": 103000}
+      {
+        "etf_code": "1475",
+        "name": "iシェアーズ・コア TOPIX ETF",
+        "weight": 0.322,
+        "pnl_rate": -0.009,
+        "current_value": 313600
+      },
+      {
+        "etf_code": "1329",
+        "name": "iシェアーズ・コア 日経225 ETF",
+        "weight": 0.302,
+        "pnl_rate": -0.012,
+        "current_value": 294150
+      },
+      {
+        "etf_code": "1615",
+        "name": "NEXT FUNDS 東証銀行業株価指数連動型上場投信",
+        "weight": 0.137,
+        "pnl_rate": -0.006,
+        "current_value": 133240
+      },
+      {
+        "etf_code": "1489",
+        "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信",
+        "weight": 0.135,
+        "pnl_rate": -0.006,
+        "current_value": 131360
+      },
+      {
+        "etf_code": "1597",
+        "name": "MAXIS Jリート上場投信",
+        "weight": 0.106,
+        "pnl_rate": -0.009,
+        "current_value": 103000
+      }
     ],
     "overall_score": 62,
     "sharpe_ratio_portfolio": 1.9,
@@ -106,9 +178,21 @@
       "return_performance": 78.9
     },
     "top_actions": [
-      {"action": "海外資産の追加（10-15%目標）", "priority": "highest", "consensus": 100},
-      {"action": "1329/1475の重複解消（1329を30%→22-25%に段階的縮小）", "priority": "highest", "consensus": 100},
-      {"action": "1597（Jリート）の段階的縮小（10.6%→5%）", "priority": "high", "consensus": 67}
+      {
+        "action": "海外資産の追加（10-15%目標）",
+        "priority": "highest",
+        "consensus": 100
+      },
+      {
+        "action": "1329/1475の重複解消（1329を30%→22-25%に段階的縮小）",
+        "priority": "highest",
+        "consensus": 100
+      },
+      {
+        "action": "1597（Jリート）の段階的縮小（10.6%→5%）",
+        "priority": "high",
+        "consensus": 67
+      }
     ],
     "key_risks": [
       "国内資産100%集中（地域分散ゼロ）",
@@ -125,12 +209,48 @@
     "cash_ratio": 0.024,
     "holdings_count": 6,
     "holdings": [
-      {"etf_code": "1475", "name": "iシェアーズ・コア TOPIX ETF", "weight": 0.325, "pnl_rate": -0.015, "current_value": 311440},
-      {"etf_code": "1329", "name": "iシェアーズ・コア 日経225 ETF", "weight": 0.226, "pnl_rate": -0.014, "current_value": 217190},
-      {"etf_code": "1489", "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信", "weight": 0.136, "pnl_rate": -0.016, "current_value": 130080},
-      {"etf_code": "1615", "name": "NEXT FUNDS 東証銀行業株価指数連動型上場投信", "weight": 0.134, "pnl_rate": -0.04, "current_value": 128580},
-      {"etf_code": "2558", "name": "MAXIS米国株式（S&P500）上場投信", "weight": 0.126, "pnl_rate": 0.002, "current_value": 120480},
-      {"etf_code": "1597", "name": "MAXIS Jリート上場投信", "weight": 0.053, "pnl_rate": -0.012, "current_value": 51300}
+      {
+        "etf_code": "1475",
+        "name": "iシェアーズ・コア TOPIX ETF",
+        "weight": 0.325,
+        "pnl_rate": -0.015,
+        "current_value": 311440
+      },
+      {
+        "etf_code": "1329",
+        "name": "iシェアーズ・コア 日経225 ETF",
+        "weight": 0.226,
+        "pnl_rate": -0.014,
+        "current_value": 217190
+      },
+      {
+        "etf_code": "1489",
+        "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信",
+        "weight": 0.136,
+        "pnl_rate": -0.016,
+        "current_value": 130080
+      },
+      {
+        "etf_code": "1615",
+        "name": "NEXT FUNDS 東証銀行業株価指数連動型上場投信",
+        "weight": 0.134,
+        "pnl_rate": -0.04,
+        "current_value": 128580
+      },
+      {
+        "etf_code": "2558",
+        "name": "MAXIS米国株式（S&P500）上場投信",
+        "weight": 0.126,
+        "pnl_rate": 0.002,
+        "current_value": 120480
+      },
+      {
+        "etf_code": "1597",
+        "name": "MAXIS Jリート上場投信",
+        "weight": 0.053,
+        "pnl_rate": -0.012,
+        "current_value": 51300
+      }
     ],
     "overall_score": 60,
     "sharpe_ratio_portfolio": 1.58,
@@ -144,9 +264,21 @@
       "return_performance": 77.1
     },
     "top_actions": [
-      {"action": "現金比率4-5%への引き上げ（1597段階的縮小）", "priority": "highest", "consensus": 100},
-      {"action": "1597（Jリート）段階的縮小（5.3%→2-3%）", "priority": "highest", "consensus": 100},
-      {"action": "2558（米国株S&P500）3ヶ月観察期間設定", "priority": "high", "consensus": 100}
+      {
+        "action": "現金比率4-5%への引き上げ（1597段階的縮小）",
+        "priority": "highest",
+        "consensus": 100
+      },
+      {
+        "action": "1597（Jリート）段階的縮小（5.3%→2-3%）",
+        "priority": "highest",
+        "consensus": 100
+      },
+      {
+        "action": "2558（米国株S&P500）3ヶ月観察期間設定",
+        "priority": "high",
+        "consensus": 100
+      }
     ],
     "key_risks": [
       "国内株式87.4%・景気敏感68.7%の二重集中",
@@ -163,12 +295,48 @@
     "cash_ratio": 0.0242,
     "holdings_count": 6,
     "holdings": [
-      {"etf_code": "1475", "name": "iシェアーズ・コア TOPIX ETF", "weight": 0.324, "pnl_rate": -0.024, "current_value": 308800},
-      {"etf_code": "1329", "name": "iシェアーズ・コア 日経225 ETF", "weight": 0.227, "pnl_rate": -0.019, "current_value": 216154},
-      {"etf_code": "1489", "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信", "weight": 0.136, "pnl_rate": -0.018, "current_value": 129880},
-      {"etf_code": "1615", "name": "NEXT FUNDS 東証銀行業株価指数連動型上場投信", "weight": 0.132, "pnl_rate": -0.061, "current_value": 125860},
-      {"etf_code": "2558", "name": "MAXIS米国株式（S&P500）上場投信", "weight": 0.126, "pnl_rate": -0.005, "current_value": 119620},
-      {"etf_code": "1597", "name": "MAXIS Jリート上場投信", "weight": 0.054, "pnl_rate": -0.012, "current_value": 51325}
+      {
+        "etf_code": "1475",
+        "name": "iシェアーズ・コア TOPIX ETF",
+        "weight": 0.324,
+        "pnl_rate": -0.024,
+        "current_value": 308800
+      },
+      {
+        "etf_code": "1329",
+        "name": "iシェアーズ・コア 日経225 ETF",
+        "weight": 0.227,
+        "pnl_rate": -0.019,
+        "current_value": 216154
+      },
+      {
+        "etf_code": "1489",
+        "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信",
+        "weight": 0.136,
+        "pnl_rate": -0.018,
+        "current_value": 129880
+      },
+      {
+        "etf_code": "1615",
+        "name": "NEXT FUNDS 東証銀行業株価指数連動型上場投信",
+        "weight": 0.132,
+        "pnl_rate": -0.061,
+        "current_value": 125860
+      },
+      {
+        "etf_code": "2558",
+        "name": "MAXIS米国株式（S&P500）上場投信",
+        "weight": 0.126,
+        "pnl_rate": -0.005,
+        "current_value": 119620
+      },
+      {
+        "etf_code": "1597",
+        "name": "MAXIS Jリート上場投信",
+        "weight": 0.054,
+        "pnl_rate": -0.012,
+        "current_value": 51325
+      }
     ],
     "overall_score": 52,
     "sharpe_ratio_portfolio": 1.58,
@@ -182,9 +350,21 @@
       "return_performance": 77.2
     },
     "top_actions": [
-      {"action": "1597（Jリート）段階的縮小（5.4%→2-3%）で現金比率5%確保", "priority": "highest", "consensus": 100},
-      {"action": "1475段階的縮小（32.4%→25%）によるブラックロック集中・重複解消", "priority": "high", "consensus": 100},
-      {"action": "ゴールドETF（1540）5%組み入れ（時期分散条件付き）", "priority": "high", "consensus": 100}
+      {
+        "action": "1597（Jリート）段階的縮小（5.4%→2-3%）で現金比率5%確保",
+        "priority": "highest",
+        "consensus": 100
+      },
+      {
+        "action": "1475段階的縮小（32.4%→25%）によるブラックロック集中・重複解消",
+        "priority": "high",
+        "consensus": 100
+      },
+      {
+        "action": "ゴールドETF（1540）5%組み入れ（時期分散条件付き）",
+        "priority": "high",
+        "consensus": 100
+      }
     ],
     "key_risks": [
       "国内集中87.4%と景気敏感銘柄68.8%の構造的偏り",
@@ -201,12 +381,48 @@
     "cash_ratio": 0.0239,
     "holdings_count": 6,
     "holdings": [
-      {"etf_code": "1475", "name": "iシェアーズ・コア TOPIX ETF", "weight": 0.324, "pnl_rate": -0.012, "current_value": 312560},
-      {"etf_code": "1329", "name": "iシェアーズ・コア 日経225 ETF", "weight": 0.227, "pnl_rate": -0.008, "current_value": 218707},
-      {"etf_code": "1489", "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信", "weight": 0.136, "pnl_rate": -0.006, "current_value": 131400},
-      {"etf_code": "1615", "name": "NEXT FUNDS 東証銀行業株価指数連動型上場投信", "weight": 0.133, "pnl_rate": -0.045, "current_value": 127900},
-      {"etf_code": "2558", "name": "MAXIS米国株式（S&P500）上場投信", "weight": 0.126, "pnl_rate": 0.006, "current_value": 120960},
-      {"etf_code": "1597", "name": "MAXIS Jリート上場投信", "weight": 0.054, "pnl_rate": -0.003, "current_value": 51775}
+      {
+        "etf_code": "1475",
+        "name": "iシェアーズ・コア TOPIX ETF",
+        "weight": 0.324,
+        "pnl_rate": -0.012,
+        "current_value": 312560
+      },
+      {
+        "etf_code": "1329",
+        "name": "iシェアーズ・コア 日経225 ETF",
+        "weight": 0.227,
+        "pnl_rate": -0.008,
+        "current_value": 218707
+      },
+      {
+        "etf_code": "1489",
+        "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信",
+        "weight": 0.136,
+        "pnl_rate": -0.006,
+        "current_value": 131400
+      },
+      {
+        "etf_code": "1615",
+        "name": "NEXT FUNDS 東証銀行業株価指数連動型上場投信",
+        "weight": 0.133,
+        "pnl_rate": -0.045,
+        "current_value": 127900
+      },
+      {
+        "etf_code": "2558",
+        "name": "MAXIS米国株式（S&P500）上場投信",
+        "weight": 0.126,
+        "pnl_rate": 0.006,
+        "current_value": 120960
+      },
+      {
+        "etf_code": "1597",
+        "name": "MAXIS Jリート上場投信",
+        "weight": 0.054,
+        "pnl_rate": -0.003,
+        "current_value": 51775
+      }
     ],
     "overall_score": 51.0,
     "sharpe_ratio_portfolio": 1.75,
@@ -220,9 +436,21 @@
       "return_performance": 77.2
     },
     "top_actions": [
-      {"action": "1597（Jリート）段階的縮小（5.37%→2%）で現金比率5%確保", "priority": "highest", "consensus": 100},
-      {"action": "ゴールドETF（1540）5%組み入れ", "priority": "highest", "consensus": 100},
-      {"action": "1329段階的縮小（22.7%→15%）→1475集約", "priority": "high", "consensus": 80}
+      {
+        "action": "1597（Jリート）段階的縮小（5.37%→2%）で現金比率5%確保",
+        "priority": "highest",
+        "consensus": 100
+      },
+      {
+        "action": "ゴールドETF（1540）5%組み入れ",
+        "priority": "highest",
+        "consensus": 100
+      },
+      {
+        "action": "1329段階的縮小（22.7%→15%）→1475集約",
+        "priority": "high",
+        "consensus": 80
+      }
     ],
     "key_risks": [
       "国内集中87.4%と景気敏感68.8%の二重集中",
@@ -234,39 +462,93 @@
     "date": "2026-02-19",
     "report_path": "reports/demo/20260219_demo.md",
     "mode": "debate",
-    "total_asset": 986861,
+    "total_asset": 1000285,
     "cash_balance": 10345,
-    "cash_ratio": 0.0105,
+    "cash_ratio": 0.0103,
     "holdings_count": 7,
     "holdings": [
-      {"etf_code": "1475", "name": "iシェアーズ・コア TOPIX ETF", "weight": 0.320, "pnl_rate": -0.012, "current_value": 312560},
-      {"etf_code": "1329", "name": "iシェアーズ・コア 日経225 ETF", "weight": 0.224, "pnl_rate": -0.008, "current_value": 218707},
-      {"etf_code": "1489", "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信", "weight": 0.135, "pnl_rate": -0.006, "current_value": 131400},
-      {"etf_code": "1615", "name": "NEXT FUNDS 東証銀行業株価指数連動型上場投信", "weight": 0.131, "pnl_rate": -0.045, "current_value": 127900},
-      {"etf_code": "2558", "name": "MAXIS米国株式（S&P500）上場投信", "weight": 0.124, "pnl_rate": 0.006, "current_value": 120960},
-      {"etf_code": "1540", "name": "純金上場信託（現物国内保管型）", "weight": 0.047, "pnl_rate": 0.0, "current_value": 46350},
-      {"etf_code": "1597", "name": "MAXIS Jリート上場投信", "weight": 0.019, "pnl_rate": -0.003, "current_value": 18639}
+      {
+        "etf_code": "1475",
+        "name": "iシェアーズ・コア TOPIX ETF",
+        "weight": 0.32,
+        "pnl_rate": 0.0,
+        "current_value": 316320
+      },
+      {
+        "etf_code": "1329",
+        "name": "iシェアーズ・コア 日経225 ETF",
+        "weight": 0.222,
+        "pnl_rate": -0.002,
+        "current_value": 220002
+      },
+      {
+        "etf_code": "1489",
+        "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信",
+        "weight": 0.134,
+        "pnl_rate": 0.005,
+        "current_value": 132840
+      },
+      {
+        "etf_code": "1615",
+        "name": "NEXT FUNDS 東証銀行業株価指数連動型上場投信",
+        "weight": 0.133,
+        "pnl_rate": -0.016,
+        "current_value": 131820
+      },
+      {
+        "etf_code": "2558",
+        "name": "MAXIS米国株式（S&P500）上場投信",
+        "weight": 0.124,
+        "pnl_rate": 0.022,
+        "current_value": 122800
+      },
+      {
+        "etf_code": "1540",
+        "name": "純金上場信託（現物国内保管型）",
+        "weight": 0.048,
+        "pnl_rate": 0.027,
+        "current_value": 47600
+      },
+      {
+        "etf_code": "1597",
+        "name": "MAXIS Jリート上場投信",
+        "weight": 0.019,
+        "pnl_rate": -0.008,
+        "current_value": 18558
+      }
     ],
     "overall_score": 56,
     "sharpe_ratio_portfolio": 1.75,
     "max_drawdown": -0.0302,
-    "var_95": -0.0167,
+    "var_95": -0.0165,
     "score_axes": {
-      "dividend_power": 54.8,
-      "cost_efficiency": 82.9,
+      "dividend_power": 54.9,
+      "cost_efficiency": 82.8,
       "scale_reliability": 95.5,
       "trading_quality": 94.4,
-      "return_performance": 79.3
+      "return_performance": 79.5
     },
     "top_actions": [
-      {"action": "1597（Jリート）全量売却+現金比率7-8%確保", "priority": "highest", "consensus": 100},
-      {"action": "1329（日経225）段階的縮小（22.4%→15%）で重複解消", "priority": "highest", "consensus": 80},
-      {"action": "債券クラス追加検討（短期債5-10%）", "priority": "high", "consensus": 80}
+      {
+        "action": "1597（Jリート）全量売却+現金比率7-15%確保",
+        "priority": "highest",
+        "consensus": 100
+      },
+      {
+        "action": "1329（日経225）段階的縮小（22.2%→15%）で重複解消",
+        "priority": "highest",
+        "consensus": 80
+      },
+      {
+        "action": "ゴールド比率引上げ（4.8%→7-10%、現金確保後）",
+        "priority": "high",
+        "consensus": 60
+      }
     ],
     "key_risks": [
-      "景気敏感比率81%・国内集中83%の二重集中構造",
-      "現金比率1.05%でVaR損失すら吸収不能（6回連続未改善）",
-      "債券0%で経済象限転換時の防御力なし"
+      "現金比率1.03%でVaR損失(-16,331円)すら吸収不能（7回連続未改善）",
+      "景気敏感80.9%+国内集中82.8%の二重構造リスク",
+      "テクニカル攻撃モードと経済象限4（スタグフレーション）の矛盾"
     ]
   }
 ]
