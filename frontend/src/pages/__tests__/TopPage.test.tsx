@@ -164,6 +164,8 @@ const createMockHooksDefault = () => ({
     summary: null,
     isLoading: false,
     error: null,
+    includeSold: false,
+    setIncludeSold: vi.fn(),
     refresh: vi.fn(),
   },
   useTopPageStorage: {
@@ -547,6 +549,7 @@ describe('TopPage', () => {
             current_value: 20000,
             unrealized_pnl: 1000,
             unrealized_pnl_percent: 5.26,
+            total_pnl: 1000,
           },
         ],
       })

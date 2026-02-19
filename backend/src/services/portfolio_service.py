@@ -56,9 +56,13 @@ class PortfolioService:
                 del cls._valuation_cache[key]
             logger.info(f"Cleared valuation cache for user_id={user_id}")
 
-    def get_holdings(self, user_id: int) -> List[Dict]:
+    def get_holdings(self, user_id: int, include_sold: bool = False) -> List[Dict]:
         """
         Calculate current holdings from trade history.
+
+        Args:
+            user_id: User ID
+            include_sold: If True, include fully sold (quantity=0) holdings
 
         Returns list of holdings with:
         - etf_code, etf info
@@ -73,6 +77,7 @@ class PortfolioService:
         - holding_period (保有期間テキスト)
         - annualized_return (年率リターン)
         - annualized_pnl (年率評価損益)
+        - total_pnl (総利益: 現在評価額 + 累計売却額 - 累計投資額)
         """
         self.split_adjustment_service.clear_cache()
         trades = self.trade_repository.get_by_user_id(user_id)
@@ -88,6 +93,7 @@ class PortfolioService:
                     "adjusted_buy_quantity": 0.0,
                     "adjusted_sell_quantity": 0.0,
                     "original_buy_amount": Decimal("0"),
+                    "total_sell_amount": Decimal("0"),
                 }
                 trades_by_code[code] = []
 
@@ -106,6 +112,7 @@ class PortfolioService:
                 holdings_data[code]["original_buy_amount"] += trade.total_amount
             else:
                 holdings_data[code]["adjusted_sell_quantity"] += adjusted_quantity
+                holdings_data[code]["total_sell_amount"] += trade.total_amount
 
         # Batch fetch ETF info
         etf_codes = list(holdings_data.keys())
@@ -119,45 +126,63 @@ class PortfolioService:
             )
 
             if adjusted_quantity <= 0:
-                continue
-
-            # Calculate average cost based on adjusted quantity
-            if data["adjusted_buy_quantity"] > 0:
-                adjusted_avg_cost = (
-                    float(data["original_buy_amount"]) / data["adjusted_buy_quantity"]
-                )
-            else:
-                adjusted_avg_cost = 0
-
-            # Total cost is the cost of currently held shares (excludes sold shares)
-            total_cost = adjusted_avg_cost * adjusted_quantity
+                if not include_sold:
+                    continue
 
             # Get ETF info and current price
             etf = etf_map.get(code)
             current_price = float(etf.market_price) if etf and etf.market_price else 0.0
-            current_value = current_price * adjusted_quantity
 
-            unrealized_pnl = current_value - float(total_cost)
-            pnl_percent = (unrealized_pnl / total_cost * 100) if total_cost > 0 else 0
-
-            # Calculate holding period and annualized metrics
+            # Calculate holding period (works for both active and sold holdings)
             holding_days = self._calculate_holding_days(trades_by_code[code], code)
             holding_period = self._format_holding_period(holding_days)
 
-            # Calculate annualized return (CAGR) and annualized P&L
-            annualized_return = None
-            annualized_pnl = None
-            if holding_days > 0 and total_cost > 0:
-                years = holding_days / 365.0
-                if years >= 0.01:  # At least ~4 days
-                    # CAGR: ((current_value / total_cost) ^ (1/years) - 1) * 100
-                    ratio = current_value / total_cost
-                    if ratio > 0:
-                        annualized_return = round(
-                            (math.pow(ratio, 1.0 / years) - 1) * 100, 2
-                        )
-                    # Annualized P&L: unrealized_pnl / years
-                    annualized_pnl = round(unrealized_pnl / years, 2)
+            # Total sell amount for total_pnl calculation
+            total_sell_amount = float(data["total_sell_amount"])
+
+            if adjusted_quantity > 0:
+                # Active holding: full calculation
+                if data["adjusted_buy_quantity"] > 0:
+                    adjusted_avg_cost = (
+                        float(data["original_buy_amount"])
+                        / data["adjusted_buy_quantity"]
+                    )
+                else:
+                    adjusted_avg_cost = 0
+
+                total_cost = adjusted_avg_cost * adjusted_quantity
+                current_value = current_price * adjusted_quantity
+                unrealized_pnl = current_value - float(total_cost)
+                pnl_percent = (
+                    (unrealized_pnl / total_cost * 100) if total_cost > 0 else 0
+                )
+
+                # Calculate annualized return (CAGR) and annualized P&L
+                annualized_return = None
+                annualized_pnl = None
+                if holding_days > 0 and total_cost > 0:
+                    years = holding_days / 365.0
+                    if years >= 0.01:  # At least ~4 days
+                        ratio = current_value / total_cost
+                        if ratio > 0:
+                            annualized_return = round(
+                                (math.pow(ratio, 1.0 / years) - 1) * 100, 2
+                            )
+                        annualized_pnl = round(unrealized_pnl / years, 2)
+            else:
+                # Fully sold holding: no current position
+                adjusted_avg_cost = 0
+                total_cost = 0
+                current_value = 0
+                unrealized_pnl = 0
+                pnl_percent = 0
+                annualized_return = None
+                annualized_pnl = None
+
+            # Total P&L: current_value + total_sell_amount - original_buy_amount
+            total_pnl = (
+                current_value + total_sell_amount - float(data["original_buy_amount"])
+            )
 
             result.append(
                 {
@@ -174,11 +199,16 @@ class PortfolioService:
                     "holding_period": holding_period,
                     "annualized_return": annualized_return,
                     "annualized_pnl": annualized_pnl,
+                    "total_pnl": round(total_pnl, 2),
                 }
             )
 
-        # Sort by current_value descending
-        result.sort(key=lambda x: x["current_value"], reverse=True)
+        # Sort: active holdings by current_value desc, then sold by total_pnl desc
+        active = [h for h in result if h["quantity"] > 0]
+        sold = [h for h in result if h["quantity"] <= 0]
+        active.sort(key=lambda x: x["current_value"], reverse=True)
+        sold.sort(key=lambda x: x["total_pnl"], reverse=True)
+        result = active + sold
         return result
 
     def _calculate_holding_days(self, trades_for_code: List, code: str) -> int:

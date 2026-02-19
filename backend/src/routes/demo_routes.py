@@ -59,12 +59,16 @@ def create_demo_bp():
     def get_holdings():
         """Get demo user's current holdings.
 
-        GET /api/v1/demo/portfolio/holdings
+        GET /api/v1/demo/portfolio/holdings?include_sold=true
+
+        Query params:
+            include_sold: Include fully sold holdings ('true'/'false'). Default: 'false'
         """
         user_pk = _get_demo_user_pk()
         if not user_pk:
             return api_response(data=[])
-        holdings = portfolio_service.get_holdings(user_pk)
+        include_sold = request.args.get("include_sold", "false").lower() == "true"
+        holdings = portfolio_service.get_holdings(user_pk, include_sold=include_sold)
         return api_response(data=holdings)
 
     @bp.route("/portfolio/valuation-history", methods=["GET"])

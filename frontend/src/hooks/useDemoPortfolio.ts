@@ -8,6 +8,8 @@ interface UseDemoPortfolioReturn {
   summary: PortfolioSummary | null
   isLoading: boolean
   error: string | null
+  includeSold: boolean
+  setIncludeSold: (value: boolean) => void
   refresh: () => Promise<void>
 }
 
@@ -16,6 +18,7 @@ export function useDemoPortfolio(): UseDemoPortfolioReturn {
   const [summary, setSummary] = useState<PortfolioSummary | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [includeSold, setIncludeSold] = useState(false)
 
   const fetchPortfolio = useCallback(async () => {
     setIsLoading(true)
@@ -23,7 +26,7 @@ export function useDemoPortfolio(): UseDemoPortfolioReturn {
 
     try {
       const [holdingsData, summaryData] = await Promise.all([
-        demoApi.getHoldings(),
+        demoApi.getHoldings({ includeSold }),
         demoApi.getPortfolioSummary(),
       ])
       setHoldings(holdingsData)
@@ -34,7 +37,7 @@ export function useDemoPortfolio(): UseDemoPortfolioReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [])
+  }, [includeSold])
 
   useEffect(() => {
     fetchPortfolio()
@@ -45,6 +48,8 @@ export function useDemoPortfolio(): UseDemoPortfolioReturn {
     summary,
     isLoading,
     error,
+    includeSold,
+    setIncludeSold,
     refresh: fetchPortfolio,
   }
 }

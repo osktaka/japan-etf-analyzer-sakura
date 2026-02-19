@@ -295,6 +295,25 @@
   cursor: not-allowed;
 }
 
+.soldRow {
+  opacity: 0.6;
+}
+
+.includeSoldLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.includeSoldCheckbox {
+  cursor: pointer;
+}
+
 @media (max-width: 768px) {
   .container {
     overflow-x: auto;

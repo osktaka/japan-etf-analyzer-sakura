@@ -677,3 +677,236 @@ def test_summary_cash_flow_same_day_trades(
     assert summary["total_value"] == 161000.0
     # total_asset = 161000 + 77000 = 238000
     assert summary["total_asset"] == 238000.0
+
+
+# --- Total P&L tests ---
+
+
+def test_total_pnl_buy_only(
+    mock_trade_repository, mock_etf_repository, mock_split_repository,
+    mock_cash_flow_repository,
+):
+    """total_pnl for buy-only holding: current_value - buy_amount."""
+    # Setup: Buy 100 shares at 1000 yen, current price 2000 yen
+    mock_trade_repository.get_by_user_id.return_value = [
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="buy",
+            quantity=100,
+            price=Decimal("1000"),
+            trade_date=date(2024, 1, 1),
+        )
+    ]
+    mock_split_repository.get_approved_splits_since.return_value = []
+
+    split_service = SplitAdjustmentService(mock_split_repository)
+    service = PortfolioService(
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
+    )
+
+    holdings = service.get_holdings(1)
+
+    assert len(holdings) == 1
+    # current_value = 100 * 2000 = 200000
+    # total_pnl = current_value - buy_amount = 200000 - 100000 = 100000
+    assert holdings[0]["total_pnl"] == 100000.0
+
+
+def test_total_pnl_partial_sell(
+    mock_trade_repository, mock_etf_repository, mock_split_repository,
+    mock_cash_flow_repository,
+):
+    """total_pnl for partial sell: current_value + sell_amount - buy_amount."""
+    # Setup: Buy 100 at 1000, sell 30 at 1500, current price 2000
+    mock_trade_repository.get_by_user_id.return_value = [
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="buy",
+            quantity=100,
+            price=Decimal("1000"),
+            trade_date=date(2024, 1, 1),
+        ),
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="sell",
+            quantity=30,
+            price=Decimal("1500"),
+            trade_date=date(2024, 6, 1),
+        ),
+    ]
+    mock_split_repository.get_approved_splits_since.return_value = []
+
+    split_service = SplitAdjustmentService(mock_split_repository)
+    service = PortfolioService(
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
+    )
+
+    holdings = service.get_holdings(1)
+
+    assert len(holdings) == 1
+    # current_value = 70 * 2000 = 140000
+    # sell_amount = 30 * 1500 = 45000
+    # buy_amount = 100 * 1000 = 100000
+    # total_pnl = 140000 + 45000 - 100000 = 85000
+    assert holdings[0]["total_pnl"] == 85000.0
+
+
+def test_total_pnl_full_sell(
+    mock_trade_repository, mock_etf_repository, mock_split_repository,
+    mock_cash_flow_repository,
+):
+    """total_pnl for fully sold holding: sell_amount - buy_amount (current_value=0)."""
+    # Setup: Buy 100 at 1000, sell all 100 at 1500, current price 2000
+    mock_trade_repository.get_by_user_id.return_value = [
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="buy",
+            quantity=100,
+            price=Decimal("1000"),
+            trade_date=date(2024, 1, 1),
+        ),
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="sell",
+            quantity=100,
+            price=Decimal("1500"),
+            trade_date=date(2024, 6, 1),
+        ),
+    ]
+    mock_split_repository.get_approved_splits_since.return_value = []
+
+    split_service = SplitAdjustmentService(mock_split_repository)
+    service = PortfolioService(
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
+    )
+
+    # Must use include_sold=True to see fully sold holdings
+    holdings = service.get_holdings(1, include_sold=True)
+
+    assert len(holdings) == 1
+    assert holdings[0]["quantity"] == 0.0
+    assert holdings[0]["current_value"] == 0
+    # total_pnl = 0 + 150000 - 100000 = 50000
+    assert holdings[0]["total_pnl"] == 50000.0
+
+
+def test_include_sold_true(
+    mock_trade_repository, mock_etf_repository, mock_split_repository,
+    mock_cash_flow_repository,
+):
+    """include_sold=True returns fully sold holdings."""
+    # Setup: ETF "1234" fully sold, ETF "5678" still held
+    etf_5678 = ETF(code="5678", name="Another ETF", market_price=Decimal("3000"))
+    mock_etf_repository.get_by_codes.return_value = {
+        "1234": ETF(code="1234", name="Test ETF", market_price=Decimal("2000")),
+        "5678": etf_5678,
+    }
+    mock_trade_repository.get_by_user_id.return_value = [
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="buy",
+            quantity=100,
+            price=Decimal("1000"),
+            trade_date=date(2024, 1, 1),
+        ),
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="sell",
+            quantity=100,
+            price=Decimal("1500"),
+            trade_date=date(2024, 6, 1),
+        ),
+        Trade(
+            user_id=1,
+            etf_code="5678",
+            trade_type="buy",
+            quantity=50,
+            price=Decimal("2500"),
+            trade_date=date(2024, 3, 1),
+        ),
+    ]
+    mock_split_repository.get_approved_splits_since.return_value = []
+
+    split_service = SplitAdjustmentService(mock_split_repository)
+    service = PortfolioService(
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
+    )
+
+    holdings = service.get_holdings(1, include_sold=True)
+
+    # Both holdings returned: active first, then sold
+    assert len(holdings) == 2
+    codes = [h["etf_code"] for h in holdings]
+    assert "1234" in codes
+    assert "5678" in codes
+    # Active holding (5678) should come first
+    assert holdings[0]["etf_code"] == "5678"
+    assert holdings[0]["quantity"] == 50.0
+    # Sold holding (1234) should come second
+    assert holdings[1]["etf_code"] == "1234"
+    assert holdings[1]["quantity"] == 0.0
+
+
+def test_include_sold_false_default(
+    mock_trade_repository, mock_etf_repository, mock_split_repository,
+    mock_cash_flow_repository,
+):
+    """include_sold=False (default) excludes fully sold holdings."""
+    # Same setup as above: ETF "1234" fully sold, ETF "5678" still held
+    etf_5678 = ETF(code="5678", name="Another ETF", market_price=Decimal("3000"))
+    mock_etf_repository.get_by_codes.return_value = {
+        "1234": ETF(code="1234", name="Test ETF", market_price=Decimal("2000")),
+        "5678": etf_5678,
+    }
+    mock_trade_repository.get_by_user_id.return_value = [
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="buy",
+            quantity=100,
+            price=Decimal("1000"),
+            trade_date=date(2024, 1, 1),
+        ),
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="sell",
+            quantity=100,
+            price=Decimal("1500"),
+            trade_date=date(2024, 6, 1),
+        ),
+        Trade(
+            user_id=1,
+            etf_code="5678",
+            trade_type="buy",
+            quantity=50,
+            price=Decimal("2500"),
+            trade_date=date(2024, 3, 1),
+        ),
+    ]
+    mock_split_repository.get_approved_splits_since.return_value = []
+
+    split_service = SplitAdjustmentService(mock_split_repository)
+    service = PortfolioService(
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
+    )
+
+    # Default (include_sold=False)
+    holdings = service.get_holdings(1)
+
+    # Only active holding returned
+    assert len(holdings) == 1
+    assert holdings[0]["etf_code"] == "5678"
+    assert holdings[0]["quantity"] == 50.0

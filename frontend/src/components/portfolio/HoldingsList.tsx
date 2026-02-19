@@ -16,6 +16,7 @@ type SortKey =
   | 'current_value'
   | 'unrealized_pnl'
   | 'unrealized_pnl_percent'
+  | 'total_pnl'
   | 'holding_days'
   | 'annualized_return'
 type SortOrder = 'asc' | 'desc'
@@ -23,6 +24,7 @@ type SortOrder = 'asc' | 'desc'
 const CARD_SORT_KEYS: SortKey[] = [
   'unrealized_pnl',
   'unrealized_pnl_percent',
+  'total_pnl',
   'annualized_return',
   'holding_days',
   'current_value',
@@ -38,6 +40,7 @@ const SORT_LABELS: Record<SortKey, string> = {
   current_value: '評価額',
   unrealized_pnl: '評価損益',
   unrealized_pnl_percent: '損益率',
+  total_pnl: '総利益',
   holding_days: '保有期間',
   annualized_return: '年率リターン',
 }
@@ -56,6 +59,8 @@ interface HoldingsListProps {
   onAddTrade?: (code: string) => void
   onAddCashFlow?: () => void
   readOnly?: boolean
+  includeSold?: boolean
+  onIncludeSoldChange?: (value: boolean) => void
 }
 
 export function HoldingsList({
@@ -70,6 +75,8 @@ export function HoldingsList({
   onAddTrade,
   onAddCashFlow,
   readOnly,
+  includeSold,
+  onIncludeSoldChange,
 }: HoldingsListProps) {
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const stored = localStorage.getItem(STORAGE_KEY)
@@ -155,6 +162,10 @@ export function HoldingsList({
           aVal = a.unrealized_pnl_percent
           bVal = b.unrealized_pnl_percent
           break
+        case 'total_pnl':
+          aVal = a.total_pnl
+          bVal = b.total_pnl
+          break
         case 'holding_days':
           aVal = a.holding_days ?? 0
           bVal = b.holding_days ?? 0
@@ -234,6 +245,17 @@ export function HoldingsList({
                 ))}
               </select>
             )}
+            {!readOnly && onIncludeSoldChange && (
+              <label className={styles.includeSoldLabel}>
+                <input
+                  type="checkbox"
+                  checked={includeSold ?? false}
+                  onChange={(e) => onIncludeSoldChange(e.target.checked)}
+                  className={styles.includeSoldCheckbox}
+                />
+                過去保有銘柄を含む
+              </label>
+            )}
           </div>
         )}
         {(readOnly || onTradeHistory || onAddTrade || onAddCashFlow) && (
@@ -274,188 +296,218 @@ export function HoldingsList({
 
       {holdings.length > 0 ? (
         viewMode === 'table' ? (
-        <table className={styles.table}>
-          <thead>
-            <tr>
-              <th
-                onClick={() => handleSortClick('etf_code')}
-                style={{ cursor: 'pointer' }}
-              >
-                銘柄{getSortIndicator('etf_code')}
-              </th>
-              <th
-                className={styles.right}
-                onClick={() => handleSortClick('quantity')}
-                style={{ cursor: 'pointer' }}
-              >
-                数量{getSortIndicator('quantity')}
-              </th>
-              <th
-                className={styles.right}
-                onClick={() => handleSortClick('average_cost')}
-                style={{ cursor: 'pointer' }}
-              >
-                平均取得単価{getSortIndicator('average_cost')}
-              </th>
-              <th
-                className={styles.right}
-                onClick={() => handleSortClick('current_price')}
-                style={{ cursor: 'pointer' }}
-              >
-                現在価格{getSortIndicator('current_price')}
-              </th>
-              <th
-                className={styles.right}
-                onClick={() => handleSortClick('current_value')}
-                style={{ cursor: 'pointer' }}
-              >
-                評価額{getSortIndicator('current_value')}
-              </th>
-              <th
-                className={styles.right}
-                onClick={() => handleSortClick('unrealized_pnl')}
-                style={{ cursor: 'pointer' }}
-              >
-                評価損益{getSortIndicator('unrealized_pnl')}
-              </th>
-              <th
-                className={styles.right}
-                onClick={() => handleSortClick('unrealized_pnl_percent')}
-                style={{ cursor: 'pointer' }}
-              >
-                損益率{getSortIndicator('unrealized_pnl_percent')}
-              </th>
-              <th
-                className={styles.right}
-                onClick={() => handleSortClick('holding_days')}
-                style={{ cursor: 'pointer' }}
-              >
-                保有期間{getSortIndicator('holding_days')}
-              </th>
-              <th
-                className={styles.right}
-                onClick={() => handleSortClick('annualized_return')}
-                style={{ cursor: 'pointer' }}
-              >
-                年率リターン{getSortIndicator('annualized_return')}
-              </th>
-              {(readOnly || onHistoryClick || onAddTrade) && <th className={styles.center}>操作</th>}
-              {onCompareToggle && <th className={styles.center}>比較</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {sortedHoldings.map((holding) => {
-              const pnlClass =
-                holding.unrealized_pnl >= 0 ? styles.positive : styles.negative
-              const pnlSign = holding.unrealized_pnl >= 0 ? '+' : ''
-
-              return (
-                <tr
-                  key={holding.etf_code}
-                  onClick={() => onETFClick?.(holding.etf_code)}
-                  className={styles.row}
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th
+                  onClick={() => handleSortClick('etf_code')}
+                  style={{ cursor: 'pointer' }}
                 >
-                  <td>
-                    <div className={styles.etfInfo}>
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                        }}
-                      >
-                        <span className={styles.code}>{holding.etf_code}</span>
-                        <MomentumBadge label={holding.etf?.momentum_label} code={holding.etf_code} />
-                      </span>
-                      <span className={styles.name}>
-                        {holding.etf?.name || '-'}
-                      </span>
-                    </div>
-                  </td>
-                  <td className={styles.right}>{holding.quantity}口</td>
-                  <td className={styles.right}>
-                    {formatPrice(holding.average_cost)}
-                  </td>
-                  <td className={styles.right}>
-                    {formatPrice(holding.current_price)}
-                  </td>
-                  <td className={styles.right}>
-                    {formatPrice(holding.current_value)}
-                  </td>
-                  <td className={`${styles.right} ${pnlClass}`}>
-                    {pnlSign}
-                    {formatPrice(holding.unrealized_pnl)}
-                  </td>
-                  <td className={`${styles.right} ${pnlClass}`}>
-                    {pnlSign}
-                    {holding.unrealized_pnl_percent.toFixed(2)}%
-                  </td>
-                  <td className={styles.right}>
-                    {holding.holding_period || '-'}
-                  </td>
-                  <td
-                    className={`${styles.right} ${
-                      holding.annualized_return !== null &&
-                      holding.annualized_return !== undefined
-                        ? holding.annualized_return >= 0
-                          ? styles.positive
-                          : styles.negative
-                        : ''
-                    }`}
+                  銘柄{getSortIndicator('etf_code')}
+                </th>
+                <th
+                  className={styles.right}
+                  onClick={() => handleSortClick('quantity')}
+                  style={{ cursor: 'pointer' }}
+                >
+                  数量{getSortIndicator('quantity')}
+                </th>
+                <th
+                  className={styles.right}
+                  onClick={() => handleSortClick('average_cost')}
+                  style={{ cursor: 'pointer' }}
+                >
+                  平均取得単価{getSortIndicator('average_cost')}
+                </th>
+                <th
+                  className={styles.right}
+                  onClick={() => handleSortClick('current_price')}
+                  style={{ cursor: 'pointer' }}
+                >
+                  現在価格{getSortIndicator('current_price')}
+                </th>
+                <th
+                  className={styles.right}
+                  onClick={() => handleSortClick('current_value')}
+                  style={{ cursor: 'pointer' }}
+                >
+                  評価額{getSortIndicator('current_value')}
+                </th>
+                <th
+                  className={styles.right}
+                  onClick={() => handleSortClick('unrealized_pnl')}
+                  style={{ cursor: 'pointer' }}
+                >
+                  評価損益{getSortIndicator('unrealized_pnl')}
+                </th>
+                <th
+                  className={styles.right}
+                  onClick={() => handleSortClick('unrealized_pnl_percent')}
+                  style={{ cursor: 'pointer' }}
+                >
+                  損益率{getSortIndicator('unrealized_pnl_percent')}
+                </th>
+                <th
+                  className={styles.right}
+                  onClick={() => handleSortClick('total_pnl')}
+                  style={{ cursor: 'pointer' }}
+                >
+                  総利益{getSortIndicator('total_pnl')}
+                </th>
+                <th
+                  className={styles.right}
+                  onClick={() => handleSortClick('holding_days')}
+                  style={{ cursor: 'pointer' }}
+                >
+                  保有期間{getSortIndicator('holding_days')}
+                </th>
+                <th
+                  className={styles.right}
+                  onClick={() => handleSortClick('annualized_return')}
+                  style={{ cursor: 'pointer' }}
+                >
+                  年率リターン{getSortIndicator('annualized_return')}
+                </th>
+                {(readOnly || onHistoryClick || onAddTrade) && (
+                  <th className={styles.center}>操作</th>
+                )}
+                {onCompareToggle && <th className={styles.center}>比較</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {sortedHoldings.map((holding) => {
+                const pnlClass =
+                  holding.unrealized_pnl >= 0
+                    ? styles.positive
+                    : styles.negative
+                const pnlSign = holding.unrealized_pnl >= 0 ? '+' : ''
+                const totalPnlClass =
+                  holding.total_pnl >= 0 ? styles.positive : styles.negative
+                const totalPnlSign = holding.total_pnl >= 0 ? '+' : ''
+                const isSold = holding.quantity === 0
+
+                return (
+                  <tr
+                    key={holding.etf_code}
+                    onClick={() => onETFClick?.(holding.etf_code)}
+                    className={`${styles.row} ${isSold ? styles.soldRow : ''}`}
                   >
-                    {holding.annualized_return !== null &&
-                    holding.annualized_return !== undefined
-                      ? `${holding.annualized_return >= 0 ? '+' : ''}${holding.annualized_return.toFixed(2)}%`
-                      : '-'}
-                  </td>
-                  {(readOnly || onHistoryClick || onAddTrade) && (
-                    <td
-                      className={styles.center}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                        {(readOnly || onHistoryClick) && (
-                          <button
-                            className={styles.historyBtn}
-                            onClick={() => onHistoryClick?.(holding.etf_code)}
-                            type="button"
-                            title="取引履歴"
-                            disabled={readOnly}
-                          >
-                            履歴
-                          </button>
-                        )}
-                        {(readOnly || onAddTrade) && (
-                          <button
-                            className={styles.tradeBtn}
-                            onClick={() => onAddTrade?.(holding.etf_code)}
-                            type="button"
-                            title="取引登録"
-                            disabled={readOnly}
-                          >
-                            取引
-                          </button>
-                        )}
+                    <td>
+                      <div className={styles.etfInfo}>
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                          }}
+                        >
+                          <span className={styles.code}>
+                            {holding.etf_code}
+                          </span>
+                          <MomentumBadge
+                            label={holding.etf?.momentum_label}
+                            code={holding.etf_code}
+                          />
+                        </span>
+                        <span className={styles.name}>
+                          {holding.etf?.name || '-'}
+                        </span>
                       </div>
                     </td>
-                  )}
-                  {onCompareToggle && (
-                    <td
-                      className={styles.center}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <CompareCheckbox
-                        isInCompare={isInCompare?.(holding.etf_code) ?? false}
-                        onToggle={() => onCompareToggle(holding.etf_code)}
-                        size="sm"
-                      />
+                    <td className={styles.right}>{holding.quantity}口</td>
+                    <td className={styles.right}>
+                      {formatPrice(holding.average_cost)}
                     </td>
-                  )}
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+                    <td className={styles.right}>
+                      {formatPrice(holding.current_price)}
+                    </td>
+                    <td className={styles.right}>
+                      {formatPrice(holding.current_value)}
+                    </td>
+                    <td className={`${styles.right} ${pnlClass}`}>
+                      {pnlSign}
+                      {formatPrice(holding.unrealized_pnl)}
+                    </td>
+                    <td className={`${styles.right} ${pnlClass}`}>
+                      {pnlSign}
+                      {holding.unrealized_pnl_percent.toFixed(2)}%
+                    </td>
+                    <td className={`${styles.right} ${totalPnlClass}`}>
+                      {totalPnlSign}
+                      {formatPrice(holding.total_pnl)}
+                    </td>
+                    <td className={styles.right}>
+                      {holding.holding_period || '-'}
+                    </td>
+                    <td
+                      className={`${styles.right} ${
+                        holding.annualized_return !== null &&
+                        holding.annualized_return !== undefined
+                          ? holding.annualized_return >= 0
+                            ? styles.positive
+                            : styles.negative
+                          : ''
+                      }`}
+                    >
+                      {holding.annualized_return !== null &&
+                      holding.annualized_return !== undefined
+                        ? `${holding.annualized_return >= 0 ? '+' : ''}${holding.annualized_return.toFixed(2)}%`
+                        : '-'}
+                    </td>
+                    {(readOnly || onHistoryClick || onAddTrade) && (
+                      <td
+                        className={styles.center}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            gap: '4px',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          {(readOnly || onHistoryClick) && (
+                            <button
+                              className={styles.historyBtn}
+                              onClick={() => onHistoryClick?.(holding.etf_code)}
+                              type="button"
+                              title="取引履歴"
+                              disabled={readOnly}
+                            >
+                              履歴
+                            </button>
+                          )}
+                          {(readOnly || onAddTrade) && (
+                            <button
+                              className={styles.tradeBtn}
+                              onClick={() => onAddTrade?.(holding.etf_code)}
+                              type="button"
+                              title="取引登録"
+                              disabled={readOnly}
+                            >
+                              取引
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    )}
+                    {onCompareToggle && (
+                      <td
+                        className={styles.center}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <CompareCheckbox
+                          isInCompare={isInCompare?.(holding.etf_code) ?? false}
+                          onToggle={() => onCompareToggle(holding.etf_code)}
+                          size="sm"
+                        />
+                      </td>
+                    )}
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         ) : (
           <div className={styles.cardGrid}>
             {sortedHoldings.map((holding) => (
@@ -469,9 +521,7 @@ export function HoldingsList({
                     : undefined
                 }
                 onAddTrade={
-                  onAddTrade
-                    ? () => onAddTrade(holding.etf_code)
-                    : undefined
+                  onAddTrade ? () => onAddTrade(holding.etf_code) : undefined
                 }
                 isInCompare={isInCompare?.(holding.etf_code)}
                 onCompareToggle={

@@ -82,6 +82,23 @@ DEMO_TRADES = [
         "trade_date": date(2025, 10, 22),
         "memo": "日経225連動ETF 一部利確",
     },
+    # 完全売却銘柄（過去保有銘柄表示テスト用）
+    {
+        "etf_code": "2558",
+        "trade_type": "buy",
+        "quantity": 30,
+        "price": 2180.0,
+        "trade_date": date(2025, 5, 8),
+        "memo": "MAXIS 米国株式 S&P500 購入",
+    },
+    {
+        "etf_code": "2558",
+        "trade_type": "sell",
+        "quantity": 30,
+        "price": 2350.0,
+        "trade_date": date(2025, 9, 18),
+        "memo": "MAXIS 米国株式 S&P500 全量売却（利確）",
+    },
 ]
 
 # サンプルお気に入りデータ

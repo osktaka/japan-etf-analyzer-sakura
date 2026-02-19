@@ -15,9 +15,14 @@ export const portfolioApi = {
     return response.data.data
   },
 
-  async getHoldings(): Promise<Holding[]> {
+  async getHoldings(options?: { includeSold?: boolean }): Promise<Holding[]> {
+    const params = new URLSearchParams()
+    if (options?.includeSold) {
+      params.append('include_sold', 'true')
+    }
+    const query = params.toString()
     const response = await apiClient.get<ApiResponse<Holding[]>>(
-      '/portfolio/holdings'
+      `/portfolio/holdings${query ? `?${query}` : ''}`
     )
     return response.data.data
   },

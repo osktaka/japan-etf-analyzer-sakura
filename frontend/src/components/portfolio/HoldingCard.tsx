@@ -27,6 +27,10 @@ export function HoldingCard({
   const pnlClass =
     holding.unrealized_pnl >= 0 ? styles.positive : styles.negative
   const pnlSign = holding.unrealized_pnl >= 0 ? '+' : ''
+  const totalPnlClass =
+    holding.total_pnl >= 0 ? styles.positive : styles.negative
+  const totalPnlSign = holding.total_pnl >= 0 ? '+' : ''
+  const isSold = holding.quantity === 0
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -42,13 +46,18 @@ export function HoldingCard({
       role="button"
       tabIndex={0}
       onKeyDown={handleKeyDown}
+      style={isSold ? { opacity: 0.6 } : undefined}
     >
       <div className={styles.header}>
         <span
           style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
         >
           <span className={styles.code}>{holding.etf_code}</span>
-          <MomentumBadge label={holding.etf?.momentum_label} code={holding.etf_code} />
+          <MomentumBadge
+            label={holding.etf?.momentum_label}
+            code={holding.etf_code}
+          />
+          {isSold && <span className={styles.soldBadge}>売却済み</span>}
         </span>
         {onCompareToggle && (
           <div
@@ -91,6 +100,13 @@ export function HoldingCard({
           <span className={`${styles.pnlPercent} ${pnlClass}`}>
             {pnlSign}
             {holding.unrealized_pnl_percent.toFixed(2)}%
+          </span>
+        </div>
+        <div className={styles.pnlItem}>
+          <span className={styles.label}>総利益</span>
+          <span className={`${styles.pnlValue} ${totalPnlClass}`}>
+            {totalPnlSign}
+            {formatPrice(holding.total_pnl)}
           </span>
         </div>
       </div>

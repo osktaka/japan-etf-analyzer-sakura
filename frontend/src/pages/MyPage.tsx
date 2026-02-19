@@ -52,6 +52,8 @@ export function MyPage() {
     summary,
     isLoading: portfolioLoading,
     error: portfolioError,
+    includeSold,
+    setIncludeSold,
     refresh: refreshPortfolio,
   } = usePortfolio()
   const [selectedETF, setSelectedETF] = useState<ETFSummary | null>(null)
@@ -207,6 +209,8 @@ export function MyPage() {
             setShowTradeFormModal(true)
           }}
           onAddCashFlow={() => setShowCashFlowFormModal(true)}
+          includeSold={includeSold}
+          onIncludeSoldChange={setIncludeSold}
         />
         {holdings.length > 0 && (
           <HoldingsChartGrid

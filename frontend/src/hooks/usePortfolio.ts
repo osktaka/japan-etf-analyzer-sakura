@@ -9,17 +9,20 @@ interface UsePortfolioReturn {
   summary: PortfolioSummary | null
   isLoading: boolean
   error: string | null
+  includeSold: boolean
+  setIncludeSold: (value: boolean) => void
   refresh: () => Promise<void>
 }
 
-export function usePortfolio(
-  options?: { skipSummary?: boolean }
-): UsePortfolioReturn {
+export function usePortfolio(options?: {
+  skipSummary?: boolean
+}): UsePortfolioReturn {
   const { isAuthenticated } = useAuth()
   const [holdings, setHoldings] = useState<Holding[]>([])
   const [summary, setSummary] = useState<PortfolioSummary | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [includeSold, setIncludeSold] = useState(false)
 
   const fetchPortfolio = useCallback(async () => {
     if (!isAuthenticated) {
@@ -33,11 +36,11 @@ export function usePortfolio(
 
     try {
       if (options?.skipSummary) {
-        const holdingsData = await portfolioApi.getHoldings()
+        const holdingsData = await portfolioApi.getHoldings({ includeSold })
         setHoldings(holdingsData)
       } else {
         const [holdingsData, summaryData] = await Promise.all([
-          portfolioApi.getHoldings(),
+          portfolioApi.getHoldings({ includeSold }),
           portfolioApi.getSummary(),
         ])
         setHoldings(holdingsData)
@@ -49,7 +52,7 @@ export function usePortfolio(
     } finally {
       setIsLoading(false)
     }
-  }, [isAuthenticated, options?.skipSummary])
+  }, [isAuthenticated, options?.skipSummary, includeSold])
 
   useEffect(() => {
     fetchPortfolio()
@@ -60,6 +63,8 @@ export function usePortfolio(
     summary,
     isLoading,
     error,
+    includeSold,
+    setIncludeSold,
     refresh: fetchPortfolio,
   }
 }

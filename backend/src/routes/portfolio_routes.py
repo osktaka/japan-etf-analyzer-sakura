@@ -29,12 +29,18 @@ def create_portfolio_bp():
     def get_holdings():
         """Get user's current holdings.
 
-        GET /api/v1/portfolio/holdings
+        GET /api/v1/portfolio/holdings?include_sold=true
+
+        Query params:
+            include_sold: Include fully sold holdings ('true'/'false'). Default: 'false'
 
         Returns:
             List of holdings with P&L data
         """
-        holdings = portfolio_service.get_holdings(current_user.id)
+        include_sold = request.args.get("include_sold", "false").lower() == "true"
+        holdings = portfolio_service.get_holdings(
+            current_user.id, include_sold=include_sold
+        )
         return api_response(data=holdings)
 
     @bp.route("/valuation-history", methods=["GET"])
