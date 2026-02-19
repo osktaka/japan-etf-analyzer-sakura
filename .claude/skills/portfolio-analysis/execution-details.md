@@ -10,7 +10,7 @@ SKILL.md から分離した実行詳細情報。メインエージェントが�
 ├── 0b_trend_summary.md         # Phase 0b出力（過去分析のトレンドサマリー）
 ├── 00_portfolio_data.json      # Phase 0出力
 ├── 00_portfolio_reference.md   # Phase 0出力（セクション1・11.2用テーブル）
-├── 05_shared_calculations.md   # Phase 0.5出力（debateモード限定、共通定量計算結果）
+├── 05_shared_calculations.md   # Phase 0.5出力（debateモード限定、共通定量計算結果＋テクニカル指標）
 ├── 20_candidate_verification.md # Phase 2出力（入替候補の外部検証結果、normal/debateモード）
 ├── 10_quant_analysis.md        # Phase 1: quant-analyst出力（speed/normalモード）
 ├── 10_score_analysis.md        # Phase 1: score-analyst出力（speed/normalモード）
@@ -55,6 +55,7 @@ reports/
 | Phase 0 | holdings成功だがDB系データが**全て**失敗 | **スキル全体を中止**。シャープレシオ・相関分析・スコア分析が全スキップとなり有用なレポートを生成できないため。ユーザーにDB接続エラーの確認を促す |
 | Phase 0 | holdings成功だがDB系データが**一部**失敗 | `00_portfolio_data.json` をAPI取得分+成功DB分で保存して続行。Phase 1は `_data_status` に基づき個別にスキップ |
 | Phase 0.5 (debate) | スクリプト実行失敗 | Phase 1のペルソナエージェントが各自で計算を実行（`05_shared_calculations.md` が存在しなければ自力計算にフォールバック） |
+| Phase 0.5 (debate) | Phase 0a未完了時 | テクニカル指標の項目13（経済象限判定 `economic_quadrant`）をスキップし「Phase 0a未完了のためスキップ」と記載。項目8-12は Phase 0a に依存しないため通常通り実行 |
 | Phase 2 | WebSearch全失敗/タイムアウト | 外部検証なしで続行。セクション10に「外部検証: 未実施」と記載 |
 | Phase 2 | 入替候補0件 | 正常完了（検証対象なし） |
 | Phase 1 | 1-2体が失敗 | 残りの体の結果で続行。レポートの該当セクションに「分析失敗のため省略」と記載 |
@@ -102,7 +103,7 @@ reports/
 | Phase 0a | 市場環境調査 | general-purpose | sonnet | 3分 | `agent-instructions/phase0a-market-research.md` |
 | Phase 0b | トレンドサマリー | general-purpose | sonnet | 2分 | `agent-instructions/phase0b-trend-summary.md` |
 | Phase 0 | データ収集 | Bash | - | 2分 | `agent-instructions/phase0-data-collection.md` |
-| Phase 0.5 (debate) | 共通定量計算 | general-purpose | sonnet | 3分 | `agent-instructions/phase05-shared-calculations.md` |
+| Phase 0.5 (debate) | 共通定量計算 | general-purpose | sonnet | 5分 | `agent-instructions/phase05-shared-calculations.md` + `agent-instructions/phase05b-trader-indicators.md` |
 | Phase 1 (speed/normal) | quant-analyst | general-purpose | sonnet | 5分 | `agent-instructions/phase1-quant-analyst.md` |
 | Phase 1 (speed/normal) | score-analyst | general-purpose | sonnet | 5分 | `agent-instructions/phase1-score-analyst.md` |
 | Phase 1 (speed/normal) | allocation-analyst | general-purpose | sonnet | 5分 | `agent-instructions/phase1-allocation-analyst.md` |

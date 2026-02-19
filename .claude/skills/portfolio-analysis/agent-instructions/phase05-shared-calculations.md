@@ -191,3 +191,22 @@ debateモードのPhase 1で5ペルソナエージェントが重複して行っ
 - このセクションには数値テーブルのみを出力し、判定文・推奨文は記載しない
 - 信託報酬データが取得できない銘柄は「信託報酬: 不明」と記載してスキップ
 - 出力識別子: `<!-- DO_NOT_RECALCULATE: expense_ratio_effect -->`
+
+---
+
+## 追加計算（テクニカル指標）: 項目8-13
+
+Phase 0で取得した追加データ（`price_data_daily_30d`, `price_data_close_250d`, `dividend_data`）を使用し、トレーダー知見に基づくテクニカル指標を計算する。
+
+**計算指示の参照先**: `{skill_dir}/agent-instructions/phase05b-trader-indicators.md`
+
+上記ファイルに記載された項目8-13の計算を実行し、結果を `05_shared_calculations.md` の末尾に追記する。各計算結果には `DO_NOT_RECALCULATE` マーカーを付与すること。
+
+### 条件分岐
+
+- **項目8-12**: Phase 0の追加データ（`price_data_daily_30d`, `price_data_close_250d`, `dividend_data`）が取得済みであれば実行する。個別のスキップ条件は `phase05b-trader-indicators.md` を参照
+- **項目13（経済象限判定）**: `{WORK_DIR}/0a_market_environment.md` が存在する場合のみ実行する。Phase 0a完了を待たずにPhase 0.5は起動可能だが、0aが完了している場合のみ経済象限判定を計算する。未完了の場合は「Phase 0a未完了のためスキップ」と記載
+
+### タイムアウト
+
+追加計算の分、Phase 0.5のタイムアウトを **3分 → 5分** に変更する。

@@ -105,6 +105,8 @@ score_data = []
 etf_data = []
 tag_data = []
 price_data = []
+price_data_daily_30d = []
+price_data_close_250d = []
 
 try:
     app = create_app()
@@ -167,7 +169,7 @@ try:
             print(f"tag_data取得エラー: {e}")
             record_status('tag_data', error=e)
 
-        # price_histories（月次リターン用）
+        # price_histories（月次リターン用、後方互換）
         try:
             price_params = {f'code_{i}': code for i, code in enumerate(etf_codes)}
             price_placeholders = ', '.join([f':code_{i}' for i in range(len(etf_codes))])
@@ -183,9 +185,43 @@ try:
         except Exception as e:
             print(f"price_data取得エラー: {e}")
             record_status('price_data', error=e)
+
+        # price_histories（直近30日OHLCV、ATR/出来高用）
+        try:
+            ohlcv_params = {f'code_{i}': code for i, code in enumerate(etf_codes)}
+            ohlcv_placeholders = ', '.join([f':code_{i}' for i in range(len(etf_codes))])
+            ohlcv_result = db.session.execute(db.text(f"""
+                SELECT etf_code, date, open, high, low, close, volume
+                FROM price_histories
+                WHERE etf_code IN ({ohlcv_placeholders})
+                AND date >= date('now', '-30 days')
+                ORDER BY etf_code, date
+            """), ohlcv_params)
+            price_data_daily_30d = ohlcv_result.fetchall()
+            record_status('price_data_daily_30d', data=price_data_daily_30d)
+        except Exception as e:
+            print(f"price_data_daily_30d取得エラー: {e}")
+            record_status('price_data_daily_30d', error=e)
+
+        # price_histories（14ヶ月close、200MA用）
+        try:
+            close250_params = {f'code_{i}': code for i, code in enumerate(etf_codes)}
+            close250_placeholders = ', '.join([f':code_{i}' for i in range(len(etf_codes))])
+            close250_result = db.session.execute(db.text(f"""
+                SELECT etf_code, date, close
+                FROM price_histories
+                WHERE etf_code IN ({close250_placeholders})
+                AND date >= date('now', '-14 months')
+                ORDER BY etf_code, date
+            """), close250_params)
+            price_data_close_250d = close250_result.fetchall()
+            record_status('price_data_close_250d', data=price_data_close_250d)
+        except Exception as e:
+            print(f"price_data_close_250d取得エラー: {e}")
+            record_status('price_data_close_250d', error=e)
 except Exception as e:
     print(f"DB接続エラー: {e}（DBデータはスキップ）")
-    for name in ['performance_cache', 'score_cache', 'etf_data', 'tag_data', 'price_data']:
+    for name in ['performance_cache', 'score_cache', 'etf_data', 'tag_data', 'price_data', 'price_data_daily_30d', 'price_data_close_250d']:
         if name not in data_status:
             record_status(name, error=e)
 
@@ -228,6 +264,52 @@ if len(etf_codes) >= 2:
                 compare_scores_list.append(None)
                 record_status('compare_scores', resp=compare_score_resp)
 
+# 7. yfinance配当データ取得（3年分、年別集計）
+dividend_data = {}
+try:
+    import yfinance as yf
+    from datetime import datetime, timedelta
+    three_years_ago = datetime.now() - timedelta(days=3*365)
+    dividend_fetch_errors = []
+
+    for code in etf_codes:
+        try:
+            ticker = yf.Ticker(f"{code}.T")
+            dividends = ticker.dividends
+            if dividends is not None and len(dividends) > 0:
+                # 3年以内のデータに絞り込み
+                recent = dividends[dividends.index >= three_years_ago.strftime('%Y-%m-%d')]
+                if len(recent) > 0:
+                    yearly = {}
+                    for idx, val in recent.items():
+                        year = str(idx.year)
+                        yearly[year] = yearly.get(year, 0) + float(val)
+                    dividend_data[code] = yearly
+                else:
+                    dividend_data[code] = {}
+            else:
+                dividend_data[code] = {}
+        except Exception as e:
+            print(f"配当データ取得エラー（{code}）: {e}（スキップ）")
+            dividend_fetch_errors.append(f"{code}: {str(e)[:100]}")
+            dividend_data[code] = {}
+
+    if dividend_data and any(len(v) > 0 for v in dividend_data.values()):
+        record_status('dividend_data', data=dividend_data)
+    elif dividend_fetch_errors:
+        record_status('dividend_data', error=f"一部取得失敗: {'; '.join(dividend_fetch_errors[:3])}")
+    else:
+        record_status('dividend_data', data={})
+        print("配当データ: 全銘柄で配当データなし")
+except ImportError:
+    print("yfinanceがインストールされていません。配当データをスキップします。")
+    dividend_data = None
+    record_status('dividend_data', error="yfinanceモジュールが利用不可")
+except Exception as e:
+    print(f"配当データ取得で予期しないエラー: {e}")
+    dividend_data = None
+    record_status('dividend_data', error=str(e)[:200])
+
 # _metadata生成（アナリストがフィールド名を正確に把握するため）
 def build_metadata(data, extra_info=None):
     if not data:
@@ -248,6 +330,13 @@ _metadata = {
         "periods": sorted(set(dict(r._mapping)['period'] for r in performance_data)) if performance_data else []
     }),
     "price_data": build_metadata(price_data),
+    "price_data_daily_30d": build_metadata(price_data_daily_30d),
+    "price_data_close_250d": build_metadata(price_data_close_250d),
+    "dividend_data": {
+        "count": len(dividend_data) if dividend_data else 0,
+        "columns": ["etf_code"],
+        "sample": {k: v for k, v in list(dividend_data.items())[:1]} if dividend_data and len(dividend_data) > 0 else None
+    },
     "etf_data": build_metadata(etf_data),
     "tag_data": build_metadata(tag_data),
     "etf_codes": etf_codes,
@@ -256,7 +345,7 @@ _metadata = {
 }
 
 # === DB系データ全失敗チェック ===
-db_sources = ['performance_cache', 'score_cache', 'etf_data', 'tag_data', 'price_data']
+db_sources = ['performance_cache', 'score_cache', 'etf_data', 'tag_data', 'price_data', 'price_data_daily_30d', 'price_data_close_250d']
 db_all_failed = all(data_status.get(s, {}).get('status') == 'error' for s in db_sources)
 if db_all_failed:
     print("DB系データが全て取得失敗。有用な分析レポートを生成できません。")
@@ -322,6 +411,9 @@ output = {
     'etf_data': [dict(row._mapping) for row in etf_data] if etf_data else None,
     'tag_data': [dict(row._mapping) for row in tag_data] if tag_data else None,
     'price_data': [dict(row._mapping) for row in price_data] if price_data else None,
+    'price_data_daily_30d': [dict(row._mapping) for row in price_data_daily_30d] if price_data_daily_30d else None,
+    'price_data_close_250d': [dict(row._mapping) for row in price_data_close_250d] if price_data_close_250d else None,
+    'dividend_data': dividend_data,
     'recommendations': recommendations,
     'compare_performance': compare_performance_list if compare_performance_list else None,
     'compare_scores': compare_scores_list if compare_scores_list else None,

@@ -19,6 +19,12 @@ SKILL.md から分離したスキップ判断の詳細ルール。メインエ�
 | モメンタム分析 | `_data_status.etf_data`がerror/empty、またはラベルが全銘柄NULL |
 | 現金比率 | `_data_status.summary`がerror/empty、またはsummaryにcash_balanceが含まれない |
 | クロスレビュー | レビュー対象の分析がスキップされた場合 |
+| 200MA防御シグナル | `_data_status.price_data_close_250d`がerror/empty、または200日分未満のデータ（日数不足） |
+| ATRベース退避ライン | `_data_status.price_data_daily_30d`がerror/empty |
+| 出来高分析 | `_data_status.price_data_daily_30d`がerror/empty |
+| 分配金Zスコア | `_data_status.dividend_data`がerror、または`dividend_data`が`null`（取得失敗） |
+| 経済象限判定 | `0a_market_environment.md`が未取得（既存のPhase 0aフォールバックに準拠） |
+| 再購入分析スコア | 200MA防御シグナルと分配金Zスコアの**両方**がスキップの場合（一方のみスキップの場合は残りの要素で重み再配分して算出） |
 
 ## Phase 2: 入替候補の外部検証
 

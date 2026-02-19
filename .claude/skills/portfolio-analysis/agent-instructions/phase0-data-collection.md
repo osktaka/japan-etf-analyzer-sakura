@@ -82,7 +82,10 @@ print(f"検証OK: 総資産{total_asset_from_summary:,.0f}円（銘柄{total_cur
 | `valuation_history` | 日次データ | 3年分（`period=3y`） | 約750件 |
 | `performance_cache` | キャッシュ | 8期間×銘柄数 | 約40件 |
 | `score_cache` | キャッシュ | 6視点×銘柄数 | 約30件 |
-| `price_data` | 日次データ | 直近13ヶ月 | 約65件（月次リターン計算用） |
+| `price_data` | 日次データ | 直近13ヶ月 | 約65件（月次リターン計算用、後方互換） |
+| `price_data_daily_30d` | 日次データ | 直近30日 | 約150件（OHLCV、ATR/出来高用） |
+| `price_data_close_250d` | 日次データ | 直近14ヶ月（250営業日） | 約1250件（close、200MA用） |
+| `dividend_data` | yfinance | 3年分 | 銘柄別年度別配当合計（取得失敗時null） |
 | `etf_data` | マスタ | - | 保有銘柄数（5件） |
 | `tag_data` | マスタ | - | 約25件 |
 
@@ -90,7 +93,7 @@ print(f"検証OK: 総資産{total_asset_from_summary:,.0f}円（銘柄{total_cur
 
 `_metadata` に `_data_status` キーを追加し、全データソースの取得状態を記録すること。Phase 1アナリストはこの情報を使ってスキップ判断を行う。
 
-**記録対象**: holdings, summary, valuation_history, performance_cache, score_cache, etf_data, tag_data, price_data, recommendations_balance, recommendations_dividend, recommendations_low-cost, compare_performance, compare_scores
+**記録対象**: holdings, summary, valuation_history, performance_cache, score_cache, etf_data, tag_data, price_data, price_data_daily_30d, price_data_close_250d, dividend_data, recommendations_balance, recommendations_dividend, recommendations_low-cost, compare_performance, compare_scores
 
 **ステータス値**:
 - `"ok"`: 正常取得（件数付き）
@@ -125,6 +128,9 @@ print(f"検証OK: 総資産{total_asset_from_summary:,.0f}円（銘柄{total_cur
       "etf_data": {"status": "ok", "count": 5},
       "tag_data": {"status": "ok", "count": 25},
       "price_data": {"status": "ok", "count": 65},
+      "price_data_daily_30d": {"status": "ok", "count": 150},
+      "price_data_close_250d": {"status": "ok", "count": 1250},
+      "dividend_data": {"status": "ok", "count": 5},
       "recommendations_balance": {"status": "ok", "count": 10},
       "recommendations_dividend": {"status": "ok", "count": 10},
       "recommendations_low-cost": {"status": "error", "http_status": 500, "error": "Internal Server Error"},
@@ -136,6 +142,58 @@ print(f"検証OK: 総資産{total_asset_from_summary:,.0f}円（銘柄{total_cur
   "..."
 }
 ```
+
+---
+
+## 追加データ取得仕様（OHLCV + 配当）
+
+### `price_data_daily_30d`（直近30日OHLCV）
+
+- **取得元**: `price_histories` テーブル
+- **カラム**: `etf_code, date, open, high, low, close, volume`
+- **期間**: `date >= date('now', '-30 days')`
+- **用途**: Phase 0.5のATR(14)計算、出来高異常検知
+- **注意**: `volume` カラムにNULLがある場合も取得する（Phase 0.5側でフォールバック処理）
+
+### `price_data_close_250d`（直近14ヶ月close）
+
+- **取得元**: `price_histories` テーブル
+- **カラム**: `etf_code, date, close`
+- **期間**: `date >= date('now', '-14 months')`（250営業日を確保するため14ヶ月）
+- **用途**: Phase 0.5の200日移動平均防御シグナル計算
+- **後方互換**: 既存 `price_data`（13ヶ月close）はそのまま維持する。`price_data_close_250d` は追加キーとして並存
+
+### `dividend_data`（3年分配当データ）
+
+- **取得元**: yfinance `ticker.dividends`（外部API）
+- **期間**: 3年分
+- **集計**: 銘柄別・年度別の配当合計
+- **出力形式**: `{"1475": {"2024": 45.0, "2023": 42.0, "2022": 40.0}, ...}`
+- **フォールバック**: yfinance 0.1.63で `ticker.dividends` 取得失敗時は `dividend_data: null` を設定し、`_data_status` に `{"status": "error", "error": "配当データ取得失敗"}` を記録。この場合、Phase 0.5の分配金Zスコア（項目10）は一括スキップされる
+- **注意**: 配当データ取得は `try/except` で囲み、1銘柄の失敗が他銘柄に影響しないようにする
+
+### `00_portfolio_data.json` の出力構造（追加分）
+
+```json
+{
+  "_metadata": {
+    "price_data_daily_30d": {"count": 150, "columns": ["etf_code", "date", "open", "high", "low", "close", "volume"], "sample": {...}},
+    "price_data_close_250d": {"count": 1250, "columns": ["etf_code", "date", "close"], "sample": {...}},
+    "dividend_data": {"count": 5, "columns": ["etf_code"], "sample": {"1475": {"2024": 45.0, "2023": 42.0}}},
+    "_data_status": {
+      "price_data_daily_30d": {"status": "ok", "count": 150},
+      "price_data_close_250d": {"status": "ok", "count": 1250},
+      "dividend_data": {"status": "ok", "count": 5}
+    }
+  },
+  "price_data": [...],
+  "price_data_daily_30d": [...],
+  "price_data_close_250d": [...],
+  "dividend_data": {...}
+}
+```
+
+> **注**: Phase 1ペルソナ（debateモード）はこれらの生データを直接参照しない。Phase 0.5が計算済みテーブル（`05_shared_calculations.md`）に集約し、Phase 1は計算済みテーブルのみ参照する。normalモードではPhase 0.5が実行されないため、Phase 1アナリストが生データから自力計算する。
 
 ---
 

@@ -91,7 +91,7 @@ Phase 0a + Phase 0 + Phase 0b（並行）→ Phase 1（タスク分割型並行�
 
 Phase 0a + Phase 0 + Phase 0b（並行）→ Phase 0.5（共通定量計算）→ Phase 1（ペルソナ別独立分析）→ Phase 2（入替候補の外部検証）→ Phase 3（クロスレビュー2ラウンド）→ Phase 4（統合）
 
-- Phase 0.5で決定論的な計算結果（シャープレシオ、相関係数、ドローダウン等）を `05_shared_calculations.md` に出力
+- Phase 0.5で決定論的な計算結果（シャープレシオ、相関係数、ドローダウン等）および追加テクニカル指標（`phase05b-trader-indicators.md` 参照: 200MA、ATR、Zスコア、出来高、再購入スコア、経済象限）を `05_shared_calculations.md` に出力
 - Phase 1では5エージェントが**同じ全データ+共通計算結果**を受け取り、ペルソナごとの解釈・見解・提言を独立に行う
 - クロスレビュー（2ラウンド: 相互レビュー→反論→合意形成）はPhase 3で独立エージェントが実施し、Phase 4で統合
 - レポートのセクション9に議論の経緯を詳細に記載
@@ -118,6 +118,9 @@ Phase 0a + Phase 0 + Phase 0b（並行）→ Phase 0.5（共通定量計算）�
 | スコアキャッシュ | score_cache テーブル | 5軸スコア（配当力/コスト効率/規模信頼性/売買品質/リターン）× 6視点 |
 | 勢いラベル | etfs.momentum_label | 上昇加速〜下降加速の5段階 |
 | 日次価格履歴 | price_histories テーブル | 相関分析用（月次リターン計算） |
+| 日次価格OHLCV 30日 | price_histories テーブル（`price_data_daily_30d`） | ATR(14)計算、出来高異常検知用 |
+| 日次close 250日 | price_histories テーブル（`price_data_close_250d`） | 200日移動平均防御シグナル用 |
+| 配当データ 3年 | yfinance `ticker.dividends`（`dividend_data`） | 分配金利回りZスコア用（取得失敗時null） |
 | 資産推移 | GET /api/v1/portfolio/valuation-history?period=3y | 最大ドローダウン、回復期間 |
 | 比較API | GET /api/v1/compare/performance, /scores | 銘柄間パフォーマンス・スコア比較 |
 | おすすめAPI | GET /api/v1/recommendations?perspective=... | 代替銘柄候補（balance, dividend, low-cost視点） |
@@ -272,7 +275,7 @@ timing.json更新とPhase 2起動は**同一ターンで並列発行**してよ�
 2. performance_cache（全保有銘柄の8期間リターン・ボラティリティ・回帰率）
 3. score_cache（全保有銘柄の5軸×6視点スコア）
 4. etfs（momentum_label, manager, listing_date, deviation_rate）
-5. 月次価格データ（price_histories、直近13ヶ月の月初価格）
+5. 月次価格データ（price_histories、直近14ヶ月 OHLCV。既存の13ヶ月closeは後方互換で維持、追加で30日OHLCV+250日closeを取得）
 6. 資産推移API（valuation-history?period=3y）
 7. タグ情報（etf_tag_relations JOIN tags）
 8. おすすめ銘柄API（balance, dividend, low-cost の各視点トップ10）
@@ -287,9 +290,10 @@ timing.json更新とPhase 2起動は**同一ターンで並列発行**してよ�
 決定論的な計算（シャープレシオ、相関係数、ドローダウン等）を1エージェントで実行し、Phase 1の5ペルソナエージェントが計算を重複実行することを防ぐ。
 
 **サブエージェントへの指示**: プロンプトに以下を含める:
-- 指示ファイル: `{skill_dir}/agent-instructions/phase05-shared-calculations.md` を読んで実行
+- 指示ファイル: `{skill_dir}/agent-instructions/phase05-shared-calculations.md` を読んで実行（追加テクニカル指標は `phase05b-trader-indicators.md` を参照）
 - WORK_DIR: `{WORK_DIR}`
 - skill_dir: `{skill_dir}`
+- タイムアウト: **5分**（追加テクニカル指標計算のため従来の3分から拡大）
 - **メインへの戻り値は「共通定量計算完了」の1行のみ**
 
 ### Phase 1: 並行分析（並列Task）
@@ -419,4 +423,5 @@ debateモードでは、Phase 3（クロスレビュー2ラウンド）+ Phase 4
 - [ ] 最適化前後の比較表（指標比較+保有銘柄の改善前後比較）を作成した
 - [ ] アクションアイテムを優先度別に整理した
 - [ ] レポートファイルが `./reports/{USER_ID}/` ディレクトリに保存された
+- [ ] テクニカル指標セクション（6.3分配金利回り、7.2防御シグナル、7.3出来高）がレポートに存在する、またはデータ不足によるスキップ理由が記載されている（debateモード限定。speed/normalモードではPhase 0.5が実行されないため、Phase 1アナリストの出力に依存する）
 - [ ] レポート保存後の数値整合性チェック（`00_portfolio_reference.md`との照合）がパスした

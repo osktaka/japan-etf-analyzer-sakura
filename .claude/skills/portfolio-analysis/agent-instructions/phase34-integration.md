@@ -34,8 +34,8 @@
 
 | ファイル | 内容 |
 |---------|------|
-| `{WORK_DIR}/10_quant_analysis.md` | 定量リスク・リターン分析結果 |
-| `{WORK_DIR}/10_score_analysis.md` | スコア・モメンタム分析結果 |
+| `{WORK_DIR}/10_quant_analysis.md` | 定量リスク・リターン分析結果（項目G: テクニカル防御シグナル、項目H: 出来高分析を含む） |
+| `{WORK_DIR}/10_score_analysis.md` | スコア・モメンタム分析結果（項目G: 分配金利回り分析、項目H: 再購入分析を含む） |
 | `{WORK_DIR}/10_allocation_analysis.md` | アセットアロケーション分析結果（存在する場合） |
 | `{WORK_DIR}/20_candidate_verification.md` | Phase 2 入替候補の外部検証結果（存在する場合のみ。speedモードでは生成されない） |
 
@@ -46,7 +46,7 @@
 
 | ファイル | 内容 | 読込範囲 |
 |---------|------|---------|
-| `{WORK_DIR}/05_shared_calculations.md` | 共通定量計算結果（Phase 0.5で生成） | 全文 |
+| `{WORK_DIR}/05_shared_calculations.md` | 共通定量計算結果（Phase 0.5で生成。項目1-7の基礎計算＋項目8-13のテクニカル指標。新マーカー: `ma200_signal`, `atr_trailing_stop`, `dividend_zscore`, `volume_stats`, `rebuy_score`, `economic_quadrant`） | 全文 |
 | `{WORK_DIR}/10_analyst_a_analysis.md` | analyst-A（積極派）分析結果 | 総合判断セクションのみ |
 | `{WORK_DIR}/10_analyst_b_analysis.md` | analyst-B（堅実派）分析結果 | 総合判断セクションのみ |
 | `{WORK_DIR}/10_analyst_c_analysis.md` | analyst-C（異論派）分析結果 | 総合判断セクションのみ |
@@ -142,12 +142,16 @@ Phase 3で独立エージェントが実施したクロスレビュー結果を�
     - `_data_status.{source}.status == "empty"` → △（備考: 「空レスポンス」）
     - `_data_status.{source}.status == "error"` → ✗（備考: エラー詳細を転記）
     - Phase 0で取得対象外（条件に該当せず） → -
+    - **追加データソース**: `price_data_daily_30d`（ATR/出来高用30日OHLCV）、`price_data_close_250d`（200MA用14ヶ月close）、`dividend_data`（3年分配当データ）も同様に判定してテーブルに含める
 2b. `{WORK_DIR}/0b_trend_summary.md` が存在する場合、読み込んでセクション0.5（トレンド分析）を記載する。存在しない場合は「（初回分析のためトレンドデータなし）」と記載してセクション0.5をスキップする
 3. テンプレートに従い、各セクションを実データで埋める
    - **セクション1.1（銘柄別保有状況）**: `{WORK_DIR}/00_portfolio_reference.md` の「セクション1.1」テーブルをそのまま転記する。数値の丸め・フォーマット変更は禁止
    - **セクション1.2（サマリー）**: `{WORK_DIR}/00_portfolio_reference.md` の「セクション1.2」をそのまま転記する
    - **セクション11.2（現行ポートフォリオ・改善前）**: `{WORK_DIR}/00_portfolio_reference.md` の「セクション1.1」テーブルをそのまま転記する（セクション11.2の注記参照）
    - **セクション13.2（用語解説）**: テンプレートの基本用語テーブルをそのまま転記し、レポート本文で使用したその他の専門用語（リバランス、アセットアロケーション、ヘッジ等）を追記する
+   - **セクション6.3（分配金利回り分析）**: debateモードでは`05_shared_calculations.md`の`dividend_zscore`テーブルを転記、normalモードでは`10_score_analysis.md`の項目Gから転記。データ不足時は「配当データ取得失敗のためスキップ」と記載
+   - **セクション7.2（テクニカル防御シグナル）**: debateモードでは`05_shared_calculations.md`の`ma200_signal`と`atr_trailing_stop`テーブルを統合して転記、normalモードでは`10_quant_analysis.md`の項目Gから転記。データ不足時は「データ不足のためスキップ」と記載
+   - **セクション7.3（出来高分析）**: debateモードでは`05_shared_calculations.md`の`volume_stats`テーブルを転記、normalモードでは`10_quant_analysis.md`の項目Hから転記。データ不足時は「データ不足のためスキップ」と記載
    - **上記以外のセクション**: Phase 1の各分析ファイルと `00_portfolio_data.json` から統合して記載する
 4. クロスレビュー結果をセクション9に記載:
    - **speedモード**: 「速度重視モードのためスキップ」と記載
