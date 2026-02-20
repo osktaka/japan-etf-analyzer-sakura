@@ -64,6 +64,8 @@ const SORT_LABELS: Record<SortKey, string> = {
 
 const STORAGE_KEY = 'holdings-view-mode'
 const PNL_MODE_STORAGE_KEY = 'holdings-pnl-mode'
+const SORT_KEY_STORAGE_KEY = 'holdings-sort-key'
+const SORT_ORDER_STORAGE_KEY = 'holdings-sort-order'
 
 interface HoldingsListProps {
   holdings: Holding[]
@@ -104,8 +106,14 @@ export function HoldingsList({
     const stored = localStorage.getItem(PNL_MODE_STORAGE_KEY)
     return stored === 'current' || stored === 'total' ? stored : 'current'
   })
-  const [sortKey, setSortKey] = useState<SortKey>('current_value')
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
+  const [sortKey, setSortKey] = useState<SortKey>(() => {
+    const stored = localStorage.getItem(SORT_KEY_STORAGE_KEY)
+    return stored && stored in SORT_LABELS ? (stored as SortKey) : 'current_value'
+  })
+  const [sortOrder, setSortOrder] = useState<SortOrder>(() => {
+    const stored = localStorage.getItem(SORT_ORDER_STORAGE_KEY)
+    return stored === 'asc' || stored === 'desc' ? stored : 'desc'
+  })
 
   const cardSortKeys =
     pnlMode === 'current' ? CARD_SORT_KEYS_CURRENT : CARD_SORT_KEYS_TOTAL
@@ -117,6 +125,14 @@ export function HoldingsList({
   useEffect(() => {
     localStorage.setItem(PNL_MODE_STORAGE_KEY, pnlMode)
   }, [pnlMode])
+
+  useEffect(() => {
+    localStorage.setItem(SORT_KEY_STORAGE_KEY, sortKey)
+  }, [sortKey])
+
+  useEffect(() => {
+    localStorage.setItem(SORT_ORDER_STORAGE_KEY, sortOrder)
+  }, [sortOrder])
 
   const handleViewModeChange = useCallback(
     (mode: ViewMode) => {
