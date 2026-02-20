@@ -8,6 +8,7 @@ import { HoldingCard } from './HoldingCard'
 import styles from './HoldingsList.module.css'
 
 type ViewMode = 'card' | 'table'
+type PnlMode = 'current' | 'total'
 type SortKey =
   | 'etf_code'
   | 'quantity'
@@ -17,17 +18,30 @@ type SortKey =
   | 'unrealized_pnl'
   | 'unrealized_pnl_percent'
   | 'total_pnl'
+  | 'total_buy_amount'
+  | 'total_sell_amount'
+  | 'total_pnl_percent'
   | 'holding_days'
   | 'annualized_return'
 type SortOrder = 'asc' | 'desc'
 
-const CARD_SORT_KEYS: SortKey[] = [
+const CARD_SORT_KEYS_CURRENT: SortKey[] = [
   'unrealized_pnl',
   'unrealized_pnl_percent',
-  'total_pnl',
   'annualized_return',
   'holding_days',
   'current_value',
+  'quantity',
+  'etf_code',
+]
+
+const CARD_SORT_KEYS_TOTAL: SortKey[] = [
+  'total_buy_amount',
+  'total_sell_amount',
+  'total_pnl_percent',
+  'total_pnl',
+  'annualized_return',
+  'holding_days',
   'quantity',
   'etf_code',
 ]
@@ -37,15 +51,19 @@ const SORT_LABELS: Record<SortKey, string> = {
   quantity: '数量',
   average_cost: '平均取得単価',
   current_price: '現在価格',
-  current_value: '評価額',
+  current_value: '現在評価額',
   unrealized_pnl: '評価損益',
   unrealized_pnl_percent: '損益率',
   total_pnl: '総利益',
+  total_buy_amount: '累計投資額',
+  total_sell_amount: '累計売却額',
+  total_pnl_percent: '総利益率',
   holding_days: '保有期間',
   annualized_return: '年率リターン',
 }
 
 const STORAGE_KEY = 'holdings-view-mode'
+const PNL_MODE_STORAGE_KEY = 'holdings-pnl-mode'
 
 interface HoldingsListProps {
   holdings: Holding[]
@@ -82,22 +100,46 @@ export function HoldingsList({
     const stored = localStorage.getItem(STORAGE_KEY)
     return stored === 'card' || stored === 'table' ? stored : 'table'
   })
+  const [pnlMode, setPnlMode] = useState<PnlMode>(() => {
+    const stored = localStorage.getItem(PNL_MODE_STORAGE_KEY)
+    return stored === 'current' || stored === 'total' ? stored : 'current'
+  })
   const [sortKey, setSortKey] = useState<SortKey>('current_value')
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
+
+  const cardSortKeys =
+    pnlMode === 'current' ? CARD_SORT_KEYS_CURRENT : CARD_SORT_KEYS_TOTAL
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, viewMode)
   }, [viewMode])
 
+  useEffect(() => {
+    localStorage.setItem(PNL_MODE_STORAGE_KEY, pnlMode)
+  }, [pnlMode])
+
   const handleViewModeChange = useCallback(
     (mode: ViewMode) => {
-      if (mode === 'card' && !CARD_SORT_KEYS.includes(sortKey)) {
-        setSortKey('unrealized_pnl')
+      if (mode === 'card' && !cardSortKeys.includes(sortKey)) {
+        setSortKey(pnlMode === 'current' ? 'unrealized_pnl' : 'total_pnl')
         setSortOrder('desc')
       }
       setViewMode(mode)
     },
-    [sortKey]
+    [sortKey, cardSortKeys, pnlMode]
+  )
+
+  const handlePnlModeChange = useCallback(
+    (mode: PnlMode) => {
+      setPnlMode(mode)
+      const newCardSortKeys =
+        mode === 'current' ? CARD_SORT_KEYS_CURRENT : CARD_SORT_KEYS_TOTAL
+      if (viewMode === 'card' && !newCardSortKeys.includes(sortKey)) {
+        setSortKey(mode === 'current' ? 'unrealized_pnl' : 'total_pnl')
+        setSortOrder('desc')
+      }
+    },
+    [viewMode, sortKey]
   )
 
   const handleSortClick = useCallback(
@@ -166,6 +208,18 @@ export function HoldingsList({
           aVal = a.total_pnl
           bVal = b.total_pnl
           break
+        case 'total_buy_amount':
+          aVal = a.total_buy_amount
+          bVal = b.total_buy_amount
+          break
+        case 'total_sell_amount':
+          aVal = a.total_sell_amount
+          bVal = b.total_sell_amount
+          break
+        case 'total_pnl_percent':
+          aVal = a.total_pnl_percent
+          bVal = b.total_pnl_percent
+          break
         case 'holding_days':
           aVal = a.holding_days ?? 0
           bVal = b.holding_days ?? 0
@@ -226,6 +280,26 @@ export function HoldingsList({
                 表
               </button>
             </div>
+            <div className={styles.pnlModeToggle}>
+              <button
+                type="button"
+                className={`${styles.toggleBtn} ${pnlMode === 'current' ? styles.toggleBtnActive : ''}`}
+                onClick={() => handlePnlModeChange('current')}
+                aria-label="現在の損益を表示"
+                title="現在の損益"
+              >
+                現在
+              </button>
+              <button
+                type="button"
+                className={`${styles.toggleBtn} ${pnlMode === 'total' ? styles.toggleBtnActive : ''}`}
+                onClick={() => handlePnlModeChange('total')}
+                aria-label="トータルの損益を表示"
+                title="トータルの損益"
+              >
+                トータル
+              </button>
+            </div>
             {viewMode === 'card' && (
               <select
                 className={styles.sortSelect}
@@ -233,7 +307,7 @@ export function HoldingsList({
                 onChange={handleSortSelectChange}
                 aria-label="並び替え"
               >
-                {CARD_SORT_KEYS.map((key) => (
+                {cardSortKeys.map((key) => (
                   <optgroup key={key} label={SORT_LABELS[key]}>
                     <option value={`${key}-desc`}>
                       {SORT_LABELS[key]} (大→小)
@@ -253,7 +327,7 @@ export function HoldingsList({
                   onChange={(e) => onIncludeSoldChange(e.target.checked)}
                   className={styles.includeSoldCheckbox}
                 />
-                過去保有銘柄を含む
+                過去保有を含む
               </label>
             )}
           </div>
@@ -305,55 +379,96 @@ export function HoldingsList({
                 >
                   銘柄{getSortIndicator('etf_code')}
                 </th>
-                <th
-                  className={styles.right}
-                  onClick={() => handleSortClick('quantity')}
-                  style={{ cursor: 'pointer' }}
-                >
-                  数量{getSortIndicator('quantity')}
-                </th>
-                <th
-                  className={styles.right}
-                  onClick={() => handleSortClick('average_cost')}
-                  style={{ cursor: 'pointer' }}
-                >
-                  平均取得単価{getSortIndicator('average_cost')}
-                </th>
-                <th
-                  className={styles.right}
-                  onClick={() => handleSortClick('current_price')}
-                  style={{ cursor: 'pointer' }}
-                >
-                  現在価格{getSortIndicator('current_price')}
-                </th>
-                <th
-                  className={styles.right}
-                  onClick={() => handleSortClick('current_value')}
-                  style={{ cursor: 'pointer' }}
-                >
-                  評価額{getSortIndicator('current_value')}
-                </th>
-                <th
-                  className={styles.right}
-                  onClick={() => handleSortClick('unrealized_pnl')}
-                  style={{ cursor: 'pointer' }}
-                >
-                  評価損益{getSortIndicator('unrealized_pnl')}
-                </th>
-                <th
-                  className={styles.right}
-                  onClick={() => handleSortClick('unrealized_pnl_percent')}
-                  style={{ cursor: 'pointer' }}
-                >
-                  損益率{getSortIndicator('unrealized_pnl_percent')}
-                </th>
-                <th
-                  className={styles.right}
-                  onClick={() => handleSortClick('total_pnl')}
-                  style={{ cursor: 'pointer' }}
-                >
-                  総利益{getSortIndicator('total_pnl')}
-                </th>
+                {pnlMode === 'current' && (
+                  <th
+                    className={styles.right}
+                    onClick={() => handleSortClick('quantity')}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    数量{getSortIndicator('quantity')}
+                  </th>
+                )}
+                {pnlMode === 'current' && (
+                  <>
+                    <th
+                      className={styles.right}
+                      onClick={() => handleSortClick('average_cost')}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      平均取得単価{getSortIndicator('average_cost')}
+                    </th>
+                    <th
+                      className={styles.right}
+                      onClick={() => handleSortClick('current_price')}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      現在価格{getSortIndicator('current_price')}
+                    </th>
+                  </>
+                )}
+                {pnlMode === 'current' ? (
+                  <>
+                    <th
+                      className={styles.right}
+                      onClick={() => handleSortClick('current_value')}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      現在評価額{getSortIndicator('current_value')}
+                    </th>
+                    <th
+                      className={styles.right}
+                      onClick={() => handleSortClick('unrealized_pnl')}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      評価損益{getSortIndicator('unrealized_pnl')}
+                    </th>
+                    <th
+                      className={styles.right}
+                      onClick={() => handleSortClick('unrealized_pnl_percent')}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      損益率{getSortIndicator('unrealized_pnl_percent')}
+                    </th>
+                  </>
+                ) : (
+                  <>
+                    <th
+                      className={styles.right}
+                      onClick={() => handleSortClick('total_buy_amount')}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      累計投資額{getSortIndicator('total_buy_amount')}
+                    </th>
+                    <th
+                      className={styles.right}
+                      onClick={() => handleSortClick('total_sell_amount')}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      現在評価額{getSortIndicator('current_value')}
+                    </th>
+                    <th
+                      className={styles.right}
+                      onClick={() => handleSortClick('total_sell_amount')}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      累計売却額{getSortIndicator('total_sell_amount')}
+                    </th>
+                    <th
+                      className={styles.right}
+                      onClick={() => handleSortClick('total_pnl')}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      総利益{getSortIndicator('total_pnl')}
+                    </th>
+                    <th
+                      className={styles.right}
+                      onClick={() => handleSortClick('total_pnl_percent')}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      総利益率{getSortIndicator('total_pnl_percent')}
+                    </th>
+                  </>
+                )}
                 <th
                   className={styles.right}
                   onClick={() => handleSortClick('holding_days')}
@@ -414,28 +529,60 @@ export function HoldingsList({
                         </span>
                       </div>
                     </td>
-                    <td className={styles.right}>{holding.quantity}口</td>
-                    <td className={styles.right}>
-                      {formatPrice(holding.average_cost)}
-                    </td>
-                    <td className={styles.right}>
-                      {formatPrice(holding.current_price)}
-                    </td>
-                    <td className={styles.right}>
-                      {formatPrice(holding.current_value)}
-                    </td>
-                    <td className={`${styles.right} ${pnlClass}`}>
-                      {pnlSign}
-                      {formatPrice(holding.unrealized_pnl)}
-                    </td>
-                    <td className={`${styles.right} ${pnlClass}`}>
-                      {pnlSign}
-                      {holding.unrealized_pnl_percent.toFixed(2)}%
-                    </td>
-                    <td className={`${styles.right} ${totalPnlClass}`}>
-                      {totalPnlSign}
-                      {formatPrice(holding.total_pnl)}
-                    </td>
+                    {pnlMode === 'current' && (
+                      <td className={styles.right}>{holding.quantity}口</td>
+                    )}
+                    {pnlMode === 'current' && (
+                      <>
+                        <td className={styles.right}>
+                          {formatPrice(holding.average_cost)}
+                        </td>
+                        <td className={styles.right}>
+                          {formatPrice(holding.current_price)}
+                        </td>
+                      </>
+                    )}
+                    {pnlMode === 'current' ? (
+                      <>
+                        <td className={styles.right}>
+                          {formatPrice(holding.current_value)}
+                        </td>
+                        <td className={`${styles.right} ${pnlClass}`}>
+                          {pnlSign}
+                          {formatPrice(holding.unrealized_pnl)}
+                        </td>
+                        <td className={`${styles.right} ${pnlClass}`}>
+                          {pnlSign}
+                          {holding.unrealized_pnl_percent.toFixed(2)}%
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className={styles.right}>
+                          {formatPrice(holding.total_buy_amount)}
+                        </td>
+                        <td className={styles.right}>
+                          {formatPrice(holding.current_value)}
+                        </td>
+                        <td className={styles.right}>
+                          {formatPrice(holding.total_sell_amount)}
+                        </td>
+                        <td className={`${styles.right} ${totalPnlClass}`}>
+                          {totalPnlSign}
+                          {formatPrice(holding.total_pnl)}
+                        </td>
+                        <td
+                          className={`${styles.right} ${
+                            holding.total_pnl_percent >= 0
+                              ? styles.positive
+                              : styles.negative
+                          }`}
+                        >
+                          {holding.total_pnl_percent >= 0 ? '+' : ''}
+                          {holding.total_pnl_percent.toFixed(2)}%
+                        </td>
+                      </>
+                    )}
                     <td className={styles.right}>
                       {holding.holding_period || '-'}
                     </td>
@@ -514,6 +661,7 @@ export function HoldingsList({
               <HoldingCard
                 key={holding.etf_code}
                 holding={holding}
+                pnlMode={pnlMode}
                 onClick={() => onETFClick?.(holding.etf_code)}
                 onHistoryClick={
                   onHistoryClick

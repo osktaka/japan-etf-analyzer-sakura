@@ -712,6 +712,10 @@ def test_total_pnl_buy_only(
     # current_value = 100 * 2000 = 200000
     # total_pnl = current_value - buy_amount = 200000 - 100000 = 100000
     assert holdings[0]["total_pnl"] == 100000.0
+    assert holdings[0]["total_buy_amount"] == 100000.0
+    assert holdings[0]["total_sell_amount"] == 0.0
+    # total_pnl_percent = 100000 / 100000 * 100 = 100.0
+    assert holdings[0]["total_pnl_percent"] == 100.0
 
 
 def test_total_pnl_partial_sell(
@@ -754,6 +758,10 @@ def test_total_pnl_partial_sell(
     # buy_amount = 100 * 1000 = 100000
     # total_pnl = 140000 + 45000 - 100000 = 85000
     assert holdings[0]["total_pnl"] == 85000.0
+    assert holdings[0]["total_buy_amount"] == 100000.0
+    assert holdings[0]["total_sell_amount"] == 45000.0
+    # total_pnl_percent = 85000 / 100000 * 100 = 85.0
+    assert holdings[0]["total_pnl_percent"] == 85.0
 
 
 def test_total_pnl_full_sell(
@@ -796,6 +804,10 @@ def test_total_pnl_full_sell(
     assert holdings[0]["current_value"] == 0
     # total_pnl = 0 + 150000 - 100000 = 50000
     assert holdings[0]["total_pnl"] == 50000.0
+    assert holdings[0]["total_buy_amount"] == 100000.0
+    assert holdings[0]["total_sell_amount"] == 150000.0
+    # total_pnl_percent = 50000 / 100000 * 100 = 50.0
+    assert holdings[0]["total_pnl_percent"] == 50.0
 
 
 def test_include_sold_true(
@@ -853,9 +865,18 @@ def test_include_sold_true(
     # Active holding (5678) should come first
     assert holdings[0]["etf_code"] == "5678"
     assert holdings[0]["quantity"] == 50.0
+    assert holdings[0]["total_buy_amount"] == 125000.0
+    assert holdings[0]["total_sell_amount"] == 0.0
+    # total_pnl = 150000 + 0 - 125000 = 25000
+    # total_pnl_percent = 25000 / 125000 * 100 = 20.0
+    assert holdings[0]["total_pnl_percent"] == 20.0
     # Sold holding (1234) should come second
     assert holdings[1]["etf_code"] == "1234"
     assert holdings[1]["quantity"] == 0.0
+    assert holdings[1]["total_buy_amount"] == 100000.0
+    assert holdings[1]["total_sell_amount"] == 150000.0
+    # total_pnl_percent = 50000 / 100000 * 100 = 50.0
+    assert holdings[1]["total_pnl_percent"] == 50.0
 
 
 def test_include_sold_false_default(
@@ -910,3 +931,7 @@ def test_include_sold_false_default(
     assert len(holdings) == 1
     assert holdings[0]["etf_code"] == "5678"
     assert holdings[0]["quantity"] == 50.0
+    assert holdings[0]["total_buy_amount"] == 125000.0
+    assert holdings[0]["total_sell_amount"] == 0.0
+    # total_pnl_percent = 25000 / 125000 * 100 = 20.0
+    assert holdings[0]["total_pnl_percent"] == 20.0

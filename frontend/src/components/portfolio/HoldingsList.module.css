@@ -75,6 +75,13 @@
   background: var(--color-primary);
 }
 
+.pnlModeToggle {
+  display: flex;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border-dark);
+}
+
 .sortSelect {
   padding: var(--spacing-xs) var(--spacing-sm);
   font-size: var(--text-sm);

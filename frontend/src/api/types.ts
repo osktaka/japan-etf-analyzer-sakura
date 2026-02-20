@@ -206,6 +206,9 @@ export interface Holding {
   unrealized_pnl: number
   unrealized_pnl_percent: number
   total_pnl: number
+  total_buy_amount: number
+  total_sell_amount: number
+  total_pnl_percent: number
   holding_days?: number
   holding_period?: string
   annualized_return?: number

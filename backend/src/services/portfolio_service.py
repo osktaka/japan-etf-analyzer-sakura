@@ -180,8 +180,10 @@ class PortfolioService:
                 annualized_pnl = None
 
             # Total P&L: current_value + total_sell_amount - original_buy_amount
-            total_pnl = (
-                current_value + total_sell_amount - float(data["original_buy_amount"])
+            original_buy = float(data["original_buy_amount"])
+            total_pnl = current_value + total_sell_amount - original_buy
+            total_pnl_percent = (
+                round(total_pnl / original_buy * 100, 2) if original_buy > 0 else 0
             )
 
             result.append(
@@ -200,6 +202,9 @@ class PortfolioService:
                     "annualized_return": annualized_return,
                     "annualized_pnl": annualized_pnl,
                     "total_pnl": round(total_pnl, 2),
+                    "total_buy_amount": round(original_buy, 2),
+                    "total_sell_amount": round(total_sell_amount, 2),
+                    "total_pnl_percent": total_pnl_percent,
                 }
             )
 

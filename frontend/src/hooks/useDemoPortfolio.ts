@@ -18,7 +18,13 @@ export function useDemoPortfolio(): UseDemoPortfolioReturn {
   const [summary, setSummary] = useState<PortfolioSummary | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [includeSold, setIncludeSold] = useState(false)
+  const [includeSold, setIncludeSoldState] = useState(() => {
+    return localStorage.getItem('holdings-include-sold') === 'true'
+  })
+  const setIncludeSold = useCallback((value: boolean) => {
+    localStorage.setItem('holdings-include-sold', String(value))
+    setIncludeSoldState(value)
+  }, [])
 
   const fetchPortfolio = useCallback(async () => {
     setIsLoading(true)

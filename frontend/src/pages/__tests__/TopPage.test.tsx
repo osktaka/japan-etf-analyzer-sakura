@@ -550,6 +550,9 @@ describe('TopPage', () => {
             unrealized_pnl: 1000,
             unrealized_pnl_percent: 5.26,
             total_pnl: 1000,
+            total_buy_amount: 19000,
+            total_sell_amount: 0,
+            total_pnl_percent: 5.26,
           },
         ],
       })
