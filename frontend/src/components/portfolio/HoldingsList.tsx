@@ -457,7 +457,7 @@ export function HoldingsList({
                     </th>
                     <th
                       className={styles.right}
-                      onClick={() => handleSortClick('total_sell_amount')}
+                      onClick={() => handleSortClick('current_value')}
                       style={{ cursor: 'pointer' }}
                     >
                       現在評価額{getSortIndicator('current_value')}
