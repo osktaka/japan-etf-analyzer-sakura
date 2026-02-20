@@ -60,6 +60,33 @@ curl -s http://localhost:8902/api/v1/demo/portfolio/holdings
 
 **Step 3 [AM]: portfolioモード時のAPI取得**（共通セクション参照）
 
+**Step 4 [AM]: 注目ETF収集**
+
+Step 1-2で特定した注目テーマからキーワードを抽出し、以下の優先順でETFを検索する。3-5銘柄を目標とする。
+
+1. **keyword検索**（テーマごとに実行）:
+```bash
+curl -s "http://localhost:8902/api/v1/etfs?keyword={テーマ}&momentum_labels=上昇加速,上昇維持&sort=return_1m&order=desc&limit=5"
+```
+
+2. **tag_idsフォールバック**（keyword検索が0件の場合）:
+```bash
+# タグ一覧を取得し、テーマに近いタグ名を選定
+curl -s "http://localhost:8902/api/v1/tags"
+# 選定したタグIDでフィルタ
+curl -s "http://localhost:8902/api/v1/etfs?tag_ids={tag_id}&momentum_labels=上昇加速,上昇維持&sort=return_1m&order=desc&limit=5"
+```
+
+3. **tag-momentumフォールバック**（tag_ids検索も0件の場合）:
+```bash
+# 上昇テーマを特定し、関連ETFを取得
+curl -s "http://localhost:8902/api/v1/market/tag-momentum"
+# dominant_label が「上昇加速」のタグを選び、そのtag_idで再検索
+curl -s "http://localhost:8902/api/v1/etfs?tag_ids={tag_id}&sort=return_1m&order=desc&limit=5"
+```
+
+4. **最終フォールバック**: 全て0件の場合、セクション省略 + `<!-- etf_recommendation_unavailable -->` を出力末尾に付与
+
 ### AM: 時間帯ルール
 
 | 実行時刻(JST) | 米国市場 | 東証データ | 備考 |
@@ -94,6 +121,12 @@ curl -s http://localhost:8902/api/v1/demo/portfolio/holdings
 - {リスク要因1}
 - {リスク要因2}
 
+## 今日の注目ETF
+
+| コード | 銘柄名 | 関連テーマ | 注目理由 |
+|--------|--------|-----------|---------|
+| {code} | {name} | {theme} | {reason} |
+
 ## 保有銘柄データ（portfolioモードのみ）
 {JSON形式でAPI取得結果の上位5銘柄を記載。generalモードではこのセクション自体を省略}
 
@@ -126,6 +159,52 @@ curl -s http://localhost:8902/api/v1/demo/portfolio/holdings
 セクター別騰落が取得できない場合、出力に `<!-- sector_data_unavailable -->` を含める。
 
 **Step 3 [PM]: portfolioモード時のAPI取得**（共通セクション参照）
+
+**Step 4 [PM]: 今日の注目ETF収集**
+
+当日に動きのあったETFを特定する。3-5銘柄を目標とする。
+
+1. **WebSearch**で当日の注目ETF情報を収集:
+   - `東証 ETF 値上がり率 {date}`
+   - `東証 ETF 売買代金 {date}`
+
+2. **具体的ETFコード判明時**: 銘柄情報を補完
+```bash
+curl -s "http://localhost:8902/api/v1/etfs/{code}"
+```
+
+3. **コード不明時**: tag-momentumフォールバック
+```bash
+# 上昇加速のタグを特定
+curl -s "http://localhost:8902/api/v1/market/tag-momentum"
+# dominant_label が「上昇加速」のタグを選び、関連ETFを取得
+curl -s "http://localhost:8902/api/v1/etfs?tag_ids={tag_id}&sort=return_1m&order=desc&limit=5"
+```
+
+4. **最終フォールバック**: 全て不十分な場合、セクション省略
+
+**Step 5 [PM]: 明日の注目ETF収集**
+
+当日のテーマ・ニュース・海外情勢からテーマを抽出し、翌営業日に注目すべきETFを特定する。3-5銘柄を目標とする。
+
+1. **keyword検索**（テーマごとに実行）:
+```bash
+curl -s "http://localhost:8902/api/v1/etfs?keyword={テーマ}&momentum_labels=上昇加速,上昇維持&sort=return_1m&order=desc&limit=5"
+```
+
+2. **tag_idsフォールバック**（keyword検索が0件の場合）:
+```bash
+curl -s "http://localhost:8902/api/v1/tags"
+curl -s "http://localhost:8902/api/v1/etfs?tag_ids={tag_id}&momentum_labels=上昇加速,上昇維持&sort=return_1m&order=desc&limit=5"
+```
+
+3. **tag-momentumフォールバック**（tag_ids検索も0件の場合）:
+```bash
+curl -s "http://localhost:8902/api/v1/market/tag-momentum"
+curl -s "http://localhost:8902/api/v1/etfs?tag_ids={tag_id}&sort=return_1m&order=desc&limit=5"
+```
+
+4. **最終フォールバック**: 全て0件の場合、セクション省略 + `<!-- etf_recommendation_unavailable -->` を出力末尾に付与
 
 ### PM: 時間帯ルール
 
@@ -163,6 +242,18 @@ curl -s http://localhost:8902/api/v1/demo/portfolio/holdings
 1. **{見出し}**: {影響を1文}
 2. **{見出し}**: {影響を1文}
 3. **{見出し}**: {影響を1文}
+
+## 今日の注目ETF
+
+| コード | 銘柄名 | 勢い | 注目理由 |
+|--------|--------|------|---------|
+| {code} | {name} | {momentum_label} | {reason} |
+
+## 明日の注目ETF
+
+| コード | 銘柄名 | 関連テーマ | 注目理由 |
+|--------|--------|-----------|---------|
+| {code} | {name} | {theme} | {reason} |
 
 ## 保有銘柄データ（portfolioモードのみ）
 {JSON形式でAPI取得結果の上位5銘柄を記載。generalモードではこのセクション自体を省略}
@@ -244,4 +335,7 @@ curl -s http://localhost:8902/api/v1/demo/portfolio/holdings
 | WebSearch完全失敗 | WebFetchで日経新聞サイト等に直接アクセス |
 | CME日経先物取得不可 [AM] | 「取得失敗」と明記し他指標で出力作成 |
 | セクター別騰落取得不可 [PM] | セクション省略 + `<!-- sector_data_unavailable -->` |
+| 注目ETF keyword検索0件 | tag_idsフォールバック検索。それも0件の場合はtag-momentumで上昇テーマから取得 |
+| 注目ETF 全フォールバック失敗 | セクション省略 + `<!-- etf_recommendation_unavailable -->` |
+| 注目ETF API失敗 | WebSearch結果のみで構成。それも不十分な場合はセクション省略 |
 | ポートフォリオAPI失敗 | 出力に `<!-- portfolio取得失敗 -->` を含める |
