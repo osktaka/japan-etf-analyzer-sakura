@@ -550,5 +550,91 @@
       "景気敏感80.9%+国内集中82.8%の二重構造リスク",
       "テクニカル攻撃モードと経済象限4（スタグフレーション）の矛盾"
     ]
+  },
+  {
+    "date": "2026-02-20",
+    "report_path": "reports/demo/20260220_demo.md",
+    "mode": "debate",
+    "total_asset": 991035.0,
+    "cash_balance": 70525.0,
+    "cash_ratio": 0.0712,
+    "holdings_count": 6,
+    "holdings": [
+      {
+        "etf_code": "1475",
+        "name": "iシェアーズ・コア TOPIX ETF",
+        "weight": 0.339,
+        "pnl_rate": -0.012,
+        "current_value": 312480
+      },
+      {
+        "etf_code": "1329",
+        "name": "iシェアーズ・コア 日経225 ETF",
+        "weight": 0.192,
+        "pnl_rate": -0.013,
+        "current_value": 176340
+      },
+      {
+        "etf_code": "1489",
+        "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信",
+        "weight": 0.143,
+        "pnl_rate": -0.004,
+        "current_value": 131640
+      },
+      {
+        "etf_code": "1615",
+        "name": "NEXT FUNDS 東証銀行業株価指数連動型上場投信",
+        "weight": 0.141,
+        "pnl_rate": -0.033,
+        "current_value": 129560
+      },
+      {
+        "etf_code": "2558",
+        "name": "MAXIS米国株式（S&P500）上場投信",
+        "weight": 0.133,
+        "pnl_rate": 0.022,
+        "current_value": 122840
+      },
+      {
+        "etf_code": "1540",
+        "name": "純金上場信託（現物国内保管型）",
+        "weight": 0.052,
+        "pnl_rate": 0.028,
+        "current_value": 47650
+      }
+    ],
+    "overall_score": 62,
+    "sharpe_ratio_portfolio": 1.75,
+    "max_drawdown": -0.0302,
+    "var_95": -0.0168,
+    "score_axes": {
+      "dividend_power": 54.3,
+      "cost_efficiency": 82.3,
+      "scale_reliability": 95.4,
+      "trading_quality": 94.5,
+      "return_performance": 79.9
+    },
+    "top_actions": [
+      {
+        "action": "1329段階的縮小（22%→15%以下）",
+        "priority": "highest",
+        "consensus": 100
+      },
+      {
+        "action": "1540増額（5.2%→10%）",
+        "priority": "high",
+        "consensus": 80
+      },
+      {
+        "action": "先進国株式ETF（2513）新規組入",
+        "priority": "high",
+        "consensus": 80
+      }
+    ],
+    "key_risks": [
+      "国内株式集中81.5%+景気敏感比率67.4%の構造的脆弱性",
+      "防御資産カバー率5.2%で象限移行耐性不足",
+      "配当力54.3の継続的低下（初回68.4→現在54.3）"
+    ]
   }
 ]
