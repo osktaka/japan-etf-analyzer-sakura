@@ -95,6 +95,8 @@ aliases: ["/market-outlook"]
 ```markdown
 ## 東証見通し（YYYY-MM-DD AM）
 
+*更新: YYYY-MM-DD HH:MM JST*
+
 ### 総合判断
 
 **{上昇/下落/横ばい}** 予想（確信度: {高/中/低}）
@@ -163,6 +165,8 @@ Sources:
 
 ```markdown
 ## 東証デイリーレビュー（YYYY-MM-DD PM）
+
+*更新: YYYY-MM-DD HH:MM JST*
 
 ### 本日の結果
 
