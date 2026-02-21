@@ -41,7 +41,11 @@ aliases: ["/market-outlook"]
 1. モード判定（メイン）
    ├─ timing: 引数 or 現在時刻から自動判定（15:30境界）
    ├─ mode: general / portfolio
-   └─ パラメータ算出: date, prev_business_day, year_month, current_time
+   └─ パラメータ算出:
+        ├─ date: 本日の日付（スキル実行日。次の取引日ではない）
+        ├─ prev_business_day: dateの直前の東証営業日
+        ├─ year_month: dateの年月部分
+        └─ current_time: 現在時刻（JST）
         ↓
 2. データ収集+検証（サブエージェント: general-purpose）
    ├─ Task(general-purpose) で agent-instructions/market-data-collection.md に従い実行
@@ -244,9 +248,9 @@ PMの出力の「AM予想との比較」の後、Sourcesの前に以下のセク
 
 ## ファイル保存ルール
 
-- **AM保存先**: `reports/market-outlook/YYYYMMDD_am.md`（dateパラメータの日付を使用）
+- **AM保存先**: `reports/market-outlook/YYYYMMDD_am.md`（dateパラメータ＝実行日の日付を使用）
 - **PM保存先**: `reports/market-outlook/YYYYMMDD_pm.md`
-- **ファイル名例**: `20260220_am.md`, `20260220_pm.md`
+- **ファイル名の日付は実行日（処理日）**: 例えば2/21(金)にAM実行→`20260221_am.md`。次の取引日(2/24)ではない
 - **保存内容**: 出力フォーマットの内容をそのまま保存（コンソール出力と同一）
 - **同一timing・同日のファイルが存在する場合**: 上書きする
 - **保存後**: ファイルパスをユーザーに通知する
