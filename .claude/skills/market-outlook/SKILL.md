@@ -44,6 +44,7 @@ aliases: ["/market-outlook"]
    └─ パラメータ算出:
         ├─ date: 本日の日付（スキル実行日。次の取引日ではない）
         ├─ prev_business_day: dateの直前の東証営業日
+        ├─ is_trading_day: dateが東証営業日かどうか（平日かつ日本の祝日でなければtrue）
         ├─ year_month: dateの年月部分
         └─ current_time: 現在時刻（JST）
         ↓
@@ -75,10 +76,11 @@ aliases: ["/market-outlook"]
 - mode: {mode}
 - date: {date}
 - prev_business_day: {prev_business_day}
+- is_trading_day: {is_trading_day}
 - year_month: {year_month}
 - current_time: {current_time}
 
-指示書内の {timing}, {mode}, {date}, {prev_business_day}, {year_month}, {current_time} を上記パラメータで読み替えてください。
+指示書内の {timing}, {mode}, {date}, {prev_business_day}, {is_trading_day}, {year_month}, {current_time} を上記パラメータで読み替えてください。
 
 戻り値は指示書の出力テンプレート形式のみで返却してください。
 ```
@@ -229,6 +231,18 @@ Sources:
 - [ソース名1](URL1)
 - [ソース名2](URL2)
 ```
+
+### PM出力: 非営業日の場合（is_trading_day=false）
+
+`is_trading_day=false`（土日祝）の場合、以下のセクションを変更する。それ以外のセクションは営業日と同様に出力する。
+
+| セクション | 変更内容 |
+|-----------|---------|
+| 本日の結果 | テーブルを省略し `本日（{date}）は東証休場日のため取引データなし` に置換 |
+| セクター別騰落 | セクション自体を省略 |
+| 値動きの要因分析 | 見出しを `前営業日（{prev_business_day}）の値動き` に変更。内容は前営業日の振り返りとして記述 |
+| AM予想との比較 | セクション自体を省略（非営業日にAMレポートは存在しないため） |
+| その他（注目ニュース、今日の注目ETF、明日の注目ETF等） | 変更なし（前営業日の情報として出力） |
 
 ## PM出力フォーマット（ポートフォリオモード追加セクション）
 
