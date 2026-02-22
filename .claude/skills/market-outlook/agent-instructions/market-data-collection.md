@@ -226,9 +226,6 @@ curl -s "http://localhost:8902/api/v1/etfs?tag_ids={tag_id}&sort=return_1m&order
 
 本日（{date}）は東証休場日のため取引データなし
 
-## 前営業日（{prev_business_day}）の値動き
-{前営業日の値動きの主要因を3-4文で記述}
-
 ## 注目ニュース・イベント
 1. **{見出し}**: {影響を1文}
 2. **{見出し}**: {影響を1文}
