@@ -77,9 +77,9 @@ class YahooFinanceClient:
             if cached:
                 logger.info(f"Using stale cached data for {code}")
                 return cached
-            # 4. キャッシュもない場合はモックデータ
-            logger.warning(f"No cache available for {code}, using mock")
-            return YahooFinanceClient._generate_mock_data(code, days)
+            # 4. キャッシュもない場合は空リスト（データなし）
+            logger.warning(f"No cache available for {code}, returning empty")
+            return []
 
     @staticmethod
     def _is_cache_valid(cached: List[Dict]) -> bool:
@@ -166,6 +166,8 @@ class YahooFinanceClient:
 
             for item in data:
                 date = datetime.strptime(item["date"], "%Y-%m-%d").date()
+                if date > datetime.now().date():
+                    continue  # 未来日付はスキップ
                 existing = PriceHistory.query.filter_by(
                     etf_code=code, date=date
                 ).first()
@@ -278,11 +280,29 @@ class YahooFinanceClient:
         }
 
         base_price = base_prices.get(code, 10000)
+
+        # 今日の日付を取得（土日なら直前の金曜日に調整）
+        today = datetime.now().date()
+        while today.weekday() >= 5:
+            today -= timedelta(days=1)
+
+        # todayから逆算してdays営業日分の日付リストを作成
+        business_dates = []
+        current_date = today
+        while len(business_dates) < days:
+            business_dates.append(current_date)
+            current_date -= timedelta(days=1)
+            while current_date.weekday() >= 5:
+                current_date -= timedelta(days=1)
+
+        # 古い順にソート
+        business_dates.reverse()
+
+        # 日付リストに沿ってデータ生成
         data = []
-        current_date = datetime.now() - timedelta(days=days)
         price = base_price
 
-        for _ in range(days):
+        for bd in business_dates:
             change = random.uniform(-0.02, 0.025)
             price = price * (1 + change)
 
@@ -292,7 +312,7 @@ class YahooFinanceClient:
 
             data.append(
                 {
-                    "date": current_date.strftime("%Y-%m-%d"),
+                    "date": bd.strftime("%Y-%m-%d"),
                     "open": round(open_price, 2),
                     "high": round(high, 2),
                     "low": round(low, 2),
@@ -300,9 +320,5 @@ class YahooFinanceClient:
                     "volume": random.randint(100000, 1000000),
                 }
             )
-
-            current_date += timedelta(days=1)
-            while current_date.weekday() >= 5:
-                current_date += timedelta(days=1)
 
         return data
