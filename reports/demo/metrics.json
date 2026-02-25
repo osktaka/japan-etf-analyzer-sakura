@@ -722,5 +722,98 @@
       "現金比率7.12%で推奨15-20%を大幅に下回る防御力不足",
       "経済象限4（スタグフレーション寄り）との銘柄構成のミスマッチ"
     ]
+  },
+  {
+    "date": "2026-02-24",
+    "report_path": "reports/demo/20260224_demo.md",
+    "mode": "debate",
+    "total_asset": 991825.0,
+    "cash_balance": 72967.0,
+    "cash_ratio": 0.0736,
+    "holdings_count": 7,
+    "holdings": [
+      {
+        "etf_code": "1475",
+        "name": "iシェアーズ・コア TOPIX ETF",
+        "weight": 0.341,
+        "pnl_rate": -0.011,
+        "current_value": 312880
+      },
+      {
+        "etf_code": "1489",
+        "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信",
+        "weight": 0.144,
+        "pnl_rate": -0.0003,
+        "current_value": 132160
+      },
+      {
+        "etf_code": "1615",
+        "name": "NEXT FUNDS 東証銀行業株価指数連動型上場投信",
+        "weight": 0.138,
+        "pnl_rate": -0.054,
+        "current_value": 126720
+      },
+      {
+        "etf_code": "2558",
+        "name": "MAXIS米国株式（S&P500）上場投信",
+        "weight": 0.133,
+        "pnl_rate": 0.016,
+        "current_value": 122160
+      },
+      {
+        "etf_code": "1540",
+        "name": "純金上場信託（現物国内保管型）",
+        "weight": 0.107,
+        "pnl_rate": 0.042,
+        "current_value": 97940
+      },
+      {
+        "etf_code": "1329",
+        "name": "iシェアーズ・コア 日経225 ETF",
+        "weight": 0.103,
+        "pnl_rate": -0.004,
+        "current_value": 94928
+      },
+      {
+        "etf_code": "2513",
+        "name": "NEXT FUNDS 外国株式・MSCI-KOKUSAI指数連動型上場投信",
+        "weight": 0.035,
+        "pnl_rate": -0.004,
+        "current_value": 32070
+      }
+    ],
+    "overall_score": 64,
+    "sharpe_ratio_portfolio": 1.71,
+    "max_drawdown": -0.0302,
+    "var_95": -0.0205,
+    "score_axes": {
+      "dividend_power": 52.4,
+      "cost_efficiency": 77.5,
+      "scale_reliability": 95.0,
+      "trading_quality": 94.0,
+      "return_performance": 79.8
+    },
+    "top_actions": [
+      {
+        "action": "2513/2558の重複解消（2513売却→2558集約）",
+        "priority": "highest",
+        "consensus": 100
+      },
+      {
+        "action": "現金比率の引き上げ（7.4%→12-15%）",
+        "priority": "highest",
+        "consensus": 80
+      },
+      {
+        "action": "1540（金ETF）比率の維持・監視",
+        "priority": "high",
+        "consensus": 100
+      }
+    ],
+    "key_risks": [
+      "国内集中72.6%+株式比率89.3%による構造的脆弱性",
+      "防御資産カバー率18.1%で目標30%に未達",
+      "全世界株式-15%シナリオで-13.4%（-123,138円）の影響"
+    ]
   }
 ]
