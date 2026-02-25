@@ -1,0 +1,27 @@
+#!/bin/bash
+set -uo pipefail
+
+PROJECT_DIR="/home/t_osaka/_mydev/_test_kabu/japan-etf-analyzer-sakura"
+cd "$PROJECT_DIR"
+
+TIMESTAMP=$(date +%Y%m%d-%H%M)
+LOGDIR="/tmp"
+
+# 1. market-outlookレポート生成
+claude -p "/market-outlook" \
+  --allowedTools "WebSearch WebFetch Bash Read Write Edit Glob Grep Task Skill" \
+  > "$LOGDIR/market-outlook-${TIMESTAMP}.log" 2>&1
+STEP1_EXIT=$?
+
+sleep 3
+
+# 2. X投稿文生成（レポート読み→Markdown書き出しのみ）
+claude -p "最新のmarket-outlookのレポートをもとにX用の投稿を書いて。1つの投稿にまとまらなければ複数投稿を書いて。出力はreports/tmp_x_posts.mdに書き出して。表題の右には「[テスト]」と付けて。1つの投稿は200文字程度にまとめて" \
+  --allowedTools "Read Write Glob Grep" \
+  > "$LOGDIR/market-x-posts-${TIMESTAMP}.log" 2>&1
+STEP2_EXIT=$?
+
+# 終了コード: いずれかが失敗していれば1
+if [ $STEP1_EXIT -ne 0 ] || [ $STEP2_EXIT -ne 0 ]; then
+  exit 1
+fi
