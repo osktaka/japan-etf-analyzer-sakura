@@ -9,7 +9,7 @@ import styles from './ETFCodeAutocomplete.module.css'
 interface ETFCodeAutocompleteProps {
   value: string
   onChange: (value: string) => void
-  onSelect?: (code: string, name: string) => void
+  onSelect?: (code: string, name: string, marketPrice?: number | null) => void
   onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void
   disabled?: boolean
   placeholder?: string
@@ -110,11 +110,11 @@ export function ETFCodeAutocomplete({
   )
 
   const handleSelect = useCallback(
-    (code: string, name: string) => {
+    (code: string, name: string, marketPrice?: number | null) => {
       userTyping.current = false
       setInternalKeyword(code)
       onChange(code)
-      onSelect?.(code, name)
+      onSelect?.(code, name, marketPrice)
       setIsOpen(false)
       setResults([])
       setHighlightedIndex(-1)
@@ -151,7 +151,7 @@ export function ETFCodeAutocomplete({
         e.preventDefault()
         const selected = results[highlightedIndex]
         if (selected) {
-          handleSelect(selected.code, selected.name)
+          handleSelect(selected.code, selected.name, selected.market_price)
         }
       }
     },
@@ -201,7 +201,7 @@ export function ETFCodeAutocomplete({
                 className={`${styles.dropdownItem}${index === highlightedIndex ? ` ${styles.highlighted}` : ''}`}
                 role="option"
                 aria-selected={index === highlightedIndex}
-                onClick={() => handleSelect(etf.code, etf.name)}
+                onClick={() => handleSelect(etf.code, etf.name, etf.market_price)}
               >
                 <span className={styles.itemCode}>{etf.code}</span>
                 <span className={styles.itemName}>{etf.name}</span>

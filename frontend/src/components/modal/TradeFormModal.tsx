@@ -11,6 +11,7 @@ interface TradeFormModalProps {
   trade?: Trade
   isEdit?: boolean
   defaultEtfCode?: string
+  defaultPrice?: number
 }
 
 export function TradeFormModal({
@@ -20,6 +21,7 @@ export function TradeFormModal({
   trade,
   isEdit = false,
   defaultEtfCode,
+  defaultPrice,
 }: TradeFormModalProps) {
   if (!isOpen) return null
 
@@ -60,6 +62,7 @@ export function TradeFormModal({
           <TradeForm
             etfCode={defaultEtfCode}
             initialData={initialData}
+            defaultPrice={defaultPrice}
             isEdit={isEdit}
             onSubmit={handleSubmit}
             onCancel={onClose}

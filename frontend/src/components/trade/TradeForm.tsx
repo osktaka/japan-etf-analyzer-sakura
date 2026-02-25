@@ -7,6 +7,7 @@ import styles from './TradeForm.module.css'
 interface TradeFormProps {
   etfCode?: string
   initialData?: Partial<CreateTradeRequest>
+  defaultPrice?: number
   onSubmit: (data: CreateTradeRequest) => Promise<boolean>
   onCancel: () => void
   isEdit?: boolean
@@ -15,6 +16,7 @@ interface TradeFormProps {
 export function TradeForm({
   etfCode: defaultEtfCode,
   initialData,
+  defaultPrice,
   onSubmit,
   onCancel,
   isEdit = false,
@@ -28,7 +30,10 @@ export function TradeForm({
   const [quantity, setQuantity] = useState(
     initialData?.quantity?.toString() || ''
   )
-  const [price, setPrice] = useState(initialData?.price?.toString() || '')
+  const [price, setPrice] = useState(
+    initialData?.price?.toString() ||
+      (defaultPrice != null ? defaultPrice.toString() : '')
+  )
   const [tradeDate, setTradeDate] = useState(
     initialData?.trade_date || new Date().toISOString().split('T')[0]
   )
@@ -92,7 +97,12 @@ export function TradeForm({
           id="etfCode"
           value={etfCode}
           onChange={setEtfCode}
-          onSelect={(_code, name) => setSelectedEtfName(name)}
+          onSelect={(_code, name, marketPrice) => {
+            setSelectedEtfName(name)
+            if (marketPrice != null) {
+              setPrice(marketPrice.toString())
+            }
+          }}
           onFocus={(e) => e.target.select()}
           placeholder="例: 1306"
           disabled={isEdit}

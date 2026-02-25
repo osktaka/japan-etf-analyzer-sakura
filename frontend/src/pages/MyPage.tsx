@@ -65,6 +65,9 @@ export function MyPage() {
   const [tradeFormCode, setTradeFormCode] = useState<string | undefined>(
     undefined
   )
+  const [tradeFormPrice, setTradeFormPrice] = useState<number | undefined>(
+    undefined
+  )
 
   // Save perspective to localStorage
   useEffect(() => {
@@ -204,8 +207,9 @@ export function MyPage() {
           isInCompare={isInCompare}
           onCompareToggle={toggleCompare}
           onTradeHistory={() => setShowTradeHistoryModal(true)}
-          onAddTrade={(code: string) => {
+          onAddTrade={(code: string, currentPrice?: number) => {
             setTradeFormCode(code)
+            setTradeFormPrice(currentPrice)
             setShowTradeFormModal(true)
           }}
           onAddCashFlow={() => setShowCashFlowFormModal(true)}
@@ -306,9 +310,11 @@ export function MyPage() {
         onClose={() => {
           setShowTradeFormModal(false)
           setTradeFormCode(undefined)
+          setTradeFormPrice(undefined)
         }}
         onSuccess={handleTradeSuccess}
         defaultEtfCode={tradeFormCode}
+        defaultPrice={tradeFormPrice}
       />
 
       <TradeHistoryModal

@@ -76,7 +76,7 @@ interface HoldingsListProps {
   isInCompare?: (code: string) => boolean
   onCompareToggle?: (code: string) => void
   onTradeHistory?: () => void
-  onAddTrade?: (code: string) => void
+  onAddTrade?: (code: string, currentPrice?: number) => void
   onAddCashFlow?: () => void
   readOnly?: boolean
   includeSold?: boolean
@@ -643,7 +643,12 @@ export function HoldingsList({
                           {(readOnly || onAddTrade) && (
                             <button
                               className={styles.tradeBtn}
-                              onClick={() => onAddTrade?.(holding.etf_code)}
+                              onClick={() =>
+                                onAddTrade?.(
+                                  holding.etf_code,
+                                  holding.current_price
+                                )
+                              }
                               type="button"
                               title="取引登録"
                               disabled={readOnly}
@@ -685,7 +690,9 @@ export function HoldingsList({
                     : undefined
                 }
                 onAddTrade={
-                  onAddTrade ? () => onAddTrade(holding.etf_code) : undefined
+                  onAddTrade
+                    ? () => onAddTrade(holding.etf_code, holding.current_price)
+                    : undefined
                 }
                 isInCompare={isInCompare?.(holding.etf_code)}
                 onCompareToggle={
