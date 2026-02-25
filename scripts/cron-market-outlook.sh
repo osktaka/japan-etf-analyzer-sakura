@@ -11,7 +11,7 @@ LOGDIR="/tmp"
 # Claude CLIセッション内からの実行対策（入れ子セッション防止）
 unset CLAUDECODE
 
-claude -p "/market-outlook" \
+setsid --wait claude -p "/market-outlook" \
   --allowedTools "WebSearch WebFetch Bash Read Write Edit Glob Grep Task Skill" \
   > "$LOGDIR/market-outlook-${TIMESTAMP}.log" 2>&1
 STEP1_EXIT=$?
@@ -19,7 +19,7 @@ STEP1_EXIT=$?
 sleep 3
 
 # 2. X投稿文生成（レポート読み→Markdown書き出しのみ）
-claude -p "最新のmarket-outlookのレポートをもとにX用の投稿を書いて。1つの投稿にまとまらなければ複数投稿を書いて。出力はreports/tmp_x_posts.mdに書き出して。表題の右には「[テスト]」と付けて。1つの投稿は200文字程度にまとめて" \
+setsid --wait claude -p "最新のmarket-outlookのレポートをもとにX用の投稿を書いて。1つの投稿にまとまらなければ複数投稿を書いて。出力はreports/tmp_x_posts.mdに書き出して。表題の右には「[テスト]」と付けて。1つの投稿は200文字程度にまとめて" \
   --allowedTools "Read Write Glob Grep" \
   > "$LOGDIR/market-x-posts-${TIMESTAMP}.log" 2>&1
 STEP2_EXIT=$?

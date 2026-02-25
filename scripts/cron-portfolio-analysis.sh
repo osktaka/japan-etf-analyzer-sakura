@@ -75,7 +75,7 @@ echo "Log: $LOGFILE"
 # Claude CLIセッション内からの実行対策（入れ子セッション防止）
 unset CLAUDECODE
 
-timeout 3600 claude -p "$PROMPT" \
+setsid --wait timeout 3600 claude -p "$PROMPT" \
   --allowedTools "WebSearch WebFetch Bash Read Write Edit Glob Grep Task TaskOutput Skill" \
   > "$LOGFILE" 2>&1
 STEP2_EXIT=$?
