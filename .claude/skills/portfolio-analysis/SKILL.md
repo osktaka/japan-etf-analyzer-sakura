@@ -5,7 +5,7 @@
 name: portfolio-analysis
 description: ポートフォリオ定量分析・最適化（システム全データ活用）
 user-invocable: true
-allowed-tools: Read, Grep, Glob, Bash, Task, WebSearch, WebFetch, AskUserQuestion, Write
+allowed-tools: Read, Grep, Glob, Bash, Task, TaskOutput, WebSearch, WebFetch, AskUserQuestion, Write
 aliases: ["/portfolio-analysis", "/pf-analysis"]
 ---
 ```

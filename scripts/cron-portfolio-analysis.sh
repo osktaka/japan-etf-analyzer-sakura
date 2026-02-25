@@ -72,10 +72,18 @@ LOGFILE="$LOGDIR/portfolio-analysis-${USER}-${TIMESTAMP}.log"
 echo "Starting portfolio-analysis for user=$USER mode=$MODE ..."
 echo "Log: $LOGFILE"
 
+# Claude CLIセッション内からの実行対策（入れ子セッション防止）
+unset CLAUDECODE
+
 timeout 3600 claude -p "$PROMPT" \
-  --allowedTools "WebSearch WebFetch Bash Read Write Edit Glob Grep Task Skill" \
+  --allowedTools "WebSearch WebFetch Bash Read Write Edit Glob Grep Task TaskOutput Skill" \
   > "$LOGFILE" 2>&1
 STEP2_EXIT=$?
+
+if [ ! -s "$LOGFILE" ]; then
+  echo "Warning: Log file is empty. Claude CLI may have failed to start."
+  echo "Hint: Try running 'claude -p ...' manually to check for errors."
+fi
 
 if [ $STEP2_EXIT -eq 124 ]; then
   echo "Error: portfolio-analysis timed out (3600s)"

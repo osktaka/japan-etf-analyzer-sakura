@@ -8,6 +8,9 @@ TIMESTAMP=$(date +%Y%m%d-%H%M)
 LOGDIR="/tmp"
 
 # 1. market-outlookレポート生成
+# Claude CLIセッション内からの実行対策（入れ子セッション防止）
+unset CLAUDECODE
+
 claude -p "/market-outlook" \
   --allowedTools "WebSearch WebFetch Bash Read Write Edit Glob Grep Task Skill" \
   > "$LOGDIR/market-outlook-${TIMESTAMP}.log" 2>&1
