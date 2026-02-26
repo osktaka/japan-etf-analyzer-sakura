@@ -1,6 +1,6 @@
 """Performance cache recalculation service."""
 import sys
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import List, Optional
 
@@ -55,7 +55,7 @@ class PerformanceCacheService:
         Returns:
             Dictionary with etf_code and updated_periods, or None if data not available
         """
-        from src.models import PerformanceCache, db
+        from src.models import ETF, PerformanceCache, db
 
         # Get all periods defined in update_etf_data.py
         periods = list(PERIODS.keys())
@@ -64,6 +64,10 @@ class PerformanceCacheService:
         batch_data = self.chart_service.get_batch_periods_chart_data(etf_code, periods)
         if not batch_data:
             return None
+
+        # 上場日ベースの期間カバレッジガード用: 経過日数を算出
+        etf = ETF.query.get(etf_code)
+        days_since_listing = self._calc_days_since_listing(etf)
 
         # Convert each period's chart data to DataFrame and calculate metrics
         updated_periods = []
@@ -83,6 +87,13 @@ class PerformanceCacheService:
             volatility = (
                 calculate_volatility_from_df(df, 365) if period_id == "1y" else None
             )
+
+            # 上場日ベースの期間カバレッジガード:
+            # 経過日数が期間の必要日数に満たない場合、リターン指標を無効化
+            # ※ volatility はガード対象外（期間依存しない直近ボラとして扱う）
+            if days_since_listing is not None and days_since_listing < days:
+                return_rate = None
+                regression_rate = None
 
             # UPSERT to PerformanceCache
             existing = PerformanceCache.query.filter_by(
@@ -113,6 +124,20 @@ class PerformanceCacheService:
             "etf_code": etf_code,
             "updated_periods": updated_periods,
         }
+
+    @staticmethod
+    def _calc_days_since_listing(etf) -> Optional[int]:
+        """上場日からの経過日数を算出する。
+
+        Args:
+            etf: ETF model instance (or None)
+
+        Returns:
+            経過日数。ETFが見つからないか listing_date が NULL の場合は None
+        """
+        if etf is None or etf.listing_date is None:
+            return None
+        return (date.today() - etf.listing_date).days
 
     def _chart_data_to_dataframe(self, chart_data: List[dict]) -> pd.DataFrame:
         """Convert chart data to pandas DataFrame.
