@@ -275,7 +275,10 @@ def update_etf_info(
     market_price: Optional[float] = None,
 ) -> None:
     """Update ETF info (dividend yield, total assets, market price)."""
+    from sqlalchemy import func
+
     from src.models import ETF, db
+    from src.models.price_history import PriceHistory
 
     etf = ETF.query.filter_by(code=code).first()
     if etf:
@@ -285,6 +288,15 @@ def update_etf_info(
             etf.total_assets = total_assets
         if market_price is not None:
             etf.market_price = market_price
+
+        # listing_dateがNULLの場合、PriceHistoryの最古日付で補完
+        if etf.listing_date is None:
+            oldest = db.session.query(func.min(PriceHistory.date)).filter(
+                PriceHistory.etf_code == code
+            ).scalar()
+            if oldest is not None:
+                etf.listing_date = oldest
+
         db.session.commit()
 
 
