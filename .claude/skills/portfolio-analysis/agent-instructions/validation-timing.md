@@ -12,19 +12,22 @@ Phase 1/Phase 2完了後に、メインエージェントから委譲される�
 
 ## Phase 1完了後の検証
 
-### 出力ファイルサイズチェック
+### Phase 1出力の品質検証
 
-speed/normalモード:
-- `{WORK_DIR}/10_quant_analysis.md` - 500バイト以上
-- `{WORK_DIR}/10_score_analysis.md` - 500バイト以上
-- `{WORK_DIR}/10_allocation_analysis.md` - 500バイト以上（存在しない場合はスキップ）
+以下のPythonスクリプトを実行して品質検証を行う:
 
-debateモード:
-- `{WORK_DIR}/10_analyst_a_analysis.md` - 500バイト以上
-- `{WORK_DIR}/10_analyst_b_analysis.md` - 500バイト以上
-- `{WORK_DIR}/10_analyst_c_analysis.md` - 500バイト以上
-- `{WORK_DIR}/10_analyst_d_analysis.md` - 500バイト以上
-- `{WORK_DIR}/10_analyst_e_analysis.md` - 500バイト以上
+```bash
+python {skill_dir}/scripts/validate_phase1.py {WORK_DIR} {mode}
+```
+
+スクリプトはJSON結果をstdoutに出力する。結果のstatusフィールドを確認する。
+
+### 品質検証NGの場合の自己修正ルール
+
+- スクリプト結果にNG項目がある場合 → **NG該当のanalystのみ**に具体的なNG項目を伝えて再実行（**1回のみ**、他のOK analystは再実行しない）
+- 再実行後もNG → 「修正試行済み・品質警告あり」として続行し、最終レポートの「注意事項」に警告を記載
+- speedモード時: 所要時間優先のため再実行をスキップし、警告のみ記録
+- **スクリプト異常終了時**（Python実行失敗等）: 各ファイルの `wc -c` でサイズ500バイト以上を確認するフォールバックを実行し、警告を記録して続行
 
 ### timing.json一括書き込み
 
@@ -64,8 +67,9 @@ print('timing updated')
 ### 戻り値フォーマット
 
 成功時: `「検証完了: quant=OK(2.1KB) score=OK(1.8KB) alloc=OK(1.5KB) timing更新済み」`
+WARN時: `「検証完了(WARN): quant=OK(2.1KB) score=WARN(score_range:NG) alloc=OK(1.5KB) timing更新済み」`
 debateモード: `「検証完了: A=OK(3.2KB) B=OK(2.8KB) C=OK(3.0KB) D=OK(2.5KB) E=OK(2.7KB) timing更新済み」`
-失敗時: `「検証失敗: [失敗ファイル名]が500バイト未満（XXバイト）」`
+フォールバック時: `「検証完了(フォールバック): quant=OK(2.1KB) score=OK(1.8KB) alloc=OK(1.5KB) timing更新済み ※スクリプト実行失敗」`
 
 ## Phase 2完了後の検証
 

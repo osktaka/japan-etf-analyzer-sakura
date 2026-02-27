@@ -79,6 +79,7 @@
 以下のファイルを読み込み、記載された観点で分析結果間の矛盾・整合性を検証する:
 
 - **参照ファイル**: `{skill_dir}/agent-instructions/crossreview-normal.md`
+- **競合時のルール**: 3分析の見解が競合する場合は、crossreview-normal.mdの「アクション決定ルール」に従いアクションを決定する
 
 ### debateモード
 
