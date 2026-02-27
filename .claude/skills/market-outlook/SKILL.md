@@ -70,7 +70,9 @@ aliases: ["/market-outlook"]
    ※ 非営業日でもニュース選定・注目ETF等の出力があるためレビューは実施する
         ↓
 5. 妥当性チェック R1（サブエージェント群）
-   5.1 R1: マクロ経済派 + テクニカル派を並列起動（各300tok以内）
+   5.1 R1: マクロ経済派 + テクニカル派を並列起動
+    - 各ペルソナの出力を /tmp/market-outlook-review/r1_{macro|technical}.md に保存
+    - メインは要約のみ抽出（各300tok以内）
    5.2 レビュー統合（メイン）: 2視点の指摘をドラフトに反映
        ├─ 合意点 → ドラフト修正
        └─ 対立点 → 両論併記（「マクロ面では〜、テクニカル面では〜」）
@@ -108,7 +110,7 @@ aliases: ["/market-outlook"]
 テンプレート: ~/.claude/prompts/subagent/multi_persona_r1.md
 
 パラメータマッピング:
-- {{shared_data}} = Step 3ドラフト全文
+- {{shared_data}} = Step 3ドラフトから以下を除外した内容: ソース一覧セクション、メタデータコメント（<!-- prediction: ... -->）、保有銘柄データセクション（portfolioモード時の生JSON）
 - {{theme}} = review-personas.md の AM/PM テーマテンプレート（timingに応じて選択）
 - {{persona_name}} = review-personas.md の各ペルソナ名
 - {{persona_stance}} = review-personas.md の各ペルソナ立場
@@ -127,6 +129,13 @@ aliases: ["/market-outlook"]
 - R1は2つとも `run_in_background: true` で並列起動する
 - TaskOutputで完了待機（タイムアウト180秒）、要約のみ抽出（各300tok以内）
 - 統合後にR1生出力は破棄してよい
+- サブエージェント（Step 2: データ収集）の戻り値は800トークン以内に収める
+- R1サブエージェントの出力は `/tmp/market-outlook-review/` 配下にファイル保存して返却する
+  - マクロ経済派: `/tmp/market-outlook-review/r1_macro.md`
+  - テクニカル派: `/tmp/market-outlook-review/r1_technical.md`
+- メインエージェントはR1出力ファイルを読み込み、要約（各300tok以内）のみをコンテキストに取り込む
+- 統合完了後、`/tmp/market-outlook-review/` ディレクトリを削除する
+- これにより、R1の生出力（各ペルソナの詳細分析）はメインコンテキストを経由せず、要約のみが残る
 
 ## フォールバックルール
 
