@@ -4,11 +4,11 @@
 # NAME: 銘柄マスター更新＋スコア再計算（毎週月曜 6:00）
 0 6 * * 1 cd /app && /usr/local/bin/python3 scripts/sync_etf_from_jpx.py >> /app/logs/master_sync.log 2>&1 && /usr/local/bin/python3 scripts/update_scores.py --skip-dep-check >> /app/logs/score_update.log 2>&1
 
-# NAME: 株価データ更新（平日 18:00）
-0 18 * * 1-5 cd /app && /usr/local/bin/python3 scripts/update_etf_data.py --smart --rate-limit 3.0 >> /app/logs/etf_update.log 2>&1
+# NAME: 株価データ更新（平日 17:00）
+0 17 * * 1-5 cd /app && /usr/local/bin/python3 scripts/update_etf_data.py --smart --rate-limit 3.0 >> /app/logs/etf_update.log 2>&1
 
-# NAME: 配当利回り更新（平日 18:00）
-0 18 * * 1-5 cd /app && /usr/local/bin/python3 scripts/sync_dividend_from_minkabu.py --rate-limit 1.5 >> /app/logs/dividend_update.log 2>&1
+# NAME: 配当利回り更新（平日 17:00）
+0 17 * * 1-5 cd /app && /usr/local/bin/python3 scripts/sync_dividend_from_minkabu.py --rate-limit 1.5 >> /app/logs/dividend_update.log 2>&1
 
 # NAME: スコア更新・依存チェック付き（平日 10分間隔 16:00-22:59）
 */10 16-22 * * 1-5 cd /app && /usr/local/bin/python3 scripts/update_scores.py >> /app/logs/score_update.log 2>&1
