@@ -8,6 +8,7 @@ import {
   checkDataSufficiency,
   calculatePriceReturn,
   calculateRegressionReturn,
+  formatReturn,
 } from '../../utils/chartUtils'
 import { Loading } from '../common'
 import { PriceChart } from './PriceChart'
@@ -106,12 +107,6 @@ export function MultiPeriodChart({
   const getPeriodLabel = (period: ChartPeriod): string => {
     const found = CHART_PERIODS.find((p) => p.id === period)
     return found?.label ?? period
-  }
-
-  const formatReturn = (value: number | null): string => {
-    if (value === null) return '-'
-    const sign = value >= 0 ? '+' : ''
-    return `${sign}${value.toFixed(1)}%`
   }
 
   return (

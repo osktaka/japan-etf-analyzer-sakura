@@ -10,6 +10,11 @@ import { getETFsChartBatch } from '../../api/etf'
 import { tradesApi } from '../../api/trades'
 import { demoApi } from '../../api/demo'
 import { CHART_PERIODS } from '../../utils/constants'
+import {
+  calculatePriceReturn,
+  calculateRegressionReturn,
+  formatReturn,
+} from '../../utils/chartUtils'
 import { Loading, ErrorMessage } from '../common'
 import { PriceChart } from '../chart/PriceChart'
 import styles from './HoldingsChartGrid.module.css'
@@ -159,6 +164,15 @@ export function HoldingsChartGrid({
             const data = chartData[code]
             const isMounted = index < mountedCount
 
+            const priceReturn =
+              data && data.data.length > 0
+                ? calculatePriceReturn(data.data)
+                : null
+            const regressionReturn =
+              data && data.data.length > 0
+                ? calculateRegressionReturn(data.data)
+                : null
+
             return (
               <div
                 key={code}
@@ -166,10 +180,33 @@ export function HoldingsChartGrid({
                 onClick={() => onETFClick?.(code)}
               >
                 <div className={styles.cardHeader}>
-                  <span className={styles.etfCode}>{code}</span>
-                  <span className={styles.etfName}>
-                    {holding.etf?.name ?? ''}
-                  </span>
+                  <div className={styles.cardHeaderLeft}>
+                    <span className={styles.etfCode}>{code}</span>
+                    <span className={styles.etfName}>
+                      {holding.etf?.name ?? ''}
+                    </span>
+                  </div>
+                  {priceReturn !== null && (
+                    <div className={styles.returnInfo}>
+                      <span
+                        className={
+                          priceReturn >= 0 ? styles.positive : styles.negative
+                        }
+                      >
+                        株価: {formatReturn(priceReturn)}
+                      </span>
+                      <span className={styles.separator}>/</span>
+                      <span
+                        className={
+                          regressionReturn !== null && regressionReturn >= 0
+                            ? styles.positive
+                            : styles.negative
+                        }
+                      >
+                        回帰: {formatReturn(regressionReturn)}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 {data && data.data.length > 0 ? (
                   isMounted ? (

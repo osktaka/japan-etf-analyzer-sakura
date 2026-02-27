@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChartPeriod } from '../../api'
 import { CHART_PERIODS } from '../../utils/constants'
+import { formatReturn } from '../../utils/chartUtils'
 import { getMomentumInfoFromAnnualized } from '../../utils/momentum'
 import { MomentumBadge } from '../common'
 import styles from './AnnualizedReturnCards.module.css'
@@ -59,12 +60,6 @@ export function AnnualizedReturnCards({
   const getPeriodLabel = (period: ChartPeriod): string => {
     const found = CHART_PERIODS.find((p) => p.id === period)
     return found?.label ?? period
-  }
-
-  const formatReturn = (value: number | null): string => {
-    if (value === null) return '-'
-    const sign = value >= 0 ? '+' : ''
-    return `${sign}${value.toFixed(1)}%`
   }
 
   const handleHelpClick = () => {

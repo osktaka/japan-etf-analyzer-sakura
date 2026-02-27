@@ -243,6 +243,16 @@ export function calculateRegressionReturn(
 }
 
 /**
+ * Format a return value for display (e.g. "+3.2%", "-1.5%", "-")
+ * Returns "-" if value is null
+ */
+export function formatReturn(value: number | null): string {
+  if (value === null) return '-'
+  const sign = value >= 0 ? '+' : ''
+  return `${sign}${value.toFixed(1)}%`
+}
+
+/**
  * Decimate chart data using LTTB (Largest Triangle Three Buckets) algorithm.
  * Preserves visually important data points while reducing total count.
  * First and last points are always preserved.

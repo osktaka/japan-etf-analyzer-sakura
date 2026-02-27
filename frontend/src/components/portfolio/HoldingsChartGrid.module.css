@@ -86,9 +86,38 @@
 .cardHeader {
   display: flex;
   align-items: baseline;
+  justify-content: space-between;
   gap: var(--spacing-xs);
   margin-bottom: var(--spacing-xs);
   min-width: 0;
+}
+
+.cardHeaderLeft {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-xs);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.returnInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--text-xs);
+  flex-shrink: 0;
+}
+
+.positive {
+  color: #22c55e;
+}
+
+.negative {
+  color: #ef4444;
+}
+
+.separator {
+  color: var(--color-text-muted);
 }
 
 .etfCode {
@@ -169,5 +198,9 @@
 
   .grid {
     gap: var(--spacing-xs);
+  }
+
+  .returnInfo {
+    display: none;
   }
 }
