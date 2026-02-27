@@ -64,7 +64,14 @@ export function PortfolioValueChart({ demoMode }: PortfolioValueChartProps = {})
 
   const mergedData = useMemo(() => {
     const decimated = decimateChartData(data, 500, (d) => d.value)
-    return mergeTradesWithChartData(decimated, trades)
+    const merged = mergeTradesWithChartData(decimated, trades)
+    return merged.map((d, i) => {
+      if (i === 0) return { ...d, dailyChange: null, dailyChangePct: null }
+      const prev = merged[i - 1]
+      const change = d.value - prev.value
+      const pct = prev.value !== 0 ? Math.round((change / prev.value) * 10000) / 100 : null
+      return { ...d, dailyChange: change, dailyChangePct: pct }
+    })
   }, [data, trades])
 
   const handleMarkerClick = useCallback(
@@ -176,6 +183,19 @@ export function PortfolioValueChart({ demoMode }: PortfolioValueChartProps = {})
                     <p className={styles.tooltipRow} style={{ fontWeight: 600 }}>
                       総資産: {formatPrice(data.value)}
                     </p>
+                    {data.dailyChange != null && data.dailyChangePct != null && (
+                      <p
+                        className={styles.tooltipRow}
+                        style={{
+                          color: data.dailyChange >= 0 ? '#10b981' : '#ef4444',
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        前日比: {data.dailyChange >= 0 ? '+' : ''}
+                        {formatPrice(data.dailyChange)} ({data.dailyChange >= 0 ? '+' : ''}
+                        {data.dailyChangePct.toFixed(2)}%)
+                      </p>
+                    )}
                   </div>
                 )
               }}
