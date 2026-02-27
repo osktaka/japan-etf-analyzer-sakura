@@ -19,7 +19,7 @@ STEP1_EXIT=$?
 sleep 3
 
 # 2. X投稿文生成（レポート読み→Markdown書き出しのみ）
-setsid --wait claude -p "最新のmarket-outlookのレポートをもとにX用の投稿を書いて。market-outlookのレポート内容から最適なポイントを抽出して。X投稿用に最適な文章を構成して。1つの投稿は180文字程度にまとめて。1つの投稿にまとまらなければ複数投稿を書いて。表題の右には「[テスト]」と付けて。出力はreports/tmp_x_posts.mdに書き出して。" \
+setsid --wait claude -p "最新のmarket-outlookのレポートをもとにX用の投稿を書いて。market-outlookのレポート内容から最適なポイントを抽出して。X投稿用に最適な文章を構成して。1つの投稿は180文字程度にまとめて。1つの投稿にまとまらなければ複数投稿を書いて。表題の右には「[テスト]」と付けて。出力はreports/tmp_x_posts.mdに書き出して。コンテキスト使用サイズを抑えるように最適な実行をして。" \
   --allowedTools "Read Write Glob Grep" \
   > "$LOGDIR/market-x-posts-${TIMESTAMP}.log" 2>&1
 STEP2_EXIT=$?
