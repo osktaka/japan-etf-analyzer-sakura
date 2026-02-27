@@ -28,12 +28,15 @@ aliases: ["/market-outlook"]
 /market-outlook portfolio    # 自動判定 + ポートフォリオモード
 /market-outlook am portfolio # AM + ポートフォリオ
 /market-outlook pm portfolio # PM + ポートフォリオ
+/market-outlook am --no-review           # AM + レビュー省略
+/market-outlook pm --no-review portfolio # PM + ポートフォリオ + レビュー省略
 ```
 
 - 引数順序は自由（`portfolio pm` も可）
 - am/pm未指定時は現在時刻（JST）で自動判定（15:30が境界）
-- 有効引数: `am`, `pm`, `portfolio`。不正引数は無視して警告出力
+- 有効引数: `am`, `pm`, `portfolio`, `--no-review`。不正引数は無視して警告出力
 - `am pm` 同時指定: 自動判定にフォールバック
+- `--no-review`: 妥当性チェック（R1）をスキップする
 
 ## 実行フロー
 
@@ -41,6 +44,7 @@ aliases: ["/market-outlook"]
 1. モード判定（メイン）
    ├─ timing: 引数 or 現在時刻から自動判定（15:30境界）
    ├─ mode: general / portfolio
+   ├─ no_review: --no-review引数の有無
    └─ パラメータ算出:
         ├─ date: 本日の日付（スキル実行日。次の取引日ではない）
         ├─ prev_business_day: dateの直前の東証営業日
@@ -52,16 +56,29 @@ aliases: ["/market-outlook"]
    ├─ Task(general-purpose) で agent-instructions/market-data-collection.md に従い実行
    └─ timing に応じた収集・テンプレートで返却
         ↓
-3. 総合判断・テンプレート出力（メイン）
+3. ドラフト生成（メイン）※未保存
+   ├─ データ収集サブの構造化出力 + メインの総合判断・テンプレート出力
    ├─ AM: 見通し判断（上昇/下落/横ばい + 確信度）
    └─ PM: 結果まとめ + AM予想との比較
    　　　├─ AMファイル（reports/market-outlook/YYYYMMDD_am.md）を読み込みメタデータをパース
    　　　├─ AMファイルなし: 比較セクション省略
    　　　└─ パース失敗: 「AM予想データの読み取り失敗」と明記
         ↓
-4. ファイル保存（メイン）
-   ├─ AM: reports/market-outlook/YYYYMMDD_am.md
-   └─ PM: reports/market-outlook/YYYYMMDD_pm.md
+4. レビュー実施判定（メイン）
+   ├─ --no-review → Step 6へ直行（<!-- review_skipped: user_opt_out -->）
+   └─ AM未実行でPM実行（AMファイル不在で判定）→ Step 6へ直行（<!-- review_skipped: no_am_reference -->）
+   ※ 非営業日でもニュース選定・注目ETF等の出力があるためレビューは実施する
+        ↓
+5. 妥当性チェック R1（サブエージェント群）
+   5.1 R1: マクロ経済派 + テクニカル派を並列起動（各300tok以内）
+   5.2 レビュー統合（メイン）: 2視点の指摘をドラフトに反映
+       ├─ 合意点 → ドラフト修正
+       └─ 対立点 → 両論併記（「マクロ面では〜、テクニカル面では〜」）
+        ↓
+6. ファイル保存（メイン）
+   ├─ AM: reports/market-outlook/YYYYMMDD_am.md（改善版ドラフト）
+   ├─ PM: reports/market-outlook/YYYYMMDD_pm.md（改善版ドラフト）
+   └─ reports/market-outlook/review/YYYYMMDD_{am|pm}.md（レビュー要約）
 ```
 
 ## サブエージェント起動プロンプト
@@ -85,16 +102,44 @@ aliases: ["/market-outlook"]
 戻り値は指示書の出力テンプレート形式のみで返却してください。
 ```
 
+### 妥当性チェック（Step 5: R1）
+
+ペルソナ定義: agent-instructions/review-personas.md を参照
+テンプレート: ~/.claude/prompts/subagent/multi_persona_r1.md
+
+パラメータマッピング:
+- {{shared_data}} = Step 3ドラフト全文
+- {{theme}} = review-personas.md の AM/PM テーマテンプレート（timingに応じて選択）
+- {{persona_name}} = review-personas.md の各ペルソナ名
+- {{persona_stance}} = review-personas.md の各ペルソナ立場
+- {{persona_values}} = review-personas.md の各ペルソナ価値観
+- {{persona_anti_values}} = review-personas.md の各ペルソナ否定価値
+- {{persona_reasoning_style}} = review-personas.md の各ペルソナ推論スタイル
+- {{conflict_matrix}} = review-personas.md の対立軸マトリクス
+- {{codebase_context}} = ""（空文字列）
+
+起動: Task(general-purpose) x 2（並列、run_in_background: true）
+
 ## コンテキスト管理ルール
 
 - `agent-instructions/` 配下のファイルはメインエージェントが直接読まない（サブエージェントが読む）
 - サブエージェントの戻り値は構造化テーブルのみ（生テキスト・HTML断片は含まない）
+- R1は2つとも `run_in_background: true` で並列起動する
+- TaskOutputで完了待機（タイムアウト180秒）、要約のみ抽出（各300tok以内）
+- 統合後にR1生出力は破棄してよい
 
 ## フォールバックルール
 
 - サブエージェントの戻り値に `portfolio取得失敗` が含まれる場合、一般モードとして出力し、その旨を明記する
 - PM実行時、セクター別データが `<!-- sector_data_unavailable -->` の場合、セクター別騰落セクションを省略する
 - 注目ETFデータが取得できない場合、該当セクションを省略し、`<!-- etf_recommendation_unavailable -->` を出力末尾に付与する
+- `--no-review` → Step 4-5スキップ + `<!-- review_skipped: user_opt_out -->`
+- AM未実行でPM（`reports/market-outlook/YYYYMMDD_am.md` 不在で判定）→ レビュースキップ + `<!-- review_skipped: no_am_reference -->`
+- 非営業日: レビュー実施する（ニュース選定・注目ETF等の分析内容があるため）
+- R1両方タイムアウト（180秒）→ レビュースキップ + `<!-- review_skipped: R1_timeout -->`
+- R1片方タイムアウト → もう片方のR1結果のみで簡易統合 + `<!-- review_partial: {ペルソナ名}_timeout -->`
+  - 簡易統合: 成功側ペルソナの指摘のみをドラフトに反映、「単視点レビュー」と明記
+- R1両者の主張が完全一致（推奨方向同一 かつ 主要根拠3点以上合致 かつ リスク認識共通）→ レビュー完了 + `<!-- review_complete: consensus -->`
 
 ## AM出力フォーマット（一般モード）
 
@@ -262,10 +307,47 @@ PMの出力の「AM予想との比較」の後、Sourcesの前に以下のセク
 {保有銘柄全体としての本日の結果を2-3文で分析}
 ```
 
+## レビュー統合ロジック（Step 5.2）
+
+R1のみの場合、統合はメインエージェントが直接実施（統合サブ不要）:
+
+1. 2ペルソナのR1出力を読み込む
+2. 指摘を分類:
+   - 合意点（両者が同じ指摘）→ ドラフト該当箇所を修正
+   - 片方のみの指摘 → ドラフトに注記として追記
+   - 対立点 → 両論併記（「マクロ面では〜、テクニカル面では〜」）
+3. 改善禁止: 指標数値・ソース一覧・メタデータの変更禁止
+   ※ 確信度の見直しが合意された場合のみメタデータ更新可
+4. ドラフト末尾に `<!-- review_applied: {改善要約1行} -->` を付与
+5. R1要約を `reports/market-outlook/review/YYYYMMDD_{am|pm}.md` に保存
+   （Step 5.2完了直後に保存。reviewディレクトリは初回実行時に自動作成）
+
+### レビュー要約ファイルフォーマット
+
+```markdown
+# レビュー要約 YYYY-MM-DD {AM|PM}
+
+## マクロ経済派
+- 主張: {1行}
+- 根拠: {箇条書き}
+- 確信度: {高|中|低}
+
+## テクニカル派
+- 主張: {1行}
+- 根拠: {箇条書き}
+- 確信度: {高|中|低}
+
+## 統合結果
+- 合意点: {箇条書き}
+- 対立点: {箇条書き}
+- 適用した改善: {1行要約}
+```
+
 ## ファイル保存ルール
 
 - **AM保存先**: `reports/market-outlook/YYYYMMDD_am.md`（dateパラメータ＝実行日の日付を使用）
 - **PM保存先**: `reports/market-outlook/YYYYMMDD_pm.md`
+- **レビュー要約保存先**: `reports/market-outlook/review/YYYYMMDD_{am|pm}.md`
 - **ファイル名の日付は実行日（処理日）**: 例えば2/21(金)にAM実行→`20260221_am.md`。次の取引日(2/24)ではない
 - **保存内容**: 出力フォーマットの内容をそのまま保存（コンソール出力と同一）
 - **同一timing・同日のファイルが存在する場合**: 上書きする
@@ -287,6 +369,10 @@ PMの出力の「AM予想との比較」の後、Sourcesの前に以下のセク
 - [ ] ソース一覧が出力されている
 - [ ] [portfolioモード] 保有銘柄への影響/結果分析が含まれている
 - [ ] `reports/market-outlook/YYYYMMDD_{timing}.md` に保存されている
+- [ ] [AM/PM共通] 妥当性チェック（R1）が実行されている（--no-review時を除く）
+- [ ] [AM/PM共通] 改善版ドラフトに `<!-- review_applied: ... -->` コメントが含まれている
+- [ ] [AM/PM共通] レビュースキップ時は `<!-- review_skipped: {理由} -->` が含まれている
+- [ ] [AM/PM共通] `reports/market-outlook/review/YYYYMMDD_{am|pm}.md` にレビュー要約が保存されている
 
 ## 関連スキル
 
