@@ -344,6 +344,13 @@ class PortfolioService:
 
         total_asset = total_value + cash_balance
 
+        # Calculate daily change (include sold ETFs for accurate prev-day calculation)
+        etf_codes = list(set(t.etf_code for t in trades))
+        daily_change = self._calculate_daily_change(
+            etf_codes, trades, cash_flows,
+            total_asset, total_value, unrealized_pnl, cash_balance,
+        )
+
         return {
             "total_value": round(total_value, 2),
             "total_cost": round(total_cost, 2),
@@ -352,6 +359,7 @@ class PortfolioService:
             "holdings_count": len(holdings),
             "cash_balance": round(cash_balance, 2),
             "total_asset": round(total_asset, 2),
+            **daily_change,
         }
 
     def get_valuation_history(self, user_id: int, period: str = "1y") -> List[Dict]:
@@ -434,6 +442,73 @@ class PortfolioService:
         logger.info(f"Valuation history cached: user_id={user_id}, period={period}")
 
         return result
+
+    def _calculate_daily_change(
+        self,
+        etf_codes: List[str],
+        trades: List,
+        cash_flows: List,
+        current_total_asset: float,
+        current_total_value: float,
+        current_unrealized_pnl: float,
+        current_cash_balance: float = 0.0,
+    ) -> Dict[str, Optional[float]]:
+        """Calculate daily change by comparing with previous business day."""
+        none_result = {
+            "daily_change_total_asset": None,
+            "daily_change_total_asset_percent": None,
+            "daily_change_total_value": None,
+            "daily_change_total_value_percent": None,
+            "daily_change_unrealized_pnl": None,
+            "daily_change_unrealized_pnl_percent": None,
+            "daily_change_cash_balance": None,
+            "daily_change_cash_balance_percent": None,
+        }
+
+        if not etf_codes or not trades:
+            return none_result
+
+        try:
+            today = date.today()
+            start = today - timedelta(days=10)
+            price_map = self._build_price_map(etf_codes, start)
+
+            # Find previous business day (latest date before today in price_map)
+            prev_dates = sorted(d for d in price_map if d < today)
+            if not prev_dates:
+                return none_result
+
+            prev_date = prev_dates[-1]
+            prev = self._calculate_value_at_date(
+                trades, prev_date, price_map, cash_flows
+            )
+            prev_total_value = prev["total_asset"] - prev["cash_balance"]
+
+            def _change(
+                current: float, previous: float
+            ) -> Tuple[Optional[float], Optional[float]]:
+                diff = round(current - previous, 2)
+                pct = round(diff / previous * 100, 2) if previous != 0 else None
+                return diff, pct
+
+            da, dap = _change(current_total_asset, prev["total_asset"])
+            dv, dvp = _change(current_total_value, prev_total_value)
+            du, dup = _change(current_unrealized_pnl, prev["unrealized_pnl"])
+            dc, dcp = _change(current_cash_balance, prev["cash_balance"])
+
+            return {
+                "daily_change_total_asset": da,
+                "daily_change_total_asset_percent": dap,
+                "daily_change_total_value": dv,
+                "daily_change_total_value_percent": dvp,
+                "daily_change_unrealized_pnl": du,
+                "daily_change_unrealized_pnl_percent": dup,
+                "daily_change_cash_balance": dc,
+                "daily_change_cash_balance_percent": dcp,
+            }
+        except Exception:
+            logger.debug("Failed to calculate daily change", exc_info=True)
+            return none_result
 
     def _build_price_map(
         self, etf_codes: List[str], start_date: date

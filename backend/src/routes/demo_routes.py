@@ -32,6 +32,14 @@ def _empty_portfolio_summary():
         "holdings_count": 0,
         "cash_balance": 0,
         "total_asset": 0,
+        "daily_change_total_asset": None,
+        "daily_change_total_asset_percent": None,
+        "daily_change_total_value": None,
+        "daily_change_total_value_percent": None,
+        "daily_change_unrealized_pnl": None,
+        "daily_change_unrealized_pnl_percent": None,
+        "daily_change_cash_balance": None,
+        "daily_change_cash_balance_percent": None,
     }
 
 

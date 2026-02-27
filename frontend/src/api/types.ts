@@ -223,6 +223,14 @@ export interface PortfolioSummary {
   holdings_count: number
   cash_balance: number
   total_asset: number
+  daily_change_total_asset: number | null
+  daily_change_total_asset_percent: number | null
+  daily_change_total_value: number | null
+  daily_change_total_value_percent: number | null
+  daily_change_unrealized_pnl: number | null
+  daily_change_unrealized_pnl_percent: number | null
+  daily_change_cash_balance: number | null
+  daily_change_cash_balance_percent: number | null
 }
 
 export type ValuationHistoryPeriod =
