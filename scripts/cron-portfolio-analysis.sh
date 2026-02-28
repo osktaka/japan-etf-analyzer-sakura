@@ -106,5 +106,30 @@ if [ $STEP3_EXIT -ne 0 ]; then
   echo "Warning: metrics extraction failed (exit code $STEP3_EXIT), continuing..."
 fi
 
+# --- Step 4: ドラフト記事作成（demoユーザーのみ） ---
+
+if [ "$USER" = "demo" ]; then
+  echo "Starting publish-report auto for user=$USER ..."
+
+  read -r -d '' PROMPT4 << 'EOF'
+/publish-report auto
+EOF
+
+  setsid --wait timeout 600 claude -p "$PROMPT4" \
+    --allowedTools "Read Glob Grep Write Bash Skill" \
+    >> "$LOGFILE" 2>&1
+  STEP4_EXIT=$?
+
+  if [ $STEP4_EXIT -eq 124 ]; then
+    echo "Warning: publish-report timed out (600s), continuing..."
+  elif [ $STEP4_EXIT -ne 0 ]; then
+    echo "Warning: publish-report failed with exit code $STEP4_EXIT, continuing..."
+  fi
+
+  sleep 3
+else
+  echo "Skipping publish-report (user=$USER is not demo)"
+fi
+
 echo "Done. Log: $LOGFILE"
 exit 0

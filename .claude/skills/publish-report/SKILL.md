@@ -19,6 +19,7 @@ aliases: ["/publish-report", "/pub-report"]
 /publish-report draft           # ドラフト作成（同上）
 /publish-report [レポートパス]   # 指定レポートでドラフト作成
 /publish-report confirm         # ドラフトを確定・公開
+/publish-report auto            # 自動実行用（AskUserQuestionをスキップしてドラフトを直接保存）
 ```
 
 ## 記事トーン
@@ -55,6 +56,14 @@ aliases: ["/publish-report", "/pub-report"]
 6. OKなら `reports/demo/drafts/YYYYMMDD_draft.md` に保存
 7. **この段階では HISTORY.md を触らない**
 8. 完了メッセージで次のアクションを案内する（「ドラフトを確認して、確定する場合は `/publish-report confirm` と指示してください。修正が必要な場合は再度 `/publish-report` を実行してください。」）
+
+#### `auto` モード時の動作
+
+cronスクリプトからの自動実行用。Phase 1-2 は通常モードと同一。Phase 3 は以下が異なる:
+
+- 手順5のAskUserQuestionを**スキップ**し、ドラフトを直接保存する
+- 品質チェック結果を stdout に出力する
+- 手順8の完了メッセージ（次のアクション案内）を**省略**する
 
 ## 確定モード（Phase 4-5）
 

@@ -55,6 +55,7 @@ reports/demo/YYYYMMDD_demo.md
 - ドラフトは `reports/demo/drafts/YYYYMMDD_draft.md` に保存される
 - **HISTORY.md は触らない**（ドラフト段階では履歴を更新しない）
 - 何度でも作り直し可能（上書き保存）
+- cronスクリプト（`scripts/cron-portfolio-analysis.sh`）実行時は、Step 3の後に `/publish-report auto` が自動実行され、ドラフトが作成される
 
 → **次のアクション**: ドラフトを確認し、記事確定へ進む場合は `/publish-report confirm` と指示してください。修正が必要な場合は再度 `/publish-report` を実行してください。
 
