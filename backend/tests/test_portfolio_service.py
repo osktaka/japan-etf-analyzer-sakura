@@ -935,3 +935,258 @@ def test_include_sold_false_default(
     assert holdings[0]["total_sell_amount"] == 0.0
     # total_pnl_percent = 25000 / 125000 * 100 = 20.0
     assert holdings[0]["total_pnl_percent"] == 20.0
+
+
+# ============================================================
+# Daily change: non-business day handling
+# ============================================================
+
+def _make_service_for_daily_change(
+    mock_trade_repository, mock_etf_repository,
+    mock_split_repository, mock_cash_flow_repository,
+):
+    """Helper to create a PortfolioService for daily change tests."""
+    mock_split_repository.get_approved_splits_since.return_value = []
+    split_service = SplitAdjustmentService(mock_split_repository)
+    return PortfolioService(
+        mock_trade_repository, mock_etf_repository, split_service,
+        mock_cash_flow_repository,
+    )
+
+
+def _stub_value_at_date(values_by_date):
+    """Return a side_effect function for _calculate_value_at_date mock."""
+    def _side_effect(trades, target_date, price_map, cash_flows):
+        return values_by_date[target_date]
+    return _side_effect
+
+
+class TestDailyChangeNonBusinessDay:
+    """Tests for _calculate_daily_change with non-business day handling."""
+
+    # Shared fixtures
+    DUMMY_TRADES = [
+        Trade(
+            user_id=1,
+            etf_code="1234",
+            trade_type="buy",
+            quantity=100,
+            price=Decimal("1000"),
+            trade_date=date(2024, 1, 1),
+        )
+    ]
+    ETF_CODES = ["1234"]
+    CASH_FLOWS = []
+
+    def test_weekday_with_today_data(
+        self, mock_trade_repository, mock_etf_repository,
+        mock_split_repository, mock_cash_flow_repository,
+    ):
+        """Weekday (today's data exists): compare Friday vs Thursday."""
+        service = _make_service_for_daily_change(
+            mock_trade_repository, mock_etf_repository,
+            mock_split_repository, mock_cash_flow_repository,
+        )
+
+        friday = date(2026, 2, 27)  # Friday
+        thursday = date(2026, 2, 26)  # Thursday
+
+        price_map = {
+            thursday: {"1234": 1000.0},
+            friday: {"1234": 1050.0},
+        }
+        service._build_price_map = Mock(return_value=price_map)
+
+        values_by_date = {
+            thursday: {
+                "total_asset": 100000.0,
+                "unrealized_pnl": 0.0,
+                "cash_balance": 0.0,
+            },
+        }
+        service._calculate_value_at_date = Mock(
+            side_effect=_stub_value_at_date(values_by_date)
+        )
+
+        result = service._calculate_daily_change(
+            etf_codes=self.ETF_CODES,
+            trades=self.DUMMY_TRADES,
+            cash_flows=self.CASH_FLOWS,
+            current_total_asset=105000.0,
+            current_total_value=105000.0,
+            current_unrealized_pnl=5000.0,
+            current_cash_balance=0.0,
+            _today=friday,
+        )
+
+        # Friday - Thursday = 5000
+        assert result["daily_change_total_asset"] == 5000.0
+        assert result["daily_change_total_asset_percent"] == 5.0
+        assert result["daily_change_unrealized_pnl"] == 5000.0
+
+    def test_saturday_no_today_data(
+        self, mock_trade_repository, mock_etf_repository,
+        mock_split_repository, mock_cash_flow_repository,
+    ):
+        """Saturday (no today data): should compare Friday vs Thursday,
+        NOT return all None."""
+        service = _make_service_for_daily_change(
+            mock_trade_repository, mock_etf_repository,
+            mock_split_repository, mock_cash_flow_repository,
+        )
+
+        saturday = date(2026, 2, 28)  # Saturday
+        friday = date(2026, 2, 27)
+        thursday = date(2026, 2, 26)
+
+        # Price map only has trading days (Thu, Fri)
+        price_map = {
+            thursday: {"1234": 1000.0},
+            friday: {"1234": 1050.0},
+        }
+        service._build_price_map = Mock(return_value=price_map)
+
+        values_by_date = {
+            thursday: {
+                "total_asset": 100000.0,
+                "unrealized_pnl": 0.0,
+                "cash_balance": 0.0,
+            },
+        }
+        service._calculate_value_at_date = Mock(
+            side_effect=_stub_value_at_date(values_by_date)
+        )
+
+        result = service._calculate_daily_change(
+            etf_codes=self.ETF_CODES,
+            trades=self.DUMMY_TRADES,
+            cash_flows=self.CASH_FLOWS,
+            current_total_asset=105000.0,
+            current_total_value=105000.0,
+            current_unrealized_pnl=5000.0,
+            current_cash_balance=0.0,
+            _today=saturday,
+        )
+
+        # effective_today=Friday, prev=Thursday → diff = 5000
+        assert result["daily_change_total_asset"] == 5000.0
+        assert result["daily_change_total_asset_percent"] == 5.0
+        assert result["daily_change_unrealized_pnl"] == 5000.0
+
+    def test_monday_before_batch(
+        self, mock_trade_repository, mock_etf_repository,
+        mock_split_repository, mock_cash_flow_repository,
+    ):
+        """Monday before batch: no Monday data yet, should compare
+        Friday vs Thursday."""
+        service = _make_service_for_daily_change(
+            mock_trade_repository, mock_etf_repository,
+            mock_split_repository, mock_cash_flow_repository,
+        )
+
+        monday = date(2026, 3, 2)  # Monday
+        friday = date(2026, 2, 27)
+        thursday = date(2026, 2, 26)
+
+        price_map = {
+            thursday: {"1234": 1000.0},
+            friday: {"1234": 1050.0},
+        }
+        service._build_price_map = Mock(return_value=price_map)
+
+        values_by_date = {
+            thursday: {
+                "total_asset": 100000.0,
+                "unrealized_pnl": 0.0,
+                "cash_balance": 0.0,
+            },
+        }
+        service._calculate_value_at_date = Mock(
+            side_effect=_stub_value_at_date(values_by_date)
+        )
+
+        result = service._calculate_daily_change(
+            etf_codes=self.ETF_CODES,
+            trades=self.DUMMY_TRADES,
+            cash_flows=self.CASH_FLOWS,
+            current_total_asset=105000.0,
+            current_total_value=105000.0,
+            current_unrealized_pnl=5000.0,
+            current_cash_balance=0.0,
+            _today=monday,
+        )
+
+        # effective_today=Friday, prev=Thursday → diff = 5000
+        assert result["daily_change_total_asset"] == 5000.0
+        assert result["daily_change_total_asset_percent"] == 5.0
+        assert result["daily_change_unrealized_pnl"] == 5000.0
+
+    def test_empty_price_map(
+        self, mock_trade_repository, mock_etf_repository,
+        mock_split_repository, mock_cash_flow_repository,
+    ):
+        """Empty price map: all values should be None."""
+        service = _make_service_for_daily_change(
+            mock_trade_repository, mock_etf_repository,
+            mock_split_repository, mock_cash_flow_repository,
+        )
+
+        service._build_price_map = Mock(return_value={})
+
+        result = service._calculate_daily_change(
+            etf_codes=self.ETF_CODES,
+            trades=self.DUMMY_TRADES,
+            cash_flows=self.CASH_FLOWS,
+            current_total_asset=105000.0,
+            current_total_value=105000.0,
+            current_unrealized_pnl=5000.0,
+            current_cash_balance=0.0,
+            _today=date(2026, 2, 27),
+        )
+
+        assert result["daily_change_total_asset"] is None
+        assert result["daily_change_total_asset_percent"] is None
+        assert result["daily_change_total_value"] is None
+        assert result["daily_change_total_value_percent"] is None
+        assert result["daily_change_unrealized_pnl"] is None
+        assert result["daily_change_unrealized_pnl_percent"] is None
+        assert result["daily_change_cash_balance"] is None
+        assert result["daily_change_cash_balance_percent"] is None
+
+    def test_single_trading_day(
+        self, mock_trade_repository, mock_etf_repository,
+        mock_split_repository, mock_cash_flow_repository,
+    ):
+        """Only one trading day in price_map: no previous day to compare,
+        all values should be None."""
+        service = _make_service_for_daily_change(
+            mock_trade_repository, mock_etf_repository,
+            mock_split_repository, mock_cash_flow_repository,
+        )
+
+        friday = date(2026, 2, 27)
+
+        price_map = {
+            friday: {"1234": 1050.0},
+        }
+        service._build_price_map = Mock(return_value=price_map)
+
+        result = service._calculate_daily_change(
+            etf_codes=self.ETF_CODES,
+            trades=self.DUMMY_TRADES,
+            cash_flows=self.CASH_FLOWS,
+            current_total_asset=105000.0,
+            current_total_value=105000.0,
+            current_unrealized_pnl=5000.0,
+            current_cash_balance=0.0,
+            _today=friday,
+        )
+
+        assert result["daily_change_total_asset"] is None
+        assert result["daily_change_total_asset_percent"] is None
+        assert result["daily_change_total_value"] is None
+        assert result["daily_change_total_value_percent"] is None
+        assert result["daily_change_unrealized_pnl"] is None
+        assert result["daily_change_unrealized_pnl_percent"] is None
+        assert result["daily_change_cash_balance"] is None
+        assert result["daily_change_cash_balance_percent"] is None

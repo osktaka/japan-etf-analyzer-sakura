@@ -452,6 +452,7 @@ class PortfolioService:
         current_total_value: float,
         current_unrealized_pnl: float,
         current_cash_balance: float = 0.0,
+        _today: Optional[date] = None,
     ) -> Dict[str, Optional[float]]:
         """Calculate daily change by comparing with previous business day."""
         none_result = {
@@ -469,12 +470,26 @@ class PortfolioService:
             return none_result
 
         try:
-            today = date.today()
+            today = _today or date.today()
             start = today - timedelta(days=10)
             price_map = self._build_price_map(etf_codes, start)
 
-            # Find previous business day (latest date before today in price_map)
-            prev_dates = sorted(d for d in price_map if d < today)
+            if not price_map:
+                return none_result
+
+            # Determine effective "today" based on price data availability
+            # On non-trading days (weekends/holidays), use the latest
+            # available trading day
+            if today in price_map:
+                effective_today = today
+            else:
+                available_dates = sorted(price_map.keys())
+                effective_today = available_dates[-1]
+
+            # Find previous business day (latest date before effective_today)
+            prev_dates = sorted(
+                d for d in price_map if d < effective_today
+            )
             if not prev_dates:
                 return none_result
 
