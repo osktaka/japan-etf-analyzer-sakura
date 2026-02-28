@@ -141,6 +141,16 @@
   font-weight: 700;
 }
 
+.content hr {
+  margin-bottom: 0.5rem;
+}
+
+.content em {
+  display: inline-block;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
 .content img {
   max-width: 100%;
   border-radius: 0.375rem;
