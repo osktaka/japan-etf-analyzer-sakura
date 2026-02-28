@@ -1015,5 +1015,85 @@
       "現金74",
       "487円では59%カバーにとどまる。月次VaR(95%) -2.06%"
     ]
+  },
+  {
+    "date": "2026-02-28",
+    "report_path": "reports/demo/20260228_demo.md",
+    "mode": "normal",
+    "total_asset": 1013175,
+    "cash_balance": 74487,
+    "cash_ratio": 0.0735,
+    "holdings_count": 6,
+    "holdings": [
+      {
+        "etf_code": "1475",
+        "name": "iシェアーズ・コア TOPIX ETF",
+        "weight": 0.344,
+        "pnl_rate": 0.022000000000000002,
+        "current_value": 323200
+      },
+      {
+        "etf_code": "2558",
+        "name": "ＭＡＸＩＳ米国株式（Ｓ＆Ｐ５００）上場投信",
+        "weight": 0.16399999999999998,
+        "pnl_rate": 0.022000000000000002,
+        "current_value": 154300
+      },
+      {
+        "etf_code": "1489",
+        "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信",
+        "weight": 0.145,
+        "pnl_rate": 0.027999999999999997,
+        "current_value": 135920
+      },
+      {
+        "etf_code": "1615",
+        "name": "ＮＥＸＴ ＦＵＮＤＳ 東証銀行業株価指数連動型上場投信",
+        "weight": 0.138,
+        "pnl_rate": -0.033,
+        "current_value": 129580
+      },
+      {
+        "etf_code": "1540",
+        "name": "純金上場信託（現物国内保管型）",
+        "weight": 0.105,
+        "pnl_rate": 0.047,
+        "current_value": 98440
+      },
+      {
+        "etf_code": "1329",
+        "name": "iシェアーズ・コア 日経225 ETF",
+        "weight": 0.10400000000000001,
+        "pnl_rate": 0.02,
+        "current_value": 97248
+      }
+    ],
+    "overall_score": 65.0,
+    "sharpe_ratio_portfolio": 1.92,
+    "max_drawdown": -0.0236,
+    "var_95": -0.0206,
+    "score_axes": {
+      "dividend_power": 52.5,
+      "cost_efficiency": 78.7,
+      "scale_reliability": 95.2,
+      "trading_quality": 94.1,
+      "return_performance": 80.1
+    },
+    "top_actions": [
+      {
+        "action": "1329縮小による現金比率10%引き上げ",
+        "priority": "highest",
+        "consensus": 100
+      },
+      {
+        "action": "象限移行の定量的早期警戒基準設定",
+        "priority": "high",
+        "consensus": 80
+      }
+    ],
+    "key_risks": [
+      "トランプ関税3月4日発動による複合ショック（国内株式集中73.1%",
+      "景気敏感59.3%で直撃リスク）。VaR(95%) -2.06%（月次参考値）"
+    ]
   }
 ]
