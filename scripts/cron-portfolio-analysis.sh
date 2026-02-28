@@ -75,7 +75,7 @@ echo "Log: $LOGFILE"
 # Claude CLIセッション内からの実行対策（入れ子セッション防止）
 unset CLAUDECODE
 
-setsid --wait timeout 3600 claude -p "$PROMPT" \
+setsid --wait timeout 5400 claude -p "$PROMPT" \
   --allowedTools "WebSearch WebFetch Bash Read Write Edit Glob Grep Task TaskOutput Skill" \
   > "$LOGFILE" 2>&1
 STEP2_EXIT=$?
@@ -86,7 +86,7 @@ if [ ! -s "$LOGFILE" ]; then
 fi
 
 if [ $STEP2_EXIT -eq 124 ]; then
-  echo "Error: portfolio-analysis timed out (3600s)"
+  echo "Error: portfolio-analysis timed out (5400s)"
   exit 1
 fi
 
