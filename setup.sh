@@ -83,6 +83,7 @@ ln -sf frontend/dist/assets assets
 ln -sf frontend/dist/robots.txt robots.txt
 ln -sf frontend/dist/sitemap.xml sitemap.xml
 ln -sf frontend/dist/notes notes
+ln -sf frontend/dist/google92af733acccacf69.html google92af733acccacf69.html
 echo "  ✓ Symbolic links created"
 
 echo ""
