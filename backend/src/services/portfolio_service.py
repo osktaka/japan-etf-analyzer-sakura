@@ -1,6 +1,5 @@
 """Portfolio service for calculating user's holdings and P&L."""
 import logging
-import math
 from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Dict, List, Optional, Tuple
@@ -157,18 +156,15 @@ class PortfolioService:
                     (unrealized_pnl / total_cost * 100) if total_cost > 0 else 0
                 )
 
-                # Calculate annualized return (CAGR) and annualized P&L
+                # 現在モード用（年率リターン）- シンプル線形計算
                 annualized_return = None
                 annualized_pnl = None
                 if holding_days > 0 and total_cost > 0:
                     years = holding_days / 365.0
-                    if years >= 0.01:  # At least ~4 days
-                        ratio = current_value / total_cost
-                        if ratio > 0:
-                            annualized_return = round(
-                                (math.pow(ratio, 1.0 / years) - 1) * 100, 2
-                            )
-                        annualized_pnl = round(unrealized_pnl / years, 2)
+                    if years >= 0.01:  # 4日未満は統計的信頼度が低いためNone
+                        annual_pnl = unrealized_pnl / years  # = unrealized_pnl / holding_days * 365（線形換算）
+                        annualized_pnl = round(annual_pnl, 2)
+                        annualized_return = round((annual_pnl / float(total_cost)) * 100, 2)
             else:
                 # Fully sold holding: no current position
                 adjusted_avg_cost = 0
@@ -185,6 +181,14 @@ class PortfolioService:
             total_pnl_percent = (
                 round(total_pnl / original_buy * 100, 2) if original_buy > 0 else 0
             )
+            # トータルモード用（年率リターン）
+            annualized_return_total = None
+            if holding_days > 0 and original_buy > 0:
+                years_total = holding_days / 365.0
+                if years_total >= 0.01:
+                    annualized_return_total = round(
+                        (total_pnl / years_total / original_buy) * 100, 2
+                    )
 
             result.append(
                 {
@@ -200,6 +204,7 @@ class PortfolioService:
                     "holding_days": holding_days,
                     "holding_period": holding_period,
                     "annualized_return": annualized_return,
+                    "annualized_return_total": annualized_return_total,
                     "annualized_pnl": annualized_pnl,
                     "total_pnl": round(total_pnl, 2),
                     "total_buy_amount": round(original_buy, 2),

@@ -240,10 +240,12 @@ export function HoldingsList({
           aVal = a.holding_days ?? 0
           bVal = b.holding_days ?? 0
           break
-        case 'annualized_return':
-          aVal = a.annualized_return ?? -Infinity
-          bVal = b.annualized_return ?? -Infinity
+        case 'annualized_return': {
+          const annKey = pnlMode === 'total' ? 'annualized_return_total' : 'annualized_return'
+          aVal = (a[annKey] as number) ?? -Infinity
+          bVal = (b[annKey] as number) ?? -Infinity
           break
+        }
         default:
           return 0
       }
@@ -261,7 +263,7 @@ export function HoldingsList({
       return 0
     })
     return sorted
-  }, [holdings, sortKey, sortOrder])
+  }, [holdings, sortKey, sortOrder, pnlMode])
 
   if (isLoading) {
     return <div className={styles.loading}>読み込み中...</div>
@@ -604,18 +606,22 @@ export function HoldingsList({
                     </td>
                     <td
                       className={`${styles.right} ${
-                        holding.annualized_return !== null &&
-                        holding.annualized_return !== undefined
-                          ? holding.annualized_return >= 0
-                            ? styles.positive
-                            : styles.negative
-                          : ''
+                        (() => {
+                          const annVal = pnlMode === 'total' ? holding.annualized_return_total : holding.annualized_return
+                          return annVal !== null && annVal !== undefined
+                            ? annVal >= 0
+                              ? styles.positive
+                              : styles.negative
+                            : ''
+                        })()
                       }`}
                     >
-                      {holding.annualized_return !== null &&
-                      holding.annualized_return !== undefined
-                        ? `${holding.annualized_return >= 0 ? '+' : ''}${holding.annualized_return.toFixed(2)}%`
-                        : '-'}
+                      {(() => {
+                        const annVal = pnlMode === 'total' ? holding.annualized_return_total : holding.annualized_return
+                        return annVal !== null && annVal !== undefined
+                          ? `${annVal >= 0 ? '+' : ''}${annVal.toFixed(2)}%`
+                          : '-'
+                      })()}
                     </td>
                     {(readOnly || onHistoryClick || onAddTrade) && (
                       <td

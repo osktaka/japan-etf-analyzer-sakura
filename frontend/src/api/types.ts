@@ -211,8 +211,9 @@ export interface Holding {
   total_pnl_percent: number
   holding_days?: number
   holding_period?: string
-  annualized_return?: number
-  annualized_pnl?: number
+  annualized_return?: number | null
+  annualized_return_total?: number | null
+  annualized_pnl?: number | null
 }
 
 export interface PortfolioSummary {

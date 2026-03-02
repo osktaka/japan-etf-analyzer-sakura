@@ -158,28 +158,36 @@ export function HoldingCard({
         )}
       </div>
       <div className={styles.annualizedSection}>
-        <div className={styles.pnlItem}>
-          <span className={styles.label}>保有期間</span>
-          <span className={styles.value}>{holding.holding_period || '-'}</span>
-        </div>
-        <div className={styles.pnlItem}>
-          <span className={styles.label}>年率リターン</span>
-          <span
-            className={`${styles.pnlPercent} ${
-              holding.annualized_return !== null &&
-              holding.annualized_return !== undefined
-                ? holding.annualized_return >= 0
-                  ? styles.positive
-                  : styles.negative
-                : ''
-            }`}
-          >
-            {holding.annualized_return !== null &&
-            holding.annualized_return !== undefined
-              ? `${holding.annualized_return >= 0 ? '+' : ''}${holding.annualized_return.toFixed(2)}%`
-              : '-'}
-          </span>
-        </div>
+        {(() => {
+          const annualizedVal =
+            pnlMode === 'total'
+              ? holding.annualized_return_total
+              : holding.annualized_return
+          return (
+            <>
+              <div className={styles.pnlItem}>
+                <span className={styles.label}>保有期間</span>
+                <span className={styles.value}>{holding.holding_period || '-'}</span>
+              </div>
+              <div className={styles.pnlItem}>
+                <span className={styles.label}>年率リターン</span>
+                <span
+                  className={`${styles.pnlPercent} ${
+                    annualizedVal !== null && annualizedVal !== undefined
+                      ? annualizedVal >= 0
+                        ? styles.positive
+                        : styles.negative
+                      : ''
+                  }`}
+                >
+                  {annualizedVal !== null && annualizedVal !== undefined
+                    ? `${annualizedVal >= 0 ? '+' : ''}${annualizedVal.toFixed(2)}%`
+                    : '-'}
+                </span>
+              </div>
+            </>
+          )
+        })()}
       </div>
       {(readOnly || onHistoryClick || onAddTrade) && (
         <div className={styles.actions}>
