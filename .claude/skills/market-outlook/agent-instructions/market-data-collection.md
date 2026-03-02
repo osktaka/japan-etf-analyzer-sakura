@@ -53,11 +53,18 @@ curl -s http://localhost:8902/api/v1/demo/portfolio/holdings
 
 **Step 2 [AM]: 不足データのWebFetch補完**
 
-| 不足データ | WebFetch先 |
-|-----------|-----------|
-| S&P500/ダウ/NASDAQ | Bloomberg、Reuters等の市場サマリーページ |
-| CME日経先物 | 日経新聞 先物ページ |
-| ドル円 | Yahoo!ファイナンス 為替ページ |
+| 不足データ | 第1候補URL | 第2候補URL |
+|-----------|-----------|-----------|
+| S&P500/ダウ/NASDAQ | https://www.bloomberg.com/markets/stocks | Reuters markets |
+| VIX・米10年債利回り | https://www.bloomberg.com/markets/rates-bonds | Reuters markets |
+| CME日経先物 | https://nikkei225jp.com/cme/ | https://www.nikkei.com/markets/kabu/futexp/ |
+| ドル円 | https://finance.yahoo.co.jp/quote/USDJPY=FX | bloomberg.co.jp |
+| 日経平均・TOPIX | https://finance.yahoo.co.jp/quote/998407.O（日経） | https://finance.yahoo.co.jp/quote/998405.T（TOPIX） |
+
+**フォールバックルール:**
+- 第1候補Fetch失敗 → 即座に第2候補を実行
+- 両方失敗 → 備考に「取得失敗」と明記し、レポート作成は続行
+- ※ Yahoo US（finance.yahoo.com）は地域制限リスクのため使用しない
 
 **Step 3 [AM]: portfolioモード時のAPI取得**（共通セクション参照）
 
@@ -90,28 +97,61 @@ curl -s "http://localhost:8902/api/v1/etfs?tag_ids={tag_id}&sort=return_1m&order
 
 ### AM: 時間帯ルール
 
+**営業日（is_trading_day=true）の場合:**
+
 | 実行時刻(JST) | 米国市場 | 東証データ | 備考 |
 |--------------|---------|-----------|------|
-| 6:00-9:00 | 前夜終値 | 前営業日終値 | 推奨 |
+| 6:00-8:00 | 前夜終値（確定） | 前営業日終値 | 推奨。CME先物は参考値として記録 |
+| 8:00-9:00 | 前夜終値（確定） | 前営業日終値 | CME先物・ドル円は「東京時間変動あり」を備考追記。総合判断に注記テンプレートを挿入する |
 | 9:00-15:30 | 前夜終値 | 取引中と明記 | 非推奨・警告 |
+
+**8:00以降の総合判断注記テンプレート（is_trading_day=true かつ 8:00以降）:**
+
+> ※ 本レポートは {current_time} 時点のデータに基づく。
+> CME先物は参考値であり、東証開場（9:00）後の実際の値動きと乖離する場合がある。
+
+**非営業日（is_trading_day=false）の場合:**
+- 時間帯ルールは適用しない（前営業日終値をすべての指標に使用）
+- CME先物は「非営業日のため前営業日参考値」と備考に記載
+- 総合判断の注記は不要（東証が開場しないため）
 
 ### AM: 出力テンプレート
 
 以下の形式で**直接返却**する。ファイル保存は不要。
 
+備考列の記載形式: `{検証状態}・{データ種別}・取得: HH:MM JST`
+
+| データ種別 | 記載例 |
+|-----------|-------|
+| 前夜終値（確定） | 「終値確定・取得: 06:30 JST」 |
+| 参考値（変動中） | 「参考値・取得: 08:14 JST」 |
+| 前日終値 | 「前日終値・取得: 08:14 JST」 |
+
+HH:MM は `{current_time}` パラメータ（スキル実行時刻）を使用する。
+
+**CME先物の特別ルール（必須）:**
+CME先物の備考は必ず「参考値」と表記すること。
+理由: 東証開場後（9:00以降）に大きく変動するため、AM実行時点の値は実際の日経平均の動きを保証しない。
+
+**PMでのCME先物参照時の整合性ルール:**
+PMの「AM予想との比較」でCME先物（cme_nikkei）を参照する際、
+AMファイルのメタデータに cme_fetched が記録されていれば
+「参考値（取得: HH:MM JST）」と注記する。
+比較対象は cme_nikkei の値のまま維持する（削除しない）。
+
 ```markdown
 ## 主要指標サマリー
 | 指標 | 値 | 前日比 | 備考 |
 |------|-----|--------|------|
-| S&P500 | X,XXX | +X.X% | {検証状態} {コメント} |
-| NASDAQ | XX,XXX | +X.X% | |
-| Dow | XX,XXX | +X.X% | |
-| VIX | XX.X | +X.X | {警戒水準なら言及} |
-| 米10年債利回り | X.XX% | +X.XXbp | |
-| CME日経先物 | XX,XXX | +XXX | 大証比 |
-| 日経平均（前日終値） | XX,XXX | | {検証状態} |
-| TOPIX（前日終値） | X,XXX | | |
-| ドル円 | XXX.XX | | {検証状態} |
+| S&P500 | X,XXX | +X.X% | {検証状態}・{データ種別}・取得: HH:MM JST |
+| NASDAQ | XX,XXX | +X.X% | {データ種別}・取得: HH:MM JST |
+| Dow | XX,XXX | +X.X% | {データ種別}・取得: HH:MM JST |
+| VIX | XX.X | +X.X | {警戒水準なら言及}・取得: HH:MM JST |
+| 米10年債利回り | X.XX% | +X.XXbp | {データ種別}・取得: HH:MM JST |
+| CME日経先物 | XX,XXX | +XXX | 大証比・参考値・取得: HH:MM JST |
+| 日経平均（前日終値） | XX,XXX | | {検証状態}・前日終値・取得: HH:MM JST |
+| TOPIX（前日終値） | X,XXX | | 前日終値・取得: HH:MM JST |
+| ドル円 | XXX.XX | | {検証状態}・{データ種別}・取得: HH:MM JST |
 
 ## 注目テーマ・セクター
 1. **{テーマ名}**: {影響と根拠}
@@ -331,8 +371,12 @@ curl -s "http://localhost:8902/api/v1/etfs?tag_ids={tag_id}&sort=return_1m&order
 | 指標 | 許容差異 |
 |------|---------|
 | S&P500 | ±0.5% |
+| NASDAQ | ±0.5% |
 | 日経平均 | ±0.5% |
 | ドル円 | ±0.5% |
+| CME日経先物 | ±250円（乖離時は警告のみ・参考値のためレポート続行） |
+| VIX | ±2pt |
+| 米10年債利回り | ±5bp |
 
 **PM対象:**
 

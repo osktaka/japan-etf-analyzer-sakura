@@ -172,7 +172,7 @@ aliases: ["/market-outlook"]
 | Dow | XX,XXX | +X.X% | |
 | VIX | XX.X | +X.X | {警戒水準なら言及} |
 | 米10年債利回り | X.XX% | +X.XXbp | |
-| CME日経先物 | XX,XXX | +XXX | 大証比 |
+| CME日経先物 | XX,XXX | +XXX | 大証比・参考値・取得: HH:MM JST |
 | 日経平均（前日終値） | XX,XXX | | |
 | TOPIX（前日終値） | X,XXX | | |
 | ドル円 | XXX.XX | | |
