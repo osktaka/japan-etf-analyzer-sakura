@@ -1019,81 +1019,223 @@
   {
     "date": "2026-02-28",
     "report_path": "reports/demo/20260228_demo.md",
-    "mode": "normal",
-    "total_asset": 1013175,
-    "cash_balance": 74487,
-    "cash_ratio": 0.0735,
+    "mode": "debate",
+    "total_asset": 1000000,
+    "cash_balance": 86643,
+    "cash_ratio": 0.0866,
     "holdings_count": 6,
     "holdings": [
       {
         "etf_code": "1475",
         "name": "iシェアーズ・コア TOPIX ETF",
-        "weight": 0.344,
+        "weight": 0.349,
         "pnl_rate": 0.022000000000000002,
         "current_value": 323200
       },
       {
         "etf_code": "2558",
         "name": "ＭＡＸＩＳ米国株式（Ｓ＆Ｐ５００）上場投信",
-        "weight": 0.16399999999999998,
+        "weight": 0.16699999999999998,
         "pnl_rate": 0.022000000000000002,
         "current_value": 154300
       },
       {
         "etf_code": "1489",
         "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信",
-        "weight": 0.145,
+        "weight": 0.147,
         "pnl_rate": 0.027999999999999997,
         "current_value": 135920
       },
       {
         "etf_code": "1615",
         "name": "ＮＥＸＴ ＦＵＮＤＳ 東証銀行業株価指数連動型上場投信",
-        "weight": 0.138,
+        "weight": 0.14,
         "pnl_rate": -0.033,
         "current_value": 129580
       },
       {
         "etf_code": "1540",
         "name": "純金上場信託（現物国内保管型）",
-        "weight": 0.105,
+        "weight": 0.106,
         "pnl_rate": 0.047,
         "current_value": 98440
       },
       {
         "etf_code": "1329",
         "name": "iシェアーズ・コア 日経225 ETF",
-        "weight": 0.10400000000000001,
+        "weight": 0.092,
         "pnl_rate": 0.02,
-        "current_value": 97248
+        "current_value": 85092
       }
     ],
-    "overall_score": 65.0,
+    "overall_score": 73.0,
+    "sharpe_ratio_portfolio": 1.92,
+    "max_drawdown": -0.0302,
+    "var_95": -0.0213,
+    "score_axes": {
+      "dividend_power": 52.64,
+      "cost_efficiency": 78.45,
+      "scale_reliability": 95.14,
+      "trading_quality": 94.04,
+      "return_performance": 80.09
+    },
+    "top_actions": [
+      {
+        "action": "1615（銀行ETF）縮小の関税後判断",
+        "priority": "highest",
+        "consensus": 60
+      }
+    ],
+    "key_risks": [
+      "トランプ関税3月4日発動による複合ショック（国内株式集中72.8%",
+      "景気敏感59%で直撃リスク）。月次VaR(95%) -2.13%（参考値）"
+    ]
+  },
+  {
+    "date": "2026-03-01",
+    "report_path": "reports/demo/20260301_demo.md",
+    "mode": "normal",
+    "total_asset": 1013175,
+    "cash_balance": 86643,
+    "cash_ratio": 0.0855,
+    "holdings_count": 6,
+    "holdings": [
+      {
+        "etf_code": "1475",
+        "name": "iシェアーズ・コア TOPIX ETF",
+        "weight": 0.349,
+        "pnl_rate": 0.022000000000000002,
+        "current_value": 323200
+      },
+      {
+        "etf_code": "2558",
+        "name": "ＭＡＸＩＳ米国株式（Ｓ＆Ｐ５００）上場投信",
+        "weight": 0.16699999999999998,
+        "pnl_rate": 0.022000000000000002,
+        "current_value": 154300
+      },
+      {
+        "etf_code": "1489",
+        "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信",
+        "weight": 0.147,
+        "pnl_rate": 0.027999999999999997,
+        "current_value": 135920
+      },
+      {
+        "etf_code": "1615",
+        "name": "ＮＥＸＴ ＦＵＮＤＳ 東証銀行業株価指数連動型上場投信",
+        "weight": 0.14,
+        "pnl_rate": -0.033,
+        "current_value": 129580
+      },
+      {
+        "etf_code": "1540",
+        "name": "純金上場信託（現物国内保管型）",
+        "weight": 0.106,
+        "pnl_rate": 0.047,
+        "current_value": 98440
+      },
+      {
+        "etf_code": "1329",
+        "name": "iシェアーズ・コア 日経225 ETF",
+        "weight": 0.092,
+        "pnl_rate": 0.02,
+        "current_value": 85092
+      }
+    ],
+    "overall_score": 66.0,
     "sharpe_ratio_portfolio": 1.92,
     "max_drawdown": -0.0236,
-    "var_95": -0.0206,
+    "var_95": -0.0213,
     "score_axes": {
-      "dividend_power": 52.5,
-      "cost_efficiency": 78.7,
-      "scale_reliability": 95.2,
-      "trading_quality": 94.1,
+      "dividend_power": 52.6,
+      "cost_efficiency": 78.4,
+      "scale_reliability": 95.1,
+      "trading_quality": 94.0,
       "return_performance": 80.1
     },
     "top_actions": [
       {
-        "action": "1329縮小による現金比率10%引き上げ",
+        "action": "現金比率10%への引き上げ",
         "priority": "highest",
         "consensus": 100
       },
       {
-        "action": "象限移行の定量的早期警戒基準設定",
+        "action": "関税発動後の条件分岐戦略策定",
         "priority": "high",
         "consensus": 80
       }
     ],
     "key_risks": [
-      "トランプ関税3月4日発動による複合ショック（国内株式集中73.1%",
-      "景気敏感59.3%で直撃リスク）。VaR(95%) -2.06%（月次参考値）"
+      "国内株式72.7%への過度な集中。景気敏感58.7%・高相関3ペア・VaR悪化傾向（-2.13%）が構造的な脆弱性を形成"
+    ]
+  },
+  {
+    "date": "2026-03-02",
+    "report_path": "reports/demo/20260302_demo.md",
+    "mode": "debate",
+    "total_asset": 1008017,
+    "cash_balance": 86643,
+    "cash_ratio": 0.086,
+    "holdings_count": 6,
+    "holdings": [
+      {
+        "etf_code": "1475",
+        "name": "iシェアーズ・コア TOPIX ETF",
+        "weight": 0.34700000000000003,
+        "pnl_rate": 0.012,
+        "current_value": 320000
+      },
+      {
+        "etf_code": "2558",
+        "name": "ＭＡＸＩＳ米国株式（Ｓ＆Ｐ５００）上場投信",
+        "weight": 0.16699999999999998,
+        "pnl_rate": 0.017,
+        "current_value": 153550
+      },
+      {
+        "etf_code": "1489",
+        "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信",
+        "weight": 0.146,
+        "pnl_rate": 0.02,
+        "current_value": 134840
+      },
+      {
+        "etf_code": "1615",
+        "name": "ＮＥＸＴ ＦＵＮＤＳ 東証銀行業株価指数連動型上場投信",
+        "weight": 0.13699999999999998,
+        "pnl_rate": -0.057,
+        "current_value": 126380
+      },
+      {
+        "etf_code": "1540",
+        "name": "純金上場信託（現物国内保管型）",
+        "weight": 0.111,
+        "pnl_rate": 0.092,
+        "current_value": 102660
+      },
+      {
+        "etf_code": "1329",
+        "name": "iシェアーズ・コア 日経225 ETF",
+        "weight": 0.091,
+        "pnl_rate": 0.006999999999999999,
+        "current_value": 83944
+      }
+    ],
+    "overall_score": 71.0,
+    "sharpe_ratio_portfolio": 1.92,
+    "max_drawdown": -0.0302,
+    "var_95": -0.0126,
+    "score_axes": {
+      "dividend_power": 52.09,
+      "cost_efficiency": 77.76,
+      "scale_reliability": 95.15,
+      "trading_quality": 94.0,
+      "return_performance": 79.63
+    },
+    "top_actions": [],
+    "key_risks": [
+      "国内景気敏感株集中58.5%×3月4日関税発動リスクの複合シナリオ。月次VaR -1.26%（CVaR -2.11%）。シャープレシオ最低の2558（0.70）が全体の効率を引き下げ中。"
     ]
   }
 ]
