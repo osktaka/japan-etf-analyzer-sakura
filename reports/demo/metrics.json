@@ -1237,5 +1237,90 @@
     "key_risks": [
       "国内景気敏感株集中58.5%×3月4日関税発動リスクの複合シナリオ。月次VaR -1.26%（CVaR -2.11%）。シャープレシオ最低の2558（0.70）が全体の効率を引き下げ中。"
     ]
+  },
+  {
+    "date": "2026-03-03",
+    "report_path": "reports/demo/20260303_demo.md",
+    "mode": "debate",
+    "total_asset": 986009,
+    "cash_balance": 128615,
+    "cash_ratio": 0.1304,
+    "holdings_count": 6,
+    "holdings": [
+      {
+        "etf_code": "1475",
+        "name": "iシェアーズ・コア TOPIX ETF",
+        "weight": 0.361,
+        "pnl_rate": -0.021,
+        "current_value": 309520
+      },
+      {
+        "etf_code": "2558",
+        "name": "ＭＡＸＩＳ米国株式（Ｓ＆Ｐ５００）上場投信",
+        "weight": 0.18,
+        "pnl_rate": 0.022000000000000002,
+        "current_value": 154400
+      },
+      {
+        "etf_code": "1489",
+        "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信",
+        "weight": 0.152,
+        "pnl_rate": -0.013999999999999999,
+        "current_value": 130280
+      },
+      {
+        "etf_code": "1615",
+        "name": "ＮＥＸＴ ＦＵＮＤＳ 東証銀行業株価指数連動型上場投信",
+        "weight": 0.141,
+        "pnl_rate": -0.1,
+        "current_value": 120600
+      },
+      {
+        "etf_code": "1540",
+        "name": "純金上場信託（現物国内保管型）",
+        "weight": 0.11900000000000001,
+        "pnl_rate": 0.083,
+        "current_value": 101840
+      },
+      {
+        "etf_code": "1329",
+        "name": "iシェアーズ・コア 日経225 ETF",
+        "weight": 0.048,
+        "pnl_rate": -0.022000000000000002,
+        "current_value": 40754
+      }
+    ],
+    "overall_score": 72.0,
+    "sharpe_ratio_portfolio": 1.93,
+    "max_drawdown": -0.0302,
+    "var_95": -0.0232,
+    "score_axes": {
+      "dividend_power": 52.21,
+      "cost_efficiency": 76.77,
+      "scale_reliability": 95.01,
+      "trading_quality": 93.76,
+      "return_performance": 80.63
+    },
+    "top_actions": [
+      {
+        "action": "1329縮小・売却（即時実行）",
+        "priority": "highest",
+        "consensus": 100
+      },
+      {
+        "action": "1615の段階的縮小（ATR注意ライン接近確認後）",
+        "priority": "high",
+        "consensus": 80
+      },
+      {
+        "action": "先進国ETF追加（地政学安定化後）",
+        "priority": "medium",
+        "consensus": 80
+      }
+    ],
+    "key_risks": [
+      "国内株式集中（70.1%）× 地政学ショック直撃による一体的下落リスク（本日実損失-22",
+      "008円/-2.18%）"
+    ]
   }
 ]

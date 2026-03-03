@@ -50,7 +50,7 @@ class SyncHistoricalSplitsScript(BaseBatchScript):
     batch_name = "sync_historical_splits"
     description = "Sync historical stock splits from yfinance"
     enable_batch_log = True
-    enable_progress = False
+    enable_progress = True
     enable_resume = False
 
     def add_custom_arguments(self, parser):
@@ -118,6 +118,7 @@ class SyncHistoricalSplitsScript(BaseBatchScript):
 
                 result = service.sync_splits_for_etf(etf_code)
                 results.append(result)
+                self._update_progress(last_item_code=etf_code)
 
                 if result["error"] is None:
                     self.logger.info(
