@@ -106,6 +106,41 @@ if [ $STEP3_EXIT -ne 0 ]; then
   echo "Warning: metrics extraction failed (exit code $STEP3_EXIT), continuing..."
 fi
 
+# --- Step 3.5: tmp_report.md 作成（要約） ---
+
+LATEST_REPORT=$(ls -t reports/${USER}/*_${USER}.md 2>/dev/null | head -1)
+
+if [ -z "$LATEST_REPORT" ]; then
+  echo "Warning: No report file found for user=$USER, skipping tmp_report generation."
+else
+  echo "Starting tmp_report generation: $LATEST_REPORT -> reports/$USER/tmp_report.md"
+
+  PROMPT_TEMPLATE=".claude/skills/portfolio-analysis/prompts/tmp_report.md"
+  if [ ! -f "$PROMPT_TEMPLATE" ]; then
+    echo "Warning: Prompt template not found ($PROMPT_TEMPLATE), skipping."
+  else
+    PROMPT35=$(sed \
+      -e "s|{{REPORT_PATH}}|${LATEST_REPORT}|g" \
+      -e "s|{{OUTPUT_PATH}}|reports/${USER}/tmp_report.md|g" \
+      "$PROMPT_TEMPLATE")
+
+    setsid --wait timeout 300 claude -p "$PROMPT35" \
+      --allowedTools "Read Write" \
+      >> "$LOGFILE" 2>&1
+    STEP35_EXIT=$?
+
+    if [ $STEP35_EXIT -eq 124 ]; then
+      echo "Warning: tmp_report generation timed out (300s), continuing..."
+    elif [ $STEP35_EXIT -ne 0 ]; then
+      echo "Warning: tmp_report generation failed (exit code $STEP35_EXIT), continuing..."
+    else
+      echo "tmp_report generated: reports/$USER/tmp_report.md"
+    fi
+
+    sleep 2
+  fi
+fi
+
 # --- Step 4: ドラフト記事作成（demoユーザーのみ） ---
 
 if [ "$USER" = "demo" ]; then
