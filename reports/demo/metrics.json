@@ -1322,5 +1322,81 @@
       "国内株式集中（70.1%）× 地政学ショック直撃による一体的下落リスク（本日実損失-22",
       "008円/-2.18%）"
     ]
+  },
+  {
+    "date": "2026-03-04",
+    "report_path": "reports/demo/20260304_demo.md",
+    "mode": "normal",
+    "total_asset": 955458,
+    "cash_balance": 128615,
+    "cash_ratio": 0.1346,
+    "holdings_count": 6,
+    "holdings": [
+      {
+        "etf_code": "1475",
+        "name": "iシェアーズ・コア TOPIX ETF",
+        "weight": 0.361,
+        "pnl_rate": -0.057999999999999996,
+        "current_value": 298080
+      },
+      {
+        "etf_code": "2558",
+        "name": "ＭＡＸＩＳ米国株式（Ｓ＆Ｐ５００）上場投信",
+        "weight": 0.18600000000000003,
+        "pnl_rate": 0.016,
+        "current_value": 153500
+      },
+      {
+        "etf_code": "1489",
+        "name": "NEXT FUNDS 日経平均高配当株50指数連動型上場投信",
+        "weight": 0.151,
+        "pnl_rate": -0.057999999999999996,
+        "current_value": 124600
+      },
+      {
+        "etf_code": "1615",
+        "name": "ＮＥＸＴ ＦＵＮＤＳ 東証銀行業株価指数連動型上場投信",
+        "weight": 0.136,
+        "pnl_rate": -0.158,
+        "current_value": 112800
+      },
+      {
+        "etf_code": "1540",
+        "name": "純金上場信託（現物国内保管型）",
+        "weight": 0.11900000000000001,
+        "pnl_rate": 0.049,
+        "current_value": 98600
+      },
+      {
+        "etf_code": "1329",
+        "name": "iシェアーズ・コア 日経225 ETF",
+        "weight": 0.047,
+        "pnl_rate": -0.057999999999999996,
+        "current_value": 39263
+      }
+    ],
+    "overall_score": 61.0,
+    "sharpe_ratio_portfolio": 1.58,
+    "max_drawdown": -0.057,
+    "var_95": -0.023,
+    "score_axes": {
+      "dividend_power": 52.1,
+      "cost_efficiency": 77.0,
+      "scale_reliability": 95.0,
+      "trading_quality": 93.7,
+      "return_performance": 81.1
+    },
+    "top_actions": [
+      {
+        "action": "現金比率25%段階的達成",
+        "priority": "highest",
+        "consensus": 100
+      }
+    ],
+    "key_risks": [
+      "象限4（スタグフレーション）環境での現金比率不足（現在13.5% vs 推奨25-40%）",
+      "国内景気敏感株集中（69.6%）",
+      "VaR(95%) -2.30%/月に対して3/4単日-3.1%と既に月次Varを超過"
+    ]
   }
 ]
