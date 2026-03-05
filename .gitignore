@@ -63,6 +63,8 @@ reports/*
 !reports/demo/
 reports/demo/drafts/
 reports/demo/HISTORY.md
+reports/demo/tmp_report.md
+reports/demo/metrics.json
 reports/demo/HISTORY.md.bak
 reports/demo/history/
 reports/demo/[0-9]*_*.md
