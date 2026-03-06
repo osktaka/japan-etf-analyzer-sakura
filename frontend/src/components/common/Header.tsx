@@ -178,6 +178,17 @@ export function Header() {
                         >
                           パスワード変更
                         </button>
+                        {isAdmin && (
+                          <button
+                            className={styles.userMenuOption}
+                            onClick={() => {
+                              navigate(ROUTES.DEMO)
+                              setIsMenuOpen(false)
+                            }}
+                          >
+                            demoを表示
+                          </button>
+                        )}
                         <button
                           className={styles.userMenuOption}
                           onClick={handleLogout}
@@ -338,6 +349,18 @@ export function Header() {
                   >
                     パスワード変更
                   </button>
+                  {isAdmin && (
+                    <button
+                      className={styles.mobilePasswordBtn}
+                      onClick={() => {
+                        navigate(ROUTES.DEMO)
+                        closeMobileMenu()
+                      }}
+                      role="menuitem"
+                    >
+                      demoを表示
+                    </button>
+                  )}
                   <button
                     className={styles.mobileLogoutBtn}
                     onClick={handleLogout}
