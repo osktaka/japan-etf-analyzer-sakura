@@ -155,7 +155,7 @@ Phase 1完了後にメインエージェントが確認する。詳細は `./dat
 - speed/normalモード: 各分析出力ファイル（`10_quant_analysis.md`, `10_score_analysis.md`, `10_allocation_analysis.md`）のサイズが500バイト以上であること
 - debateモード: `10_analyst_a_analysis.md` ～ `10_analyst_e_analysis.md` の5ファイルが全て500バイト以上であること
 - 500バイト未満は実質空出力として「失敗」扱いとし、Phase 1の失敗カウントに加算する
-- **バリデーションはBashサブエージェントに委譲**: バリデーションサブエージェント（Bash）を起動し、`{skill_dir}/agent-instructions/validation-timing.md` の指示に従って実行する。戻り値フォーマット: 「検証完了: [各ファイル状態] timing更新済み」の1行
+- **バリデーションはBashサブエージェントに委譲**: バリデーションサブエージェント（Bash）を起動し、`{skill_dir}/agent-instructions/validation-timing.md` の指示に従って実行する。Phase 0完了時は `validate_phase0.py`、Phase 1完了時は `validate_phase1.py` をそれぞれ実行する。戻り値フォーマット: 「検証完了: [各ファイル状態] timing更新済み」の1行
 
 ### 株式分割の取り扱い
 

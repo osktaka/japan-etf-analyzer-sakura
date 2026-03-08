@@ -2,13 +2,39 @@
 
 ## 概要
 
-Phase 1/Phase 2完了後に、メインエージェントから委譲される出力ファイルの検証とtiming.json更新を実行する。
+Phase 0/Phase 1/Phase 2完了後に、メインエージェントから委譲される出力ファイルの検証とtiming.json更新を実行する。
 
 ## パラメータ
 
 - `WORK_DIR`: 作業ディレクトリパス
 - `mode`: 分析モード（speed/normal/debate）
-- `validation_phase`: 検証対象フェーズ（`phase1` or `phase2`）
+- `validation_phase`: 検証対象フェーズ（`phase0` or `phase1` or `phase2`）
+
+## Phase 0完了後の検証
+
+### Phase 0出力の品質検証
+
+以下のPythonスクリプトを実行して品質検証を行う:
+
+```bash
+python {skill_dir}/scripts/validate_phase0.py {WORK_DIR}
+```
+
+スクリプトはJSON結果をstdoutに出力する。結果のstatusフィールドを確認する。
+
+- **NG**: `00_portfolio_data.json` の構造・数値整合性に問題あり → Phase 0をやり直す（1回のみ）
+- **WARN**: データ取得エラーが3件以上 → 警告を記録して続行
+- **OK**: 全チェック通過
+
+### Phase 0検証NGの場合の自己修正ルール
+
+- NG項目がある場合 → メインエージェントに具体的なNG内容を報告し、Phase 0の再実行を促す（**1回のみ**）
+- 再実行後もNG → 「修正試行済み・品質警告あり」として続行し、最終レポートの「注意事項」に警告を記載
+- **スクリプト異常終了時**: `00_portfolio_data.json` の `wc -c` でサイズ100バイト以上を確認するフォールバックを実行し、警告を記録して続行
+
+### Phase 0検証後のフロー
+
+Phase 0検証が完了したら、結果をメインエージェントに返す。Phase 1検証（`validate_phase1.py`）はPhase 1完了後に別途 `validation_phase=phase1` で呼び出される。
 
 ## Phase 1完了後の検証
 
