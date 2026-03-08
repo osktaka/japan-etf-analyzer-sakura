@@ -62,6 +62,17 @@ if abs(calc_total - total_asset_from_summary) > 10:  # 10円以上の誤差
 print(f"検証OK: 総資産{total_asset_from_summary:,.0f}円（銘柄{total_current_value:,.0f}円 + 現金{cash:,.0f}円）")
 ```
 
+### 禁止パターン（データ収集時）
+
+以下のDB直接クエリパターンは**絶対に使用禁止**。株式分割調整前のデータが返され、レポート全体が不正確になる:
+
+- `SELECT * FROM trades` — 分割前の元の数量・単価が返される
+- `SELECT quantity, price FROM trades` — 同上
+- tradesテーブルへの任意のSELECT文
+- portfolioテーブルのquantity/average_costカラムの直接取得（APIを経由すること）
+
+**正しい取得方法**: `/api/v1/portfolio/holdings` API経由で取得する。APIはSplitAdjustmentServiceを経由して分割調整済みデータを返す。
+
 ## `_metadata`セクションの出力（必須）
 
 `00_portfolio_data.json` の先頭に `_metadata` キーを追加し、各データセクションのスキーマ情報を含めること。アナリストエージェントはこの `_metadata` を最初に読み、正しいフィールド名を確定してからスクリプトを書く。

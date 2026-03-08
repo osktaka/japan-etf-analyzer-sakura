@@ -353,6 +353,15 @@ if db_all_failed:
     sys.exit(1)
 
 # === 株式分割調整データの検証（必須） ===
+# 重要: holdings/summaryデータは全て /api/v1/portfolio/holdings および
+# /api/v1/portfolio/summary API経由で取得された値であること。
+# APIはSplitAdjustmentServiceを経由して株式分割調整済みデータを返す。
+# average_cost, quantity等はAPIレスポンスの値をそのまま使用しており、
+# DB（tradesテーブル）への直接クエリは一切含まれていない。
+#
+# 【禁止】tradesテーブルへの直接クエリ（SELECT * FROM trades等）は
+# 分割前の元の数量・単価が返されるため、絶対に使用しないこと。
+# 詳細: phase0-data-collection.md「禁止パターン」セクション参照
 print("--- データ整合性検証 ---")
 holdings_data_v = (holdings or {}).get('data', [])
 if not holdings_data_v:

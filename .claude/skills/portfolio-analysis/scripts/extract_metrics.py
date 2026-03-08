@@ -237,9 +237,9 @@ def extract_top_actions(content: str) -> list[dict]:
     section_end = pos + next_heading.start() if next_heading else pos + 2000
     section = content[pos:section_end]
 
-    # "1. **アクション名**: 説明（合意度: 100%）"
+    # "1. **アクション名**: 説明（方向性一致度: 5/5）" or legacy "（方向性一致度: 100%）"
     action_pattern = re.compile(
-        r"\d+\.\s*\*\*([^*]+)\*\*[:：]?\s*([^（(]*?)(?:（合意度[:：]\s*(\d+)%）|\(合意度[:：]\s*(\d+)%\))?(?:\n|$)"
+        r"\d+\.\s*\*\*([^*]+)\*\*[:：]?\s*([^（(]*?)(?:（方向性一致度[:：]\s*(\d+)/5）|\(方向性一致度[:：]\s*(\d+)/5\)|（方向性一致度[:：]\s*(\d+)%）|\(方向性一致度[:：]\s*(\d+)%\))?(?:\n|$)"
     )
 
     priority_map = {0: "highest", 1: "high", 2: "medium"}
@@ -248,9 +248,13 @@ def extract_top_actions(content: str) -> list[dict]:
         action_name = am.group(1).strip()
         consensus = None
         if am.group(3):
-            consensus = int(am.group(3))
+            consensus = int(am.group(3)) * 20  # 5/5 → 100, 4/5 → 80
         elif am.group(4):
-            consensus = int(am.group(4))
+            consensus = int(am.group(4)) * 20
+        elif am.group(5):
+            consensus = int(am.group(5))  # legacy百分率
+        elif am.group(6):
+            consensus = int(am.group(6))
 
         actions.append({
             "action": action_name,
