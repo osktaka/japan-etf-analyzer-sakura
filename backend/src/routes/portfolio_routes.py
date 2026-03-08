@@ -2,6 +2,7 @@
 from flask import Blueprint, request
 from flask_login import current_user, login_required
 
+from src.services.analysis_data_service import AnalysisDataService
 from src.services.portfolio_service import PortfolioService
 from src.utils import api_response
 
@@ -10,6 +11,7 @@ def create_portfolio_bp():
     """Create portfolio blueprint."""
     bp = Blueprint("portfolio", __name__, url_prefix="/portfolio")
     portfolio_service = PortfolioService()
+    analysis_data_service = AnalysisDataService()
 
     @bp.route("", methods=["GET"])
     @login_required
@@ -62,5 +64,21 @@ def create_portfolio_bp():
 
         history = portfolio_service.get_valuation_history(current_user.id, period)
         return api_response(data=history)
+
+    @bp.route("/analysis-data", methods=["GET"])
+    @login_required
+    def get_analysis_data():
+        """Get bulk analysis data for portfolio holdings.
+
+        GET /api/v1/portfolio/analysis-data
+
+        Returns:
+            Bulk data including performance_cache, score_cache,
+            etf_data, tag_data, and price_data for held ETFs
+        """
+        holdings = portfolio_service.get_holdings(current_user.id)
+        etf_codes = [h["etf_code"] for h in holdings]
+        data = analysis_data_service.get_analysis_data(etf_codes)
+        return api_response(data=data)
 
     return bp

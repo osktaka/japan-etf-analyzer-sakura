@@ -9,7 +9,7 @@
 
 ## データ受け渡しルール
 
-- **入力**: なし（API/DB直接アクセス）
+- **入力**: なし（全データHTTP API経由で取得）
 - **出力**:
   - `{WORK_DIR}/00_portfolio_data.json` — 全収集データ
   - `{WORK_DIR}/00_portfolio_reference.md` — セクション1・11.2用markdownテーブル(プログラマティック生成。Phase 3+4統合エージェントがそのまま転記する)
@@ -25,18 +25,20 @@
 
 **原則**: 保有銘柄の数量・取得単価・評価額・損益率は**必ずAPI `/api/v1/portfolio/holdings` のレスポンスを正とする**。DBの `trades` テーブルを直接クエリして数量・単価を取得してはならない。
 
-> **補足**: 「DB直接クエリ禁止」の対象は `trades` テーブルのみ。performance_cache, score_cache, etfs, tags, price_histories はキャッシュ/マスタデータであり、株式分割調整の影響を受けないため直接クエリを許容する。
+> **補足**: 全テーブルのデータ取得をHTTP API経由に統一済み。`GET /api/v1/portfolio/analysis-data` で performance_cache, score_cache, etfs, tags, price_histories を一括取得する。`create_app()` / `db.session.execute()` は使用しない。
 
-### DB直接クエリ方針
+### データ取得方針
 
-| テーブル | 直接クエリ | 理由 |
-|---------|-----------|------|
-| trades | ❌禁止 | 分割調整前の生データが返される。必ずAPI経由で取得 |
-| performance_cache | ✅許可 | キャッシュデータ。株式分割の影響を受けない |
-| score_cache | ✅許可 | キャッシュデータ。株式分割の影響を受けない |
-| price_histories | ✅許可 | 価格データ。yfinanceのauto_adjust=Trueで分割調整済み |
-| etfs | ✅許可 | マスタデータ。分割情報はstock_splitsテーブルで別管理 |
-| tags / etf_tag_relations | ✅許可 | マスタデータ。株式分割と無関係 |
+全データをHTTP API経由で取得する。DB直接クエリ（`create_app()`, `db.session.execute()`）は使用しない。
+
+| データ | 取得方法 | API |
+|--------|---------|-----|
+| trades（保有銘柄・損益） | API経由 | `GET /api/v1/portfolio/holdings` |
+| performance_cache | API経由 | `GET /api/v1/portfolio/analysis-data` |
+| score_cache | API経由 | `GET /api/v1/portfolio/analysis-data` |
+| price_histories | API経由 | `GET /api/v1/portfolio/analysis-data` |
+| etfs | API経由 | `GET /api/v1/portfolio/analysis-data` |
+| tags / etf_tag_relations | API経由 | `GET /api/v1/portfolio/analysis-data` |
 
 **検証手順**: データ収集完了後、以下を実行する。
 

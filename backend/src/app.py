@@ -5,6 +5,8 @@ import os
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_login import LoginManager
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 from werkzeug.exceptions import HTTPException
 
 from .config.settings import config
@@ -15,6 +17,14 @@ logger = logging.getLogger(__name__)
 
 # Flask-Login manager
 login_manager = LoginManager()
+
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_wal_mode(dbapi_conn, connection_record):
+    """SQLite接続時にWALモードを有効化する."""
+    cursor = dbapi_conn.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.close()
 
 
 @login_manager.user_loader

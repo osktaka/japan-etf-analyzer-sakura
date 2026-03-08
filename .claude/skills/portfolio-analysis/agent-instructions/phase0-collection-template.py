@@ -12,13 +12,14 @@ Phase 0: データ収集テンプレートスクリプト
 注意: このテンプレートをコピーして使う場合、上記プレースホルダーを実際の値に置換すること。
 サブエージェントが実装する場合は、メインから渡された引数で動的に置換する。
 株式分割検証コードは本テンプレート末尾に組込済み。検証失敗時はスクリプトが停止する。
+
+全データはHTTP API経由で取得する。Flask import（create_app, db）は不要。
 """
 
 import requests
 from urllib3.util.retry import Retry
 from requests.adapters import HTTPAdapter
 import json
-import os
 from pathlib import Path
 import sys
 
@@ -28,13 +29,6 @@ if len(sys.argv) < 2:
     sys.exit(1)
 WORK_DIR = Path(sys.argv[1])
 WORK_DIR.mkdir(parents=True, exist_ok=True)
-
-# プロジェクトルート設定
-PROJECT_ROOT = Path('/app')
-sys.path.insert(0, str(PROJECT_ROOT))
-
-from src.app import create_app
-from src.models import db
 
 # データソースの取得状態を記録
 data_status = {}
@@ -93,13 +87,7 @@ record_status('valuation_history', resp=valuation_resp, data=valuation_history.g
 if valuation_history is None:
     print(f"資産推移取得エラー: {valuation_resp.status_code}（スキップ）")
 
-# 安全なIN句の構築ヘルパー
-def build_in_clause(etf_codes):
-    placeholders = ', '.join([f':code_{i}' for i in range(len(etf_codes))])
-    params = {f'code_{i}': code for i, code in enumerate(etf_codes)}
-    return placeholders, params
-
-# 4. DBクエリ（performance_cache, score_cache, etfs, tags）
+# 4. バルク分析データAPI（performance_cache, score_cache, etfs, tags, price_data）
 performance_data = []
 score_data = []
 etf_data = []
@@ -109,118 +97,29 @@ price_data_daily_30d = []
 price_data_close_250d = []
 
 try:
-    app = create_app()
-    with app.app_context():
-        placeholders, params = build_in_clause(etf_codes)
-
-        # performance_cache
-        try:
-            perf_result = db.session.execute(db.text(f"""
-                SELECT etf_code, period, return_rate, volatility, regression_rate
-                FROM performance_cache
-                WHERE etf_code IN ({placeholders})
-            """), params)
-            performance_data = perf_result.fetchall()
-            record_status('performance_cache', data=performance_data)
-        except Exception as e:
-            print(f"performance_cache取得エラー: {e}")
-            record_status('performance_cache', error=e)
-
-        # score_cache
-        try:
-            score_result = db.session.execute(db.text(f"""
-                SELECT etf_code, perspective, total_score,
-                       dividend_power, cost_efficiency, scale_reliability, trading_quality, return_performance
-                FROM score_cache
-                WHERE etf_code IN ({placeholders})
-            """), params)
-            score_data = score_result.fetchall()
-            record_status('score_cache', data=score_data)
-        except Exception as e:
-            print(f"score_cache取得エラー: {e}")
-            record_status('score_cache', error=e)
-
-        # etfs
-        try:
-            etf_result = db.session.execute(db.text(f"""
-                SELECT code, momentum_label, manager, listing_date, deviation_rate
-                FROM etfs
-                WHERE code IN ({placeholders})
-            """), params)
-            etf_data = etf_result.fetchall()
-            record_status('etf_data', data=etf_data)
-        except Exception as e:
-            print(f"etf_data取得エラー: {e}")
-            record_status('etf_data', error=e)
-
-        # tags
-        try:
-            tag_params = {f'code_{i}': code for i, code in enumerate(etf_codes)}
-            tag_placeholders = ', '.join([f':code_{i}' for i in range(len(etf_codes))])
-            tag_result = db.session.execute(db.text(f"""
-                SELECT etr.etf_code, t.name, t.category
-                FROM etf_tag_relations etr
-                JOIN tags t ON etr.tag_id = t.id
-                WHERE etr.etf_code IN ({tag_placeholders})
-            """), tag_params)
-            tag_data = tag_result.fetchall()
-            record_status('tag_data', data=tag_data)
-        except Exception as e:
-            print(f"tag_data取得エラー: {e}")
-            record_status('tag_data', error=e)
-
-        # price_histories（月次リターン用、後方互換）
-        try:
-            price_params = {f'code_{i}': code for i, code in enumerate(etf_codes)}
-            price_placeholders = ', '.join([f':code_{i}' for i in range(len(etf_codes))])
-            price_result = db.session.execute(db.text(f"""
-                SELECT etf_code, date, close
-                FROM price_histories
-                WHERE etf_code IN ({price_placeholders})
-                AND date >= date('now', '-13 months')
-                ORDER BY etf_code, date
-            """), price_params)
-            price_data = price_result.fetchall()
-            record_status('price_data', data=price_data)
-        except Exception as e:
-            print(f"price_data取得エラー: {e}")
-            record_status('price_data', error=e)
-
-        # price_histories（直近30日OHLCV、ATR/出来高用）
-        try:
-            ohlcv_params = {f'code_{i}': code for i, code in enumerate(etf_codes)}
-            ohlcv_placeholders = ', '.join([f':code_{i}' for i in range(len(etf_codes))])
-            ohlcv_result = db.session.execute(db.text(f"""
-                SELECT etf_code, date, open, high, low, close, volume
-                FROM price_histories
-                WHERE etf_code IN ({ohlcv_placeholders})
-                AND date >= date('now', '-30 days')
-                ORDER BY etf_code, date
-            """), ohlcv_params)
-            price_data_daily_30d = ohlcv_result.fetchall()
-            record_status('price_data_daily_30d', data=price_data_daily_30d)
-        except Exception as e:
-            print(f"price_data_daily_30d取得エラー: {e}")
-            record_status('price_data_daily_30d', error=e)
-
-        # price_histories（14ヶ月close、200MA用）
-        try:
-            close250_params = {f'code_{i}': code for i, code in enumerate(etf_codes)}
-            close250_placeholders = ', '.join([f':code_{i}' for i in range(len(etf_codes))])
-            close250_result = db.session.execute(db.text(f"""
-                SELECT etf_code, date, close
-                FROM price_histories
-                WHERE etf_code IN ({close250_placeholders})
-                AND date >= date('now', '-14 months')
-                ORDER BY etf_code, date
-            """), close250_params)
-            price_data_close_250d = close250_result.fetchall()
-            record_status('price_data_close_250d', data=price_data_close_250d)
-        except Exception as e:
-            print(f"price_data_close_250d取得エラー: {e}")
-            record_status('price_data_close_250d', error=e)
+    analysis_resp = session.get('http://localhost:8902/api/v1/portfolio/analysis-data')
+    if analysis_resp.status_code == 200:
+        analysis = analysis_resp.json().get('data', {})
+        performance_data = analysis.get('performance_cache', [])
+        score_data = analysis.get('score_cache', [])
+        etf_data = analysis.get('etf_data', [])
+        tag_data = analysis.get('tag_data', [])
+        price_data = analysis.get('price_data', [])
+        price_data_daily_30d = analysis.get('price_data_daily_30d', [])
+        price_data_close_250d = analysis.get('price_data_close_250d', [])
+        record_status('performance_cache', data=performance_data)
+        record_status('score_cache', data=score_data)
+        record_status('etf_data', data=etf_data)
+        record_status('tag_data', data=tag_data)
+        record_status('price_data', data=price_data)
+        record_status('price_data_daily_30d', data=price_data_daily_30d)
+        record_status('price_data_close_250d', data=price_data_close_250d)
+    else:
+        print(f"分析データAPI取得エラー: {analysis_resp.status_code} {analysis_resp.text[:200]}")
+        for name in ['performance_cache', 'score_cache', 'etf_data', 'tag_data', 'price_data', 'price_data_daily_30d', 'price_data_close_250d']:
+            record_status(name, resp=analysis_resp)
 except Exception as e:
-    print(f"DB接続エラー: {e}（DBデータはスキップ）")
+    print(f"分析データAPI接続エラー: {e}")
     for name in ['performance_cache', 'score_cache', 'etf_data', 'tag_data', 'price_data', 'price_data_daily_30d', 'price_data_close_250d']:
         if name not in data_status:
             record_status(name, error=e)
@@ -315,19 +214,18 @@ def build_metadata(data, extra_info=None):
     if not data:
         return {"count": 0, "columns": [], "sample": None}
     first = data[0] if isinstance(data, list) else data
-    first_dict = dict(first._mapping) if hasattr(first, '_mapping') else first
-    meta = {"count": len(data), "columns": list(first_dict.keys()), "sample": {k: str(v) if not isinstance(v, (int, float, bool, type(None))) else v for k, v in first_dict.items()}}
+    meta = {"count": len(data), "columns": list(first.keys()), "sample": {k: str(v) if not isinstance(v, (int, float, bool, type(None))) else v for k, v in first.items()}}
     if extra_info:
         meta.update(extra_info)
     return meta
 
 _metadata = {
     "score_cache": build_metadata(score_data, {
-        "perspectives": sorted(set(dict(r._mapping)['perspective'] for r in score_data)) if score_data else [],
+        "perspectives": sorted(set(r['perspective'] for r in score_data)) if score_data else [],
         "axes": ["dividend_power", "cost_efficiency", "scale_reliability", "trading_quality", "return_performance"]
     }),
     "performance_cache": build_metadata(performance_data, {
-        "periods": sorted(set(dict(r._mapping)['period'] for r in performance_data)) if performance_data else []
+        "periods": sorted(set(r['period'] for r in performance_data)) if performance_data else []
     }),
     "price_data": build_metadata(price_data),
     "price_data_daily_30d": build_metadata(price_data_daily_30d),
@@ -344,12 +242,12 @@ _metadata = {
     "_data_status": data_status
 }
 
-# === DB系データ全失敗チェック ===
-db_sources = ['performance_cache', 'score_cache', 'etf_data', 'tag_data', 'price_data', 'price_data_daily_30d', 'price_data_close_250d']
-db_all_failed = all(data_status.get(s, {}).get('status') == 'error' for s in db_sources)
-if db_all_failed:
-    print("DB系データが全て取得失敗。有用な分析レポートを生成できません。")
-    print("推奨: Docker環境・DBの状態を確認してください。")
+# === API系データ全失敗チェック ===
+api_sources = ['performance_cache', 'score_cache', 'etf_data', 'tag_data', 'price_data', 'price_data_daily_30d', 'price_data_close_250d']
+api_all_failed = all(data_status.get(s, {}).get('status') == 'error' for s in api_sources)
+if api_all_failed:
+    print("分析データが全て取得失敗。有用な分析レポートを生成できません。")
+    print("推奨: Docker環境・APIサーバーの状態を確認してください。")
     sys.exit(1)
 
 # === 株式分割調整データの検証（必須） ===
@@ -415,13 +313,13 @@ output = {
     'holdings': holdings,
     'summary': summary,
     'valuation_history': valuation_history,
-    'performance_cache': [dict(row._mapping) for row in performance_data] if performance_data else None,
-    'score_cache': [dict(row._mapping) for row in score_data] if score_data else None,
-    'etf_data': [dict(row._mapping) for row in etf_data] if etf_data else None,
-    'tag_data': [dict(row._mapping) for row in tag_data] if tag_data else None,
-    'price_data': [dict(row._mapping) for row in price_data] if price_data else None,
-    'price_data_daily_30d': [dict(row._mapping) for row in price_data_daily_30d] if price_data_daily_30d else None,
-    'price_data_close_250d': [dict(row._mapping) for row in price_data_close_250d] if price_data_close_250d else None,
+    'performance_cache': performance_data if performance_data else None,
+    'score_cache': score_data if score_data else None,
+    'etf_data': etf_data if etf_data else None,
+    'tag_data': tag_data if tag_data else None,
+    'price_data': price_data if price_data else None,
+    'price_data_daily_30d': price_data_daily_30d if price_data_daily_30d else None,
+    'price_data_close_250d': price_data_close_250d if price_data_close_250d else None,
     'dividend_data': dividend_data,
     'recommendations': recommendations,
     'compare_performance': compare_performance_list if compare_performance_list else None,

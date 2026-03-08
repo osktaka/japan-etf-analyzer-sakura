@@ -10,6 +10,55 @@ Phase 0/Phase 1/Phase 2完了後に、メインエージェントから委譲さ
 - `mode`: 分析モード（speed/normal/debate）
 - `validation_phase`: 検証対象フェーズ（`phase0` or `phase1` or `phase2`）
 
+## timing.json 拡張メトリクス
+
+以下のフィールドをtiming.jsonに記録する。全てオプショナル（旧形式との後方互換を維持）。
+
+### スキル開始時に記録するフィールド
+
+timing.jsonの初期化時（skill_start記録時）に、以下も合わせて記録すること:
+
+- `mode`: 実行モード文字列。`"speed"` / `"normal"` / `"debate"` のいずれか
+- `holdings_count`: 保有銘柄数（整数）。Phase 0のAPI取得結果から算出
+
+### Phase 0完了後に記録するフィールド
+
+Phase 0検証後（phase_0_end記録後）に、以下も合わせて記録すること:
+
+- `phase_0_file_size`: `00_portfolio_data.json` のバイト数（整数）。`os.path.getsize()` で取得
+
+### スキル完了時に自動算出するフィールド
+
+skill_end記録時に、以下を自動算出して記録すること:
+
+- `total_duration_sec`: skill_start〜skill_endの秒数（浮動小数点）。skill_startとskill_endのISO形式タイムスタンプから算出
+
+### 記録例
+
+```json
+{
+  "skill_start": "2026-03-08T18:00:19+09:00",
+  "mode": "debate",
+  "holdings_count": 8,
+  "phase_0_end": "2026-03-08T18:01:27",
+  "phase_0_file_size": 15234,
+  "phase_05_end": "2026-03-08T18:09:13.193331",
+  "phase_1_end": "2026-03-08T18:18:22.909135",
+  "phase_2_end": "2026-03-08T18:20:50.139516",
+  "phase_3_round1_end": "2026-03-08T18:26:19.709902",
+  "phase_3_round2_end": "2026-03-08T18:29:28.078015",
+  "phase_4_end": "2026-03-08T18:40:43.621398",
+  "skill_end": "2026-03-08T18:40:43.621398",
+  "total_duration_sec": 2424.62
+}
+```
+
+### 後方互換性
+
+- 新フィールドは全てオプショナル。旧形式のtiming.jsonにこれらのフィールドがなくても、集計スクリプト（`timing_summary.py`）は正常に動作する
+- `mode` フィールドがない場合、集計時は「不明」として分類される
+- `total_duration_sec` がない場合、集計時にskill_start/skill_endから自動算出される
+
 ## Phase 0完了後の検証
 
 ### Phase 0出力の品質検証

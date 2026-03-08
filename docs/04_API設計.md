@@ -130,6 +130,7 @@
 | GET | /portfolio | ポートフォリオ概要取得 | F-105 | 必要 |
 | GET | /portfolio/holdings | 保有銘柄一覧取得 | F-105 | 必要 |
 | GET | /portfolio/valuation-history | ポートフォリオ評価額推移取得 | F-105 | 必要 |
+| GET | /portfolio/analysis-data | ポートフォリオ分析用一括データ取得 | F-105 | 必要 |
 | GET | /user/settings | ユーザー設定取得 | - | 必要 |
 | PUT | /user/settings/custom-weights | カスタム重み更新 | - | 必要 |
 | GET | /compare/performance | パフォーマンス比較取得 | F-107 | 不要 |
