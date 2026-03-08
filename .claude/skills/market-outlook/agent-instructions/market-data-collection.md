@@ -43,6 +43,17 @@ curl -s http://localhost:8902/api/v1/demo/portfolio/holdings
 
 ### AM: データ収集手順
 
+**Step 0 [AM]: yfinanceによる確定的データ取得**
+
+Bashツールで以下を実行:
+```bash
+docker compose exec backend python scripts/market_data_quick.py
+```
+
+- JSON出力を解析し、取得成功した指標はStep 1-2のWebSearch対象から除外する
+- 失敗した指標（errorsに記載）のみWebSearch/WebFetchで補完する
+- スクリプト実行自体が失敗した場合（Docker未起動等）は全指標をWebSearchで取得する（従来通り）
+
 **Step 1 [AM]: WebSearch 3並行**
 
 | ID | クエリ名 | 検索文字列 |
@@ -173,7 +184,7 @@ AMファイルのメタデータに cme_fetched が記録されていれば
 | 悪化 | XX,XXX - XX,XXX | {下振れリスク顕在化時} |
 | 回復 | XX,XXX - XX,XXX | {上振れ材料が出た場合} |
 
-レンジ算出: CME先物基準、VIX×0.05%をレンジ幅（例: VIX=25→CME±1.25%）
+レンジ算出: CME先物基準、VIX×0.05%をレンジ幅（例: VIX=25→CME±1.25%）。VIX>30の場合はVIX×0.04%に縮小（高VIX時の過大レンジ防止）。※ これらの係数は経験的な簡易値であり、理論モデルに基づくものではない
 
 ## 主要リスク要因
 
@@ -201,6 +212,8 @@ AMファイルのメタデータに cme_fetched が記録されていれば
 ## PM専用セクション（timing=pm のときのみ読む）
 
 ### PM: データ収集手順
+
+<!-- PM版ではドル円（USDJPY=X）のみyfinanceで取得可能。必要に応じて docker compose exec backend python scripts/market_data_quick.py で補完できるが、東証指標はyfinance非対応のため基本はWebSearchで収集する -->
 
 **Step 1 [PM]: WebSearch 3並行**
 
@@ -470,3 +483,5 @@ curl -s "http://localhost:8902/api/v1/etfs?tag_ids={tag_id}&sort=return_1m&order
 | 注目ETF 全フォールバック失敗 | セクション省略 + `<!-- etf_recommendation_unavailable -->` |
 | 注目ETF API失敗 | WebSearch結果のみで構成。それも不十分な場合はセクション省略 |
 | ポートフォリオAPI失敗 | 出力に `<!-- portfolio取得失敗 -->` を含める |
+
+- WebSearch/WebFetchの個別リトライ上限: 2回（同一URLへの3回目のアクセスは禁止）
