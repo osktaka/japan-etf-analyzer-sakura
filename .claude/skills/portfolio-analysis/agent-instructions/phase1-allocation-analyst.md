@@ -7,6 +7,17 @@
 - 作業ディレクトリ: `{WORK_DIR}`（メインエージェントから渡される）
 - Docker内パス: `/app/{WORK_DIR}`
 
+### Phase 0.5 計算結果の活用（全モード共通）
+
+本エージェントが分析を開始する前に、Phase 0.5で共通定量計算が実行済みである。
+`{WORK_DIR}/05_shared_calculations.md` に計算結果が格納されている。
+
+**必須ルール**:
+- シャープレシオ、相関係数、最大ドローダウン、VaR/CVaR等の数値は `05_shared_calculations.md` から引用する
+- 自分で再計算しない（DO_NOT_RECALCULATE原則）
+- 05_shared_calculations.md が存在しない場合のみ、自身で計算する（フォールバック）
+- 引用時は「Phase 0.5計算結果より」と出典を明記する
+
 ### データ受け渡しルール（共通原則）
 
 - **入力**: `{WORK_DIR}/00_portfolio_data.json`（全収集データ）、`{WORK_DIR}/0a_market_environment.md`（市場環境サマリー）、`{WORK_DIR}/0b_trend_summary.md`（トレンドデータ、存在する場合のみ）
@@ -175,6 +186,16 @@ allocation-analystは欠落アセットクラスの追加を提案するため�
 ```
 <!-- PHASE2_CANDIDATES_START -->
 - ADD_CLASS: {アセットクラス名} | REASON: {1行理由} | CANDIDATE: {etf_code} {name}
+<!-- PHASE2_CANDIDATES_END -->
+```
+
+**根拠チェーン（必須）**: 各候補に以下の4段チェーンを記載すること:
+```
+<!-- PHASE2_CANDIDATES_START -->
+- ADD_CLASS: {アセットクラス名} | REASON: {1行理由} | CANDIDATE: {etf_code} {name}
+  根拠: {データ} → {計算結果} → {解釈} → {提案理由}
+  例: ADD_CLASS: 債券 | CANDIDATE: 2621 iシェアーズ米国債
+  根拠: 保有資産クラス（株式95%/REIT5%）→ 債券0% → インフレヘッジ・下落耐性の欠如 → 債券10-20%追加で最大DD改善の可能性
 <!-- PHASE2_CANDIDATES_END -->
 ```
 

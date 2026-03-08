@@ -7,6 +7,17 @@
 - 作業ディレクトリ: `{WORK_DIR}`（メインエージェントから渡される）
 - Docker内パス: `/app/{WORK_DIR}`
 
+### Phase 0.5 計算結果の活用（全モード共通）
+
+本エージェントが分析を開始する前に、Phase 0.5で共通定量計算が実行済みである。
+`{WORK_DIR}/05_shared_calculations.md` に計算結果が格納されている。
+
+**必須ルール**:
+- シャープレシオ、相関係数、最大ドローダウン、VaR/CVaR等の数値は `05_shared_calculations.md` から引用する
+- 自分で再計算しない（DO_NOT_RECALCULATE原則）
+- 05_shared_calculations.md が存在しない場合のみ、自身で計算する（フォールバック）
+- 引用時は「Phase 0.5計算結果より」と出典を明記する
+
 ### データ受け渡しルール（共通原則）
 
 - **入力**: `{WORK_DIR}/00_portfolio_data.json`（全収集データ）、`{WORK_DIR}/0a_market_environment.md`（市場環境サマリー）、`{WORK_DIR}/0b_trend_summary.md`（トレンドデータ、存在する場合のみ）
@@ -220,6 +231,10 @@ Phase 0aで収集した市場環境サマリー（`{WORK_DIR}/0a_market_environm
 
 3. **最終確率の決定**: 調整後の確率と判定理由を「市場環境根拠」列に記載
 
+**資産換算の解釈ルール（必須）**:
+- ストレスシナリオの解釈には必ず「資産換算」（約X万円の減少、資産の約Xヶ月分相当）を含めること
+- 05_shared_calculations.md にabsolute_loss/monthly_equivalentがある場合はそれを引用
+
 **複合シナリオの扱い**:
 - 同時発生確率の低いシナリオの組み合わせは「参考シナリオ」として分離表示
 - 「現実的な複合シナリオ」の判定: `0a_market_environment.md` の示唆に**2つ以上のシナリオ発生条件に関連する記述がある**場合のみ追加。発生確率は個別シナリオの最低確率とする
@@ -425,6 +440,16 @@ quant-analystは主にリスク調整後リターンの効率性が低い銘柄�
 ```
 <!-- PHASE2_CANDIDATES_START -->
 - SELL: {etf_code} {name} | REASON: {1行理由}
+<!-- PHASE2_CANDIDATES_END -->
+```
+
+**根拠チェーン（必須）**: 各候補に以下の4段チェーンを記載すること:
+```
+<!-- PHASE2_CANDIDATES_START -->
+- SELL: {etf_code} {name} | REASON: {1行理由}
+  根拠: {データ} → {計算結果} → {解釈} → {提案理由}
+  例: 1489: SELL
+  根拠: SR 0.15（05_shared_calculations.md）→ ポートフォリオ内最低 → 非効率銘柄 → 同カテゴリ高効率銘柄への入替で全体SR改善の可能性
 <!-- PHASE2_CANDIDATES_END -->
 ```
 

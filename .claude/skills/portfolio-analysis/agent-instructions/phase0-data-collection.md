@@ -27,6 +27,17 @@
 
 > **補足**: 「DB直接クエリ禁止」の対象は `trades` テーブルのみ。performance_cache, score_cache, etfs, tags, price_histories はキャッシュ/マスタデータであり、株式分割調整の影響を受けないため直接クエリを許容する。
 
+### DB直接クエリ方針
+
+| テーブル | 直接クエリ | 理由 |
+|---------|-----------|------|
+| trades | ❌禁止 | 分割調整前の生データが返される。必ずAPI経由で取得 |
+| performance_cache | ✅許可 | キャッシュデータ。株式分割の影響を受けない |
+| score_cache | ✅許可 | キャッシュデータ。株式分割の影響を受けない |
+| price_histories | ✅許可 | 価格データ。yfinanceのauto_adjust=Trueで分割調整済み |
+| etfs | ✅許可 | マスタデータ。分割情報はstock_splitsテーブルで別管理 |
+| tags / etf_tag_relations | ✅許可 | マスタデータ。株式分割と無関係 |
+
 **検証手順**: データ収集完了後、以下を実行する。
 
 1. `00_portfolio_data.json` の `holdings` セクションから各銘柄の `quantity`, `average_cost`, `current_price`, `current_value` を抽出

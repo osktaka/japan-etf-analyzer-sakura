@@ -1,0 +1,109 @@
+{
+  "_description": "Phase 0.5 共通定量計算の閾値パラメータ。変更時はphase05-shared-calculations.mdの根拠説明も更新すること",
+  "correlation": {
+    "high": 0.85,
+    "low": 0.3,
+    "high_description": "高相関判定。日本ETF市場で同一インデックス連動ETF間の典型値",
+    "low_description": "低相関判定。Markowitz理論で分散効果が顕著になる閾値"
+  },
+  "sharpe_ratio": {
+    "excellent": 1.0,
+    "good": 0.5,
+    "risk_free_rate_fallback": 0.5
+  },
+  "drawdown": {
+    "min_data_points": 10,
+    "min_data_points_description": "最大ドローダウン算出に必要な最小データポイント数"
+  },
+  "var_cvar": {
+    "confidence_level": 0.95,
+    "min_data_points": 12,
+    "reliable_data_points": 36,
+    "medium_data_points": 12
+  },
+  "momentum": {
+    "declining_warn_ratio": 0.30,
+    "declining_warn_description": "下降中/下降加速の銘柄比率がこの値を超えた場合に警告"
+  },
+  "allocation": {
+    "single_sector_warn": 0.40,
+    "single_sector_critical": 0.50,
+    "single_sector_warn_description": "単一セクター比率40%超で警告",
+    "single_sector_critical_description": "単一セクター比率50%超で重大警告"
+  },
+  "return_gap": {
+    "threshold": 0.15,
+    "description": "年率リターン格差15%以上で高リスク連動型に分類。高相関ペアでもリターン格差が大きい場合は実質重複とは言えない"
+  },
+  "beta_diff": {
+    "threshold": 0.3,
+    "high_risk_threshold": 0.5,
+    "description": "ベータ差0.3以上で不安定相関に分類。0.5以上は高リスク連動型の条件"
+  },
+  "tracking_error": {
+    "threshold": 0.07,
+    "description": "年率追跡誤差7%（月次約2%相当）。パッシブETFの許容乖離の上限目安"
+  },
+  "stability_diff": {
+    "threshold": 0.3,
+    "description": "前後半相関差0.3超で構造変化・レジームシフトの可能性を示唆"
+  },
+  "min_months": {
+    "full": 14,
+    "basic": 6,
+    "full_description": "相関安定性の算出に必要な最小データ点数（前後半分割で各7点以上）",
+    "basic_description": "相関・ベータの算出に必要な最小データ点数"
+  },
+  "min_holdings_composite": {
+    "threshold": 5,
+    "description": "複合判定の最小保有銘柄数。5銘柄未満では簡易判定にフォールバック"
+  },
+  "ma200": {
+    "upper_trend": 5,
+    "lower_defense": -5,
+    "upper_trend_description": "乖離率+5%超で上昇トレンド判定",
+    "lower_defense_description": "乖離率-5%未満で防御判定"
+  },
+  "atr": {
+    "caution_multiplier": 1.5,
+    "exit_multiplier": 2.0,
+    "period": 14
+  },
+  "volume": {
+    "surge_ratio": 2.0,
+    "increase_ratio": 1.5,
+    "dry_ratio": 0.5,
+    "min_days": 10,
+    "avg_days": 20,
+    "recent_days": 5
+  },
+  "dividend_zscore": {
+    "undervalued": 1.5,
+    "caution": 0.84,
+    "min_years": 3
+  },
+  "rebuy_score": {
+    "hold_threshold": 70,
+    "watch_threshold": 40,
+    "weights": {
+      "ma200": 0.30,
+      "momentum": 0.25,
+      "zscore": 0.25,
+      "atr_margin": 0.20
+    }
+  },
+  "economic_quadrant": {
+    "cash_ratio": {
+      "quadrant_1": [5, 10],
+      "quadrant_2": [5, 15],
+      "quadrant_3": [15, 25],
+      "quadrant_4": [25, 40]
+    }
+  },
+  "defense_level": {
+    "attack_max": 10,
+    "neutral_max": 30,
+    "defense_max": 60,
+    "defense_level_description": "防御銘柄比率に基づくポートフォリオ防御レベル判定"
+  }
+}

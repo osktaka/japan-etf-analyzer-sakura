@@ -7,6 +7,17 @@
 - 作業ディレクトリ: `{WORK_DIR}`（メインエージェントから渡される）
 - Docker内パス: `/app/{WORK_DIR}`
 
+### Phase 0.5 計算結果の活用（全モード共通）
+
+本エージェントが分析を開始する前に、Phase 0.5で共通定量計算が実行済みである。
+`{WORK_DIR}/05_shared_calculations.md` に計算結果が格納されている。
+
+**必須ルール**:
+- シャープレシオ、相関係数、最大ドローダウン、VaR/CVaR等の数値は `05_shared_calculations.md` から引用する
+- 自分で再計算しない（DO_NOT_RECALCULATE原則）
+- 05_shared_calculations.md が存在しない場合のみ、自身で計算する（フォールバック）
+- 引用時は「Phase 0.5計算結果より」と出典を明記する
+
 ### データ受け渡しルール（共通原則）
 
 - **入力**: `{WORK_DIR}/00_portfolio_data.json`（全収集データ）、`{WORK_DIR}/0a_market_environment.md`（市場環境サマリー）、`{WORK_DIR}/0b_trend_summary.md`（トレンドデータ、存在する場合のみ）
@@ -340,6 +351,18 @@ score-analystは低スコア銘柄の入替を提案するため、SELL（低ス
 <!-- PHASE2_CANDIDATES_START -->
 - SELL: {etf_code} {name} | REASON: {1行理由}
 - BUY: {etf_code} {name} | ASSET_CLASS: {アセットクラス} | REASON: {1行理由}
+<!-- PHASE2_CANDIDATES_END -->
+```
+
+**根拠チェーン（必須）**: 各候補に以下の4段チェーンを記載すること:
+```
+<!-- PHASE2_CANDIDATES_START -->
+- SELL: {etf_code} {name} | REASON: {1行理由}
+  根拠: {データ} → {計算結果} → {解釈} → {提案理由}
+- BUY: {etf_code} {name} | ASSET_CLASS: {アセットクラス} | REASON: {1行理由}
+  根拠: {データ} → {計算結果} → {解釈} → {提案理由}
+  例: SELL 9012 DEF ETF
+  根拠: 5軸スコア（コスト45/リターン38）→ 弱い軸2つ・平均以下 → 低品質銘柄 → 代替候補1357（スコア+12点）への入替でポートフォリオ品質改善
 <!-- PHASE2_CANDIDATES_END -->
 ```
 

@@ -10,7 +10,7 @@ SKILL.md から分離した実行詳細情報。メインエージェントが�
 ├── 0b_trend_summary.md         # Phase 0b出力（過去分析のトレンドサマリー）
 ├── 00_portfolio_data.json      # Phase 0出力
 ├── 00_portfolio_reference.md   # Phase 0出力（セクション1・11.2用テーブル）
-├── 05_shared_calculations.md   # Phase 0.5出力（debateモード限定、共通定量計算結果＋テクニカル指標）
+├── 05_shared_calculations.md   # Phase 0.5出力（全モード共通、共通定量計算結果＋テクニカル指標）
 ├── 20_candidate_verification.md # Phase 2出力（入替候補の外部検証結果、normal/debateモード）
 ├── 10_quant_analysis.md        # Phase 1: quant-analyst出力（speed/normalモード）
 ├── 10_score_analysis.md        # Phase 1: score-analyst出力（speed/normalモード）

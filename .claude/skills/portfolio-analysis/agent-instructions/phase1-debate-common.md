@@ -261,6 +261,20 @@ BUYまたはADD_CLASSを提案する際、以下を確認し記載すること:
 <!-- PHASE2_CANDIDATES_END -->
 ```
 
+**根拠チェーン（必須）**: 各候補に以下の4段チェーンを記載すること:
+```
+<!-- PHASE2_CANDIDATES_START -->
+- SELL: {etf_code} {name} | REASON: {1行理由}
+  根拠: {データ} → {計算結果} → {解釈} → {提案理由}
+- BUY: {etf_code} {name} | ASSET_CLASS: {アセットクラス} | REASON: {1行理由}
+  根拠: {データ} → {計算結果} → {解釈} → {提案理由}
+- ADD_CLASS: {アセットクラス名} | REASON: {1行理由} | CANDIDATE: {etf_code} {name}
+  根拠: {データ} → {計算結果} → {解釈} → {提案理由}
+  例: SELL 9012 DEF ETF
+  根拠: SR 0.15（05_shared_calculations.md）→ ポートフォリオ内最低 → 非効率銘柄 → 同カテゴリ高効率銘柄への入替で全体SR改善の可能性
+<!-- PHASE2_CANDIDATES_END -->
+```
+
 **ルール**:
 - 分析結果に基づき、入替・追加を推奨する候補を全て列挙する
 - SELL: シャープレシオ非効率銘柄、低スコア銘柄、構造的下降トレンド銘柄など
