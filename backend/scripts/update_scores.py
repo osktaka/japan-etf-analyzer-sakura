@@ -39,7 +39,7 @@ class UpdateScoresBatch(BaseBatchScript):
 
     batch_name = "update_scores"
     description = "Update score cache for all ETFs"
-    depends_on = ["update_etf_data", "sync_dividend_from_minkabu"]
+    depends_on = ["update_etf_data", "sync_from_minkabu"]
     check_window = ("16:30", "22:00")
 
     # 機能フラグ設定

@@ -239,8 +239,7 @@ def update_single_etf(
                 logger.warning(f"No data returned for {ticker}")
                 return "failed"
 
-        # 配当利回りはsync_dividend_from_minkabu.pyで別途取得
-        # totalAssetsはyfinance 0.1.63で取得不可のためスキップ
+        # 配当利回り・純資産額はsync_from_minkabu.pyで別途取得
 
         # 株式分割検知処理（データが2行以上ある場合のみ）
         if not df.empty and len(df) >= 2:

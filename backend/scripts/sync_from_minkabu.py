@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Sync dividend yield data from Minkabu (minkabu.jp) to database.
+"""Sync dividend yield and total assets data from Minkabu (minkabu.jp) to database.
 
 Usage:
-    python scripts/sync_dividend_from_minkabu.py
-    python scripts/sync_dividend_from_minkabu.py --codes 1306,1489
-    python scripts/sync_dividend_from_minkabu.py --limit 10 --dry-run
-    python scripts/sync_dividend_from_minkabu.py --rate-limit 2.0
+    python scripts/sync_from_minkabu.py
+    python scripts/sync_from_minkabu.py --codes 1306,1489
+    python scripts/sync_from_minkabu.py --limit 10 --dry-run
+    python scripts/sync_from_minkabu.py --rate-limit 2.0
 
 Options:
     --codes CODES       Comma-separated ETF codes (default: all DB ETFs)
@@ -33,10 +33,42 @@ USER_AGENT = (
 )
 
 
+def fetch_minkabu_data(
+    code: str, rate_limit: float = 1.5
+) -> dict:
+    """Fetch dividend yield and total assets from Minkabu for a given ETF code.
+
+    Args:
+        code: ETF code (e.g., "1306")
+        rate_limit: Sleep seconds after request
+
+    Returns:
+        dict with keys 'dividend_yield' (Optional[float]) and
+        'total_assets' (Optional[int])
+    """
+    url = MINKABU_URL.format(code=code)
+    headers = {"User-Agent": USER_AGENT}
+
+    response = requests.get(url, headers=headers, timeout=30)
+    response.raise_for_status()
+
+    html = response.text
+    dividend_yield = _parse_dividend_yield(html)
+    total_assets = _parse_total_assets(html)
+
+    time.sleep(rate_limit)
+    return {
+        "dividend_yield": dividend_yield,
+        "total_assets": total_assets,
+    }
+
+
 def fetch_dividend_yield(
     code: str, rate_limit: float = 1.5
 ) -> Optional[float]:
     """Fetch dividend yield from Minkabu for a given ETF code.
+
+    Backward-compatible wrapper around fetch_minkabu_data.
 
     Args:
         code: ETF code (e.g., "1306")
@@ -45,23 +77,15 @@ def fetch_dividend_yield(
     Returns:
         Dividend yield as float (e.g., 1.81) or None if unavailable
     """
-    url = MINKABU_URL.format(code=code)
-    headers = {"User-Agent": USER_AGENT}
-
-    response = requests.get(url, headers=headers, timeout=30)
-    response.raise_for_status()
-
-    yield_value = _parse_dividend_yield(response.text)
-
-    time.sleep(rate_limit)
-    return yield_value
+    data = fetch_minkabu_data(code, rate_limit)
+    return data["dividend_yield"]
 
 
 def _parse_dividend_yield(html: str) -> Optional[float]:
     """Parse dividend yield from Minkabu HTML.
 
     Extracts the yield value from the stock reference
-    indicators section (株価参考指標).
+    indicators section.
     ETFs use "分配金利回り", stocks use "配当利回り".
 
     Args:
@@ -90,6 +114,89 @@ def _parse_dividend_yield(html: str) -> Optional[float]:
             dd = dt.find_next_sibling("dd")
             if dd:
                 return _extract_yield_value(dd.get_text(strip=True))
+
+    return None
+
+
+def _parse_total_assets(html: str) -> Optional[int]:
+    """Parse total assets from Minkabu HTML.
+
+    Extracts the total assets value from th/td or dt/dd patterns.
+    Looks for text containing "純資産".
+
+    Args:
+        html: Raw HTML string from Minkabu
+
+    Returns:
+        Total assets in yen as int or None if not found
+    """
+    soup = BeautifulSoup(html, "html.parser")
+
+    # thタグで探す
+    th_tags = soup.find_all("th")
+    for th in th_tags:
+        text = th.get_text(strip=True)
+        if "純資産" in text:
+            td = th.find_next_sibling("td")
+            if td:
+                value = _extract_total_assets_value(
+                    td.get_text(strip=True)
+                )
+                if value is not None:
+                    return value
+
+    # フォールバック: dtタグで探す
+    dt_tags = soup.find_all("dt")
+    for dt in dt_tags:
+        text = dt.get_text(strip=True)
+        if "純資産" in text:
+            dd = dt.find_next_sibling("dd")
+            if dd:
+                value = _extract_total_assets_value(
+                    dd.get_text(strip=True)
+                )
+                if value is not None:
+                    return value
+
+    return None
+
+
+def _extract_total_assets_value(text: str) -> Optional[int]:
+    """Extract total assets value from text like '336,430.7億円'.
+
+    Handles units:
+        - 億円: multiply by 100,000,000
+        - 百万円: multiply by 1,000,000
+
+    Args:
+        text: Text containing total assets value
+
+    Returns:
+        Total assets in yen as int or None if not parseable
+    """
+    if not text or "---" in text or "N/A" in text:
+        return None
+
+    # カンマ除去
+    cleaned = text.replace(",", "")
+
+    # 億円単位
+    match = re.search(r"([\d.]+)\s*億円", cleaned)
+    if match:
+        try:
+            value = float(match.group(1))
+            return int(value * 100_000_000)
+        except ValueError:
+            return None
+
+    # 百万円単位
+    match = re.search(r"([\d.]+)\s*百万円", cleaned)
+    if match:
+        try:
+            value = float(match.group(1))
+            return int(value * 1_000_000)
+        except ValueError:
+            return None
 
     return None
 
@@ -127,26 +234,36 @@ def _load_all_etf_codes() -> list:
     return [etf.code for etf in etfs]
 
 
-def _update_dividend_yield(code: str, dividend_yield: float) -> None:
-    """Update dividend yield for a single ETF in database.
+def _update_from_minkabu(code: str, data: dict) -> None:
+    """Update dividend yield and total assets for a single ETF.
 
     Args:
         code: ETF code
-        dividend_yield: New dividend yield value
+        data: dict with 'dividend_yield' and 'total_assets' keys
     """
     from src.models import ETF, db
 
     etf = ETF.query.filter_by(code=code).first()
-    if etf and dividend_yield is not None:
-        etf.dividend_yield = dividend_yield
+    if not etf:
+        return
+
+    updated = False
+    if data.get("dividend_yield") is not None:
+        etf.dividend_yield = data["dividend_yield"]
+        updated = True
+    if data.get("total_assets") is not None:
+        etf.total_assets = data["total_assets"]
+        updated = True
+
+    if updated:
         db.session.commit()
 
 
-class SyncDividendFromMinkabuScript(BaseBatchScript):
-    """Dividend yield sync from Minkabu batch script."""
+class SyncFromMinkabuScript(BaseBatchScript):
+    """Dividend yield and total assets sync from Minkabu batch script."""
 
-    batch_name = "sync_dividend_from_minkabu"
-    description = "Sync dividend yield data from Minkabu"
+    batch_name = "sync_from_minkabu"
+    description = "Sync dividend yield and total assets from Minkabu"
     enable_batch_log = True
     enable_progress = True
     progress_interval = 10
@@ -252,29 +369,35 @@ class SyncDividendFromMinkabuScript(BaseBatchScript):
         Returns:
             True if successful, False otherwise
         """
+        data = fetch_minkabu_data(code, self.args.rate_limit)
+        yield_value = data["dividend_yield"]
+        total_assets = data["total_assets"]
+
+        yield_str = f"{yield_value}%" if yield_value else "N/A"
+        assets_str = f"{total_assets:,}円" if total_assets else "N/A"
+
         if self.args.dry_run:
-            yield_value = fetch_dividend_yield(code, self.args.rate_limit)
-            yield_str = f"{yield_value}%" if yield_value else "N/A"
             self.logger.info(
-                f"[{index}/{total}] {code}: [DRY-RUN] yield={yield_str}"
+                f"[{index}/{total}] {code}: [DRY-RUN] "
+                f"yield={yield_str}, total_assets={assets_str}"
             )
-            return yield_value is not None
+            return yield_value is not None or total_assets is not None
 
-        yield_value = fetch_dividend_yield(code, self.args.rate_limit)
-
-        if yield_value is None:
+        if yield_value is None and total_assets is None:
             self.logger.warning(
-                f"[{index}/{total}] {code}: Could not fetch dividend yield"
+                f"[{index}/{total}] {code}: "
+                f"Could not fetch dividend yield or total assets"
             )
             return False
 
-        _update_dividend_yield(code, yield_value)
+        _update_from_minkabu(code, data)
         self.logger.info(
-            f"[{index}/{total}] {code}: Updated dividend_yield={yield_value}%"
+            f"[{index}/{total}] {code}: Updated "
+            f"yield={yield_str}, total_assets={assets_str}"
         )
         return True
 
 
 if __name__ == "__main__":
-    script = SyncDividendFromMinkabuScript()
+    script = SyncFromMinkabuScript()
     sys.exit(script.run())
