@@ -1,7 +1,11 @@
-"""米国市場データのクイック取得スクリプト（market-outlookスキル用）
+"""市場データのクイック取得スクリプト（market-outlookスキル用）
 
-yfinanceを使用して米国主要指標をJSON形式で標準出力に出力する。
+yfinanceを使用して主要指標をJSON形式で標準出力に出力する。
 DB接続は不要。
+
+使い方:
+  python market_data_quick.py        # AM用（米国指標のみ）
+  python market_data_quick.py --pm   # PM用（米国指標 + 東証指標）
 """
 
 import json
@@ -26,7 +30,7 @@ requests.Session.prepare_request = custom_prepare_request
 
 import yfinance as yf  # noqa: E402
 
-# 取得対象ティッカー
+# AM用ティッカー（米国指標）
 TICKERS = {
     "sp500": "^GSPC",
     "nasdaq": "^IXIC",
@@ -37,15 +41,32 @@ TICKERS = {
     "usdjpy": "USDJPY=X",
 }
 
+# PM用追加ティッカー（東証指標）
+# --pm 指定時にTICKERSと合わせて取得する
+# NOTE: TOPIX (^TPX) はyfinanceで取得不可（delisted扱い）→ WebFetchフォールバック対象
+PM_TICKERS = {
+    "nikkei225": "^N225",       # 日経平均株価
+    "growth250": "2516.T",      # MAXIS東証グロース250 ETF（グロース250指数の代替）
+    "reit_index": "1343.T",     # NEXT FUNDS 東証REIT指数連動型ETF
+}
+
 JST = timezone(timedelta(hours=9))
 
 
-def fetch_market_data():
-    """全ティッカーのデータを取得してJSON形式で返す。"""
+def fetch_market_data(include_pm=False):
+    """ティッカーのデータを取得してJSON形式で返す。
+
+    Args:
+        include_pm: TrueならPM用東証指標も取得する
+    """
+    tickers = dict(TICKERS)
+    if include_pm:
+        tickers.update(PM_TICKERS)
+
     result = {}
     errors = []
 
-    for name, ticker_symbol in TICKERS.items():
+    for name, ticker_symbol in tickers.items():
         try:
             ticker = yf.Ticker(ticker_symbol)
             hist = ticker.history(period="5d")
@@ -94,7 +115,8 @@ def fetch_market_data():
 
 
 def main():
-    data = fetch_market_data()
+    include_pm = "--pm" in sys.argv
+    data = fetch_market_data(include_pm=include_pm)
     json.dump(data, sys.stdout, ensure_ascii=False, indent=2)
     print()  # 末尾改行
 

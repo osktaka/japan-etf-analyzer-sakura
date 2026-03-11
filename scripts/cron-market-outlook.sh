@@ -12,7 +12,7 @@ LOGDIR="/tmp"
 unset CLAUDECODE
 
 setsid --wait claude -p "/market-outlook" \
-  --allowedTools "WebSearch WebFetch Bash Read Write Edit Glob Grep Task Skill" \
+  --allowedTools "WebSearch WebFetch Bash Read Write Edit Glob Grep Agent Skill" \
   > "$LOGDIR/market-outlook-${TIMESTAMP}.log" 2>&1
 STEP1_EXIT=$?
 
