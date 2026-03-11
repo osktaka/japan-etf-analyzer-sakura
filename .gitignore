@@ -74,4 +74,4 @@ backend/scripts/output/
 
 # ポートフォリオ分析の一時ファイル
 .tmp/
-backend/data/_pf_temp/
+backend/data/
