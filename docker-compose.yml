@@ -15,7 +15,7 @@ services:
       - ./backend/tests:/app/tests
       - ./backend/scripts:/app/scripts
       - ./logs:/app/logs
-      - backend_data:/app/data
+      - ./backend/data:/app/data
     command: flask run --host=0.0.0.0 --port=8902
 
   frontend:
@@ -47,10 +47,7 @@ services:
       - ./backend/src:/app/src
       - ./backend/scripts:/app/scripts
       - ./logs:/app/logs
-      - backend_data:/app/data
+      - ./backend/data:/app/data
     depends_on:
       - backend
     restart: unless-stopped
-
-volumes:
-  backend_data:
