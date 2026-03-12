@@ -10,8 +10,8 @@
 ## データ受け渡しルール
 
 - **入力**: `{WORK_DIR}/` 配下の全分析結果ファイル、`{skill_dir}/report-guide.md`
-- **出力**: `./reports/{username}/YYYYMMDD_{username}.md`
-- **メインへの戻り値**: 「レポート保存完了: ./reports/{username}/YYYYMMDD_{username}.md」の1行のみ。データ全文やテーブル全体を返さないこと
+- **出力**: `./reports/{username}/YYYYMMDD_{username}_v2.md`
+- **メインへの戻り値**: 「レポート保存完了: ./reports/{username}/YYYYMMDD_{username}_v2.md」の1行のみ。データ全文やテーブル全体を返さないこと
 
 ## スキップ判断基準
 
@@ -234,7 +234,7 @@ Phase 1の内部分析（会議トランスクリプト）では率直な表現�
 6. セクション10の入替提案に外部検証結果を反映（`20_merge_meeting.md` の「入替候補の外部検証結果」から転記）
 7. 品質チェックを全て実施
 8. `./reports/{username}/` ディレクトリを作成（存在しない場合）
-9. レポート本体を保存: `./reports/{username}/YYYYMMDD_{username}.md`
+9. レポート本体を保存: `./reports/{username}/YYYYMMDD_{username}_v2.md`
 10. `reports/{username}/metrics.json` に追記（v1 phase34-integration.md の手順7a参照）
 11. 実行時間・コンテキスト使用量をセクション15に記載
 12. メインに保存先パスのみ返す
@@ -248,7 +248,7 @@ Phase 1の内部分析（会議トランスクリプト）では率直な表現�
 ```json
 {
   "date": "YYYY-MM-DD",
-  "report_path": "reports/{username}/YYYYMMDD_{username}.md",
+  "report_path": "reports/{username}/YYYYMMDD_{username}_v2.md",
   "mode": "brainstorm",
   "total_asset": 999999,
   "cash_balance": 99999,
@@ -276,7 +276,7 @@ Phase 1の内部分析（会議トランスクリプト）では率直な表現�
 ## 出力形式（サブエージェントの返答 - 必須）
 
 ```
-レポート保存完了: ./reports/{username}/YYYYMMDD_{username}.md
+レポート保存完了: ./reports/{username}/YYYYMMDD_{username}_v2.md
 ```
 
 この1行のみ返す。レポート内容は一切返さないこと。

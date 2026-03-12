@@ -4,12 +4,12 @@
 
 - 作業ディレクトリ: `{WORK_DIR}`（メインエージェントから渡される）
 - Docker内パス: `/app/{WORK_DIR}`
-- 認証情報: user_id=`{USER_ID}`, password=`{PASSWORD}`（メインエージェントから渡される）
-- APIベースURL: `http://localhost:8902`
+- 対象ユーザーID: `{USER_ID}`（メインエージェントから渡される。文字列。例: "demo"）
+- データ取得方法: サービス層（Python import）経由。Docker内で `docker compose exec backend python scripts/xxx.py` で実行
 
 ## データ受け渡しルール
 
-- **入力**: なし（全データHTTP API経由で取得）
+- **入力**: なし（全データはサービス層経由で取得）
 - **出力**:
   - `{WORK_DIR}/00_portfolio_data.json` — 全収集データ
   - `{WORK_DIR}/00_portfolio_reference.md` — セクション1・11.2用markdownテーブル(プログラマティック生成。Phase 3+4統合エージェントがそのまま転記する)
@@ -23,22 +23,28 @@
 
 **背景**: 2026-02-14に、DBクエリ経由で取得した数量・取得単価が株式分割調整前のデータとなり、API（PortfolioService）経由の分割調整済みデータと不一致が発生した。これにより総資産が約3万円過小評価され、レポート全体を破棄する事態となった。
 
-**原則**: 保有銘柄の数量・取得単価・評価額・損益率は**必ずAPI `/api/v1/portfolio/holdings` のレスポンスを正とする**。DBの `trades` テーブルを直接クエリして数量・単価を取得してはならない。
+**原則**: 保有銘柄の数量・取得単価・評価額・損益率は**必ずサービス層（PortfolioService）経由で取得する**。DBの `trades` テーブルを直接クエリして数量・単価を取得してはならない。
 
-> **補足**: 全テーブルのデータ取得をHTTP API経由に統一済み。`GET /api/v1/portfolio/analysis-data` で performance_cache, score_cache, etfs, tags, price_histories を一括取得する。`create_app()` / `db.session.execute()` は使用しない。
+> **補足**: 全データはサービス層（Python import）経由で取得する。Flask app_context内で PortfolioService, AnalysisDataService, CompareService, RecommendService を直接呼び出す。HTTP APIは使用しない。
 
 ### データ取得方針
 
-全データをHTTP API経由で取得する。DB直接クエリ（`create_app()`, `db.session.execute()`）は使用しない。
+全データをサービス層（Python import）経由で取得する。Flask app_context内で各サービスを直接インスタンス化して呼び出す。
 
-| データ | 取得方法 | API |
-|--------|---------|-----|
-| trades（保有銘柄・損益） | API経由 | `GET /api/v1/portfolio/holdings` |
-| performance_cache | API経由 | `GET /api/v1/portfolio/analysis-data` |
-| score_cache | API経由 | `GET /api/v1/portfolio/analysis-data` |
-| price_histories | API経由 | `GET /api/v1/portfolio/analysis-data` |
-| etfs | API経由 | `GET /api/v1/portfolio/analysis-data` |
-| tags / etf_tag_relations | API経由 | `GET /api/v1/portfolio/analysis-data` |
+| データ | 取得方法 | サービス/メソッド |
+|--------|---------|-----------------|
+| trades（保有銘柄・損益） | サービス層 | `PortfolioService().get_holdings(user.id)` |
+| ポートフォリオサマリー | サービス層 | `PortfolioService().get_portfolio_summary(user.id)` |
+| 資産推移 | サービス層 | `PortfolioService().get_valuation_history(user.id, '3y')` |
+| performance_cache | サービス層 | `AnalysisDataService().get_analysis_data(etf_codes)` |
+| score_cache | サービス層 | `AnalysisDataService().get_analysis_data(etf_codes)` |
+| price_histories | サービス層 | `AnalysisDataService().get_analysis_data(etf_codes)` |
+| etfs | サービス層 | `AnalysisDataService().get_analysis_data(etf_codes)` |
+| tags / etf_tag_relations | サービス層 | `AnalysisDataService().get_analysis_data(etf_codes)` |
+| 比較データ | サービス層 | `CompareService().get_comparison(codes)` |
+| おすすめ | サービス層 | `RecommendService().get_recommendations(perspective)` |
+
+**重要**: `{USER_ID}` は文字列のログインID（例: "demo"）。サービス層のメソッドは整数の `user.id`（DBプライマリキー）を受け取る。テンプレートでは `User.query.filter_by(user_id=USER_ID).first()` で User オブジェクトを取得し、`user.id` を使用する。
 
 **検証手順**: データ収集完了後、以下を実行する。
 
@@ -53,13 +59,8 @@
 
 ```python
 # データ収集後の検証
-holdings_data = holdings.get('data', [])
-summary_data = summary.get('data', {})
-cash = summary_data.get('cash_balance', 0)
-total_asset_from_summary = summary_data.get('total_asset', 0)
-
 total_current_value = 0
-for h in holdings_data:
+for h in holdings:
     qty = h.get('quantity', 0)
     price = h.get('current_price', 0)
     cv = h.get('current_value', 0)
@@ -68,11 +69,11 @@ for h in holdings_data:
         print(f"警告: {h['etf_code']} の評価額不整合: {qty}口×{price}円={calc_cv}円 ≠ {cv}円")
     total_current_value += cv
 
-calc_total = total_current_value + cash
-if abs(calc_total - total_asset_from_summary) > 10:  # 10円以上の誤差
-    print(f"エラー: 総資産不整合: 銘柄合計{total_current_value}円 + 現金{cash}円 = {calc_total}円 ≠ サマリー{total_asset_from_summary}円")
+calc_total = total_current_value + cash_balance
+if abs(calc_total - total_asset) > 10:  # 10円以上の誤差
+    print(f"エラー: 総資産不整合: 銘柄合計{total_current_value}円 + 現金{cash_balance}円 = {calc_total}円 ≠ サマリー{total_asset}円")
     sys.exit(1)
-print(f"検証OK: 総資産{total_asset_from_summary:,.0f}円（銘柄{total_current_value:,.0f}円 + 現金{cash:,.0f}円）")
+print(f"検証OK: 総資産{total_asset:,.0f}円（銘柄{total_current_value:,.0f}円 + 現金{cash_balance:,.0f}円）")
 ```
 
 ### 禁止パターン（データ収集時）
@@ -82,9 +83,9 @@ print(f"検証OK: 総資産{total_asset_from_summary:,.0f}円（銘柄{total_cur
 - `SELECT * FROM trades` — 分割前の元の数量・単価が返される
 - `SELECT quantity, price FROM trades` — 同上
 - tradesテーブルへの任意のSELECT文
-- portfolioテーブルのquantity/average_costカラムの直接取得（APIを経由すること）
+- portfolioテーブルのquantity/average_costカラムの直接取得（サービス層を経由すること）
 
-**正しい取得方法**: `/api/v1/portfolio/holdings` API経由で取得する。APIはSplitAdjustmentServiceを経由して分割調整済みデータを返す。
+**正しい取得方法**: `PortfolioService().get_holdings(user.id)` でサービス層経由で取得する。サービス層はSplitAdjustmentServiceを内包して分割調整済みデータを返す。
 
 ## `_metadata`セクションの出力（必須）
 
@@ -121,7 +122,7 @@ print(f"検証OK: 総資産{total_asset_from_summary:,.0f}円（銘柄{total_cur
 
 **ステータス値**:
 - `"ok"`: 正常取得（件数付き）
-- `"empty"`: HTTP 200だがデータが空
+- `"empty"`: データが空
 - `"error"`: 取得失敗（エラー詳細付き）
 
 **出力例**:
@@ -157,7 +158,7 @@ print(f"検証OK: 総資産{total_asset_from_summary:,.0f}円（銘柄{total_cur
       "dividend_data": {"status": "ok", "count": 5},
       "recommendations_balance": {"status": "ok", "count": 10},
       "recommendations_dividend": {"status": "ok", "count": 10},
-      "recommendations_low-cost": {"status": "error", "http_status": 500, "error": "Internal Server Error"},
+      "recommendations_low-cost": {"status": "error", "error": "Internal Server Error"},
       "compare_performance": {"status": "ok", "count": 1},
       "compare_scores": {"status": "ok", "count": 1}
     }
@@ -173,17 +174,17 @@ print(f"検証OK: 総資産{total_asset_from_summary:,.0f}円（銘柄{total_cur
 
 ### `price_data_daily_30d`（直近30日OHLCV）
 
-- **取得元**: `price_histories` テーブル
+- **取得元**: `AnalysisDataService.get_analysis_data()` の `price_data_daily_30d` キー
 - **カラム**: `etf_code, date, open, high, low, close, volume`
-- **期間**: `date >= date('now', '-30 days')`
+- **期間**: 直近30日
 - **用途**: Phase 0.5のATR(14)計算、出来高異常検知
 - **注意**: `volume` カラムにNULLがある場合も取得する（Phase 0.5側でフォールバック処理）
 
 ### `price_data_close_250d`（直近14ヶ月close）
 
-- **取得元**: `price_histories` テーブル
+- **取得元**: `AnalysisDataService.get_analysis_data()` の `price_data_close_250d` キー
 - **カラム**: `etf_code, date, close`
-- **期間**: `date >= date('now', '-14 months')`（250営業日を確保するため14ヶ月）
+- **期間**: 直近14ヶ月（250営業日を確保するため14ヶ月）
 - **用途**: Phase 0.5の200日移動平均防御シグナル計算
 - **後方互換**: 既存 `price_data`（13ヶ月close）はそのまま維持する。`price_data_close_250d` は追加キーとして並存
 
@@ -227,6 +228,19 @@ print(f"検証OK: 総資産{total_asset_from_summary:,.0f}円（銘柄{total_cur
 `{skill_dir}/agent-instructions/phase0-collection-template.py` (出力先: `{WORK_DIR}/00_portfolio_data.json`, `{WORK_DIR}/00_portfolio_reference.md`)
 
 プレースホルダーの置換:
-- `{USER_ID}` → 認証ユーザーID
-- `{PASSWORD}` → 認証パスワード
+- `{USER_ID}` → 対象ユーザーID（文字列。例: "demo"）
 - `{WORK_DIR}` → 作業ディレクトリパス
+
+### 実行方法
+
+開発環境（Docker）:
+```bash
+docker compose exec backend python -c "<テンプレートのコードをプレースホルダー置換して渡す>"
+```
+
+本番環境（さくらサーバー）:
+```bash
+cd ~/www/japan-etf-analyzer
+source backend/venv/bin/activate
+python -c "<テンプレートのコードをプレースホルダー置換して渡す>"
+```

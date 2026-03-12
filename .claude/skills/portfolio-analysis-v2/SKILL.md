@@ -75,7 +75,7 @@ mkdir -p "${WORK_DIR}"
 ### Step 0: 初期化
 
 1. WORK_DIR を作成（上記 bash 参照）
-2. `reports/demo/PROMPT.md` から USER_ID / PASSWORD を取得
+2. AskUserQuestion で対象ユーザーIDを聞く（デフォルト: demo）。例: 「分析対象のユーザーIDを入力してください（デフォルト: demo）」
 3. timing.json を初期化:
 
 ```json
@@ -104,12 +104,11 @@ mkdir -p "${WORK_DIR}"
 パラメータ:
 - WORK_DIR: {WORK_DIR}
 - USER_ID: {USER_ID}（Phase 0のみ）
-- PASSWORD: {PASSWORD}（Phase 0のみ）
 
 メインへの戻り値は完了報告1行のみ。
 ```
 
-**プレースホルダー置換**: `{skill_dir}`, `{WORK_DIR}`, `{USER_ID}`, `{PASSWORD}` を実値に置換してからサブエージェントに渡す。
+**プレースホルダー置換**: `{skill_dir}`, `{WORK_DIR}`, `{USER_ID}` を実値に置換してからサブエージェントに渡す。
 
 ### Step 2: 定量計算
 
@@ -161,8 +160,8 @@ mkdir -p "${WORK_DIR}"
 - Task(general-purpose)
 - 指示: `{skill_dir}/agent-instructions/phase3-report-integration.md` をRead
 - 入力: `{WORK_DIR}/20_merge_meeting.md` + 生データ（`00_portfolio_data.json`等） + `{skill_dir}/report-guide.md`
-- 出力: `reports/demo/YYYYMMDD_demo.md`
-- 戻り値: 「レポート保存完了: reports/demo/YYYYMMDD_demo.md」の1行のみ
+- 出力: `reports/{USER_ID}/YYYYMMDD_{USER_ID}_v2.md`
+- 戻り値: 「レポート保存完了: reports/{USER_ID}/YYYYMMDD_{USER_ID}_v2.md」の1行のみ
 
 ### Step 6: 完了通知
 
@@ -188,24 +187,24 @@ mkdir -p "${WORK_DIR}"
 
 | データソース | テーブル/API | 用途 |
 |-------------|-------------|------|
-| 保有銘柄 | GET /api/v1/portfolio/holdings | 分割調整済み保有データ（**必ずAPI経由。SQLite直接クエリ禁止**） |
-| ポートフォリオサマリー | GET /api/v1/portfolio | 総資産、含み損益 |
-| パフォーマンスキャッシュ | performance_cache | 8期間リターン、ボラティリティ、回帰上昇率 |
-| スコアキャッシュ | score_cache | 5軸スコア x 6視点 |
-| 勢いラベル | etfs.momentum_label | 5段階モメンタム |
-| 日次価格履歴 | price_histories | 相関分析用（月次リターン） |
-| 資産推移 | GET /api/v1/portfolio/valuation-history?period=3y | 最大ドローダウン、回復期間 |
-| 比較API | GET /api/v1/compare/performance, /scores | 銘柄間比較 |
-| おすすめAPI | GET /api/v1/recommendations?perspective=... | 代替銘柄候補 |
-| タグ情報 | etf_tag_relations + tags | セクター/地域/テーマ分類 |
-| ETF詳細 | etfs | 信託報酬、配当利回り、純資産、運用会社 |
+| 保有銘柄 | PortfolioService.get_holdings(user_id) | 分割調整済み保有データ（**必ずサービス層経由。SQLite直接クエリ禁止**） |
+| ポートフォリオサマリー | PortfolioService.get_portfolio_summary(user_id) | 総資産、含み損益 |
+| パフォーマンスキャッシュ | AnalysisDataService.get_analysis_data() | 8期間リターン、ボラティリティ、回帰上昇率 |
+| スコアキャッシュ | AnalysisDataService.get_analysis_data() | 5軸スコア x 6視点 |
+| 勢いラベル | AnalysisDataService.get_analysis_data() | 5段階モメンタム |
+| 日次価格履歴 | AnalysisDataService.get_analysis_data() | 相関分析用（月次リターン） |
+| 資産推移 | PortfolioService.get_valuation_history(user_id, '3y') | 最大ドローダウン、回復期間 |
+| 比較API | CompareService.get_comparison(codes) | 銘柄間比較 |
+| おすすめAPI | RecommendService.get_recommendations(perspective) | 代替銘柄候補 |
+| タグ情報 | AnalysisDataService.get_analysis_data() | セクター/地域/テーマ分類 |
+| ETF詳細 | AnalysisDataService.get_analysis_data() | 信託報酬、配当利回り、純資産、運用会社 |
 | 市場環境調査 | WebSearch + WebFetch | 主要指標・政治経済トピック |
 
 ## フォールバックポリシー
 
 | フェーズ | 失敗条件 | 対応 |
 |---------|---------|------|
-| Phase 0（API） | 認証失敗 or holdings取得失敗 | **スキル全体を中止** |
+| Phase 0（データ収集） | DB接続失敗 or holdings取得失敗 | **スキル全体を中止** |
 | Phase 0a | 市場環境取得失敗 | 警告して続行（市場環境なしで分析） |
 | Phase 0b | トレンドサマリー失敗 | 警告して続行 |
 | Phase 0.5 | 定量計算失敗 | **スキル全体を中止** |
@@ -245,7 +244,7 @@ mkdir -p "${WORK_DIR}"
 
 ### 株式分割対策
 
-DBの trades テーブルは分割前の元の数量・単価で記録されている。**必ずAPI経由で分割調整済みデータを取得すること**。SQLite直接クエリは株式分割が反映されない。
+DBの trades テーブルは分割前の元の数量・単価で記録されている。**必ずサービス層（PortfolioService）経由で分割調整済みデータを取得すること**。SQLite直接クエリは株式分割が反映されない。
 
 **既知の障害（2026-02-14）**: Phase 0で一部銘柄の数量・取得単価が分割調整前データで収集され、総資産が約3万円過小評価。レポート全体が破棄に至った。
 
@@ -258,8 +257,7 @@ Phase 0 のデータ収集は `phase0-collection-template.py` をベースに実
 サブエージェントへのプロンプトでは、以下を実値に置換してから渡す:
 - `{skill_dir}` → `.claude/skills/portfolio-analysis-v2`
 - `{WORK_DIR}` → 実際の作業ディレクトリパス
-- `{USER_ID}` → 対象ユーザーID
-- `{PASSWORD}` → 対象ユーザーパスワード
+- `{USER_ID}` → 対象ユーザーID（AskUserQuestionで取得した値）
 
 ### 市場指標の取得タイミング
 
@@ -272,5 +270,5 @@ Phase 0a で取得する市場指標は**当日の終値または直前営業日
 - [ ] 共通定量計算を実施した（Phase 0.5）
 - [ ] 3つのブレインストーミング会議を実施した（Phase 1）
 - [ ] マージ会議で統合した（Phase 2）
-- [ ] レポートファイルが `reports/demo/` に保存された（Phase 3）
+- [ ] レポートファイルが `reports/{USER_ID}/` に保存された（Phase 3）
 - [ ] timing.json が全フェーズの実行時間を記録している
