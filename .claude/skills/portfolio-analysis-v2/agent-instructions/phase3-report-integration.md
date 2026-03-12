@@ -1,0 +1,282 @@
+# Phase 3: 最終レポート生成 指示書
+
+## 前提
+
+- 作業ディレクトリ: `{WORK_DIR}`（メインエージェントから渡される）
+- Docker内パス: `/app/{WORK_DIR}`
+- スキルディレクトリ: `{skill_dir}`（メインエージェントから渡される）
+- ユーザー名: `{username}`（メインエージェントから渡される）
+
+## データ受け渡しルール
+
+- **入力**: `{WORK_DIR}/` 配下の全分析結果ファイル、`{skill_dir}/report-guide.md`
+- **出力**: `./reports/{username}/YYYYMMDD_{username}.md`
+- **メインへの戻り値**: 「レポート保存完了: ./reports/{username}/YYYYMMDD_{username}.md」の1行のみ。データ全文やテーブル全体を返さないこと
+
+## スキップ判断基準
+
+このフェーズにスキップ条件はない。常に実行する。
+
+---
+
+## 目的
+
+マージ会議結果と生データから、`report-guide.md` のテンプレートに従って最終的な分析レポートを生成する。
+
+## 入力ファイル
+
+| ファイル | 内容 | 読込範囲 |
+|---------|------|---------|
+| `{WORK_DIR}/20_merge_meeting.md` | マージ会議結果 | 全文 |
+| `{WORK_DIR}/00_portfolio_reference.md` | セクション1・11.2用テーブルデータ | 全文 |
+| `{WORK_DIR}/05_shared_calculations.md` | 定量計算結果 | 全文 |
+| `{WORK_DIR}/00_portfolio_data.json` | 全収集データ | `_metadata._data_status` + `summary` + `holdings` |
+| `{WORK_DIR}/0a_market_environment.md` | 市場環境 | 全文 |
+| `{WORK_DIR}/0b_trend_summary.md` | トレンド（存在する場合のみ） | 全文 |
+| `{WORK_DIR}/timing.json` | 各フェーズの実行時間記録 | 全文 |
+| `{skill_dir}/report-guide.md` | レポートテンプレート | 全文 |
+
+---
+
+## レポート生成ルール
+
+### テンプレート準拠
+
+`report-guide.md` のテンプレート構造に従ってレポートを生成する。
+
+### データソースの優先順位
+
+1. **テーブルデータ**: `00_portfolio_reference.md` からそのまま転記（数値の丸め・フォーマット変更禁止）
+2. **定量計算結果**: `05_shared_calculations.md` の値を正とする（Phase 0.5のプログラマティック計算結果）
+3. **市場環境**: `0a_market_environment.md` から抽出
+4. **トレンド**: `0b_trend_summary.md` から抽出（存在しない場合は「初回分析のためトレンドデータなし」）
+5. **会議結論**: `20_merge_meeting.md` の統合議事録から各セクションの内容を抽出
+
+### セクション別データソース対応
+
+| レポートセクション | データソース |
+|------------------|------------|
+| 0. 市場環境サマリー | `0a_market_environment.md` |
+| 0.5 トレンド分析 | `0b_trend_summary.md` |
+| データ活用状況 | `00_portfolio_data.json` の `_metadata._data_status` |
+| 1. 保有銘柄一覧 | `00_portfolio_reference.md` そのまま転記 |
+| 2. シャープレシオ | `05_shared_calculations.md` |
+| 3. 相関分析 | `05_shared_calculations.md` |
+| 4. 最大ドローダウン | `05_shared_calculations.md` |
+| 5. ストレスシナリオ | `05_shared_calculations.md` + `20_merge_meeting.md` |
+| 6. スコア分析 | `05_shared_calculations.md` |
+| 7. モメンタム分析 | `05_shared_calculations.md` |
+| 8. アロケーション分析 | `20_merge_meeting.md`（会議2の結論）+ `05_shared_calculations.md` |
+| 9. ブレインストーミング議論サマリー | `20_merge_meeting.md` の統合議事録 |
+| 10. 最適化シミュレーション | `20_merge_meeting.md` の最終結論 + `05_shared_calculations.md` |
+| 11. 最適化前後の比較 | `00_portfolio_reference.md` + セクション10の提案 |
+| 12. 検討オプション | `20_merge_meeting.md` の優先アクション |
+| 13. 補足資料 | `05_shared_calculations.md` + テンプレート基本用語 |
+| 14. まとめ | 全セクションの統合 |
+| 15. 実行時間 | `timing.json` |
+
+### セクション9: ブレインストーミング議論サマリー
+
+v1のクロスレビュー（セクション9）に代わり、ブレインストーミング統合議論のサマリーを記載する。
+
+`20_merge_meeting.md` の統合議事録から以下を抽出して構成する:
+
+#### 9.1 3会議の主要論点
+
+| 論点 | 会議1（リスク・リターン効率） | 会議2（分散・アロケーション） | 会議3（銘柄品質・入替判断） | 合意レベル |
+|------|---------------------------|---------------------------|---------------------------|-----------|
+| {論点} | {結論} | {結論} | {結論} | 全会議一致/2会議一致/意見分裂 |
+
+#### 9.2 マージ会議での合意形成プロセス
+
+- 矛盾点とその解消（`20_merge_meeting.md` の「矛盾点とその解消」から転記）
+- シナジーから生まれた新アイデア
+- 見落とされていた盲点
+
+#### 9.3 合意形成結果
+
+| アクション | 合意レベル | 賛成会議 | 異なる見解 | 備考 |
+|-----------|-----------|---------|-----------|------|
+| {アクション} | 全会議一致/2会議一致/意見分裂 | 会議1,2,3 | -/{会議名}({理由}) | - |
+
+#### 9.4 少数派意見ハイライト
+
+合意レベルが「意見分裂」のアクションについて、各会議の見解を記録。
+
+---
+
+## 品質チェック（レポート保存前に実施）
+
+### 数値整合性チェック（必須）
+
+レポート保存後、`{WORK_DIR}/00_portfolio_reference.md` のチェック値セクションとレポート内の数値を照合する:
+
+```bash
+python3 -c "
+import re, sys
+
+with open('/app/{WORK_DIR}/00_portfolio_reference.md', encoding='utf-8') as f:
+    ref = f.read()
+with open('./reports/{username}/{REPORT_FILENAME}', encoding='utf-8') as f:
+    report = f.read()
+
+# チェック値セクションから期待値を抽出
+ref_total = re.search(r'合計評価額:\s*([\d,]+)円', ref)
+ref_asset = re.search(r'総資産:\s*([\d,]+)円', ref)
+ref_count = re.search(r'銘柄数:\s*(\d+)', ref)
+ref_cash = re.search(r'現金残高:\s*([\d,]+)円', ref)
+
+# レポートのセクション1.2から実値を抽出
+report_total = re.search(r'合計評価額:\s*([\d,]+)円', report)
+report_asset = re.search(r'総資産:\s*([\d,]+)円', report)
+report_count = re.search(r'保有銘柄数:\s*(\d+)', report)
+report_cash = re.search(r'現金残高:\s*([\d,]+)円', report)
+
+errors = []
+if ref_total and report_total:
+    if ref_total.group(1) != report_total.group(1):
+        errors.append(f'合計評価額: 参照={ref_total.group(1)}円 vs レポート={report_total.group(1)}円')
+if ref_asset and report_asset:
+    if ref_asset.group(1) != report_asset.group(1):
+        errors.append(f'総資産: 参照={ref_asset.group(1)}円 vs レポート={report_asset.group(1)}円')
+if ref_count and report_count:
+    if ref_count.group(1) != report_count.group(1):
+        errors.append(f'銘柄数: 参照={ref_count.group(1)} vs レポート={report_count.group(1)}')
+if ref_cash and report_cash:
+    if ref_cash.group(1) != report_cash.group(1):
+        errors.append(f'現金残高: 参照={ref_cash.group(1)}円 vs レポート={report_cash.group(1)}円')
+
+if errors:
+    print('数値整合性エラー:')
+    for e in errors:
+        print(f'  - {e}')
+    print('00_portfolio_reference.md から再転記して修正してください')
+    sys.exit(1)
+else:
+    print('数値整合性チェック: OK')
+"
+```
+
+不一致があった場合: レポートのセクション1.1/1.2/11.2を `00_portfolio_reference.md` の値で上書きし、再度保存する。
+
+### Phase 0.5→レポートの数値トレーサビリティチェック（必須）
+
+`05_shared_calculations.md` に記載された定量計算結果がレポートにそのまま転記されていることを確認する:
+
+- [ ] シャープレシオ値（各銘柄・ポートフォリオ加重）が一致すること
+- [ ] 相関係数（各ペア）が一致すること
+- [ ] 最大ドローダウン値が一致すること
+- [ ] VaR/CVaR値が一致すること
+- [ ] 計算メタデータ（リスクフリーレート値、市場代理ETF）が一致すること
+
+不一致があった場合: レポートの数値を `05_shared_calculations.md` の値で上書きする。
+
+### サマリー←→詳細の整合性チェック（必須）
+
+- [ ] サマリーで「分散良好」と評価している場合 → セクション3で相関係数0.85超の「実質重複」ペアが存在しないこと
+- [ ] サマリーで「リスク管理良好」と評価している場合 → セクション5でVaR警告レベルの指摘がないこと
+- [ ] サマリーの総合評価トーン（ポジティブ/ネガティブ）と、詳細分析の個別指摘が方向性で矛盾しないこと
+
+不一致があった場合: サマリーの評価表現を詳細分析の結果に合わせて修正する。
+
+### LLM自由記述の妥当性チェック（必須）
+
+- [ ] 改善後シャープレシオが現状の2倍超の場合 → 根拠が明記されていること
+- [ ] 改善後コストが現状の50%未満の場合 → 代替銘柄の信託報酬が記載されていること
+- [ ] 定量目標が保守的推定（x0.75）ルールに従っていること
+- [ ] セクション10の各提案に「根拠チェーン」（データ→計算結果→解釈→提案理由の4段）が記載されているか
+
+### 品質ゲートチェック（必須）
+
+| 検証項目 | 判定基準 |
+|---------|---------|
+| リスクフリーレート出典 | 取得元URLが mof.go.jp または boj.or.jp であること |
+| VaR注釈のデータ点数記載 | VaR/CVaRセクションにデータ点数と信頼度が記載されていること |
+| 免責事項セクション | レポート冒頭に免責事項セクションが存在すること |
+| 前回レポートとのRf差 | `reports/{username}/metrics.json` の直近エントリと比較 |
+
+### 定量目標の整合性チェック（必須）
+
+- セクション10の各Phase定量目標とセクション11.1の指標比較テーブルが整合していること
+- 全Phase完了時の最終目標値 = セクション11.1の改善後の値であること
+
+---
+
+## トーンガイドライン
+
+Phase 1の内部分析（会議トランスクリプト）では率直な表現を許容するが、**最終レポートへの転記時**に以下のトーン変換を行う:
+
+| 内部表現 | 最終レポート表現 |
+|---------|----------------|
+| SELL / 売却推奨 | 入替検討 |
+| BUY / 購入推奨 | 追加検討 |
+| HOLD | 継続保有 |
+| 推奨 | 検討 / 目安 |
+| すべき | が有効 / が望ましい |
+| 〜を勧める | 〜の選択肢がある |
+
+### 禁止語（最終レポート内）
+
+- 「推奨」（免責否定文を除く）
+- 「すべき」
+- 「SELL」「BUY」（英語表現）
+- 「〜しなさい」「〜してください」（命令形）
+
+---
+
+## レポート作成手順
+
+1. `{WORK_DIR}/` 配下のファイルを読み込む（入力ファイル表の読込範囲に従う）
+2. `{skill_dir}/report-guide.md` を読み込む
+3. `00_portfolio_data.json` の `_metadata._data_status` を確認し、「データ活用状況」テーブルを生成
+4. テンプレートに従い、各セクションを実データで埋める（セクション別データソース対応表に従う）
+5. セクション9にブレインストーミング議論サマリーを記載（`20_merge_meeting.md` の統合議事録から抽出）
+6. セクション10の入替提案に外部検証結果を反映（`20_merge_meeting.md` の「入替候補の外部検証結果」から転記）
+7. 品質チェックを全て実施
+8. `./reports/{username}/` ディレクトリを作成（存在しない場合）
+9. レポート本体を保存: `./reports/{username}/YYYYMMDD_{username}.md`
+10. `reports/{username}/metrics.json` に追記（v1 phase34-integration.md の手順7a参照）
+11. 実行時間・コンテキスト使用量をセクション15に記載
+12. メインに保存先パスのみ返す
+
+---
+
+## metrics.json への追記
+
+レポート作成時に以下のメトリクスを抽出し、`reports/{username}/metrics.json` に追記する。
+
+```json
+{
+  "date": "YYYY-MM-DD",
+  "report_path": "reports/{username}/YYYYMMDD_{username}.md",
+  "mode": "brainstorm",
+  "total_asset": 999999,
+  "cash_balance": 99999,
+  "cash_ratio": 0.0159,
+  "holdings_count": 9,
+  "holdings": [
+    {"etf_code": "1475", "name": "銘柄名", "weight": 0.322, "pnl_rate": -0.009, "current_value": 313600}
+  ],
+  "overall_score": 99.9,
+  "sharpe_ratio_portfolio": 9.99,
+  "max_drawdown": -0.0228,
+  "var_95": -0.016,
+  "score_axes": {"dividend_power": 72, "cost_efficiency": 84, "scale_reliability": 96, "trading_quality": 95, "return_performance": 79},
+  "top_actions": [{"action": "アクション名", "priority": "highest", "consensus": "全会議一致"}],
+  "key_risks": ["リスク1", "リスク2"]
+}
+```
+
+- 同日エントリが既に存在する場合は上書き
+- 配列を日付昇順でソートして保存
+- 値が算出できなかった指標は `null` を設定
+
+---
+
+## 出力形式（サブエージェントの返答 - 必須）
+
+```
+レポート保存完了: ./reports/{username}/YYYYMMDD_{username}.md
+```
+
+この1行のみ返す。レポート内容は一切返さないこと。
