@@ -218,6 +218,8 @@ class TestAnalysisDataResponse:
         assert "manager" in item
         assert "listing_date" in item
         assert "deviation_rate" in item
+        assert "expense_ratio" in item
+        assert "dividend_yield" in item
 
     def test_tag_data_fields(
         self,

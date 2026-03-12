@@ -9,7 +9,7 @@
   "sharpe_ratio": {
     "excellent": 1.0,
     "good": 0.5,
-    "risk_free_rate_fallback": 0.5
+    "risk_free_rate_fallback": 1.5
   },
   "drawdown": {
     "min_data_points": 10,
@@ -77,6 +77,10 @@
     "avg_days": 20,
     "recent_days": 5
   },
+  "dividend_yield_sanity": {
+    "max_deviation_ratio": 3.0,
+    "min_expected_yield": 0.005
+  },
   "dividend_zscore": {
     "undervalued": 1.5,
     "caution": 0.84,
@@ -104,6 +108,13 @@
     "attack_max": 10,
     "neutral_max": 30,
     "defense_max": 60,
-    "defense_level_description": "防御銘柄比率に基づくポートフォリオ防御レベル判定"
+    "defense_level_description": "防御銘柄比率に基づくテクニカル防御レベル判定（200MA基準）"
+  },
+  "defensive_asset_categories": {
+    "description": "防御的アセットの判定基準（タグcategoryフィールドとキーワードで分類）",
+    "categories": [
+      {"category": "asset", "keywords": ["債券", "REIT", "金"]},
+      {"category": "sector", "keywords": ["公益", "通信", "生活必需品"]}
+    ]
   }
 }

@@ -176,8 +176,32 @@ with app.app_context():
                     compare_scores_list.append(None)
                     record_status('compare_scores', error=e)
 
-    # 7. yfinance配当データ取得（3年分、年別集計）
+    # 7. yfinance配当データ取得（3年分、年別集計）+ 分配金利回りサニティチェック
+    # yfinanceはZスコア計算用（3年分時系列）に限定し、DB値をプライマリ参照に変更
     dividend_data = {}
+
+    # calc_params.json からサニティチェック閾値を読み込み
+    calc_params_path = Path(__file__).resolve().parent.parent / 'calc_params.json' if Path(__file__).resolve().parent.parent.exists() else None
+    # Docker内実行時はスキルディレクトリを探索
+    if not calc_params_path or not calc_params_path.exists():
+        calc_params_path = PROJECT_ROOT / '.claude' / 'skills' / 'portfolio-analysis-v2' / 'calc_params.json'
+    dividend_sanity_params = {"max_deviation_ratio": 3.0, "min_expected_yield": 0.005}
+    try:
+        with open(calc_params_path, 'r', encoding='utf-8') as f:
+            calc_params = json.load(f)
+            dividend_sanity_params = calc_params.get('dividend_yield_sanity', dividend_sanity_params)
+    except Exception as e:
+        print(f"calc_params.json読み込みエラー（デフォルト値使用）: {e}")
+
+    max_deviation_ratio = dividend_sanity_params['max_deviation_ratio']
+    min_expected_yield = dividend_sanity_params['min_expected_yield']
+
+    # etf_dataからDB参照の分配金利回りを銘柄コード→値のマップに変換
+    db_dividend_yields = {}
+    for etf in etf_data:
+        if etf.get('dividend_yield') is not None:
+            db_dividend_yields[etf['code']] = etf['dividend_yield']
+
     try:
         import yfinance as yf
         from datetime import datetime, timedelta
@@ -221,6 +245,51 @@ with app.app_context():
         print(f"配当データ取得で予期しないエラー: {e}")
         dividend_data = None
         record_status('dividend_data', error=str(e)[:200])
+
+    # 分配金利回りサニティチェック: yfinance算出値とDB値を比較
+    # DB値をプライマリ、yfinance値はZスコア計算用時系列として保持
+    dividend_yield_primary = {}  # 各銘柄のプライマリ利回り（DB優先）
+    dividend_yield_warnings = []
+
+    for code in etf_codes:
+        db_yield = db_dividend_yields.get(code)
+        # yfinanceから直近年の利回りを概算（直近年の年間配当 / 現在価格）
+        yf_yield = None
+        if dividend_data and code in dividend_data and dividend_data[code]:
+            latest_year = max(dividend_data[code].keys())
+            annual_div = dividend_data[code][latest_year]
+            # holdingsから現在価格を取得
+            current_price = None
+            for h in holdings:
+                if h['etf_code'] == code:
+                    current_price = h.get('current_price', 0)
+                    break
+            if current_price and current_price > 0:
+                yf_yield = annual_div / current_price
+
+        # サニティチェックロジック
+        if db_yield is not None and db_yield >= min_expected_yield:
+            # DB値が有効 → DB値をプライマリに採用
+            dividend_yield_primary[code] = db_yield
+            if yf_yield is not None and yf_yield > 0:
+                # 乖離チェック
+                ratio = max(yf_yield / db_yield, db_yield / yf_yield)
+                if ratio >= max_deviation_ratio:
+                    msg = (f"利回り乖離警告: {code} DB={db_yield:.4f} "
+                           f"yfinance={yf_yield:.4f} (乖離比={ratio:.1f}倍) → DB値を採用")
+                    print(msg)
+                    dividend_yield_warnings.append(msg)
+        elif yf_yield is not None and yf_yield > 0:
+            # DB値が未整備（None or 0.5%未満）→ yfinance値を採用
+            dividend_yield_primary[code] = yf_yield
+            if db_yield is not None:
+                msg = (f"利回りDB値不足: {code} DB={db_yield:.4f} < "
+                       f"min_expected={min_expected_yield} → yfinance値{yf_yield:.4f}を採用")
+                print(msg)
+                dividend_yield_warnings.append(msg)
+        else:
+            # どちらも利用不可
+            dividend_yield_primary[code] = None
 
     # _metadata生成（アナリストがフィールド名を正確に把握するため）
     def build_metadata(data, extra_info=None):
@@ -328,6 +397,8 @@ with app.app_context():
         'price_data_daily_30d': price_data_daily_30d if price_data_daily_30d else None,
         'price_data_close_250d': price_data_close_250d if price_data_close_250d else None,
         'dividend_data': dividend_data,
+        'dividend_yield_primary': dividend_yield_primary,
+        'dividend_yield_warnings': dividend_yield_warnings if dividend_yield_warnings else None,
         'recommendations': recommendations,
         'compare_performance': compare_performance_list if compare_performance_list else None,
         'compare_scores': compare_scores_list if compare_scores_list else None,

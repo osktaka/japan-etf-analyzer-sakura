@@ -91,6 +91,8 @@ class AnalysisDataService:
                 "deviation_rate": (
                     float(r.deviation_rate) if r.deviation_rate else None
                 ),
+                "expense_ratio": float(r.expense_ratio) if r.expense_ratio else None,
+                "dividend_yield": float(r.dividend_yield) if r.dividend_yield else None,
             }
             for r in rows
         ]
