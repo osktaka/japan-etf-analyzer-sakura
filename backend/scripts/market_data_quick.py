@@ -46,8 +46,11 @@ TICKERS = {
 # NOTE: TOPIX (^TPX) はyfinanceで取得不可（delisted扱い）→ WebFetchフォールバック対象
 PM_TICKERS = {
     "nikkei225": "^N225",       # 日経平均株価
+    "topix_etf": "1306.T",     # TOPIX連動型ETF（TOPIX代替、^TPXはyfinance非対応）
     "growth250": "2516.T",      # MAXIS東証グロース250 ETF（グロース250指数の代替）
     "reit_index": "1343.T",     # NEXT FUNDS 東証REIT指数連動型ETF
+    "bank_etf": "1615.T",      # 東証銀行業株価指数ETF（銀行セクター代替）
+    "it_etf": "1626.T",        # NEXT FUNDS 情報通信・サービスその他ETF
 }
 
 JST = timezone(timedelta(hours=9))
