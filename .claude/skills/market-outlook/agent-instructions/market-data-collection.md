@@ -78,6 +78,7 @@ output-formats.md のテンプレートに従いドラフトを生成する。
 - 出力フォーマット参照: `agent-instructions/output-formats.md`
 - timingに応じてAM/PMテンプレートを選択
 - modeに応じてポートフォリオセクションを追加/省略
+- PM実行時、AMレポートのYAMLフロントマターからprediction全フィールド（direction, confidence, cme_nikkei, range_low, range_high, difficulty）を読み取り、PM「AM予想との比較」セクションおよび「予想精度メタデータ」に反映する
 
 ## 異常値検出（簡易ルール）
 
