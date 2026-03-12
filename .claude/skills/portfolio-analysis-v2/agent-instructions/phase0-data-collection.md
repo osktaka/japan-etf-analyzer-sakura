@@ -76,6 +76,30 @@ if abs(calc_total - total_asset) > 10:  # 10円以上の誤差
 print(f"検証OK: 総資産{total_asset:,.0f}円（銘柄{total_current_value:,.0f}円 + 現金{cash_balance:,.0f}円）")
 ```
 
+### データ品質検証チェックリスト（収集完了後・必須）
+
+以下を全て確認してから`00_portfolio_data.json`を保存すること:
+
+#### 株式分割検証（最重要）
+- [ ] `holdings`の各銘柄について: `quantity × current_price ≈ current_value` が成立するか
+  - 誤差が5%を超える場合: 株式分割の未反映を疑い、PortfolioService経由での再取得を試みる
+- [ ] `summary.total_value ≈ Σ(holdings[i].current_value) + cash` が成立するか
+  - 誤差が1%を超える場合: APIレスポンスを再確認
+
+#### 必須フィールド確認
+- [ ] 全銘柄に `ticker_code`, `quantity`, `current_price`, `current_value`, `profit_loss`, `profit_loss_rate` が存在するか
+- [ ] `summary` に `total_value`, `total_cost`, `cash`, `total_profit_loss` が存在するか
+- [ ] `price_data` が最低12ヶ月分（12件以上）存在するか
+
+#### データ異常検知
+- [ ] `current_price` が0円または負値になっていないか
+- [ ] `profit_loss_rate` が-99%以下または+1000%以上になっていないか（異常値の可能性）
+- [ ] `price_data_close_250d` のデータ点数が100件以上あるか（少ない場合はVaR/SR計算精度に影響）
+
+#### 検証失敗時の対応
+- 軽微（1項目のみ）: 警告を`_metadata._warnings`に記録して続行
+- 重大（評価額整合性失敗）: 収集を中止してメインエージェントに報告
+
 ### 禁止パターン（データ収集時）
 
 以下のDB直接クエリパターンは**絶対に使用禁止**。株式分割調整前のデータが返され、レポート全体が不正確になる:

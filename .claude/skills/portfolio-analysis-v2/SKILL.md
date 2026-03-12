@@ -39,6 +39,44 @@ mkdir -p "${WORK_DIR}"
 - メインはサブエージェントのプロンプトに**指示ファイルパスとパラメータ**を渡すだけ
 - サブエージェントが自分の指示ファイルを直接読み込んで実行する
 
+### コンテキスト最適化（30分目標達成のための必須事項）
+
+**Phase 1 エージェント向け読み込みルール**:
+- Phase 1-1（リスク・リターン）: `05_shared_calculations.md` と `0a_market_environment.md` のみ読む。`0b_trend_summary.md` は不要
+- Phase 1-2（分散）: `05_shared_calculations.md` と `00_portfolio_data.json`（tag_dataのみ）と `0a_market_environment.md` を読む
+- Phase 1-3（品質）: `05_shared_calculations.md` と `00_portfolio_data.json`（holdings, recommendations）を読む
+- **禁止**: Phase 1エージェントが `20_merge_meeting.md` を参照すること（存在しない段階のため当然だが明示）
+
+**Phase 2 エージェント向け読み込みルール**:
+- `10_meeting_risk_return.md`, `10_meeting_allocation.md`, `10_meeting_quality.md` を読む
+- ただし**各ファイルの「## 議事録」セクション以降のみ**読む（会議トランスクリプト全文は不要）
+- `05_shared_calculations.md` の「計算メタデータ」セクションのみ参照（詳細計算は不要）
+
+**Phase 3 エージェント向け読み込みルール**:
+- `20_merge_meeting.md` の「📋 Phase 3向け洞察エクスポート」セクション（末尾）と「## 統合議事録」セクションのみ読む
+- `05_shared_calculations.md` は各セクションヘッダーを確認して必要な節のみ読む（全文読み込み禁止）
+- `00_portfolio_data.json` は `_metadata`, `summary`, `holdings` キーのみ参照
+- **report-guide.md は最初の30行（セクション一覧）のみ読んでから、必要なセクションを個別に読む**
+
+**コンテキスト節約の効果試算**:
+- Phase 2の全会議録読み込み削減: 約30,000字 → 約6,000字（-80%）
+- Phase 3のデータ読み込み削減: 約20,000字 → 約8,000字（-60%）
+
+## フェーズ別タイムアウト設定
+
+| フェーズ | 目標時間 | タイムアウト | 超過時の対応 |
+|---------|---------|-----------|-----------|
+| Phase 0（データ収集） | 3分 | 5分 | 中止・メインに報告 |
+| Phase 0a（市場環境） | 2分 | 4分 | フォールバック値で続行 |
+| Phase 0b（トレンド） | 1分 | 3分 | スキップして続行 |
+| Phase 0.5（定量計算） | 4分 | 7分 | 中止・メインに報告 |
+| Phase 1（各会議×3） | 5分 | 8分 | 警告して2会議でマージへ |
+| Phase 2（マージ会議） | 5分 | 8分 | 1回リトライ |
+| Phase 3（レポート生成） | 3分 | 6分 | 1回リトライ |
+| **合計（並列考慮後）** | **~25分** | **~35分** | — |
+
+**注意**: 上記は単一エージェント処理時の目安。並列実行（Step 1の3並列、Phase 1の3並列）により実際の経過時間は短縮される。
+
 ## キャラクター定義（12名、固定）
 
 ### 会議1: リスク・リターン効率
@@ -112,17 +150,25 @@ mkdir -p "${WORK_DIR}"
 
 ### Step 2: 定量計算
 
-**開始条件**: Phase 0 完了後に即起動（Phase 0a/0b の完了は待たない）。
+**開始条件**: Phase 0 AND Phase 0a の**両方が完了後**に起動する。
+（Phase 0aのRf値を確実に取得するために必須。Phase 0bの完了は待たない）
 
 - Task(general-purpose)
 - 指示: `{skill_dir}/agent-instructions/phase05-shared-calculations.md` をReadし実行
-- 入力: `{WORK_DIR}/00_portfolio_data.json`
+- 入力: `{WORK_DIR}/00_portfolio_data.json` + `{WORK_DIR}/0a_market_environment.md`
 - 出力: `{WORK_DIR}/05_shared_calculations.md`
-- 戻り値: 「共通定量計算完了」の1行のみ
+- 戻り値: 「共通定量計算完了（Rf取得元: {出典URL or フォールバック}, Rf値: {X.XX}%）」の1行のみ
+
+**timing.json への記録**（Phase 0.5完了後にメインが更新）:
+- `Rf_source`: 取得元URL（mof.go.jp/boj.or.jp）またはフォールバック
+- `Rf_value`: 使用したリスクフリーレート値（%）
+
+**⚡ 30分目標達成のポイント**: Step 1の3並列（Phase 0 / 0a / 0b）は同時起動が絶対条件。
+Phase 0とPhase 0aが揃い次第（Phase 0bを待たずに）Step 2を開始すること。
 
 ### Step 3: 3並列ブレインストーミング（Phase 1）
 
-**開始条件**: Phase 0.5 + Phase 0a の両方が完了後に起動。
+**開始条件**: Phase 0.5 完了後に起動する（Phase 0aはStep 2で既に完了済みのため待機不要）。
 
 3つの Task を全て `run_in_background: true` で同時起動する。
 
@@ -223,6 +269,8 @@ mkdir -p "${WORK_DIR}"
 ```json
 {
   "session_id": "20260312_143000_abc1",
+  "rf_source": "https://www.mof.go.jp/...",
+  "rf_value": 1.32,
   "phases": {
     "phase_0a": {"start": "ISO8601", "end": "ISO8601", "duration_sec": 120},
     "phase_0": {"start": "...", "end": "...", "duration_sec": 180},
@@ -237,6 +285,9 @@ mkdir -p "${WORK_DIR}"
   "total_duration_sec": 900
 }
 ```
+
+- `rf_source`: Phase 0.5完了後にメインが記録。URLまたは「フォールバック（0.50%）」
+- `rf_value`: 使用したRf値（数値, %単位）。フォールバック時は `0.50`
 
 各フェーズの start/end はサブエージェント起動時刻/完了時刻をメインエージェントが記録する。
 

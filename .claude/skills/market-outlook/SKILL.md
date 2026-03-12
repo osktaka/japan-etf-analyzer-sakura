@@ -19,6 +19,13 @@ aliases: ["/market-outlook"]
 
 一般モードとポートフォリオモードの2種類を備え、デモポートフォリオ保有銘柄への影響分析にも対応する。
 
+## 処理時間・コンテキスト最適化
+
+- **目標処理時間**: 15分以内（サブエージェントタイムアウト: 600秒）
+- **WebSearchクエリ上限**: 合計3クエリ（AM: 1, PM: 2）
+- **WebFetch上限**: 合計5URL
+- **コンテキスト最小化**: yfinance取得済み数値のWebSearch再確認禁止、同一URL再アクセス禁止
+
 ## パラメータ一覧
 
 | パラメータ | 値 | 用途 |
@@ -109,7 +116,7 @@ aliases: ["/market-outlook"]
 - year_month: {year_month}
 - current_time: {current_time}
 
-タイムアウト: 300秒
+タイムアウト: 600秒
 ```
 
 ## データ取得戦略
@@ -206,6 +213,11 @@ aliases: ["/market-outlook"]
 - [ ] [PM] 予想精度メタデータが含まれている（AMファイル存在時）
 - [ ] [AM/PM] 禁止表現リストに該当する表現がないこと
 - [ ] [AM/PM] レポート利用ガイドが免責事項の直後に含まれている
+- [ ] [AM] YAMLフロントマターに全必須フィールドが含まれている（direction/confidence/cme_nikkei/range_low/range_high/difficulty/causal_chain/key_assumption/invalidation_signal/high_volatility/crisis_mode）
+- [ ] [AM/PM] 3行サマリーの数値が主要指標テーブルの値と一致している（数値整合性）
+- [ ] [AM/PM] ソースが全て当日または過去7営業日以内の記事/データである
+- [ ] [PM] YAMLフロントマター（accuracy:）が含まれており、direction_hit/range_hit/cme_deviation/cme_deviation_pct/core_premise_hit/invalidation_triggered/notes が記録されている（非営業日はnull可）
+- [ ] [AM] シナリオ分析に「ブレイクアウト監視水準」が含まれている（range_high/range_lowに対応した参考指標）
 - [ ] `reports/market-outlook/` に保存されている
 
 出力フォーマット: → agent-instructions/output-formats.md
