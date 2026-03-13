@@ -6,9 +6,12 @@ AM/PMレポートペアを走査し、方向性一致率・レンジ包含率・
   python backend/scripts/market_outlook_accuracy.py --month 2026-03
   python backend/scripts/market_outlook_accuracy.py --all
   python backend/scripts/market_outlook_accuracy.py --month 2026-03 --json
+  python backend/scripts/market_outlook_accuracy.py --all --csv
 """
 
 import argparse
+import csv
+import io
 import json
 import re
 import sys
@@ -69,6 +72,13 @@ def _parse_yaml_block(block):
 def _cast_yaml_value(val):
     """文字列を適切な型にキャストする。"""
     val = val.strip('"').strip("'")
+    # bool値
+    if val.lower() == "true":
+        return True
+    if val.lower() == "false":
+        return False
+    if val.lower() == "null" or val == "~":
+        return None
     if val.isdigit():
         return int(val)
     try:
@@ -143,12 +153,82 @@ def _parse_cme_from_body(text):
 # ---------------------------------------------------------------------------
 
 def parse_pm_comparison(filepath):
-    """PMレポートの「AM予想との比較」テーブルをパースする。"""
+    """PMレポートの精度データを取得する。
+
+    1. YAMLフロントマターの accuracy キーを優先的にチェック
+    2. なければ既存の「AM予想との比較」テーブルパースにフォールバック
+    """
     text = filepath.read_text(encoding="utf-8")
+
+    # --- YAML accuracy フロントマター ---
+    fm = parse_yaml_frontmatter(text)
+    acc = fm.get("accuracy", {})
+    if isinstance(acc, dict) and acc:
+        result = {}
+        result["direction_hit"] = _normalize_bool(
+            acc.get("direction_hit"))
+        result["range_hit"] = _normalize_bool(acc.get("range_hit"))
+        result["cme_gap"] = _parse_cme_deviation(
+            acc.get("cme_deviation"))
+        result["core_premise_hit"] = _normalize_premise(
+            acc.get("core_premise_hit"))
+        result["invalidation_triggered"] = _normalize_bool(
+            acc.get("invalidation_triggered"))
+        return result
+
+    # --- フォールバック: テーブルパース ---
     section = _extract_comparison_section(text)
     if not section:
         return None
-    return _parse_comparison_table(section)
+    table_result = _parse_comparison_table(section)
+    # テーブルパースの結果にcore_premise/invalidationフィールドを追加
+    table_result.setdefault("core_premise_hit", None)
+    table_result.setdefault("invalidation_triggered", None)
+    return table_result
+
+
+def _normalize_bool(val):
+    """各種値をTrue/False/Noneに正規化する。"""
+    if val is None:
+        return None
+    if isinstance(val, bool):
+        return val
+    s = str(val).lower().strip()
+    if s in ("true", "1", "yes"):
+        return True
+    if s in ("false", "0", "no"):
+        return False
+    return None
+
+
+def _normalize_premise(val):
+    """core_premise_hitの値をtrue/partial/false/Noneに正規化する。"""
+    if val is None:
+        return None
+    if isinstance(val, bool):
+        return val
+    s = str(val).lower().strip()
+    if s in ("true", "1", "yes"):
+        return True
+    if s == "partial":
+        return "partial"
+    if s in ("false", "0", "no"):
+        return False
+    return None
+
+
+def _parse_cme_deviation(val):
+    """accuracy.cme_deviationの値を数値に変換する。"""
+    if val is None:
+        return None
+    if isinstance(val, (int, float)):
+        return float(val)
+    # 文字列: "+457", "-120" 等
+    s = str(val).strip().replace(",", "")
+    try:
+        return float(s)
+    except ValueError:
+        return None
 
 
 def _extract_comparison_section(text):
@@ -271,6 +351,9 @@ def aggregate(pairs):
             "direction_hit": pm_data.get("direction_hit"),
             "range_hit": pm_data.get("range_hit"),
             "cme_gap": pm_data.get("cme_gap"),
+            "core_premise_hit": pm_data.get("core_premise_hit"),
+            "invalidation_triggered": pm_data.get(
+                "invalidation_triggered"),
         })
 
     return _compute_stats(records, am_count, pm_count)
@@ -298,6 +381,15 @@ def _compute_stats(records, am_count, pm_count):
 
     # difficulty別
     stats["by_difficulty"] = _group_hit_rate(records, "difficulty")
+
+    # 核心前提の的中率
+    stats["core_premise"] = _core_premise_stats(records)
+
+    # 無効化トリガー
+    stats["invalidation"] = _invalidation_stats(records)
+
+    # 日次レコード（CSV/JSON用）
+    stats["_records"] = records
 
     return stats
 
@@ -333,6 +425,36 @@ def _cme_gap_stats(records):
         "mean": round(mean(gaps), 1),
         "median": round(median(gaps), 1),
         "count": len(gaps),
+    }
+
+
+def _core_premise_stats(records):
+    """核心前提の的中統計を算出する。"""
+    values = [r["core_premise_hit"] for r in records]
+    true_count = sum(1 for v in values if v is True)
+    partial_count = sum(1 for v in values if v == "partial")
+    false_count = sum(1 for v in values if v is False)
+    null_count = sum(1 for v in values if v is None)
+    valid = true_count + partial_count + false_count
+    return {
+        "true": true_count,
+        "partial": partial_count,
+        "false": false_count,
+        "null": null_count,
+        "valid": valid,
+    }
+
+
+def _invalidation_stats(records):
+    """無効化トリガーの統計を算出する。"""
+    values = [r["invalidation_triggered"] for r in records]
+    true_count = sum(1 for v in values if v is True)
+    false_count = sum(1 for v in values if v is False)
+    null_count = sum(1 for v in values if v is None)
+    return {
+        "true": true_count,
+        "false": false_count,
+        "null": null_count,
     }
 
 
@@ -375,6 +497,8 @@ def format_text(stats, label):
     lines += _format_direction(stats["direction"])
     lines += _format_range(stats["range"])
     lines += _format_cme_gap(stats["cme_gap"])
+    lines += _format_core_premise(stats["core_premise"])
+    lines += _format_invalidation(stats["invalidation"])
     lines += _format_grouped("confidence別的中率", stats["by_confidence"])
     lines += _format_grouped("difficulty別的中率", stats["by_difficulty"])
     lines += _format_report_count(stats)
@@ -413,6 +537,30 @@ def _format_cme_gap(g):
     return lines
 
 
+def _format_core_premise(cp):
+    """核心前提の的中率セクションをフォーマットする。"""
+    if cp["valid"] == 0:
+        return []
+    lines = ["■ 核心前提の的中率"]
+    lines.append(f"  完全的中: {cp['true']}/{cp['valid']}")
+    lines.append(f"  部分的中: {cp['partial']}/{cp['valid']}")
+    lines.append(f"  不的中: {cp['false']}/{cp['valid']}")
+    lines.append("")
+    return lines
+
+
+def _format_invalidation(inv):
+    """無効化トリガーセクションをフォーマットする。"""
+    total = inv["true"] + inv["false"]
+    if total == 0:
+        return []
+    lines = ["■ 無効化トリガー"]
+    lines.append(f"  発動: {inv['true']}/{total}")
+    lines.append(f"  未発動: {inv['false']}/{total}")
+    lines.append("")
+    return lines
+
+
 def _format_grouped(title, groups):
     """グループ別的中率セクションをフォーマットする。"""
     if not groups:
@@ -439,6 +587,36 @@ def _rate_str(r):
     return f"{r['hits']}/{r['total']} ({r['rate']}%)"
 
 
+def format_csv(stats):
+    """CSV形式の日次一覧を生成する。"""
+    records = stats["_records"]
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "date", "direction", "confidence", "difficulty",
+        "direction_hit", "range_hit", "cme_gap",
+        "core_premise_hit",
+    ])
+    for r in records:
+        writer.writerow([
+            r["date"],
+            r.get("direction", ""),
+            r.get("confidence", ""),
+            r.get("difficulty", ""),
+            r.get("direction_hit", ""),
+            r.get("range_hit", ""),
+            r.get("cme_gap", ""),
+            r.get("core_premise_hit", ""),
+        ])
+    return output.getvalue()
+
+
+def format_json(stats):
+    """JSON形式で出力する（_recordsは除外）。"""
+    output = {k: v for k, v in stats.items() if k != "_records"}
+    return json.dumps(output, ensure_ascii=False, indent=2)
+
+
 # ---------------------------------------------------------------------------
 # メイン
 # ---------------------------------------------------------------------------
@@ -455,8 +633,10 @@ def main():
 
     stats = aggregate(pairs)
 
-    if args.json:
-        print(json.dumps(stats, ensure_ascii=False, indent=2))
+    if args.csv:
+        print(format_csv(stats), end="")
+    elif args.json:
+        print(format_json(stats))
     else:
         print(format_text(stats, label))
 
@@ -475,9 +655,14 @@ def _parse_args():
         "--all", action="store_true",
         help="全期間を集計"
     )
-    parser.add_argument(
+    output_group = parser.add_mutually_exclusive_group()
+    output_group.add_argument(
         "--json", action="store_true",
         help="JSON形式で出力"
+    )
+    output_group.add_argument(
+        "--csv", action="store_true",
+        help="CSV形式の日次一覧を出力"
     )
     return parser.parse_args()
 
