@@ -9,7 +9,9 @@
   "sharpe_ratio": {
     "excellent": 1.0,
     "good": 0.5,
-    "risk_free_rate_fallback": 1.5
+    "risk_free_rate_fallback": 1.5,
+    "kurtosis_warning_threshold": 3.0,
+    "kurtosis_warning_threshold_description": "尖度がこの値を超える場合（超過尖度>0）、リターン分布の裾の厚さ警告を出力"
   },
   "drawdown": {
     "min_data_points": 10,
@@ -19,7 +21,15 @@
     "confidence_level": 0.95,
     "min_data_points": 12,
     "reliable_data_points": 36,
-    "medium_data_points": 12
+    "medium_data_points": 12,
+    "suppress_below_months": 6,
+    "confidence_labels": {
+      "high": 36,
+      "medium": 12,
+      "low": 6,
+      "suppress": 0,
+      "_description": "high: 信頼度: 高、medium: 信頼度: 中（参考値）、low: 信頼度: 低（蓄積中）、suppress: セクション非表示"
+    }
   },
   "momentum": {
     "declining_warn_ratio": 0.30,
@@ -130,6 +140,16 @@
     "max_correlation": 1.0,
     "convergence_delta_description": "ストレス時に全ペアの相関係数に加算する値（経験的設定）",
     "max_correlation_description": "相関係数の上限（1.0）"
+  },
+  "rolling_correlation": {
+    "min_data_months": 18,
+    "window_months": 6,
+    "slide_months": 3,
+    "crisis_threshold": -0.05,
+    "min_data_months_description": "ローリング相関算出に必要な最小月次データ点数",
+    "window_months_description": "ローリング相関の窓サイズ（月）",
+    "slide_months_description": "ローリング相関のスライド幅（月）",
+    "crisis_threshold_description": "市場下落月の判定閾値（月次リターンがこの値以下）"
   },
   "defensive_asset_categories": {
     "description": "防御的アセットの判定基準（タグcategoryフィールドとキーワードで分類）",
