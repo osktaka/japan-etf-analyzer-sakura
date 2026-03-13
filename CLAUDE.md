@@ -23,7 +23,7 @@
 | おすすめ銘柄の評価設計を確認したい | docs/08_おすすめ銘柄設計.md | 5軸評価・6切り口・重み付けモデル |
 | タグ付けルールを確認したい | docs/09_タグ付けルール.md | 6カテゴリ49タグ、付与基準 |
 | バッチ処理設計を確認したい | docs/10_バッチ処理設計.md | スケジュール、依存関係、障害時対応 |
-| デモユーザーの取引分析をしたい | reports/demo/PROMPT.md | portfolio-analysisスキルによる週次運用 |
+| デモユーザーの取引分析をしたい | reports/demo/PROMPT.md | portfolio-analysis-v2スキルによる日次運用 |
 | ポートフォリオ分析v2をしたい | .claude/skills/portfolio-analysis-v2/SKILL.md | /pf-v2（ブレインストーミング方式） |
 | 今日の東証見通し・振り返り | .claude/skills/market-outlook/SKILL.md | /market-outlook（AM:朝の見通し / PM:夕方の振り返り） |
 | 分析レポートをノート記事にしたい | .claude/skills/publish-report/SKILL.md | /publish-reportスキルで記事化 |

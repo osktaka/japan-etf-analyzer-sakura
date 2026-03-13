@@ -12,16 +12,8 @@ LOGDIR="/tmp"
 # ユーザーID引数チェック
 USER="${1:-}"
 if [ -z "$USER" ]; then
-  echo "Usage: $0 <user_id> [mode]"
+  echo "Usage: $0 <user_id>"
   echo "  user_id: demo, test, etc."
-  echo "  mode:    debate (default), normal, speed"
-  exit 1
-fi
-
-# モード引数チェック
-MODE="${2:-debate}"
-if [ "$MODE" != "debate" ] && [ "$MODE" != "normal" ] && [ "$MODE" != "speed" ]; then
-  echo "Error: Invalid mode '$MODE'. Must be one of: debate, normal, speed"
   exit 1
 fi
 
@@ -31,30 +23,14 @@ if ! docker compose ps --status running 2>/dev/null | grep -q "backend"; then
   exit 1
 fi
 
-# --- Step 2: portfolio-analysis 実行 ---
-
-# モード別の分析指示
-case "$MODE" in
-  debate)
-    MODE_INSTRUCTION="エージェントチームによる議論型で徹底的に議論して最適な分析を達成して。データ不足などあれば原因があるはずなので確認して解消しながら進めて。取得したデータや分析の内容が正しいかどうかを確認しながら実行して。コンテキスト使用サイズを抑えるように最適な実行をして"
-    ;;
-  normal)
-    MODE_INSTRUCTION="バランス重視で分析して。データの正確性を確認しながら進めて"
-    ;;
-  speed)
-    MODE_INSTRUCTION="速度重視で分析して。主要な指標を中心に効率的に進めて"
-    ;;
-esac
+# --- Step 2: portfolio-analysis-v2 実行 ---
 
 # プロンプト構築（シングルクオートEOFで展開抑制→後から変数置換）
 read -r -d '' PROMPT << 'EOF'
-/portfolio-analysis {USER}ユーザーのポートフォリオを分析して。
-
-【モード指定】
-分析モードは「{MODE}」で実行。AskUserQuestionによるモード確認はスキップして直接開始。
+/pf-v2 {USER}ユーザーのポートフォリオを分析して。
 
 【分析指示】
-{MODE_INSTRUCTION}
+データ不足などあれば原因を確認して解消しながら進めて。取得したデータや分析の内容が正しいかどうかを確認しながら実行して。コンテキスト使用サイズを抑えるように最適な実行をして。
 
 【対象ユーザー】
 - user_id: {USER}
@@ -64,12 +40,10 @@ EOF
 
 # プレースホルダーをシェル変数で置換
 PROMPT="${PROMPT//\{USER\}/$USER}"
-PROMPT="${PROMPT//\{MODE\}/$MODE}"
-PROMPT="${PROMPT//\{MODE_INSTRUCTION\}/$MODE_INSTRUCTION}"
 
-LOGFILE="$LOGDIR/portfolio-analysis-${USER}-${TIMESTAMP}.log"
+LOGFILE="$LOGDIR/portfolio-analysis-v2-${USER}-${TIMESTAMP}.log"
 
-echo "Starting portfolio-analysis for user=$USER mode=$MODE ..."
+echo "Starting portfolio-analysis-v2 for user=$USER ..."
 echo "Log: $LOGFILE"
 
 # Claude CLIセッション内からの実行対策（入れ子セッション防止）
@@ -86,12 +60,12 @@ if [ ! -s "$LOGFILE" ]; then
 fi
 
 if [ $STEP2_EXIT -eq 124 ]; then
-  echo "Error: portfolio-analysis timed out (5400s)"
+  echo "Error: portfolio-analysis-v2 timed out (5400s)"
   exit 1
 fi
 
 if [ $STEP2_EXIT -ne 0 ]; then
-  echo "Error: portfolio-analysis failed with exit code $STEP2_EXIT"
+  echo "Error: portfolio-analysis-v2 failed with exit code $STEP2_EXIT"
   exit 1
 fi
 
