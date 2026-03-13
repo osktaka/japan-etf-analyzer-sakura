@@ -175,7 +175,7 @@ def calc_macd(closes, fast=12, slow=26, signal_period=9):
 
 
 def calc_ichimoku(highs, lows, closes):
-    """一目均衡表の雲位置を算出（日経225用）"""
+    """一目均衡表の5線分析（日経225用）"""
     if len(closes) < 52 or len(highs) < 52 or len(lows) < 52:
         return None
     tenkan = (max(highs[-9:]) + min(lows[-9:])) / 2
@@ -191,12 +191,70 @@ def calc_ichimoku(highs, lows, closes):
         position = "below_cloud"
     else:
         position = "in_cloud"
+
+    # 遅行スパン: 当日終値を26日前と比較
+    chikou_span = closes[-1]
+    chikou_reference = closes[-26] if len(closes) >= 26 else None
+
+    # 三役好転/三役逆転の判定
+    if chikou_reference is not None:
+        tenkan_above_kijun = tenkan > kijun
+        above_cloud = current > cloud_top
+        chikou_above = chikou_span > chikou_reference
+
+        if tenkan_above_kijun and above_cloud and chikou_above:
+            three_signals = "bullish"  # 三役好転
+        elif (not tenkan_above_kijun) and (current < cloud_bottom) and (not chikou_above):
+            three_signals = "bearish"  # 三役逆転
+        else:
+            three_signals = "mixed"
+    else:
+        three_signals = "mixed"
+
     return {
         "tenkan": round(tenkan, 2),
         "kijun": round(kijun, 2),
         "cloud_top": round(cloud_top, 2),
         "cloud_bottom": round(cloud_bottom, 2),
         "cloud_position": position,
+        "chikou_span": round(chikou_span, 2),
+        "chikou_reference": round(chikou_reference, 2) if chikou_reference else None,
+        "three_signals": three_signals,
+    }
+
+
+def calc_volume_analysis(closes, volumes, period=5):
+    """出来高分析: トレンド判定 + 価格出来高ダイバージェンス検出"""
+    if len(volumes) < period + 1 or len(closes) < period + 1:
+        return None
+    # 出来高比
+    avg_vol = sum(volumes[-period - 1 : -1]) / period
+    if avg_vol == 0:
+        return None
+    ratio = round(volumes[-1] / avg_vol, 2)
+    # 出来高トレンド（直近3日の出来高が連続増加/減少か）
+    if len(volumes) >= 4:
+        recent = volumes[-3:]
+        if recent[0] < recent[1] < recent[2]:
+            trend = "increasing"
+        elif recent[0] > recent[1] > recent[2]:
+            trend = "decreasing"
+        else:
+            trend = "flat"
+    else:
+        trend = "flat"
+    # 価格出来高ダイバージェンス
+    price_change = closes[-1] - closes[-2]
+    vol_change = volumes[-1] - volumes[-2]
+    divergence = None
+    if price_change > 0 and vol_change < 0:
+        divergence = "bearish"  # 価格上昇+出来高減少=弱い上昇
+    elif price_change < 0 and vol_change < 0:
+        divergence = "bullish"  # 価格下落+出来高減少=弱い下落（反発期待）
+    return {
+        "ratio": ratio,
+        "trend": trend,
+        "divergence": divergence,
     }
 
 
@@ -236,12 +294,57 @@ def build_technical(name, closes, volumes, highs=None, lows=None):
                 tech["sma75_deviation"] = round(
                     (closes[-1] - sma75) / sma75 * 100, 2
                 )
+
+            # SMA25×75クロス判定
+            if sma25 is not None and sma75 is not None and len(closes) >= 76:
+                prev_closes = closes[:-1]
+                prev_sma25 = calc_sma(prev_closes, 25)
+                prev_sma75 = calc_sma(prev_closes, 75)
+                if prev_sma25 is not None and prev_sma75 is not None:
+                    prev_spread = prev_sma25 - prev_sma75
+                    curr_spread = sma25 - sma75
+                    if prev_spread <= 0 and curr_spread > 0:
+                        cross_type = "golden_cross"
+                    elif prev_spread >= 0 and curr_spread < 0:
+                        cross_type = "dead_cross"
+                    else:
+                        cross_type = "none"
+                    tech["sma_cross"] = {
+                        "type": cross_type,
+                        "sma25": round(sma25, 2),
+                        "sma75": round(sma75, 2),
+                        "spread": round(curr_spread, 2),
+                    }
+
             bb = calc_bollinger(closes, 20)
             if bb is not None:
                 tech["bollinger_position"] = bb
             vr = calc_volume_ratio(volumes, 5)
             if vr is not None:
                 tech["volume_ratio"] = vr
+
+            # 出来高分析（volume_ratioの強化版）
+            va = calc_volume_analysis(closes, volumes)
+            if va is not None:
+                tech["volume_analysis"] = va
+
+            # 週足RSI（マルチタイムフレーム分析）
+            if len(closes) >= 75:  # 最低75日（15週分）必要
+                weekly_closes = [
+                    closes[i] for i in range(4, len(closes), 5)
+                ]  # 5営業日ごと
+                weekly_rsi = calc_rsi(weekly_closes, 14)
+                if weekly_rsi is not None:
+                    tech["weekly_rsi14"] = weekly_rsi
+                    # 日足RSIと週足RSIのダイバージェンス検出
+                    if "rsi14" in tech:
+                        daily_rsi = tech["rsi14"]
+                        if (daily_rsi > 55 and weekly_rsi < 45) or (
+                            daily_rsi < 45 and weekly_rsi > 55
+                        ):
+                            tech["timeframe_divergence"] = True
+                        else:
+                            tech["timeframe_divergence"] = False
 
         # MACD（S&P500, NASDAQ, 日経225）
         if name in TECHNICAL_MACD_TARGETS:
@@ -327,27 +430,37 @@ def fetch_market_data(include_pm=False):
         except Exception as e:
             errors.append(f"{name} ({ticker_symbol}): {str(e)}")
 
-    # nikkei225のvolume_ratioフォールバック
+    # nikkei225のvolume_ratio/volume_analysisフォールバック
     # ^N225のVolumeはyfinanceで常に0を返すため、1306.T（TOPIX連動ETF）で代替
     if (
         "nikkei225" in result
         and "technical" in result["nikkei225"]
-        and not result["nikkei225"]["technical"].get("volume_ratio")
         and "topix_etf" in hist_cache
     ):
         try:
+            nk_tech = result["nikkei225"]["technical"]
             topix_hist = hist_cache["topix_etf"]
             topix_volumes = [
                 float(row["Volume"]) for _, row in topix_hist.iterrows()
             ]
-            fallback_vr = calc_volume_ratio(topix_volumes, 5)
-            if fallback_vr is not None:
-                result["nikkei225"]["technical"]["volume_ratio"] = fallback_vr
-                result["nikkei225"]["technical"][
-                    "volume_ratio_source"
-                ] = "1306.T"
+            topix_closes = [
+                float(row["Close"]) for _, row in topix_hist.iterrows()
+            ]
+            # volume_ratioフォールバック
+            if not nk_tech.get("volume_ratio"):
+                fallback_vr = calc_volume_ratio(topix_volumes, 5)
+                if fallback_vr is not None:
+                    nk_tech["volume_ratio"] = fallback_vr
+                    nk_tech["volume_ratio_source"] = "1306.T"
+            # volume_analysisフォールバック（ratio=0.0はnikkei225のVolume=0が原因）
+            va = nk_tech.get("volume_analysis")
+            if not va or va.get("ratio") == 0.0:
+                fallback_va = calc_volume_analysis(topix_closes, topix_volumes)
+                if fallback_va is not None:
+                    nk_tech["volume_analysis"] = fallback_va
+                    nk_tech["volume_analysis_source"] = "1306.T"
         except Exception as e:
-            errors.append(f"volume_ratio fallback (1306.T): {str(e)}")
+            errors.append(f"volume fallback (1306.T): {str(e)}")
 
     # イールドカーブスプレッド（10年-3ヶ月）
     if "us10y" in result and "us3m" in result:
@@ -392,12 +505,33 @@ def fetch_market_data(include_pm=False):
                 bullish_signals += 1
             elif nk_tech["bollinger_position"] < 0:
                 bearish_signals += 1
+        # 一目均衡表: 三役好転/三役逆転で判定（常にthree_signalsが存在）
         if "ichimoku" in nk_tech:
             signal_count += 1
-            pos = nk_tech["ichimoku"]["cloud_position"]
-            if pos == "above_cloud":
+            if nk_tech["ichimoku"]["three_signals"] == "bullish":
                 bullish_signals += 1
-            elif pos == "below_cloud":
+            elif nk_tech["ichimoku"]["three_signals"] == "bearish":
+                bearish_signals += 1
+        # SMAクロス
+        if "sma_cross" in nk_tech:
+            signal_count += 1
+            if nk_tech["sma_cross"]["type"] == "golden_cross" or nk_tech["sma_cross"]["spread"] > 0:
+                bullish_signals += 1
+            elif nk_tech["sma_cross"]["type"] == "dead_cross" or nk_tech["sma_cross"]["spread"] < 0:
+                bearish_signals += 1
+        # 週足RSI
+        if "weekly_rsi14" in nk_tech:
+            signal_count += 1
+            if nk_tech["weekly_rsi14"] > 50:
+                bullish_signals += 1
+            elif nk_tech["weekly_rsi14"] < 50:
+                bearish_signals += 1
+        # 出来高ダイバージェンス
+        if "volume_analysis" in nk_tech and nk_tech["volume_analysis"].get("divergence"):
+            signal_count += 1
+            if nk_tech["volume_analysis"]["divergence"] == "bullish":
+                bullish_signals += 1
+            elif nk_tech["volume_analysis"]["divergence"] == "bearish":
                 bearish_signals += 1
     if signal_count > 0:
         result["technical_summary"] = {
