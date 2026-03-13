@@ -51,11 +51,75 @@ def load_params() -> dict:
         return json.load(f)
 
 
+def _normalize_data(data: dict) -> dict:
+    """フラットリスト形式のデータをdict形式に正規化する。
+
+    Phase 0の出力形式（フラットリスト）とスクリプトが期待する形式（dict keyed by ticker）を変換。
+    """
+    # performance_cache: list -> dict[ticker, list[period_data]]
+    perf = data.get("performance_cache")
+    if isinstance(perf, list):
+        perf_dict = {}
+        for item in perf:
+            ticker = str(item.get("etf_code", ""))
+            if ticker not in perf_dict:
+                perf_dict[ticker] = []
+            perf_dict[ticker].append(item)
+        data["performance_cache"] = perf_dict
+
+    # price_data: list -> dict[ticker, list[{date, close}]]
+    pd_ = data.get("price_data")
+    if isinstance(pd_, list):
+        pd_dict = {}
+        for item in pd_:
+            ticker = str(item.get("etf_code", ""))
+            if ticker not in pd_dict:
+                pd_dict[ticker] = []
+            pd_dict[ticker].append({"date": item.get("date"), "close": item.get("close")})
+        data["price_data"] = pd_dict
+
+    # score_cache: list -> list (holdingsのticker_codeをetf_codeから変換)
+    sc = data.get("score_cache")
+    if isinstance(sc, list):
+        for item in sc:
+            if "etf_code" in item and "ticker_code" not in item:
+                item["ticker_code"] = item["etf_code"]
+
+    # etf_data: list -> dict[ticker, info]
+    ed = data.get("etf_data")
+    if isinstance(ed, list):
+        ed_dict = {}
+        for item in ed:
+            ticker = str(item.get("code", ""))
+            ed_dict[ticker] = item
+        data["etf_data"] = ed_dict
+
+    # tag_data: list -> dict[ticker, list[{category, tag_name}]]
+    td = data.get("tag_data")
+    if isinstance(td, list):
+        td_dict = {}
+        for item in td:
+            ticker = str(item.get("etf_code", ""))
+            if ticker not in td_dict:
+                td_dict[ticker] = []
+            td_dict[ticker].append({"category": item.get("category", ""), "tag_name": item.get("name", "")})
+        data["tag_data"] = td_dict
+
+    # holdings: ticker_code フィールドを etf_code から設定
+    holdings_data = data.get("holdings", {}).get("data", [])
+    for h in holdings_data:
+        if "etf_code" in h and "ticker_code" not in h:
+            h["ticker_code"] = h["etf_code"]
+
+    return data
+
+
 def load_portfolio_data(work_dir: str) -> dict:
     """00_portfolio_data.json を読み込む"""
     data_path = PROJECT_ROOT / work_dir / "00_portfolio_data.json"
     with open(data_path) as f:
-        return json.load(f)
+        data = json.load(f)
+    return _normalize_data(data)
 
 
 def get_holdings_weights(data: dict) -> tuple:
@@ -84,8 +148,8 @@ def calc_sharpe_ratios(data: dict, params: dict, rf_rate=None) -> dict:
                 one_year = p
                 break
 
-        if one_year and one_year.get("volatility") and one_year["volatility"] > 0:
-            ret = one_year.get("return_rate", 0) / 100  # %->小数
+        if one_year and one_year.get("volatility") and one_year["volatility"] > 0 and one_year.get("return_rate") is not None:
+            ret = one_year["return_rate"] / 100  # %->小数
             vol = one_year["volatility"] / 100
             sr = (ret - rf) / vol
             results.append({
@@ -297,7 +361,9 @@ def calc_correlation_matrix(data: dict, params: dict) -> dict:
         period_list = periods if isinstance(periods, list) else [periods]
         for p in period_list:
             if isinstance(p, dict) and p.get("period") == "1y":
-                one_year_returns[ticker] = p.get("return_rate", 0) / 100
+                rr = p.get("return_rate")
+                if rr is not None:
+                    one_year_returns[ticker] = rr / 100
                 break
 
     pairs = []
@@ -333,7 +399,11 @@ def calc_max_drawdown(data: dict) -> dict:
             )
         }
 
-    peak = valuation[0].get("total_value", 0)
+    # valuation_historyは "value" または "total_value" フィールドを使用
+    def _get_val(point):
+        return point.get("total_value", point.get("value", 0))
+
+    peak = _get_val(valuation[0])
     max_dd = 0
     peak_date = valuation[0].get("date", "")
     dd_peak_date = peak_date
@@ -342,7 +412,7 @@ def calc_max_drawdown(data: dict) -> dict:
     trough_value = peak
 
     for point in valuation:
-        val = point.get("total_value", 0)
+        val = _get_val(point)
         if val > peak:
             peak = val
             peak_date = point.get("date", "")
@@ -362,7 +432,7 @@ def calc_max_drawdown(data: dict) -> dict:
             if point.get("date", "") == trough_date:
                 found_trough = True
                 continue
-            if found_trough and point.get("total_value", 0) >= dd_peak_value:
+            if found_trough and _get_val(point) >= dd_peak_value:
                 recovery_date = point.get("date", "")
                 break
 
@@ -752,7 +822,12 @@ def try_load_rf_rate(work_dir: str):
         return None
     try:
         content = market_file.read_text()
-        match = re.search(r'リスクフリーレート.*?(\d+\.?\d*)%', content)
+        # リスクフリーレートセクションから利回りを取得
+        match = re.search(r'リスクフリーレート.*?(\d+\.?\d*)%', content, re.DOTALL)
+        if match:
+            return float(match.group(1)) / 100
+        # フォールバック: 日本国債10年利回りを直接検索
+        match = re.search(r'日本国債10年利回り.*?(\d+\.?\d*)%', content, re.DOTALL)
         if match:
             return float(match.group(1)) / 100
     except Exception:
