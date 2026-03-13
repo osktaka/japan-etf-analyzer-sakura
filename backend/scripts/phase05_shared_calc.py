@@ -622,6 +622,129 @@ def calc_expense_ratio_effect(data: dict) -> dict:
     }
 
 
+def calc_hhi(data: dict) -> dict:
+    """項目H: HHI集中度指数（銘柄別・セクター別・地域別）"""
+    holdings, total_value = get_holdings_weights(data)
+    if not holdings or total_value == 0:
+        return {"status": "skipped", "reason": "保有データなし"}
+
+    # 銘柄別HHI
+    weights = [h.get("current_value", 0) / total_value for h in holdings]
+    hhi_holdings = sum(w ** 2 for w in weights)
+
+    # セクター別・地域別HHI（tag_dataから）
+    tag_data = data.get("tag_data", {})
+
+    def calc_category_hhi(category_key):
+        """タグカテゴリ別のHHI算出"""
+        category_weights = {}
+        for holding in holdings:
+            ticker = str(holding.get("ticker_code", ""))
+            weight = holding.get("current_value", 0) / total_value
+            tags = tag_data.get(ticker, [])
+            if isinstance(tags, list):
+                matched = [t for t in tags if isinstance(t, dict) and t.get("category") == category_key]
+                if matched:
+                    # 複数タグがある場合は均等配分
+                    per_tag_weight = weight / len(matched)
+                    for t in matched:
+                        tag_name = t.get("tag_name", "不明")
+                        category_weights[tag_name] = category_weights.get(tag_name, 0) + per_tag_weight
+                else:
+                    category_weights["未分類"] = category_weights.get("未分類", 0) + weight
+            else:
+                category_weights["未分類"] = category_weights.get("未分類", 0) + weight
+
+        if not category_weights:
+            return None, {}
+        hhi = sum(v ** 2 for v in category_weights.values())
+        return round(hhi, 4), {k: round(v, 4) for k, v in sorted(category_weights.items(), key=lambda x: -x[1])}
+
+    hhi_sector, sector_weights = calc_category_hhi("sector")
+    hhi_region, region_weights = calc_category_hhi("region")
+
+    return {
+        "status": "ok",
+        "hhi_holdings": round(hhi_holdings, 4),
+        "hhi_sector": hhi_sector,
+        "hhi_region": hhi_region,
+        "sector_weights": sector_weights,
+        "region_weights": region_weights,
+        "effective_n_holdings": round(1 / hhi_holdings, 1) if hhi_holdings > 0 else None
+    }
+
+
+def calc_cornish_fisher_var(data: dict, params: dict) -> dict:
+    """項目CF: Cornish-Fisher VaR補正（歪度・尖度考慮）"""
+    price_data = data.get("price_data", {})
+    holdings, total_value = get_holdings_weights(data)
+    summary = data.get("summary", {}).get("data", {})
+    total_asset = summary.get("total_asset", total_value)
+
+    if not price_data or not holdings or total_value == 0:
+        return {"status": "skipped", "reason": "データ不足"}
+
+    min_points = params["var_cvar"]["min_data_points"]
+    monthly_returns = extract_monthly_returns(price_data)
+    if not monthly_returns:
+        return {"status": "skipped", "reason": "月次リターン計算不可"}
+
+    min_len = min(len(v) for v in monthly_returns.values())
+    if min_len < min_points:
+        return {"status": "skipped", "reason": f"データポイント不足（{min_len}点、最低{min_points}点必要）"}
+
+    # ポートフォリオ月次リターン
+    portfolio_returns = [0.0] * min_len
+    for ticker, returns in monthly_returns.items():
+        holding = next(
+            (h for h in holdings if str(h.get("ticker_code", "")) == str(ticker)),
+            None
+        )
+        weight = (holding.get("current_value", 0) / total_value) if holding else 0
+        for i in range(min_len):
+            portfolio_returns[i] += returns[i] * weight
+
+    n = len(portfolio_returns)
+    mean = sum(portfolio_returns) / n
+    variance = sum((r - mean) ** 2 for r in portfolio_returns) / (n - 1)
+    std = math.sqrt(variance) if variance > 0 else 0
+
+    if std == 0:
+        return {"status": "skipped", "reason": "ボラティリティ0"}
+
+    # 歪度・尖度
+    skewness = sum((r - mean) ** 3 for r in portfolio_returns) / (n * std ** 3) if std > 0 else 0
+    kurtosis_excess = sum((r - mean) ** 4 for r in portfolio_returns) / (n * std ** 4) - 3 if std > 0 else 0
+
+    # Cornish-Fisher展開
+    z = 1.6449  # 95%信頼水準
+    z_cf = (z
+            + (z**2 - 1) * skewness / 6
+            + (z**3 - 3*z) * kurtosis_excess / 24
+            - (2*z**3 - 5*z) * skewness**2 / 36)
+
+    # VaR計算
+    cf_var = mean - z_cf * std
+    parametric_var = mean - z * std
+
+    # 補正インパクト
+    correction_pct = ((cf_var - parametric_var) / abs(parametric_var) * 100) if parametric_var != 0 else 0
+
+    return {
+        "status": "ok",
+        "skewness": round(skewness, 4),
+        "kurtosis_excess": round(kurtosis_excess, 4),
+        "z_normal": round(z, 4),
+        "z_cornish_fisher": round(z_cf, 4),
+        "parametric_var_pct": round(parametric_var * 100, 2),
+        "cornish_fisher_var_pct": round(cf_var * 100, 2),
+        "cf_var_amount": round(total_asset * cf_var),
+        "correction_impact_pct": round(correction_pct, 2),
+        "data_points": n,
+        "interpretation": "テール肥大（正規分布仮定は不適切）" if abs(correction_pct) > 20 else "概ね正規分布に適合"
+    }
+
+
 def try_load_rf_rate(work_dir: str):
     """0a_market_environment.md からリスクフリーレートを読み込む（存在しない場合None）"""
     market_file = PROJECT_ROOT / work_dir / "0a_market_environment.md"
@@ -666,6 +789,8 @@ def main():
         "momentum_distribution": calc_momentum_distribution(data),
         "var_cvar": calc_var_cvar(data, params),
         "expense_ratio_effect": calc_expense_ratio_effect(data),
+        "hhi": calc_hhi(data),
+        "cornish_fisher_var": calc_cornish_fisher_var(data, params),
         "params_used": {
             "correlation_high": params["correlation"]["high"],
             "correlation_low": params["correlation"]["low"],
@@ -692,6 +817,8 @@ def main():
     print("  モメンタム分布: {}".format(results['momentum_distribution'].get('status', 'N/A')))
     print("  VaR/CVaR: {}".format(results['var_cvar'].get('status', 'N/A')))
     print("  信託報酬複利効果: {}".format(results['expense_ratio_effect'].get('status', 'N/A')))
+    print("  HHI集中度: {}".format(results['hhi'].get('status', 'N/A')))
+    print("  Cornish-Fisher VaR: {}".format(results['cornish_fisher_var'].get('status', 'N/A')))
 
 
 if __name__ == "__main__":

@@ -157,5 +157,30 @@
       {"category": "asset", "keywords": ["債券", "REIT", "金"]},
       {"category": "sector", "keywords": ["公益", "通信", "生活必需品"]}
     ]
+  },
+  "hhi": {
+    "high": 0.25,
+    "medium": 0.15,
+    "high_description": "HHI 0.25超で高集中（上位2-3銘柄に偏重）",
+    "medium_description": "HHI 0.15-0.25で中集中",
+    "low_description": "HHI 0.15未満で低集中（分散良好）"
+  },
+  "currency_exposure": {
+    "mapping": {
+      "国内": {"JPY": 1.0},
+      "米国": {"USD": 1.0},
+      "先進国": {"USD": 0.5, "EUR": 0.3, "OTHER": 0.2},
+      "新興国": {"USD": 0.3, "CNY": 0.2, "OTHER": 0.5},
+      "グローバル": {"USD": 0.4, "EUR": 0.2, "JPY": 0.2, "OTHER": 0.2}
+    },
+    "sensitivity_per_yen": 1.0,
+    "_description": "通貨エクスポージャーのヒューリスティック推定マッピング。tag_dataのregionカテゴリから通貨比率を推定"
+  },
+  "factor_analysis": {
+    "size_thresholds": {
+      "large": 50000000000,
+      "mid": 10000000000,
+      "_description": "純資産500億円超=大型、100億円超=中型、以下=小型"
+    }
   }
 }
