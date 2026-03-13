@@ -39,6 +39,10 @@ TICKERS = {
     "us10y": "^TNX",
     "nikkei_futures": "NKD=F",
     "usdjpy": "USDJPY=X",
+    "wti_oil": "CL=F",      # WTI原油先物
+    "gold": "GC=F",          # 金先物
+    "us3m": "^IRX",          # 米13週国債利回り（短期金利指標）
+    "sox": "^SOX",            # フィラデルフィア半導体指数
 }
 
 # PM用追加ティッカー（東証指標）
@@ -58,8 +62,12 @@ JST = timezone(timedelta(hours=9))
 # テクニカル指標を算出するティッカー名の定義
 # AM用: S&P500, NASDAQ に RSI のみ
 # PM用: 日経225 に全テクニカル指標
-TECHNICAL_RSI_TARGETS = {"sp500", "nasdaq"}
+TECHNICAL_RSI_TARGETS = {"sp500", "nasdaq", "sox"}
 TECHNICAL_FULL_TARGETS = {"nikkei225"}
+# MACD対象: S&P500, NASDAQ, 日経225
+TECHNICAL_MACD_TARGETS = {"sp500", "nasdaq", "nikkei225"}
+# 一目均衡表対象: 日経225のみ
+TECHNICAL_ICHIMOKU_TARGETS = {"nikkei225"}
 
 
 def calc_sma(closes, period):
@@ -116,13 +124,95 @@ def calc_volume_ratio(volumes, period=5):
     return round(volumes[-1] / avg, 2)
 
 
-def build_technical(name, closes, volumes):
+def calc_ema_series(closes, period):
+    """EMA（指数移動平均）系列を算出"""
+    if len(closes) < period:
+        return []
+    multiplier = 2 / (period + 1)
+    ema_val = sum(closes[:period]) / period
+    result = [ema_val]
+    for i in range(period, len(closes)):
+        ema_val = (closes[i] - ema_val) * multiplier + ema_val
+        result.append(ema_val)
+    return result
+
+
+def calc_macd(closes, fast=12, slow=26, signal_period=9):
+    """MACD(12,26,9)を算出。ゴールデンクロス/デッドクロス検出付き"""
+    if len(closes) < slow + signal_period:
+        return None
+    fast_ema = calc_ema_series(closes, fast)
+    slow_ema = calc_ema_series(closes, slow)
+    # MACD系列の算出（fast_emaとslow_emaのアライメント調整）
+    offset = slow - fast
+    macd_series = []
+    for i in range(len(slow_ema)):
+        macd_series.append(fast_ema[i + offset] - slow_ema[i])
+    if len(macd_series) < signal_period:
+        return None
+    # シグナルライン = MACD系列のEMA(9)
+    signal_ema = calc_ema_series(macd_series, signal_period)
+    if not signal_ema:
+        return None
+    macd_val = macd_series[-1]
+    signal_val = signal_ema[-1]
+    histogram = macd_val - signal_val
+    # クロス検出（直近1日）
+    cross = "none"
+    if len(macd_series) >= 2 and len(signal_ema) >= 2:
+        prev_diff = macd_series[-2] - signal_ema[-2]
+        curr_diff = macd_val - signal_val
+        if prev_diff <= 0 and curr_diff > 0:
+            cross = "golden_cross"
+        elif prev_diff >= 0 and curr_diff < 0:
+            cross = "dead_cross"
+    return {
+        "macd": round(macd_val, 2),
+        "signal": round(signal_val, 2),
+        "histogram": round(histogram, 2),
+        "cross": cross,
+    }
+
+
+def calc_ichimoku(highs, lows, closes):
+    """一目均衡表の雲位置を算出（日経225用）"""
+    if len(closes) < 52 or len(highs) < 52 or len(lows) < 52:
+        return None
+    tenkan = (max(highs[-9:]) + min(lows[-9:])) / 2
+    kijun = (max(highs[-26:]) + min(lows[-26:])) / 2
+    senkou_a = (tenkan + kijun) / 2
+    senkou_b = (max(highs[-52:]) + min(lows[-52:])) / 2
+    current = closes[-1]
+    cloud_top = max(senkou_a, senkou_b)
+    cloud_bottom = min(senkou_a, senkou_b)
+    if current > cloud_top:
+        position = "above_cloud"
+    elif current < cloud_bottom:
+        position = "below_cloud"
+    else:
+        position = "in_cloud"
+    return {
+        "tenkan": round(tenkan, 2),
+        "kijun": round(kijun, 2),
+        "cloud_top": round(cloud_top, 2),
+        "cloud_bottom": round(cloud_bottom, 2),
+        "cloud_position": position,
+    }
+
+
+def build_technical(name, closes, volumes, highs=None, lows=None):
     """ティッカー名に応じたテクニカル指標dictを構築する。
 
     対象外のティッカーはNoneを返す。
     エラー時は空dictを返す。
     """
-    if name not in TECHNICAL_RSI_TARGETS and name not in TECHNICAL_FULL_TARGETS:
+    is_target = (
+        name in TECHNICAL_RSI_TARGETS
+        or name in TECHNICAL_FULL_TARGETS
+        or name in TECHNICAL_MACD_TARGETS
+        or name in TECHNICAL_ICHIMOKU_TARGETS
+    )
+    if not is_target:
         return None
 
     try:
@@ -153,6 +243,18 @@ def build_technical(name, closes, volumes):
             if vr is not None:
                 tech["volume_ratio"] = vr
 
+        # MACD（S&P500, NASDAQ, 日経225）
+        if name in TECHNICAL_MACD_TARGETS:
+            macd = calc_macd(closes)
+            if macd is not None:
+                tech["macd"] = macd
+
+        # 一目均衡表（日経225のみ）
+        if name in TECHNICAL_ICHIMOKU_TARGETS and highs and lows:
+            ichimoku = calc_ichimoku(highs, lows, closes)
+            if ichimoku is not None:
+                tech["ichimoku"] = ichimoku
+
         return tech
     except Exception:
         return {}
@@ -164,6 +266,7 @@ def fetch_market_data(include_pm=False):
     Args:
         include_pm: TrueならPM用東証指標も取得する
     """
+    start_time = datetime.now(JST)
     tickers = dict(TICKERS)
     if include_pm:
         tickers.update(PM_TICKERS)
@@ -213,7 +316,9 @@ def fetch_market_data(include_pm=False):
             # テクニカル指標の算出
             closes = [float(row["Close"]) for _, row in hist.iterrows()]
             volumes = [float(row["Volume"]) for _, row in hist.iterrows()]
-            tech = build_technical(name, closes, volumes)
+            highs = [float(row["High"]) for _, row in hist.iterrows()]
+            lows = [float(row["Low"]) for _, row in hist.iterrows()]
+            tech = build_technical(name, closes, volumes, highs, lows)
             if tech is not None:
                 entry["technical"] = tech
 
@@ -244,8 +349,72 @@ def fetch_market_data(include_pm=False):
         except Exception as e:
             errors.append(f"volume_ratio fallback (1306.T): {str(e)}")
 
+    # イールドカーブスプレッド（10年-3ヶ月）
+    if "us10y" in result and "us3m" in result:
+        try:
+            spread = result["us10y"]["price"] - result["us3m"]["price"]
+            result["yield_curve"] = {
+                "spread_10y3m": round(spread, 2),
+                "status": "inverted" if spread < 0
+                else "normal" if spread > 1.0
+                else "flat",
+            }
+        except Exception:
+            pass
+
+    # テクニカルシグナル集計（方向一致度）
+    bullish_signals = 0
+    bearish_signals = 0
+    signal_count = 0
+    for ticker_name in ["sp500", "nasdaq", "nikkei225"]:
+        if ticker_name in result and "technical" in result[ticker_name]:
+            tech = result[ticker_name]["technical"]
+            # RSI
+            if "rsi14" in tech:
+                signal_count += 1
+                if tech["rsi14"] > 50:
+                    bullish_signals += 1
+                elif tech["rsi14"] < 50:
+                    bearish_signals += 1
+            # MACD
+            if "macd" in tech:
+                signal_count += 1
+                if tech["macd"]["histogram"] > 0:
+                    bullish_signals += 1
+                elif tech["macd"]["histogram"] < 0:
+                    bearish_signals += 1
+    # 日経225固有
+    if "nikkei225" in result and "technical" in result["nikkei225"]:
+        nk_tech = result["nikkei225"]["technical"]
+        if "bollinger_position" in nk_tech:
+            signal_count += 1
+            if nk_tech["bollinger_position"] > 0:
+                bullish_signals += 1
+            elif nk_tech["bollinger_position"] < 0:
+                bearish_signals += 1
+        if "ichimoku" in nk_tech:
+            signal_count += 1
+            pos = nk_tech["ichimoku"]["cloud_position"]
+            if pos == "above_cloud":
+                bullish_signals += 1
+            elif pos == "below_cloud":
+                bearish_signals += 1
+    if signal_count > 0:
+        result["technical_summary"] = {
+            "bullish": bullish_signals,
+            "bearish": bearish_signals,
+            "neutral": signal_count - bullish_signals - bearish_signals,
+            "total": signal_count,
+            "direction": "bullish" if bullish_signals > bearish_signals
+            else "bearish" if bearish_signals > bullish_signals
+            else "neutral",
+        }
+
     # メタデータ
-    result["fetched_at"] = datetime.now(JST).isoformat()
+    end_time = datetime.now(JST)
+    result["fetched_at"] = end_time.isoformat()
+    result["fetch_duration_sec"] = round((end_time - start_time).total_seconds(), 1)
+    result["ticker_count"] = len(tickers)
     result["errors"] = errors
 
     return result
