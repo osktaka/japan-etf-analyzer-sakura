@@ -79,7 +79,8 @@
   },
   "dividend_yield_sanity": {
     "max_deviation_ratio": 3.0,
-    "min_expected_yield": 0.005
+    "min_expected_yield": 0.005,
+    "_description": "配当利回りの整合性チェック。min_expected_yield(0.5%)未満は配当データ欠損疑い、max_deviation_ratio(3.0倍)超は特別配当・データ誤り疑い。Phase 0.5の項目5bで検証し、異常時はdividend_zscoreセクション冒頭に警告出力"
   },
   "dividend_zscore": {
     "undervalued": 1.5,
@@ -109,6 +110,26 @@
     "neutral_max": 30,
     "defense_max": 60,
     "defense_level_description": "防御銘柄比率に基づくテクニカル防御レベル判定（200MA基準）"
+  },
+  "benchmark_relative": {
+    "information_ratio_threshold": 0.5,
+    "alpha_significant_threshold": 2.0,
+    "information_ratio_threshold_description": "情報レシオ0.5以上で市場超過リターンに有意性ありと判定",
+    "alpha_significant_threshold_description": "年率α絶対値2%超で有意なαと判定"
+  },
+  "var_parametric": {
+    "bootstrap_iterations": 1000,
+    "confidence_interval": 0.95,
+    "tail_fatness_threshold": 0.2,
+    "bootstrap_max_data_points": 20,
+    "bootstrap_iterations_description": "ブートストラップ復元抽出回数",
+    "tail_fatness_threshold_description": "テール肥大度0.2超で正規分布仮定不適切と判定"
+  },
+  "stress_correlation": {
+    "convergence_delta": 0.2,
+    "max_correlation": 1.0,
+    "convergence_delta_description": "ストレス時に全ペアの相関係数に加算する値（経験的設定）",
+    "max_correlation_description": "相関係数の上限（1.0）"
   },
   "defensive_asset_categories": {
     "description": "防御的アセットの判定基準（タグcategoryフィールドとキーワードで分類）",

@@ -144,6 +144,13 @@ print(f"検証OK: 総資産{total_asset:,.0f}円（銘柄{total_current_value:,.
 
 **記録対象**: holdings, summary, valuation_history, performance_cache, score_cache, etf_data, tag_data, price_data, price_data_daily_30d, price_data_close_250d, dividend_data, recommendations_balance, recommendations_dividend, recommendations_low-cost, compare_performance, compare_scores
 
+**おすすめAPIデータ空時のフォールバック（必須）**:
+- `recommendations_*` の全視点が `"empty"` または `"error"` の場合、以下を実行する:
+  1. `score_cache` の `balanced` ビューで `total_score` 上位5銘柄を抽出（保有銘柄は除外）
+  2. 抽出結果を `recommendations_fallback` キーに格納する（形式: `[{"etf_code": "XXXX", "total_score": XX.X, "source": "score_cache_balanced"}, ...]`）
+  3. `_data_status.recommendations` に `"fallback_note": "全視点データ空のため、スコアキャッシュから上位5銘柄を代替候補として抽出"` を記録する
+- 一部の視点のみ空の場合はフォールバック不要（取得できた視点のデータを使用する）
+
 **ステータス値**:
 - `"ok"`: 正常取得（件数付き）
 - `"empty"`: データが空
@@ -220,6 +227,29 @@ print(f"検証OK: 総資産{total_asset:,.0f}円（銘柄{total_current_value:,.
 - **出力形式**: `{"1475": {"2024": 45.0, "2023": 42.0, "2022": 40.0}, ...}`
 - **フォールバック**: yfinance 0.1.63で `ticker.dividends` 取得失敗時は `dividend_data: null` を設定し、`_data_status` に `{"status": "error", "error": "配当データ取得失敗"}` を記録。この場合、Phase 0.5の分配金Zスコア（項目10）は一括スキップされる
 - **注意**: 配当データ取得は `try/except` で囲み、1銘柄の失敗が他銘柄に影響しないようにする
+
+#### 配当データ整合性チェック（必須）
+
+収集完了後、`_data_status.dividend_data` の記録と実データの整合性を検証する:
+
+1. `_data_status.dividend_data.status` が `"ok"` の場合:
+   - `dividend_data` が `null` でないことを確認（矛盾する場合は `status: "empty"` に修正）
+   - 各銘柄に少なくとも1年分のデータが存在することを確認
+2. 銘柄ごとのステータスを `_data_status.dividend_data.per_etf` に詳細記録:
+   ```json
+   "dividend_data": {
+     "status": "ok",
+     "count": 5,
+     "per_etf": {
+       "1475": {"status": "ok", "years": 3},
+       "1489": {"status": "ok", "years": 2},
+       "1540": {"status": "empty", "reason": "配当実績なし"},
+       "2558": {"status": "error", "reason": "yfinance取得タイムアウト"}
+     }
+   }
+   ```
+3. `status: "ok"` かつ全銘柄が `"empty"` の場合、全体ステータスを `"empty"` に修正
+4. Phase 0.5の分配金Zスコア（項目10）は `per_etf` の個別ステータスを参照してスキップ判断を行う
 
 ### `00_portfolio_data.json` の出力構造（追加分）
 
