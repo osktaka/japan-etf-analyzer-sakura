@@ -39,6 +39,43 @@ docker compose exec backend python scripts/market_data_quick.py --pm
 
 **出来高データの注意**: ^N225（日経平均指数）のVolumeはyfinanceで0を返すため、出来高5日平均比（volume_ratio）はETF代替指標（1306.T: TOPIX連動型ETF）から取得する。market_data_quick.pyのvolume_ratioが0.0の場合はセクション内で「N/A」と表示する。
 
+### Step 0.3: 過去コンテキスト読み込み（~10秒）
+
+過去5営業日のAM/PMレポートのYAMLフロントマターから構造化要約を取得する。
+
+**実行コマンド**:
+```bash
+# 開発環境
+docker compose exec backend python scripts/market_outlook_context.py
+
+# 本番環境
+cd ~/www/japan-etf-analyzer && source backend/venv/bin/activate && python backend/scripts/market_outlook_context.py
+```
+
+出力される `recent_context` を以降のステップで「補助入力」として保持する。
+
+**重要**: この時点では「過去の実績の流れ」のみ確認する。「今日の予測 × 過去の流れ」の文脈判定はStep 4（ドラフト生成）で実施する。
+
+**出力内容**:
+- `actual_flow`: 過去5営業日の実績騰落（UP/DOWN/FLAT）と変化率、トレンドサマリー（enum）
+- `accuracy`: 方向性的中統計、CME乖離平均
+- `themes_3d`: 直近3日の注目テーマ
+- `regime_latest` / `regime_changed`: 最新マクロレジームと変化有無
+- `alerts`: 自動生成の警告（最大2件）
+
+**actual_flowのenum定義**:
+| enum | 条件 |
+|------|------|
+| UPTREND | 直近5日中UP3日以上かつ直近2日UP |
+| DOWNTREND | 直近5日中DOWN3日以上かつ直近2日DOWN |
+| REVERSAL_RECOVERY | 前半DOWN優勢→直近2日UP |
+| REVERSAL_DECLINE | 前半UP優勢→直近2日DOWN |
+| RANGE_BOUND | 上記いずれにも該当しない |
+
+※ 横ばい判定: 実績変化率±0.3%以内 → FLAT（連続性カウントから除外）
+
+**スクリプト失敗時**: 過去コンテキストなしで続行（必須ではない補助データ）。
+
 #### Step 0.5: confidence（データ整合性）の定量判定
 
 yfinanceデータを取得後、以下のルールでconfidenceを判定する:
@@ -206,6 +243,31 @@ output-formats.md のテンプレートに従いドラフトを生成する。
 - PM時の需給データ（信用残・投資部門別売買）は積極的に取得する。「取得可能時のみ」ではなく、毎回必ずWebSearchで取得を試みること
 - 信用倍率の閾値ルール: 5倍超→「過熱警戒」、2倍未満→「需給良好」、2-5倍→「標準」
 - AM時にも前週の投資主体別売買データに言及することを推奨（WebSearchで取得可能な場合のみ）
+
+#### 文脈判定ルール（Step 0.3の過去コンテキスト使用時）
+
+Step 0.3で取得した `recent_context` が利用可能な場合、今日の予測方向が決まった時点で `actual_flow.trend_summary` と照合し、総合判断セクションに「**市場の流れ**」行を記述する。
+
+| 今日の予測 | trend_summary | 文脈 | 今日の見通し（短期） | 継続性の見通し（中期） |
+|-----------|--------------|------|-------------------|---------------------|
+| UP | UPTREND | トレンド継続 | 今日は上昇の流れに沿った展開 | 上昇基調が継続中だが、過熱リスクに留意。利益確定売りが出やすい局面 |
+| UP | DOWNTREND / REVERSAL_DECLINE | 反転試み | 今日はCME等の材料で反発が見込まれる | ただし下落基調からの反転であり、上昇が明日以降も続くかは慎重に判断 |
+| UP | REVERSAL_RECOVERY | 回復継続 | 今日は反転からの回復が継続する見込み | トレンド形成の確認局面。継続にはテーマの持続が必要 |
+| DOWN | DOWNTREND | 下落継続 | 今日も下落圧力が優勢 | 下落基調が継続中で底値模索の局面。反発のきっかけ待ち |
+| DOWN | UPTREND / REVERSAL_RECOVERY | 反落警戒 | 今日は材料悪化で反落が見込まれる | ただし上昇基調の中での反落であり、押し目買いの可能性も。天井形成かの見極めが重要 |
+| DOWN | REVERSAL_DECLINE | 下落継続 | 今日も反落の流れが継続 | 下値メドを確認する局面。売り圧力の持続性を注視 |
+| any | RANGE_BOUND | 方向感なし | 今日は{予測方向}だが方向感に乏しい | レンジ相場が継続中で、明確なトレンド形成には至っていない |
+
+#### CMEバイアス補正ルール
+
+`alerts` に "CME_プラスバイアス" / "CME_マイナスバイアス" がある場合:
+- シナリオ分析のレンジをバイアス方向に補正（具体的な補正幅はドラフト時に判断）
+
+#### テーマ継続の注記ルール
+
+`alerts` に "テーマ継続" がある場合:
+- 該当テーマに「市場注目度が高い（織り込み進行の可能性も考慮）」と注記
+- ※「織り込み済み」とは断定しない
 
 ### Step 5: 自己検証チェック（Self-Validation）
 

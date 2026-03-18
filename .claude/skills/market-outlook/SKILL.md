@@ -32,6 +32,7 @@ aliases: ["/market-outlook"]
 |---------|------------|------|
 | 1. モード判定 | 〜10秒 | timing/mode判定、AMファイル存在確認 |
 | 2. yfinanceデータ取得 | 〜90秒 | market_data_quick.py実行（11指標+テクニカル+クロスアセット+シグナル集計） |
+| 2.5. 過去コンテキスト | 〜10秒 | market_outlook_context.py実行（過去5営業日の実績トレンド要約）。詳細はmarket-data-collection.md Step 0.3 |
 | 3. WebSearch/WebFetch | 〜120秒 | 定性情報取得（AM: 3クエリ / PM: 3クエリ） |
 | 4. ETF検索 | 〜30秒 | keyword→tag_ids→tag-momentumの3段フォールバック |
 | 5. ドラフト生成 | 〜120秒 | テンプレートに基づくレポート生成 |
@@ -54,12 +55,18 @@ aliases: ["/market-outlook"]
 | 時間帯判定境界 | 15:30 JST | AM/PM自動判定 |
 | 高ボラモード閾値 | VIX > 30 or 日経前日比 > ±3% | 高ボラモード発動 |
 | 危機モード閾値 | VIX > 35 | 危機モード発動 |
+| actual_flow横ばい閾値 | ±0.3% | 過去コンテキストの実績FLAT判定基準 |
 
 **VIX係数の算出ロジック:**
 - 通常時: `レンジ = CME ± (VIX × 0.05%)`（例: VIX=20 → CME±1.0%）
 - VIX>30時: `レンジ = CME ± (VIX × 0.04%) × 1.5`（高ボラモードの1.5倍拡大適用後）
   - 0.04%への縮小は過大レンジ防止のダンパー。1.5倍拡大との組み合わせで適度な拡幅を実現
   - 例: VIX=35 → 基本: 35×0.04%=1.4% → ×1.5=2.1%（通常時35×0.05%=1.75%より広い）
+
+**過去コンテキスト補正**（Step 2.5の出力利用時）:
+- 予測方向とtrend_summaryが同方向（UPTREND+UP予測、DOWNTREND+DOWN予測）→ confidence維持
+- 予測方向とtrend_summaryが逆方向（UPTREND+DOWN予測、DOWNTREND+UP予測）→ confidence 1段階下げ候補（CME・VIXの根拠が強い場合は維持可）
+- RANGE_BOUND → confidence「中」を上限に
 
 ## クロスアセット分析フレームワーク
 
