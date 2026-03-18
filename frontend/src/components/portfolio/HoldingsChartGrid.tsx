@@ -112,6 +112,19 @@ export function HoldingsChartGrid({
     return map
   }, [trades])
 
+  // Calculate max absolute regression return for border color scaling
+  const maxAbsRegReturn = useMemo(() => {
+    let max = 0
+    holdings.forEach((h) => {
+      const d = chartData[h.etf_code]
+      if (d && d.data.length > 0) {
+        const ret = calculateRegressionReturn(d.data)
+        if (ret !== null) max = Math.max(max, Math.abs(ret))
+      }
+    })
+    return max
+  }, [holdings, chartData])
+
   if (holdings.length === 0) return null
 
   const gridClass =
@@ -173,10 +186,27 @@ export function HoldingsChartGrid({
                 ? calculateRegressionReturn(data.data)
                 : null
 
+            // Border color based on regression return intensity
+            const intensity =
+              regressionReturn !== null && maxAbsRegReturn > 0
+                ? Math.min(Math.abs(regressionReturn) / maxAbsRegReturn, 1)
+                : 0
+            const borderStyle =
+              intensity > 0
+                ? {
+                    borderColor:
+                      regressionReturn! >= 0
+                        ? `rgba(34, 197, 94, ${intensity * 0.7 + 0.3})`
+                        : `rgba(239, 68, 68, ${intensity * 0.7 + 0.3})`,
+                    borderWidth: Math.round(intensity * 2) + 2,
+                  }
+                : undefined
+
             return (
               <div
                 key={code}
                 className={styles.chartCard}
+                style={borderStyle}
                 onClick={() => onETFClick?.(code)}
               >
                 <div className={styles.cardHeader}>
