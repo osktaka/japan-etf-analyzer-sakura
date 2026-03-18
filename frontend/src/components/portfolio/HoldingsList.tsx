@@ -542,7 +542,7 @@ export function HoldingsList({
                             code={holding.etf_code}
                           />
                         </span>
-                        <span className={styles.name}>
+                        <span className={styles.name} title={holding.etf?.name || '-'}>
                           {holding.etf?.name || '-'}
                         </span>
                       </div>
