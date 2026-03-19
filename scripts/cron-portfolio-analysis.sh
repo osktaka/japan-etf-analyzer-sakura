@@ -82,7 +82,7 @@ fi
 
 # --- Step 3.5: tmp_report.md 作成（要約） ---
 
-LATEST_REPORT=$(ls -t reports/${USER}/*_${USER}.md 2>/dev/null | head -1)
+LATEST_REPORT=$(ls -t reports/${USER}/*_${USER}.md reports/${USER}/*_${USER}_v2.md 2>/dev/null | head -1)
 
 if [ -z "$LATEST_REPORT" ]; then
   echo "Warning: No report file found for user=$USER, skipping tmp_report generation."

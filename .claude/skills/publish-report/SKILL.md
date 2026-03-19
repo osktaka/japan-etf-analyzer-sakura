@@ -34,7 +34,7 @@ aliases: ["/publish-report", "/pub-report"]
 
 ### Phase 1 - 素材収集（Read only）
 
-1. Globで `reports/demo/*_demo.md` を検索し、引数指定がなければ最新を使用
+1. Globで `reports/demo/*_demo*.md` を検索し、引数指定がなければ最新を使用（`*_demo.md` と `*_demo_v2.md` の両方に対応）
 2. レポート全文をReadで読み込む（重点セクション: エグゼクティブサマリー、市場環境、シャープレシオ、モメンタム、アロケーション、最適化提案）
 3. `reports/demo/HISTORY.md` をReadで読み込み、前回比の変化点を特定
 4. `frontend/src/content/notes/` の直近ポートフォリオ記事を確認（内容の重複回避）
@@ -207,7 +207,7 @@ publishedAt: 2026-02-20 09:00
 
 | ファイル | 役割 |
 |----------|------|
-| `reports/demo/*_demo.md` | 入力レポート |
+| `reports/demo/*_demo*.md` | 入力レポート（v1: `*_demo.md`, v2: `*_demo_v2.md`） |
 | `reports/demo/HISTORY.md` | ポートフォリオ履歴 |
 | `reports/demo/drafts/` | ドラフト保存先 |
 | `frontend/src/content/notes/` | 公開先ディレクトリ |
