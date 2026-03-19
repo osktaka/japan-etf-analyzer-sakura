@@ -31,30 +31,59 @@ requests.Session.prepare_request = custom_prepare_request
 import yfinance as yf  # noqa: E402
 
 # AM用ティッカー（米国指標）
+# 各エントリは (ticker_symbol, metadata) のタプル
+# metadata: data_type = "index" | "etf_proxy" | "futures" | "fx" | "commodity"
 TICKERS = {
-    "sp500": "^GSPC",
-    "nasdaq": "^IXIC",
-    "dow": "^DJI",
-    "vix": "^VIX",
-    "us10y": "^TNX",
-    "nikkei_futures": "NKD=F",
-    "usdjpy": "USDJPY=X",
-    "wti_oil": "CL=F",      # WTI原油先物
-    "gold": "GC=F",          # 金先物
-    "us3m": "^IRX",          # 米13週国債利回り（短期金利指標）
-    "sox": "^SOX",            # フィラデルフィア半導体指数
+    "sp500": {"symbol": "^GSPC", "data_type": "index"},
+    "nasdaq": {"symbol": "^IXIC", "data_type": "index"},
+    "dow": {"symbol": "^DJI", "data_type": "index"},
+    "vix": {"symbol": "^VIX", "data_type": "index"},
+    "us10y": {"symbol": "^TNX", "data_type": "index"},
+    "nikkei_futures": {"symbol": "NKD=F", "data_type": "futures"},
+    "usdjpy": {"symbol": "USDJPY=X", "data_type": "fx"},
+    "wti_oil": {"symbol": "CL=F", "data_type": "commodity"},      # WTI原油先物
+    "gold": {"symbol": "GC=F", "data_type": "commodity"},          # 金先物
+    "us3m": {"symbol": "^IRX", "data_type": "index"},          # 米13週国債利回り（短期金利指標）
+    "sox": {"symbol": "^SOX", "data_type": "index"},            # フィラデルフィア半導体指数
 }
 
 # PM用追加ティッカー（東証指標）
 # --pm 指定時にTICKERSと合わせて取得する
 # NOTE: TOPIX (^TPX) はyfinanceで取得不可（delisted扱い）→ WebFetchフォールバック対象
+# data_type: "index" = 指数直接取得, "etf_proxy" = ETFで指数を代替取得
+# etf_proxy の場合: proxy_for（代替元指数名）, etf_code（ETFコード）を付与
 PM_TICKERS = {
-    "nikkei225": "^N225",       # 日経平均株価
-    "topix_etf": "1306.T",     # TOPIX連動型ETF（TOPIX代替、^TPXはyfinance非対応）
-    "growth250": "2516.T",      # MAXIS東証グロース250 ETF（グロース250指数の代替）
-    "reit_index": "1343.T",     # NEXT FUNDS 東証REIT指数連動型ETF
-    "bank_etf": "1615.T",      # 東証銀行業株価指数ETF（銀行セクター代替）
-    "it_etf": "1626.T",        # NEXT FUNDS 情報通信・サービスその他ETF
+    "nikkei225": {"symbol": "^N225", "data_type": "index"},       # 日経平均株価
+    "topix_etf": {
+        "symbol": "1306.T",
+        "data_type": "etf_proxy",
+        "proxy_for": "TOPIX",
+        "etf_code": "1306",
+    },     # TOPIX連動型ETF（TOPIX代替、^TPXはyfinance非対応）
+    "growth250": {
+        "symbol": "2516.T",
+        "data_type": "etf_proxy",
+        "proxy_for": "東証グロース市場250指数",
+        "etf_code": "2516",
+    },      # MAXIS東証グロース250 ETF（グロース250指数の代替）
+    "reit_index": {
+        "symbol": "1343.T",
+        "data_type": "etf_proxy",
+        "proxy_for": "東証REIT指数",
+        "etf_code": "1343",
+    },     # NEXT FUNDS 東証REIT指数連動型ETF
+    "bank_etf": {
+        "symbol": "1615.T",
+        "data_type": "etf_proxy",
+        "proxy_for": "東証銀行業株価指数",
+        "etf_code": "1615",
+    },      # 東証銀行業株価指数ETF（銀行セクター代替）
+    "it_etf": {
+        "symbol": "1626.T",
+        "data_type": "etf_proxy",
+        "proxy_for": "情報通信・サービスその他指数",
+        "etf_code": "1626",
+    },        # NEXT FUNDS 情報通信・サービスその他ETF
 }
 
 JST = timezone(timedelta(hours=9))
@@ -378,7 +407,8 @@ def fetch_market_data(include_pm=False):
     errors = []
     hist_cache = {}  # ヒストリデータキャッシュ（volume_ratioフォールバック用）
 
-    for name, ticker_symbol in tickers.items():
+    for name, ticker_info in tickers.items():
+        ticker_symbol = ticker_info["symbol"]
         try:
             ticker = yf.Ticker(ticker_symbol)
             hist = ticker.history(period="6mo")
@@ -410,7 +440,13 @@ def fetch_market_data(include_pm=False):
                 "price": round(price, 2),
                 "change_pct": round(change_pct, 2),
                 "status": status,
+                "data_type": ticker_info["data_type"],
             }
+
+            # etf_proxy の場合、代替元情報を追加
+            if ticker_info["data_type"] == "etf_proxy":
+                entry["proxy_for"] = ticker_info["proxy_for"]
+                entry["etf_code"] = ticker_info["etf_code"]
 
             # 3営業日騰落率
             if len(hist) >= 4:
