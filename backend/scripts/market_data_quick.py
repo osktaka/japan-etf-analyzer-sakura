@@ -412,6 +412,16 @@ def fetch_market_data(include_pm=False):
                 "status": status,
             }
 
+            # 3営業日騰落率
+            if len(hist) >= 4:
+                close_3d_ago = float(hist.iloc[-4]["Close"])
+                entry["change_3d"] = round(((price - close_3d_ago) / close_3d_ago) * 100, 2)
+
+            # 5営業日騰落率
+            if len(hist) >= 6:
+                close_5d_ago = float(hist.iloc[-6]["Close"])
+                entry["change_5d"] = round(((price - close_5d_ago) / close_5d_ago) * 100, 2)
+
             # VIXのみポイント変動も追加
             if name == "vix" and prev_close is not None:
                 entry["change"] = round(price - prev_close, 2)

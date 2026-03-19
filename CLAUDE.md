@@ -26,6 +26,7 @@
 | デモユーザーの取引分析をしたい | reports/demo/PROMPT.md | portfolio-analysis-v2スキルによる日次運用 |
 | ポートフォリオ分析v2をしたい | .claude/skills/portfolio-analysis-v2/SKILL.md | /pf-v2（ブレインストーミング方式） |
 | 今日の東証見通し・振り返り | .claude/skills/market-outlook/SKILL.md | /market-outlook（AM:朝の見通し / PM:夕方の振り返り） |
+| 東証見通し・振り返り v2 | .claude/skills/market-outlook-v2/SKILL.md | /market-outlook-v2（データ自動取得+バリデーション） |
 | 分析レポートをノート記事にしたい | .claude/skills/publish-report/SKILL.md | /publish-reportスキルで記事化 |
 | ノート記事のネタを記録したい | .claude/note-ideas.md | 独立記事ネタの蓄積・管理 |
 
