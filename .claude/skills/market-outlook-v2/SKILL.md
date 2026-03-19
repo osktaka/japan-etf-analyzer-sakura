@@ -150,15 +150,25 @@ aliases: ["/market-outlook-v2", "/mo-v2"]
         ├─ FAIL時: ユーザーに通知し続行可否確認
         └─ WARN時: 警告表示して続行
         ↓
+2.5. 予測課題記録の読み込み（メイン）
+   ├─ reports/market-outlook/prediction_issues.md をReadで読み込み
+   ├─ ファイル未存在時: 空文字列として扱う（スキップ）
+   └─ 直近5件分のエントリをサブエージェントに渡す
+        ↓
 3. 分析+ドラフト生成（サブエージェント: general-purpose x1）
    ├─ 指示書2ファイルを読ませる:
    │   ├─ market-data-collection-v2.md
    │   └─ output-formats-v2.md
    ├─ ステップ2で取得したJSON（market_data, context, validation結果）をパラメータとして渡す
+   ├─ ステップ2.5で読み込んだprediction_issuesをパラメータとして渡す
    └─ SKILL.md自体はサブエージェントに渡さない（コンテキスト最適化）
         ↓
 4. ファイル保存（メイン）
    └─ reports/market-outlook/YYYYMMDD_{am|pm}_v2.md
+        ↓
+4.5. 予測課題記録の追記（メイン・PM時のみ）
+   ├─ サブエージェント出力のセクション4「予測課題の分類」を抽出
+   └─ prediction_issues.md のヘッダー直後（「---」の後）に当日エントリを追記
 ```
 
 ### ステップ2: データ自動取得コマンド
@@ -206,6 +216,11 @@ docker compose exec backend python scripts/market_data_quick.py --pm | docker co
 - market_data: [ステップ2-1のJSON出力全体をそのまま貼付]
 - context: [ステップ2-2のJSON出力全体をそのまま貼付。取得失敗時は「取得失敗」と記載]
 - validation: [ステップ2-3のJSON出力全体をそのまま貼付]
+
+予測課題の過去記録:
+※ ステップ2.5で読み込んだprediction_issues.mdの直近5件分をそのまま貼付。
+※ ファイル未存在または空の場合は「なし」と記載。
+- prediction_issues: [ステップ2.5の読み込み結果をそのまま貼付]
 
 タイムアウト: 600秒
 ```
@@ -285,6 +300,7 @@ docker compose exec backend python scripts/market_data_quick.py --pm | docker co
 - PM時セクター別データ不可 → セクション省略
 - 注目ETF全フォールバック失敗 → セクション省略 + `<!-- etf_recommendation_unavailable -->`
 - 非営業日 → PM出力の本日結果テーブルを省略
+- prediction_issues.md未存在 → 過去課題参照をスキップし、課題分類のみ実行
 
 ## ファイル保存ルール
 
@@ -292,6 +308,8 @@ docker compose exec backend python scripts/market_data_quick.py --pm | docker co
 - **PM保存先**: `reports/market-outlook/YYYYMMDD_pm_v2.md`
 - **同一timing・同日のファイルが存在する場合**: 上書き
 - **保存後**: ファイルパスをユーザーに通知
+- **予測課題記録**: `reports/market-outlook/prediction_issues.md`（PM時のみ追記）
+- **肥大化対策**: エントリが50件を超えた場合、メインエージェントが古いエントリを末尾から削除してからサブエージェントに渡す
 
 ## 完了条件
 
@@ -313,6 +331,8 @@ docker compose exec backend python scripts/market_data_quick.py --pm | docker co
 - [ ] [RC3] yfinance取得値に「推定」が付与されていないこと、推測が根拠なく断定されていないこと
 - [ ] [RC4/PM] 必須データ（売買代金、騰落銘柄数、業種別概況）が取得されていること
 - [ ] [RC5] 一目均衡表の個別数値（転換線・基準線等の具体値）が主要判断根拠に使われていないこと
+- [ ] [PM] セクション4に「予測課題の分類」（予測できた/できなかった）が含まれている
+- [ ] [PM] prediction_issues.md に当日エントリが追記されている
 
 ## 月次パラメータレビュー
 
