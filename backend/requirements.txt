@@ -20,6 +20,7 @@ yfinance==0.1.63
 beautifulsoup4==4.12.2
 multitasking==0.0.11
 jpholiday==1.0.3
+holidays==0.65
 
 # Production (for Sakura)
 gunicorn==21.2.0

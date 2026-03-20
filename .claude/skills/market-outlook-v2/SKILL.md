@@ -47,6 +47,11 @@ aliases: ["/market-outlook-v2", "/mo-v2"]
 | 高ボラモード閾値 | VIX > 30 or 日経前日比 > ±3% | 高ボラモード発動 |
 | 危機モード閾値 | VIX > 35 | 危機モード発動 |
 | actual_flow横ばい閾値 | ±0.3% | 過去コンテキストの実績FLAT判定基準 |
+| am_mode | normal/holiday/post_holiday/skip | AMモード判定結果 |
+| pm_mode | normal/holiday/us_holiday/skip | PMモード判定結果 |
+| next_trading_day | YYYY-MM-DD | 次の東証営業日 |
+| us_market_prev_night | true/false | 前夜の米国市場開場有無 |
+| us_market_tonight | true/false | 今夜の米国市場開場有無 |
 
 **VIX係数の算出ロジック:**
 - 通常時: `レンジ = CME ± (VIX × 0.05%)`（例: VIX=20 → CME±1.0%）
@@ -115,6 +120,12 @@ aliases: ["/market-outlook-v2", "/mo-v2"]
 - confidence: 強制的に「低」
 - 方向性判断: 「予測困難な環境」を総合判断に明記
 
+### 休日における高ボラ・危機モード
+
+休日（am_mode=holiday/pm_mode=holiday）でも VIX ベースの判定は実施する。
+- **危機モード発動時**: holiday AM でも通常に近いボリュームで「緊急レビュー」として生成（予測含む）。タイトルに「緊急レビュー」を付与
+- **高ボラモードのみ**: holiday フォーマットを維持しつつ、サマリー直後に高ボラ警告文を挿入
+
 ### 反動シナリオルール
 
 前日比±4%超の翌日AMでは、シナリオ分析に反動シナリオを必ず含める。
@@ -141,7 +152,38 @@ aliases: ["/market-outlook-v2", "/mo-v2"]
 1. モード判定（メイン）
    ├─ timing: 引数 or 現在時刻（15:30境界）
    ├─ mode: general / portfolio
-   └─ パラメータ算出: date, prev_business_day, is_trading_day, year_month, current_time
+   ├─ パラメータ算出: date, prev_business_day, is_trading_day, year_month, current_time
+   ├─ 休日モード判定（以下のPythonコマンドを実行）:
+   │   ```python
+   │   import holidays
+   │   from datetime import date, timedelta
+   │   # jpholidayは既存のis_market_open_dayで使用済み
+   │   from scripts.update_etf_data import is_market_open_day, get_next_market_day
+   │   
+   │   today = date.today()
+   │   yesterday = today - timedelta(days=1)
+   │   us_h = holidays.US(years=today.year)
+   │   
+   │   is_trading = is_market_open_day(today)
+   │   us_prev = yesterday.weekday() < 5 and yesterday not in us_h
+   │   us_tonight = today.weekday() < 5 and today not in us_h
+   │   next_td = get_next_market_day(today) if not is_trading else today
+   │   
+   │   # AM mode
+   │   if is_trading and us_prev:       am_mode = "normal"
+   │   elif not is_trading and us_prev: am_mode = "holiday"
+   │   elif is_trading and not us_prev: am_mode = "post_holiday"
+   │   else:                            am_mode = "skip"
+   │   
+   │   # PM mode
+   │   if is_trading and us_tonight:       pm_mode = "normal"
+   │   elif not is_trading and us_tonight: pm_mode = "holiday"
+   │   elif is_trading and not us_tonight: pm_mode = "us_holiday"
+   │   else:                               pm_mode = "skip"
+   │   ```
+   ├─ スキップ判定: timing=amかつam_mode=skip、またはtiming=pmかつpm_mode=skipの場合
+   │   → ユーザーに「本日は生成対象外です（東証・米国市場ともに休場）」と通知して終了
+   └─ next_trading_day: 非営業日の場合get_next_market_dayで算出
         ↓
 2. データ自動取得+バリデーション（メインがBash直接実行）
    ├─ market_data_quick.py [--pm] → JSON取得・変数保持
@@ -209,6 +251,11 @@ docker compose exec backend python scripts/market_data_quick.py --pm | docker co
 - is_trading_day: {is_trading_day}
 - year_month: {year_month}
 - current_time: {current_time}
+- am_mode: {am_mode}
+- pm_mode: {pm_mode}
+- next_trading_day: {next_trading_day}
+- us_market_prev_night: {us_prev}
+- us_market_tonight: {us_tonight}
 
 取得済みデータ:
 ※ 以下のJSONはステップ2でBash実行した結果をそのままコピー&ペーストすること。
@@ -299,7 +346,11 @@ docker compose exec backend python scripts/market_data_quick.py --pm | docker co
 - portfolio取得失敗時 → 一般モードとして出力し、その旨を明記
 - PM時セクター別データ不可 → セクション省略
 - 注目ETF全フォールバック失敗 → セクション省略 + `<!-- etf_recommendation_unavailable -->`
-- 非営業日 → PM出力の本日結果テーブルを省略
+- 非営業日（am_mode=holiday） → AM出力を休場日フォーマットで生成（予測なし）
+- 非営業日（pm_mode=holiday） → PM出力を休場日フォーマットで生成
+- 休み明け（am_mode=post_holiday） → 充実版ブリーフィングで生成（レンジ幅1.2倍）
+- 米国休場（pm_mode=us_holiday） → 通常PM + 米国休場注記
+- スキップ（am_mode=skip/pm_mode=skip） → 生成しない
 - prediction_issues.md未存在 → 過去課題参照をスキップし、課題分類のみ実行
 
 ## ファイル保存ルール
@@ -333,6 +384,10 @@ docker compose exec backend python scripts/market_data_quick.py --pm | docker co
 - [ ] [RC5] 一目均衡表の個別数値（転換線・基準線等の具体値）が主要判断根拠に使われていないこと
 - [ ] [PM] セクション4に「予測課題の分類」（予測できた/できなかった）が含まれている
 - [ ] [PM] prediction_issues.md に当日エントリが追記されている
+- [ ] [AM/PM] am_mode/pm_mode が正しく判定され、対応するフォーマットで出力されている
+- [ ] [holiday] 予測（direction/range/シナリオ分析）が含まれていないこと
+- [ ] [post_holiday] CME先物信頼度注記・為替ギャップ注記が含まれていること
+- [ ] [us_holiday] 「今夜は米国市場休場」の注記が含まれていること
 
 ## 月次パラメータレビュー
 
