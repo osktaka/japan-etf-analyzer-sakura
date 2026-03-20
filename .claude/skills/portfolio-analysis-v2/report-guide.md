@@ -9,7 +9,7 @@
 ```markdown
 # ポートフォリオ定量分析 統合レポート
 
-生成日: YYYY-MM-DD
+生成日: YYYY-MM-DD HH:MM:SS
 分析対象: {username}ユーザー
 保有銘柄数: N銘柄
 総評価額: XXX万円
