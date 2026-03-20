@@ -32,7 +32,8 @@ aliases: ["/market-outlook-v2", "/mo-v2"]
 
 ### コンテキスト最適化設計
 
-- サブエージェントへの読み込みファイル: 2つに限定（market-data-collection-v2.md + output-formats-v2.md）
+- 分析サブエージェントへの読み込みファイル: 2つに限定（market-data-collection-v2.md + output-formats-v2.md）
+- 予測ツリーサブエージェントへの読み込みファイル: 1つに限定（forecast-tree-v2.md）
 - SKILL.md自体はサブエージェントに渡さない
 
 ## パラメータ一覧
@@ -204,9 +205,19 @@ aliases: ["/market-outlook-v2", "/mo-v2"]
    ├─ ステップ2で取得したJSON（market_data, context, validation結果）をパラメータとして渡す
    ├─ ステップ2.5で読み込んだprediction_issuesをパラメータとして渡す
    └─ SKILL.md自体はサブエージェントに渡さない（コンテキスト最適化）
+        ↓                                              ↑ 並列実行
+3b. 予測ツリー生成（サブエージェント: general-purpose x1）─────┘
+   ├─ 指示書1ファイルを読ませる:
+   │   └─ forecast-tree-v2.md
+   ├─ ステップ2で取得したJSON（market_data, context）をパラメータとして渡す
+   ├─ forecast_tree_latest.md（前回ツリー）をReadで読み込み渡す
+   └─ AM時: 新規生成 or 差分更新 / PM時: 3日前ツリーの検証
         ↓
 4. ファイル保存（メイン）
-   └─ reports/market-outlook/YYYYMMDD_{am|pm}_v2.md
+   ├─ reports/market-outlook/YYYYMMDD_{am|pm}_v2.md
+   └─ 予測ツリーの保存:
+       ├─ レポート末尾（Sourcesの前）にセクション10として追記
+       └─ reports/market-outlook/forecast_tree_latest.md に最新版を上書き保存
         ↓
 4.5. 予測課題記録の追記（メイン・PM時のみ）
    ├─ サブエージェント出力のセクション4「予測課題の分類」を抽出
@@ -268,6 +279,32 @@ docker compose exec backend python scripts/market_data_quick.py --pm | docker co
 ※ ステップ2.5で読み込んだprediction_issues.mdの直近5件分をそのまま貼付。
 ※ ファイル未存在または空の場合は「なし」と記載。
 - prediction_issues: [ステップ2.5の読み込み結果をそのまま貼付]
+
+タイムアウト: 600秒
+```
+
+### ステップ3b: 予測ツリーサブエージェント起動プロンプト
+
+ステップ3と**並列に**Agentツールで起動する。
+
+```
+以下の指示書を読み、中期見通しの予測ツリーを生成してください。
+
+指示書: .claude/skills/market-outlook-v2/agent-instructions/forecast-tree-v2.md
+
+パラメータ:
+- timing: {timing}
+- date: {date}
+
+取得済みデータ:
+- market_data: [ステップ2-1のJSON出力全体をそのまま貼付]
+- context: [ステップ2-2のJSON出力全体をそのまま貼付]
+
+前回の予測ツリー:
+- forecast_tree_previous: [forecast_tree_latest.mdの内容をそのまま貼付。初回または未存在時は「なし」]
+
+PM時の3日前ツリー（PM実行時のみ追加）:
+- forecast_tree_3days_ago: [3日前のAMレポート（reports/market-outlook/YYYYMMDD_am_v2.md）のセクション10をReadで読み取り貼付。ファイル未存在またはセクション10なしの場合は「なし」]
 
 タイムアウト: 600秒
 ```
@@ -361,6 +398,14 @@ docker compose exec backend python scripts/market_data_quick.py --pm | docker co
 - **保存後**: ファイルパスをユーザーに通知
 - **予測課題記録**: `reports/market-outlook/prediction_issues.md`（PM時のみ追記）
 - **肥大化対策**: エントリが50件を超えた場合、メインエージェントが古いエントリを末尾から削除してからサブエージェントに渡す
+- **予測ツリー最新版**: `reports/market-outlook/forecast_tree_latest.md`（AM/PM実行時に上書き）
+- **予測ツリー統合**: レポートのSourcesセクション直前にセクション10として追記
+
+### 予測ツリーのフォールバック
+
+- 予測ツリーサブエージェントが失敗した場合、既存の9セクションレポートのみで完了とする
+- forecast_tree_latest.md は更新しない（前回版を維持）
+- レポートにセクション10は追記しない
 
 ## 完了条件
 
@@ -388,6 +433,10 @@ docker compose exec backend python scripts/market_data_quick.py --pm | docker co
 - [ ] [holiday] 予測（direction/range/シナリオ分析）が含まれていないこと
 - [ ] [post_holiday] CME先物信頼度注記・為替ギャップ注記が含まれていること
 - [ ] [us_holiday] 「今夜は米国市場休場」の注記が含まれていること
+- [ ] [AM/PM] 予測ツリーサブエージェントが起動・完了している（失敗時は既存レポートのみで完了可）
+- [ ] [AM] セクション10「中期見通しツリー」がレポートに含まれている（予測ツリー成功時）
+- [ ] [PM] セクション4に「中期予測の検証」が含まれている（3日前のAMツリーが存在する場合）
+- [ ] [AM/PM] forecast_tree_latest.md が最新の予測ツリーで更新されている
 
 ## 月次パラメータレビュー
 

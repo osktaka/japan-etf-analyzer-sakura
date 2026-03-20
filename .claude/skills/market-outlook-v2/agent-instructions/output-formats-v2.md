@@ -269,6 +269,12 @@ prediction:
 **データ整合性が「低」の場合の注記（該当時のみ記載）:**
 > データ整合性が低く、イベント通過後の解釈も割れやすいため、通常より慎重な運用が望ましい。ポジションサイズの抑制、ストップ設定の明確化、イベント後の値動き確認を優先したい。
 
+### 10. 中期見通しツリー
+
+<!-- 予測ツリーサブエージェントの出力をここに挿入。サブエージェント失敗時はセクション自体を省略 -->
+
+{forecast-tree-v2.mdの出力フォーマットに従った予測ツリー全体を挿入}
+
 ---
 Sources:
 - [ソース名1](URL1)
@@ -419,6 +425,12 @@ accuracy:
   - 対策: {次回以降どう改善するか}
 
 （AMファイル不在時はセクション自体を省略）
+
+#### 中期予測の検証
+
+<!-- 3日前のAMツリーが存在する場合のみ記載。存在しない場合はサブセクション自体を省略 -->
+
+{forecast-tree-v2.mdのPM検証フォーマットに従った検証結果を挿入}
 
 ### 5. 今日の位置づけ
 
@@ -592,6 +604,13 @@ prediction:
 - {指標/イベント1}
 - {指標/イベント2}
 
+### 7. 中期見通しツリー（更新）
+
+<!-- 休日でもツリーの更新は実施。予測なしモードでも米国データに基づく分岐再評価を行う -->
+<!-- 予測ツリーサブエージェント失敗時はセクション自体を省略 -->
+
+{forecast-tree-v2.mdの出力を挿入。ただし日経平均のレンジ予測は含めない（東証休場のため）}
+
 ---
 Sources:
 - [ソース名1](URL1)
@@ -608,7 +627,7 @@ Sources:
 
 **YAMLフロントマター注意**:
 - `direction`, `confidence`, `cme_nikkei`, `range_low`, `range_high`, `difficulty`, `causal_chain`, `key_assumption`, `invalidation_signal` は含めない
-- `risk_appetite`, `macro_regime`, `high_volatility`, `crisis_mode`, `market_mode` のみ
+- `risk_appetite`, `macro_regime`, `high_volatility`, `crisis_mode`, `market_mode`, `forecast_tree` のみ
 
 ---
 
@@ -763,6 +782,7 @@ Sources:
 | risk_appetite | string | ○ | リスクオン/リスクオフ/混合 |
 | macro_regime | string | ○ | マクロレジーム分類 |
 | market_mode | string | ○ | normal/holiday/post_holiday |
+| forecast_tree | boolean | ○ | 予測ツリー生成成功フラグ |
 
 ### PM（accuracy）
 
@@ -826,6 +846,13 @@ AMファイル不在時は乖離・レンジ関連フィールドをnullとす�
 - [ ] YAMLの `macro_regime` と本文のマクロレジーム記述が一致していること
 
 ※ テクニカル・クロスアセットデータの取得失敗時は該当チェックをスキップ。
+
+### [G] 予測ツリー整合性
+- [ ] AM: セクション10の予測ツリーが存在する（サブエージェント成功時）
+- [ ] AM: YAMLの `forecast_tree` フラグとセクション10の有無が一致
+- [ ] AM: ツリーの起点データ（日経・ドル円・VIX）がセクション2のテーブル値と一致
+- [ ] PM: 3日前AMツリーが存在する場合、セクション4に中期予測検証が含まれている
+- [ ] AM/PM: forecast_tree_latest.md が更新されている（サブエージェント成功時）
 
 ---
 
