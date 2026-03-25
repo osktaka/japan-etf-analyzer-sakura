@@ -16,65 +16,33 @@ setsid --wait claude -p "/market-outlook-v2" \
   > "$LOGDIR/market-outlook-v2-${TIMESTAMP}.log" 2>&1
 STEP1_EXIT=$?
 
-sleep 3
-
-# 2. X投稿文生成（レポート読み→Markdown書き出しのみ）
-# AM/PM判定（最新v2ファイル名で判定）
-LATEST_V2=$(ls -t reports/market-outlook/*_v2.md 2>/dev/null | head -1)
-if echo "$LATEST_V2" | grep -q "_pm_"; then
-  # PM用プロンプト（東証終了後）
-  XPOST_PROMPT='reports/market-outlook/ディレクトリから最新の_pm_v2.mdファイルを読んで、以下の方針でX投稿3本をreports/tmp_x_posts_v2.mdに書き出して。コンテキスト使用サイズを抑えるように最適な実行をして。
-
-## PM投稿方針（東証終了後・3投稿構成）
-
-### 投稿1: 【東証レビュー MM/DD】[テスト]
-- 今日の東証の動きを端的にまとめる（160文字程度）
-- 主要指数の動き、目立ったセクター、特徴的な値動きを簡潔に
-- 動的タグ2〜3個（例: #日経平均 #東証 #ETF）
-
-### 投稿2: 【朝の予想と結果】[テスト]
-- AMレポートで出した予想と実際の結果を比較（160文字程度）
-- 的中・外れを正直に共有、外れた場合は理由も簡潔に
-- 動的タグ2〜3個
-
-### 投稿3: 【明日の監視ポイント】[テスト]
-- 明日以降に注目すべきポイント（160文字程度）
-- 具体的な銘柄・指標・イベントを挙げる
-- 動的タグ2〜3個
-
-## 出力フォーマット
-各投稿を---で区切り、Markdown形式で出力。MM/DDは実際の日付に置換すること。'
-else
-  # AM用プロンプト（米国市場終了後）
-  XPOST_PROMPT='reports/market-outlook/ディレクトリから最新の_am_v2.mdファイルを読んで、以下の方針でX投稿3本をreports/tmp_x_posts_v2.mdに書き出して。コンテキスト使用サイズを抑えるように最適な実行をして。
-
-## AM投稿方針（米国市場終了後・3投稿構成）
-
-### 投稿1: 【昨夜の米国市場】[テスト]
-- 昨夜の米国市場の動きを端的にまとめる（160文字程度）
-- 主要指数・注目イベント・為替の動きを簡潔に
-- 動的タグ2〜3個（例: #米国株 #SP500 #為替）
-
-### 投稿2: 【今日の東証予想】[テスト]
-- 今日の東証がどう動くか予想（160文字程度）
-- 予想の自信度（高/中/低）と根拠を正直に開示
-- 動的タグ2〜3個
-
-### 投稿3: 【今日の監視ポイント】[テスト]
-- 今日注目すべき具体的なポイント（160文字程度）
-- 具体的な銘柄・指標・イベントを挙げる
-- 動的タグ2〜3個
-
-## 出力フォーマット
-各投稿を---で区切り、Markdown形式で出力。MM/DDは実際の日付に置換すること。'
+if [ $STEP1_EXIT -ne 0 ]; then
+  echo "Step 1 failed (exit=$STEP1_EXIT), skipping steps 2-3" >&2
+  exit 1
 fi
 
-setsid --wait claude -p "$XPOST_PROMPT" \
-  --allowedTools "Read Write Glob Grep" \
-  > "$LOGDIR/market-x-posts-v2-${TIMESTAMP}.log" 2>&1
+sleep 3
+
+# 2. X投稿文生成（スキル化）
+setsid --wait claude -p "/market-x-draft" \
+  --allowedTools "Read Write Glob" \
+  > "$LOGDIR/market-x-draft-${TIMESTAMP}.log" 2>&1
 STEP2_EXIT=$?
 
-# 終了コード: いずれかが失敗していれば1
-if [ $STEP1_EXIT -ne 0 ] || [ $STEP2_EXIT -ne 0 ]; then
+if [ $STEP2_EXIT -ne 0 ]; then
+  echo "Step 2 failed (exit=$STEP2_EXIT), skipping step 3" >&2
+  exit 1
+fi
+
+sleep 3
+
+# 3. X投稿実行
+setsid --wait claude -p "/x-publish --auto --production" \
+  --allowedTools "Read Edit Bash Glob" \
+  > "$LOGDIR/x-publish-${TIMESTAMP}.log" 2>&1
+STEP3_EXIT=$?
+
+if [ $STEP3_EXIT -ne 0 ]; then
+  echo "Step 3 failed (exit=$STEP3_EXIT), posts saved in reports/tmp_x_posts_v2.md" >&2
   exit 1
 fi

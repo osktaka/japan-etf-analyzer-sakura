@@ -28,6 +28,9 @@
 | 今日の東証見通し・振り返り | .claude/skills/market-outlook/SKILL.md | /market-outlook（AM:朝の見通し / PM:夕方の振り返り） |
 | 東証見通し・振り返り v2 | .claude/skills/market-outlook-v2/SKILL.md | /market-outlook-v2（データ自動取得+バリデーション） |
 | 分析レポートをノート記事にしたい | .claude/skills/publish-report/SKILL.md | /publish-reportスキルで記事化 |
+| X投稿文を自動生成したい | .claude/skills/market-x-draft/SKILL.md | /market-x-draft（market-outlook-v2レポートから3投稿生成） |
+| X投稿を実行したい | .claude/skills/x-publish/SKILL.md | /x-publish（tmp_x_posts_v2.mdをXに投稿） |
+| 日中マーケット観察を投稿したい | .claude/skills/market-intraday/SKILL.md | /market-intraday（東証取引中の軽量観察投稿） |
 | ノート記事のネタを記録したい | .claude/note-ideas.md | 独立記事ネタの蓄積・管理 |
 
 ## 開発環境
