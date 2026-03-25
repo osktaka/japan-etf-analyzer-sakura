@@ -66,11 +66,65 @@ def get_client():
     )
 
 
+def x_weighted_count(text):
+    """X公式のweighted countを計算する."""
+    import re
+    import unicodedata
+
+    count = 0
+    # URL を 23カウントに置換（t.co短縮）
+    url_pattern = re.compile(r"https?://\S+")
+    urls = url_pattern.findall(text)
+    text_without_urls = url_pattern.sub("", text)
+
+    for char in text_without_urls:
+        if char == "\n":
+            count += 1
+        elif unicodedata.east_asian_width(char) in ("F", "W"):
+            # 全角文字（日本語、全角記号等）
+            count += 2
+        else:
+            count += 1
+
+    # URL は各23カウント
+    count += len(urls) * 23
+
+    return count
+
+
+X_COUNT_LIMIT = 280
+
+
 def post_tweet(text, dry_run=False, client=None):
     """ツイートを投稿する."""
+    wcount = x_weighted_count(text)
+
     if dry_run:
-        result = {"success": True, "dry_run": True, "text": text, "length": len(text)}
+        result = {
+            "success": True,
+            "dry_run": True,
+            "text": text,
+            "length": len(text),
+            "x_count": wcount,
+            "over_limit": wcount > X_COUNT_LIMIT,
+        }
         print(json.dumps(result, ensure_ascii=False))
+        return
+
+    # 文字数超過チェック（投稿前にブロック）
+    if wcount > X_COUNT_LIMIT:
+        print(
+            json.dumps(
+                {
+                    "success": False,
+                    "error": f"X count {wcount} exceeds limit {X_COUNT_LIMIT}",
+                    "x_count": wcount,
+                    "text": text,
+                },
+                ensure_ascii=False,
+            )
+        )
+        # exit(1)ではなくreturnで次の投稿を続行可能にする
         return
 
     if client is None:
@@ -82,11 +136,12 @@ def post_tweet(text, dry_run=False, client=None):
             "success": True,
             "tweet_id": tweet_id,
             "url": f"https://x.com/ETF_Analyzer/status/{tweet_id}",
+            "x_count": wcount,
         }
         print(json.dumps(result, ensure_ascii=False))
     except Exception as e:
+        # API エラーもexit(1)ではなくreturnで次の投稿を続行可能にする
         print(json.dumps({"success": False, "error": str(e)}, ensure_ascii=False))
-        sys.exit(1)
 
 
 def parse_posts_file(file_path):
@@ -132,13 +187,15 @@ def main():
         post_tweet(args.text, dry_run=args.dry_run)
     elif args.file:
         posts = parse_posts_file(args.file)
+        client = None
         if not args.dry_run:
             client = get_client()
         results = []
         for i, post in enumerate(posts, 1):
-            print(f"--- Post {i}/{len(posts)} ---", file=sys.stderr)
+            wcount = x_weighted_count(post)
+            print(f"--- Post {i}/{len(posts)} (x_count={wcount}) ---", file=sys.stderr)
             post_tweet(post, dry_run=args.dry_run, client=client)
-            results.append({"post_number": i, "text_preview": post[:50]})
+            results.append({"post_number": i, "x_count": wcount, "text_preview": post[:50]})
         print(
             json.dumps({"success": True, "total": len(results), "posts": results}, ensure_ascii=False),
             file=sys.stderr,

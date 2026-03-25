@@ -164,6 +164,11 @@ VIX急騰（前回投稿時から+3以上）や日経平均が前回から±500�
 
 不一致があれば、yfinance値に基づいて修正して再生成する。
 
+**Xカウントチェック**（CP2の一部）:
+投稿文のXカウント（全角2/半角1/改行1/URL23/絵文字2）が280以内であることを確認する。
+超過している場合は情報を絞り込んで再生成する。目安は260-270カウント。
+確認コマンド: `docker compose exec backend python scripts/x_post.py --dry-run --text "投稿文"` でx_countフィールドを確認。
+
 ### Step 7: ファイル出力
 
 `reports/tmp_x_posts_v2_HHMM.md`（HHMMは実行時の日本時間）にWriteで出力する。
