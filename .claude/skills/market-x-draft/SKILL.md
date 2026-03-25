@@ -84,7 +84,7 @@ cron自動実行・対話実行の両方に対応。
 このフォーマットは `/x-publish` スキルとの契約であり、変更時は両スキルを同時に更新すること。
 
 ```markdown
-# X投稿 YYYY-MM-DD {AM|PM}（3投稿構成）
+# X投稿 YYYY-MM-DD HH:MM {AM|PM}（3投稿構成）
 
 ---
 

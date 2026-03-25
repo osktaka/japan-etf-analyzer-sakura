@@ -207,7 +207,7 @@ VIX XX.X、米10年債X.XX%。〜に注目。
 
 ### 東証モード
 ```markdown
-# X投稿 YYYY-MM-DD 日中観察（1投稿構成）
+# X投稿 YYYY-MM-DD HH:MM 日中観察（1投稿構成）
 
 <!-- snapshot: nikkei=XXXXX, topix=XXXX, usdjpy=XXX.X, bank=+X.XX%, growth=+X.XX% -->
 
@@ -223,7 +223,7 @@ VIX XX.X、米10年債X.XX%。〜に注目。
 
 ### 米国モード
 ```markdown
-# X投稿 YYYY-MM-DD 米国観察（1投稿構成）
+# X投稿 YYYY-MM-DD HH:MM 米国観察（1投稿構成）
 
 <!-- snapshot: sp500=XXXX, nasdaq=XXXXX, vix=XX.X, us10y=X.XX, usdjpy=XXX.X -->
 
