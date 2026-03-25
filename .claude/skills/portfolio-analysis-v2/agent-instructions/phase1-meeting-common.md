@@ -1,6 +1,6 @@
 # Phase 1: ブレインストーミング分析 共通ルール
 
-全3会議のサブエージェントが最初に読む指示書。
+全4会議のサブエージェントが最初に読む指示書。
 
 ---
 
@@ -174,7 +174,7 @@
 ## 出力ファイル
 
 - **ファイルパス**: `{WORK_DIR}/10_meeting_{MEETING_ID}.md`
-- **MEETING_ID**: 各会議指示書で定義（`risk_return` / `allocation` / `quality`）
+- **MEETING_ID**: 各会議指示書で定義（`risk_return` / `allocation` / `quality` / `4`）
 
 ## 出力構造
 

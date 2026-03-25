@@ -10,7 +10,7 @@ aliases: ["/pf-v2", "/portfolio-analysis-v2"]
 
 ## 概要
 
-v1の portfolio-analysis をブレインストーミング方式で再構築したスキル。3つの専門会議（各4名 = 計12名の固定キャラクター）が並列で議論し、マージ会議で統合してレポートを生成する。プロのアナリスト視点で客観的に分析する。
+v1の portfolio-analysis をブレインストーミング方式で再構築したスキル。4つの専門会議（各4名 = 計16名の固定キャラクター）が並列で議論し、マージ会議で統合してレポートを生成する。プロのアナリスト視点で客観的に分析する。
 
 - モード指定なし（常にフルモード）
 - v1と共存: `/pf-analysis` = v1、`/pf-v2` = v2
@@ -45,10 +45,11 @@ mkdir -p "${WORK_DIR}"
 - Phase 1-1（リスク・リターン）: `05_shared_calculations.md` と `0a_market_environment.md` のみ読む。`0b_trend_summary.md` は不要
 - Phase 1-2（分散）: `05_shared_calculations.md` と `00_portfolio_data.json`（tag_dataのみ）と `0a_market_environment.md` を読む
 - Phase 1-3（品質）: `05_shared_calculations.md` と `00_portfolio_data.json`（holdings, recommendations）を読む
+- Phase 1-4（新規銘柄候補）: `05_shared_calculations.md` と `0a_market_environment.md`（必須）と `00_portfolio_data.json`（holdings, tag_data）を読む
 - **禁止**: Phase 1エージェントが `20_merge_meeting.md` を参照すること（存在しない段階のため当然だが明示）
 
 **Phase 2 エージェント向け読み込みルール**:
-- `10_meeting_risk_return.md`, `10_meeting_allocation.md`, `10_meeting_quality.md` を読む
+- `10_meeting_risk_return.md`, `10_meeting_allocation.md`, `10_meeting_quality.md`, `10_meeting_4.md` を読む
 - ただし**各ファイルの「## 議事録」セクション以降のみ**読む（会議トランスクリプト全文は不要）
 - `05_shared_calculations.md` の「計算メタデータ」セクションのみ参照（詳細計算は不要）
 
@@ -70,16 +71,16 @@ mkdir -p "${WORK_DIR}"
 | Phase 0a（市場環境） | 2分 | 4分 | フォールバック値で続行 |
 | Phase 0b（トレンド） | 1分 | 3分 | スキップして続行 |
 | Phase 0.5（定量計算） | 5分 | 9分 | 中止・メインに報告 |
-| Phase 1（各会議×3） | 5分 | 8分 | 警告して2会議でマージへ |
+| Phase 1（各会議×4） | 5分 | 8分 | 警告して3会議でマージへ |
 | Phase 2（マージ会議） | 5分 | 8分 | 1回リトライ |
 | Phase 3（レポート生成） | 3分 | 6分 | 1回リトライ |
 | **合計（並列考慮後）** | **~27分** | **~37分** | — |
 
-**注意**: 上記は単一エージェント処理時の目安。並列実行（Step 1の3並列、Phase 1の3並列）により実際の経過時間は短縮される。
+**注意**: 上記は単一エージェント処理時の目安。並列実行（Step 1の3並列、Phase 1の4並列）により実際の経過時間は短縮される。
 
 **Phase 0.5 補足**: ベンチマーク計算（項目7b）はPhase 0aで取得済みの市場環境データを使用するため、追加の外部データ取得は不要。タイムアウトへの影響なし。
 
-## キャラクター定義（12名、固定）
+## キャラクター定義（16名、固定）
 
 ### 会議1: リスク・リターン効率
 
@@ -107,6 +108,15 @@ mkdir -p "${WORK_DIR}"
 | 初心者 | 加藤 さくら | ETF選びに迷う投資初心者。「このETFと似たものの違いは？」と比較視点で問う |
 | ポジティブ | 松本 翔太 | テクニカル分析家。モメンタムと出来高トレンドから上昇機会を見出す |
 | 心配性 | 藤田 恵子 | 損切りに慎重なアナリスト。含み損銘柄の継続保有リスクを指摘 |
+
+### 会議4: 新規銘柄候補・成長機会探索
+
+| タイプ | 名前 | 役割 |
+|--------|------|------|
+| 天才 | 吉田 龍之介 | マクロストラテジスト。国際経済の構造変化からセクターローテーションを読み解き、メガトレンドを特定 |
+| 初心者 | 木村 莉子 | ニュースで投資テーマを知った新人。「AIって今から買っても遅くないですか？」と率直に問う |
+| ポジティブ | 石川 拓海 | テーマ投資家。成長ポテンシャルを積極評価し、具体的なETF候補を提示 |
+| 心配性 | 西田 裕美 | バブル警戒アナリスト。過熱リスク、バリュエーション天井、過去のテーマバブル崩壊を指摘 |
 
 ## 実行フロー
 
@@ -181,17 +191,18 @@ Phase 0とPhase 0aが揃い次第（Phase 0bを待たずに）Step 2を開始す
 
 **記録方法**: timing.json の各phase完了時に `elapsed_total_sec` を算出し、上記閾値と比較する。
 
-### Step 3: 3並列ブレインストーミング（Phase 1）
+### Step 3: 4並列ブレインストーミング（Phase 1）
 
 **開始条件**: Phase 0.5 完了後に起動する（Phase 0aはStep 2で既に完了済みのため待機不要）。
 
-3つの Task を全て `run_in_background: true` で同時起動する。
+4つの Task を全て `run_in_background: true` で同時起動する。
 
 | 会議 | MEETING_ID | type | 出力ファイル |
 |------|-----------|------|------------|
 | 会議1: リスク・リターン効率 | 1 | risk-return | `{WORK_DIR}/10_meeting_1.md` |
 | 会議2: 分散・アロケーション | 2 | allocation | `{WORK_DIR}/10_meeting_2.md` |
 | 会議3: 銘柄品質・入替判断 | 3 | quality | `{WORK_DIR}/10_meeting_3.md` |
+| 会議4: 新規銘柄候補・成長機会探索 | 4 | growth | `{WORK_DIR}/10_meeting_4.md` |
 
 **プロンプト**:
 ```
@@ -201,14 +212,14 @@ Phase 0とPhase 0aが揃い次第（Phase 0bを待たずに）Step 2を開始す
 
 パラメータ:
 - WORK_DIR: {WORK_DIR}
-- MEETING_ID: {1|2|3}
+- MEETING_ID: {1|2|3|4}
 
 メインへの戻り値は完了報告1行のみ。
 ```
 
 ### Step 4: マージ会議（Phase 2）
 
-**開始条件**: 3会議のうち **2つ以上** が完了後に起動。
+**開始条件**: 4会議のうち **3つ以上** が完了後に起動。
 
 - Task(general-purpose)
 - 指示: `{skill_dir}/agent-instructions/phase2-merge-meeting.md` をRead
@@ -240,6 +251,7 @@ Phase 0とPhase 0aが揃い次第（Phase 0bを待たずに）Step 2を開始す
 ├── 10_meeting_1.md              # Phase 1: 会議1（リスク・リターン効率）
 ├── 10_meeting_2.md              # Phase 1: 会議2（分散・アロケーション）
 ├── 10_meeting_3.md              # Phase 1: 会議3（銘柄品質・入替判断）
+├── 10_meeting_4.md              # Phase 1: 会議4（新規銘柄候補・成長機会探索）
 ├── 20_merge_meeting.md          # Phase 2: マージ会議
 └── timing.json                   # 実行時間記録
 ```
@@ -269,8 +281,8 @@ Phase 0とPhase 0aが揃い次第（Phase 0bを待たずに）Step 2を開始す
 | Phase 0a | 市場環境取得失敗 | 警告して続行（市場環境なしで分析） |
 | Phase 0b | トレンドサマリー失敗 | 警告して続行 |
 | Phase 0.5 | 定量計算失敗 | **スキル全体を中止** |
-| Phase 1 | 3会議中2つ以上失敗 | **スキル全体を中止** |
-| Phase 1 | 3会議中1つ失敗 | 警告して2会議でマージに進む |
+| Phase 1 | 4会議中3つ以上失敗 | **スキル全体を中止** |
+| Phase 1 | 4会議中1つ失敗 | 警告して3会議でマージに進む |
 | Phase 2 | マージ会議失敗 | 1回リトライ。失敗時は個別会議結果でレポート生成 |
 | Phase 3 | レポート生成失敗 | 1回リトライ。失敗時はマージ結果ファイルを最終成果物として提示 |
 | Phase 0（配当データ取得） | 配当データ取得失敗 | 2回リトライ（ticker形式変更含む）後に警告付き続行。分配金Zスコア分析はスキップ |
@@ -315,6 +327,7 @@ Phase 0とPhase 0aが揃い次第（Phase 0bを待たずに）Step 2を開始す
     "phase_1_meeting_1": {"start": "...", "end": "...", "duration_sec": 300},
     "phase_1_meeting_2": {"start": "...", "end": "...", "duration_sec": 300},
     "phase_1_meeting_3": {"start": "...", "end": "...", "duration_sec": 300},
+    "phase_1_meeting_4": {"start": "...", "end": "...", "duration_sec": 300},
     "phase_2": {"start": "...", "end": "...", "duration_sec": 240},
     "phase_3": {"start": "...", "end": "...", "duration_sec": 120}
   },
@@ -355,7 +368,7 @@ Phase 0a で取得する市場指標は**当日の終値または直前営業日
 - [ ] 市場環境情報を収集した（Phase 0a）
 - [ ] 全データソースを取得した（Phase 0）
 - [ ] 共通定量計算を実施した（Phase 0.5）
-- [ ] 3つのブレインストーミング会議を実施した（Phase 1）
+- [ ] 4つのブレインストーミング会議を実施した（Phase 1）
 - [ ] マージ会議で統合した（Phase 2）
 - [ ] レポートファイルが `reports/{USER_ID}/` に保存された（Phase 3）
 - [ ] timing.json が全フェーズの実行時間を記録している
