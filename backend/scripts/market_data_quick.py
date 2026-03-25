@@ -4,8 +4,9 @@ yfinanceを使用して主要指標をJSON形式で標準出力に出力する�
 DB接続は不要。
 
 使い方:
-  python market_data_quick.py        # AM用（米国指標のみ）
-  python market_data_quick.py --pm   # PM用（米国指標 + 東証指標）
+  python market_data_quick.py            # AM用（米国指標のみ）
+  python market_data_quick.py --pm       # PM用（米国指標 + 東証指標）
+  python market_data_quick.py --pre-us   # 米国プレマーケット用（米国指標 + 先物 + 東証終値）
 """
 
 import json
@@ -84,6 +85,15 @@ PM_TICKERS = {
         "proxy_for": "情報通信・サービスその他指数",
         "etf_code": "1626",
     },        # NEXT FUNDS 情報通信・サービスその他ETF
+}
+
+# 米国プレマーケット用追加ティッカー（22:00 JST用）
+# --pre-us 指定時にTICKERSと合わせて取得する
+# 米国市場開場前のため、先物でリアルタイムの方向感を補完
+PRE_US_TICKERS = {
+    "sp500_futures": {"symbol": "ES=F", "data_type": "futures", "proxy_for": "S&P500"},
+    "nasdaq_futures": {"symbol": "NQ=F", "data_type": "futures", "proxy_for": "NASDAQ"},
+    "nikkei225": {"symbol": "^N225", "data_type": "index"},
 }
 
 JST = timezone(timedelta(hours=9))
@@ -392,16 +402,19 @@ def build_technical(name, closes, volumes, highs=None, lows=None):
         return {}
 
 
-def fetch_market_data(include_pm=False):
+def fetch_market_data(include_pm=False, include_pre_us=False):
     """ティッカーのデータを取得してJSON形式で返す。
 
     Args:
         include_pm: TrueならPM用東証指標も取得する
+        include_pre_us: Trueなら米国プレマーケット用指標も取得する
     """
     start_time = datetime.now(JST)
     tickers = dict(TICKERS)
     if include_pm:
         tickers.update(PM_TICKERS)
+    if include_pre_us:
+        tickers.update(PRE_US_TICKERS)
 
     result = {}
     errors = []
@@ -602,7 +615,8 @@ def fetch_market_data(include_pm=False):
 
 def main():
     include_pm = "--pm" in sys.argv
-    data = fetch_market_data(include_pm=include_pm)
+    include_pre_us = "--pre-us" in sys.argv
+    data = fetch_market_data(include_pm=include_pm, include_pre_us=include_pre_us)
     json.dump(data, sys.stdout, ensure_ascii=False, indent=2)
     print()  # 末尾改行
 
