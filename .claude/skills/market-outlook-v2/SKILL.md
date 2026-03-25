@@ -243,8 +243,19 @@ docker compose exec backend python scripts/market_data_quick.py | docker compose
 docker compose exec backend python scripts/market_data_quick.py --pm | docker compose exec -T backend python scripts/market_data_validate.py
 ```
 
-※ バリデーション結果がFAILの場合、index_rangeエラーが含まれていれば転記ミスの可能性が高い。
-   market_data_quick.pyを再実行してJSONを再取得すること。
+```bash
+# 4. market_dataのJSON保存（CP3レポート検証用 + CP1前回値参照用）
+# メインエージェントがステップ2-1の出力をファイルに保存する
+# 保存先: reports/market-outlook/YYYYMMDD_{am|pm}_market_data.json
+# 例: reports/market-outlook/20260325_am_market_data.json
+
+# 5. 前回値乖離チェック（CP1強化）
+# 前回のmarket_data JSONが存在する場合、--prevオプションで前回値との乖離をチェック
+# docker compose exec backend python scripts/market_data_quick.py [--pm] | docker compose exec -T backend python scripts/market_data_validate.py --prev reports/market-outlook/PREV_YYYYMMDD_{am|pm}_market_data.json
+# 前回JSONが存在しない場合（初回等）: --prevなしで通常バリデーションのみ実行
+# ※ バリデーション結果がFAILの場合、index_rangeエラーが含まれていれば転記ミスの可能性が高い。
+#    market_data_quick.pyを再実行してJSONを再取得すること。
+```
 
 ### ステップ3: サブエージェント起動プロンプト
 
@@ -407,6 +418,30 @@ PM時の3日前ツリー（PM実行時のみ追加）:
 - forecast_tree_latest.md は更新しない（前回版を維持）
 - レポートにセクション10は追記しない
 
+### ステップ4.5: レポート検証（CP3）
+
+ファイル保存後、メインエージェントが以下の検証を実行する。
+
+**ガード条件**: サブエージェント出力に `## 1.` 〜 `## 9.` の見出しが5つ未満の場合（タイムアウト等で不完全）→ CP3スキップ、失敗としてユーザーに通知。
+
+**自己検証セクション除去**: サブエージェント出力に「## 自己検証結果」セクションが存在する場合、ファイル保存前に除去する。自己検証結果はCP3との突合用にメインエージェントが一時的に保持する。
+
+**CP3実行コマンド**:
+```bash
+python3 backend/scripts/report_validate.py reports/market-outlook/YYYYMMDD_{am|pm}_v2.md reports/market-outlook/YYYYMMDD_{am|pm}_market_data.json
+```
+
+※ `reports/` ディレクトリはDockerコンテナにマウントされていないため、ホスト側で直接実行する。
+
+**結果判定**:
+- `status: "OK"` → 続行
+- `status: "WARN"` → 警告内容をログに記録して続行。禁止表現が検出された場合はEditで修正を試みる
+- `status: "FAIL"` → errorsリストを確認し、メインエージェントが修正:
+  - RV-A（数値転記ミス）: market_data JSONから正しい値を特定し、Editで修正
+  - RV-B（YAML不備）: 不足フィールドをYAMLフロントマターに追加
+  - RV-C（セクション欠落）: ログに記録して続行（再生成は時間的に困難）
+  - 修正後: report_validate.py を再実行して結果確認
+
 ## 完了条件
 
 - [ ] [AM/PM] 9セクション構造が全て含まれている
@@ -437,6 +472,8 @@ PM時の3日前ツリー（PM実行時のみ追加）:
 - [ ] [AM] セクション10「中期見通しツリー」がレポートに含まれている（予測ツリー成功時）
 - [ ] [PM] セクション4に「中期予測の検証」が含まれている（3日前のAMツリーが存在する場合）
 - [ ] [AM/PM] forecast_tree_latest.md が最新の予測ツリーで更新されている
+- [ ] [AM/PM] report_validate.py の実行結果が FAIL でないこと（WARN は許容）
+- [ ] [AM/PM] market_data JSON が reports/market-outlook/ に保存されていること
 
 ## 月次パラメータレビュー
 

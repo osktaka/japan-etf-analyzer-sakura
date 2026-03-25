@@ -631,6 +631,19 @@ output-formats-v2.md のテンプレートに従いドラフトを生成する�
 - 信頼度「中」: 数値を記載してよいが「参考」と注記
 - 信頼度「低」: 概要のみ（「雲の下」「雲の上」等の位置関係）。個別数値の詳細記載は不要
 
+### 自己検証結果の構造化出力
+
+上記チェックリスト完了後、レポート末尾（Sourcesセクションの後）に以下のセクションを追加すること。このセクションはメインエージェントが保存時に除去するため、最終レポートには含まれない。
+
+```markdown
+## 自己検証結果
+- numeric_match: PASS/FAIL
+- yaml_complete: PASS/FAIL
+- sections_complete: PASS/FAIL
+- source_quality: PASS/FAIL
+- prohibited_expressions: PASS/FAIL
+```
+
 ## 異常値検出
 
 | 指標 | 閾値 | 対応 |

@@ -4,12 +4,14 @@
 
 使い方:
   python market_data_quick.py | python market_data_validate.py
-  cat data.json | python market_data_validate.py
+  python market_data_quick.py | python market_data_validate.py --prev prev_data.json
 """
 
+import argparse
 import json
 import sys
 from datetime import datetime, timedelta
+from pathlib import Path
 
 
 # バリデーション対象外のメタデータキー
@@ -49,9 +51,38 @@ INDEX_RANGES = {
 # price_consistency: 逆方向乖離の閾値（%）
 CONSISTENCY_DIVERGENCE_THRESHOLD = 5.0
 
+# prev_deviation: 前回値との乖離閾値（±%）
+PREV_DEVIATION_THRESHOLD = 5.0
+PREV_DEVIATION_KEYS = {"sp500", "nasdaq", "nikkei_futures", "usdjpy", "vix"}
 
-def validate(data):
+
+def validate_prev_deviation(current_data, prev_data):
+    """前回取得値との乖離をチェックし、警告リストを返す。"""
+    warnings = []
+    for key in PREV_DEVIATION_KEYS:
+        cur_entry = current_data.get(key)
+        prev_entry = prev_data.get(key)
+        if not isinstance(cur_entry, dict) or not isinstance(prev_entry, dict):
+            continue
+        cur_price = cur_entry.get("price")
+        prev_price = prev_entry.get("price")
+        if cur_price is None or prev_price is None or prev_price == 0:
+            continue
+        deviation = (cur_price - prev_price) / prev_price * 100
+        if abs(deviation) > PREV_DEVIATION_THRESHOLD:
+            warnings.append(
+                f"prev_deviation: {key} 前回値 {prev_price} → 今回値 {cur_price} "
+                f"(乖離: {deviation:+.2f}%、閾値: ±{PREV_DEVIATION_THRESHOLD}%)"
+            )
+    return warnings
+
+
+def validate(data, prev_data=None):
     """市場データJSONをバリデーションする。
+
+    Args:
+        data: 現在の市場データJSON
+        prev_data: 前回の市場データJSON（省略可）
 
     Returns:
         dict: {"status", "errors", "warnings", "summary"}
@@ -173,6 +204,10 @@ def validate(data):
                     f"の3日騰落率が両方正（株上昇+VIX上昇の3日連続）"
                 )
 
+    # prev_deviation: 前回値との乖離チェック
+    if prev_data is not None:
+        warnings.extend(validate_prev_deviation(data, prev_data))
+
     # ステータス判定
     if errors:
         status = "FAIL"
@@ -192,6 +227,13 @@ def validate(data):
 
 
 def main():
+    parser = argparse.ArgumentParser(description="市場データJSONのバリデーション")
+    parser.add_argument(
+        "--prev", type=str, default=None,
+        help="前回の市場データJSONファイルパス（乖離チェック用）",
+    )
+    args = parser.parse_args()
+
     try:
         raw = sys.stdin.read()
         data = json.loads(raw)
@@ -206,7 +248,17 @@ def main():
         print()
         sys.exit(1)
 
-    result = validate(data)
+    # 前回データの読み込み
+    prev_data = None
+    if args.prev:
+        prev_path = Path(args.prev)
+        if prev_path.exists():
+            try:
+                prev_data = json.loads(prev_path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                pass  # 読み込み失敗時はスキップ
+
+    result = validate(data, prev_data=prev_data)
     json.dump(result, sys.stdout, ensure_ascii=False, indent=2)
     print()
 
