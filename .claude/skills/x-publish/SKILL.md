@@ -33,7 +33,8 @@ cron自動実行（`--auto`）・対話実行の両方に対応。
 
 ## 中間ファイルフォーマット（入力契約）
 
-`reports/tmp_x_posts_v2.md` は `/market-x-draft` スキルが生成する。
+`reports/tmp_x_posts_v2_HHMM.md` は `/market-x-draft` または `/market-intraday` スキルが生成する。
+ファイル名のHHMMは実行時の日本時間（例: `tmp_x_posts_v2_0700.md`, `tmp_x_posts_v2_1200.md`）。
 フォーマット仕様は `.claude/skills/market-x-draft/SKILL.md` の「出力フォーマット」セクションを参照。
 
 パース方法:
@@ -45,9 +46,10 @@ cron自動実行（`--auto`）・対話実行の両方に対応。
 
 ### Step 1: 投稿文読み込み
 
-1. `reports/tmp_x_posts_v2.md` をReadで読み込む
-2. `## 投稿N` + `---` でパースし、投稿を抽出（AM/PM: 3投稿、日中観察: 1投稿）
-3. ファイルが存在しない場合 → エラー通知して終了
+1. Globで `reports/tmp_x_posts_v2_*.md` を検索し、最新ファイル（更新日時順）を特定する
+2. 最新ファイルをReadで読み込む
+3. `## 投稿N` + `---` でパースし、投稿を抽出（AM/PM: 3投稿、日中観察: 1投稿）
+4. ファイルが存在しない場合 → エラー通知して終了
 
 ### Step 2: プレビュー・確認
 
@@ -79,6 +81,7 @@ cron自動実行（`--auto`）・対話実行の両方に対応。
 - `# X投稿 YYYY-MM-DD AM（3投稿構成）` → AM
 - `# X投稿 YYYY-MM-DD PM（3投稿構成）` → PM
 - `# X投稿 YYYY-MM-DD 日中観察（1投稿構成）` → 日中観察
+- `# X投稿 YYYY-MM-DD 米国観察（1投稿構成）` → 米国観察
 
 投稿数は中間ファイルの内容に応じて可変（AM/PM: 3投稿、日中観察: 1投稿）。
 
@@ -105,7 +108,7 @@ cron自動実行（`--auto`）・対話実行の両方に対応。
 
 | ファイル | 役割 |
 |----------|------|
-| `reports/tmp_x_posts_v2.md` | 入力（投稿文） |
+| `reports/tmp_x_posts_v2_HHMM.md` | 入力（投稿文、Globで最新を検索） |
 | `backend/scripts/x_post.py` | X API投稿スクリプト |
 | `.claude/x-posts-history.md` | 投稿履歴（追記先） |
 | `.env` | X API認証情報 |

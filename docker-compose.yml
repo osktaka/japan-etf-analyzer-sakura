@@ -5,17 +5,15 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8902:8902"
-    environment:
-      - FLASK_ENV=development
-      - FLASK_DEBUG=1
-      - DATABASE_URL=sqlite:////app/data/etf.db
-      - USE_MOCK_DATA=false
+    env_file:
+      - .env
     volumes:
       - ./backend/src:/app/src
       - ./backend/tests:/app/tests
       - ./backend/scripts:/app/scripts
       - ./logs:/app/logs
       - ./backend/data:/app/data
+      - ./reports:/app/reports
     command: flask run --host=0.0.0.0 --port=8902
 
   frontend:
@@ -40,9 +38,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile.scheduler
-    environment:
-      - DATABASE_URL=sqlite:////app/data/etf.db
-      - FLASK_APP=src/app.py
+    env_file:
+      - .env
     volumes:
       - ./backend/src:/app/src
       - ./backend/scripts:/app/scripts

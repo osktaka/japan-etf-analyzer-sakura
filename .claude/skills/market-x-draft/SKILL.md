@@ -42,7 +42,7 @@ cron自動実行・対話実行の両方に対応。
 
 ### Step 3: ファイル出力
 
-`reports/tmp_x_posts_v2.md` にWriteで出力する。
+`reports/tmp_x_posts_v2_HHMM.md`（HHMMは実行時の日本時間、例: `tmp_x_posts_v2_0700.md`） にWriteで出力する。
 
 ## AM投稿テンプレート（米国市場終了後・3投稿構成）
 
@@ -80,7 +80,7 @@ cron自動実行・対話実行の両方に対応。
 
 ## 出力フォーマット（中間ファイル契約）
 
-`reports/tmp_x_posts_v2.md` は以下のフォーマットで出力する。
+`reports/tmp_x_posts_v2_HHMM.md`（HHMMは実行時の日本時間、例: `tmp_x_posts_v2_0700.md`） は以下のフォーマットで出力する。
 このフォーマットは `/x-publish` スキルとの契約であり、変更時は両スキルを同時に更新すること。
 
 ```markdown
@@ -137,4 +137,4 @@ cron自動実行・対話実行の両方に対応。
 - [ ] 3投稿が生成された
 - [ ] 各投稿が280カウント以内
 - [ ] 出力フォーマットに準拠している
-- [ ] `reports/tmp_x_posts_v2.md` に書き出された
+- [ ] `reports/tmp_x_posts_v2_HHMM.md`（HHMMは実行時の日本時間、例: `tmp_x_posts_v2_0700.md`） に書き出された
