@@ -127,7 +127,7 @@ fi
 sleep 3
 
 # 2. X投稿実行
-setsid --wait claude -p "/x-publish --auto" \
+setsid --wait claude -p "/x-publish --auto --production" \
   --allowedTools "Read Edit Bash Glob" \
   > "$LOGDIR/x-publish-intraday-${TIMESTAMP}.log" 2>&1
 STEP2_EXIT=$?
