@@ -150,10 +150,106 @@ EOF
   if [ -n "$LATEST_DRAFT" ]; then
     echo "Starting publish_note.py --sync-production for: $LATEST_DRAFT"
     docker compose exec -T backend python scripts/publish_note.py \
-      "$LATEST_DRAFT" --sync-production 2>&1 || true
-    echo "publish_note.py completed."
+      "$LATEST_DRAFT" --sync-production 2>&1
+    STEP45_EXIT=$?
+    echo "publish_note.py completed (exit=$STEP45_EXIT)."
   else
     echo "Warning: No draft file found, skipping DB sync."
+    STEP45_EXIT=1
+  fi
+
+  # --- Step 5: X投稿文生成（記事告知） ---
+
+  if [ "${STEP45_EXIT:-1}" -ne 0 ]; then
+    echo "Warning: Step 4.5 failed (exit=$STEP45_EXIT), skipping Step 5-6 (X post)."
+  else
+    # slug取得: frontmatterのslugフィールド、なければファイル名stem
+    DRAFT_SLUG=$(grep -m1 '^slug:' "$LATEST_DRAFT" 2>/dev/null | sed 's/^slug:[[:space:]]*//' | tr -d '"' | tr -d "'")
+    if [ -z "$DRAFT_SLUG" ]; then
+      DRAFT_SLUG=$(basename "$LATEST_DRAFT" .md)
+    fi
+    ARTICLE_URL="https://kima3.net/japan-etf-analyzer/notes/${DRAFT_SLUG}"
+    TODAY_DISPLAY=$(date +%Y-%m-%d)
+    NOW_HHMM=$(date +%H:%M)
+    X_POSTS_FILE="reports/tmp_x_posts_v2_1800.md"
+
+    read -r -d '' PROMPT5 << STEP5EOF
+以下のドラフト記事を読み、記事公開を告知するX投稿文を1本だけ生成してください。
+
+【ドラフトファイル】
+${LATEST_DRAFT}
+
+【記事URL】
+${ARTICLE_URL}
+
+【出力先】
+${X_POSTS_FILE}
+
+【出力フォーマット（厳守）】
+\`\`\`
+# X投稿 ${TODAY_DISPLAY} ${NOW_HHMM} 記事告知（1投稿構成）
+
+---
+
+## 投稿1
+（投稿テキスト本文）
+#ハッシュタグ1 #ハッシュタグ2
+
+---
+\`\`\`
+
+【投稿ルール】
+- 文字数: 270カウント前後（URLは23カウントとして計算）
+- ハッシュタグ: 2-3個（#ETF #東証ETF分析 など）
+- 冒頭に[テスト]を付ける（例: [テスト] 記事を公開しました）
+- 記事URLを本文に含める
+
+【キャラクター設定】
+- ペルソナ: 20代後半・女性・データアナリスト
+- トーン: 丁寧だけど堅くない。解説者ベース
+- 語尾: 「〜です」「〜があります」「〜してみてください」
+- 事実を淡々と並べた後、最後の一言にさりげなく人柄をにじませる
+- 絵文字はアイコン的に使用
+
+【手順】
+1. Readで${LATEST_DRAFT}を読んでtitleとsummaryを把握
+2. 投稿文を作成
+3. Writeで${X_POSTS_FILE}に出力
+STEP5EOF
+
+    echo "Starting Step 5: X post draft generation..."
+
+    setsid --wait timeout 120 claude -p "$PROMPT5" \
+      --allowedTools "Read Write" \
+      >> "$LOGFILE" 2>&1
+    STEP5_EXIT=$?
+
+    if [ $STEP5_EXIT -eq 124 ]; then
+      echo "Warning: Step 5 (X draft) timed out (120s), skipping Step 6."
+    elif [ $STEP5_EXIT -ne 0 ]; then
+      echo "Warning: Step 5 (X draft) failed (exit=$STEP5_EXIT), skipping Step 6."
+    else
+      echo "Step 5 completed: $X_POSTS_FILE"
+
+      sleep 3
+
+      # --- Step 6: X実投稿 ---
+
+      echo "Starting Step 6: X publish..."
+
+      setsid --wait timeout 300 claude -p "/x-publish --auto --production" \
+        --allowedTools "Read Edit Bash Glob" \
+        >> "$LOGFILE" 2>&1
+      STEP6_EXIT=$?
+
+      if [ $STEP6_EXIT -eq 124 ]; then
+        echo "Warning: Step 6 (X publish) timed out (300s)."
+      elif [ $STEP6_EXIT -ne 0 ]; then
+        echo "Warning: Step 6 (X publish) failed (exit=$STEP6_EXIT)."
+      else
+        echo "Step 6 completed: X post published."
+      fi
+    fi
   fi
 
 else
