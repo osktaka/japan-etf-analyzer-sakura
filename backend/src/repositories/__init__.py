@@ -8,6 +8,7 @@ from .tag_repository import TagRepository
 from .stock_split_repository import StockSplitRepository
 from .user_settings_repository import UserSettingsRepository
 from .etf_metrics_history_repository import EtfMetricsHistoryRepository
+from .note_repository import NoteRepository
 
 __all__ = [
     "BaseRepository",
@@ -19,4 +20,5 @@ __all__ = [
     "StockSplitRepository",
     "UserSettingsRepository",
     "EtfMetricsHistoryRepository",
+    "NoteRepository",
 ]

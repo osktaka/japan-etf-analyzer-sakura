@@ -27,6 +27,7 @@ from .stock_split import StockSplit  # noqa: E402
 from .user_settings import UserSettings  # noqa: E402
 from .etf_metrics_history import EtfMetricsHistory  # noqa: E402
 from .cash_flow import CashFlow  # noqa: E402
+from .note import Note  # noqa: E402
 
 __all__ = [
     "db",
@@ -46,4 +47,5 @@ __all__ = [
     "UserSettings",
     "EtfMetricsHistory",
     "CashFlow",
+    "Note",
 ]

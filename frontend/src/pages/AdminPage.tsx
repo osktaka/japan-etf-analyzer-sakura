@@ -5,9 +5,10 @@ import { useAuth } from '../hooks/useAuth'
 import { adminApi, BatchLog, StockSplit } from '../api/admin'
 import { User } from '../api/types'
 import { ETFDetailModal } from '../components/modal/ETFDetailModal'
+import { AdminNotesTab } from './admin/AdminNotesTab'
 import styles from './AdminPage.module.css'
 
-type Tab = 'system' | 'users' | 'splits'
+type Tab = 'system' | 'users' | 'splits' | 'notes'
 type SortKey =
   | 'detected_at'
   | 'etf_code'
@@ -159,6 +160,8 @@ export function AdminPage() {
         await loadUsers()
       } else if (activeTab === 'splits') {
         await loadStockSplits()
+      } else if (activeTab === 'notes') {
+        // Notes tab manages its own loading
       }
       setIsLoading(false)
     }
@@ -685,22 +688,35 @@ export function AdminPage() {
         >
           株式分割
         </button>
+        <button
+          className={`${styles.tab} ${activeTab === 'notes' ? styles.tabActive : ''}`}
+          onClick={() => handleTabChange('notes')}
+        >
+          ノート
+        </button>
       </div>
 
-      <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>
+      {activeTab === 'notes' ? (
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>ノート管理</h2>
+          <AdminNotesTab />
+        </section>
+      ) : (
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>
+            {activeTab === 'system'
+              ? 'バッチ実行履歴'
+              : activeTab === 'users'
+                ? 'ユーザー一覧'
+                : '株式分割候補'}
+          </h2>
           {activeTab === 'system'
-            ? 'バッチ実行履歴'
+            ? renderSystemTab()
             : activeTab === 'users'
-              ? 'ユーザー一覧'
-              : '株式分割候補'}
-        </h2>
-        {activeTab === 'system'
-          ? renderSystemTab()
-          : activeTab === 'users'
-            ? renderUsersTab()
-            : renderSplitsTab()}
-      </section>
+              ? renderUsersTab()
+              : renderSplitsTab()}
+        </section>
+      )}
 
       {/* ETF詳細モーダル */}
       <ETFDetailModal

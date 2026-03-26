@@ -167,6 +167,12 @@
   border-radius: 9999px;
 }
 
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-text-secondary);
+}
+
 .notFound {
   text-align: center;
   padding: 3rem 0;

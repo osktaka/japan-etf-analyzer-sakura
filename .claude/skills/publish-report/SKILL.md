@@ -72,10 +72,11 @@ cronスクリプトからの自動実行用。Phase 1-2 は通常モードと同
 1. `reports/demo/drafts/` から最新のドラフトファイルを読み込み
 2. AskUserQuestionでドラフト内容を提示し最終確認
 
-### Phase 5 - 公開・検証・HISTORY更新
+### Phase 5 - 公開・DB投入・HISTORY更新
 
 1. `frontend/src/content/notes/` にWrite
-2. ビルド確認: `docker compose exec frontend npm run build`
+2. DB投入: `docker compose exec backend python scripts/publish_note.py frontend/src/content/notes/<slug>.md`
+   - cronからの自動実行時は `--sync-production` オプションを付けて本番APIにも同期
 3. HISTORY.md 更新:
    - **スナップショット保存**: 当日のスナップショットが無ければ `HISTORY.md` を `history/YYYYMMDD.md` として保存（過去のスナップショットは変更・削除しない）
    - **バックアップ**: `HISTORY.md` を `HISTORY.md.bak` にコピー
@@ -147,7 +148,7 @@ publishedAt: 2026-02-20 09:00
 ### 確定モード
 
 - `frontend/src/content/notes/` に記事が配置されている
-- Viteビルドが通る
+- DBに記事がupsertされている（publish_note.py実行済み）
 - HISTORY.md が更新されている
 - `reports/demo/drafts/` のドラフトが削除されている
 
@@ -190,7 +191,7 @@ publishedAt: 2026-02-20 09:00
 | frontmatter形式 | OK/NG |
 | 文字数範囲 | OK/NG（N字） |
 | 数値正確性 | OK/NG |
-| ビルド確認 | OK/NG |
+| DB投入 | OK/NG |
 | HISTORY.md更新 | OK/NG |
 | ドラフト削除 | OK/NG |
 

@@ -153,7 +153,19 @@
 - デモユーザー（user_id='demo'）のデータを読み取り専用で返す
 - デモユーザーが存在しない場合は空データを返す（エラーにならない）
 
-### 3.4 管理者用API
+### 3.4 ノート記事API
+
+| メソッド | パス | 機能 | 対応機能ID | 認証 |
+|----------|------|------|------------|------|
+| GET | /notes | 公開記事一覧取得 | - | 不要 |
+| GET | /notes/{slug} | 記事詳細取得 | - | 不要 |
+| POST | /notes/sync | 記事同期 | - | APIキー |
+
+**備考:**
+- `/notes/sync` はAPIキー認証（`Authorization: Bearer <NOTES_API_KEY>`）で保護
+- 公開APIは `status=published` かつ `published_at <= 現在日時` の記事のみ返す
+
+### 3.5 管理者用API
 
 | メソッド | パス | 機能 | 対応機能ID | 認証 |
 |----------|------|------|------------|------|
@@ -165,6 +177,10 @@
 | GET | /admin/stock-splits | 株式分割候補一覧取得 | F-203 | 管理者 |
 | PATCH | /admin/stock-splits/{id} | 株式分割適用状態更新 | F-203 | 管理者 |
 | POST | /admin/stock-splits/{id}/recalculate | パフォーマンスキャッシュ再計算 | F-203 | 管理者 |
+| GET | /admin/notes | 全記事一覧取得 | - | 管理者 |
+| POST | /admin/notes | 記事作成 | - | 管理者 |
+| PUT | /admin/notes/{slug} | 記事更新 | - | 管理者 |
+| DELETE | /admin/notes/{slug} | 記事削除 | - | 管理者 |
 
 **備考:**
 - 管理者認証: `@login_required` + `@admin_required` デコレータで保護

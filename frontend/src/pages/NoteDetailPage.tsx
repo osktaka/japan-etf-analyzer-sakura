@@ -2,22 +2,28 @@ import { Link, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { SEOHead } from '../components/common/SEOHead'
-import { getNoteBySlug, isPublished } from '../content/notes'
-import { useAuth } from '../hooks/useAuth'
+import { useNote } from '../hooks/useNotes'
 import { ROUTES } from '../utils/constants'
 import styles from './NoteDetailPage.module.css'
 
 /** Note detail page */
 export function NoteDetailPage() {
   const { slug } = useParams<{ slug: string }>()
-  const { isAdmin } = useAuth()
-  const note = slug ? getNoteBySlug(slug, isAdmin) : undefined
+  const { note, loading, error } = useNote(slug ?? '')
 
-  if (!note) {
+  if (loading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.loading}>読み込み中...</div>
+      </div>
+    )
+  }
+
+  if (error || !note) {
     return (
       <div className={styles.container}>
         <div className={styles.notFound}>
-          <h2>記事が見つかりません</h2>
+          <h2>{error || '記事が見つかりません'}</h2>
           <Link to={ROUTES.NOTES}>ノート一覧に戻る</Link>
         </div>
       </div>
@@ -31,21 +37,25 @@ export function NoteDetailPage() {
         description={note.summary}
         path={`/notes/${note.slug}`}
         type="article"
-        publishedTime={note.publishedAt}
-        modifiedTime={note.updatedAt}
+        publishedTime={note.published_at}
+        modifiedTime={note.updated_at}
       />
       <Link to={ROUTES.NOTES} className={styles.backLink}>
-        ← ノート一覧
+        &larr; ノート一覧
       </Link>
       <article className={styles.article}>
         <header className={styles.header}>
           <h1 className={styles.articleTitle}>{note.title}</h1>
           <div className={styles.meta}>
-            <time dateTime={note.publishedAt}>{note.publishedAt.slice(0, 10)}</time>
-            {note.updatedAt && (
-              <span className={styles.updated}>（更新: {note.updatedAt}）</span>
+            <time dateTime={note.published_at}>
+              {note.published_at.slice(0, 10)}
+            </time>
+            {note.updated_at && (
+              <span className={styles.updated}>
+                （更新: {note.updated_at}）
+              </span>
             )}
-            {!isPublished(note.publishedAt) && (
+            {note.status === 'draft' && (
               <span className={styles.unpublishedBadge}>未公開</span>
             )}
           </div>
@@ -64,8 +74,8 @@ export function NoteDetailPage() {
             '@type': 'Article',
             headline: note.title,
             description: note.summary,
-            datePublished: note.publishedAt,
-            ...(note.updatedAt && { dateModified: note.updatedAt }),
+            datePublished: note.published_at,
+            ...(note.updated_at && { dateModified: note.updated_at }),
             publisher: {
               '@type': 'Organization',
               name: 'Japan ETF Analyzer',

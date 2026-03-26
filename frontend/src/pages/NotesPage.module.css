@@ -68,6 +68,20 @@
   border-radius: 9999px;
 }
 
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--color-text-secondary);
+}
+
+.error {
+  text-align: center;
+  padding: 2rem;
+  color: #dc2626;
+  background: #fef2f2;
+  border-radius: 4px;
+}
+
 @media (max-width: 640px) {
   .container {
     padding: 1rem 0;

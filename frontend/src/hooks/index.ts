@@ -27,6 +27,7 @@ export type {
   SearchOverrides,
 } from './useTopPageDisplayMode'
 export { useTopPageSearch, PAGE_SIZE } from './useTopPageSearch'
+export { useNotes, useNote } from './useNotes'
 export type {
   UseTopPageSearchOptions,
   UseTopPageSearchResult,

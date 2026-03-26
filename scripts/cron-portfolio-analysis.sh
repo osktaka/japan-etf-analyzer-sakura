@@ -136,6 +136,27 @@ EOF
   fi
 
   sleep 3
+
+  # --- Step 4.5: 本番DBに記事を同期 ---
+
+  # 最新のドラフト記事を取得（Step 4で作成されたもの）
+  LATEST_DRAFT=$(ls -t reports/demo/drafts/*_draft.md 2>/dev/null | head -1)
+  if [ -n "$LATEST_DRAFT" ]; then
+    # ドラフトのslugからノート記事ファイルを特定
+    # ドラフト内容を確認して対応するノート記事を探す
+    LATEST_NOTE=$(ls -t frontend/src/content/notes/*.md 2>/dev/null | head -1)
+    if [ -n "$LATEST_NOTE" ]; then
+      echo "Starting publish_note.py --sync-production for: $LATEST_NOTE"
+      docker compose exec -T backend python scripts/publish_note.py \
+        "$LATEST_NOTE" --sync-production 2>&1 || true
+      echo "publish_note.py completed."
+    else
+      echo "Warning: No note file found in frontend/src/content/notes/, skipping DB sync."
+    fi
+  else
+    echo "Warning: No draft file found, skipping DB sync."
+  fi
+
 else
   echo "Skipping publish-report (user=$USER is not demo)"
 fi

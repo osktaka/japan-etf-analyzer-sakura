@@ -8,6 +8,7 @@ from .scoring_service import ScoringService
 from .compare_service import CompareService
 from .market_service import MarketService
 from .split_detection_service import SplitDetectionService
+from .note_service import NoteService
 
 __all__ = [
     "CategoryService",
@@ -19,4 +20,5 @@ __all__ = [
     "CompareService",
     "MarketService",
     "SplitDetectionService",
+    "NoteService",
 ]
