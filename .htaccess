@@ -15,6 +15,9 @@ RewriteBase /japan-etf-analyzer/
 RewriteCond %{HTTP:Authorization} ^(.+)$
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
 
+# sitemap.xmlをバックエンドAPIで動的生成
+RewriteRule ^sitemap\.xml$ api/index.cgi/v1/sitemap.xml [L]
+
 # APIリクエストをindex.cgiにルーティング（index.cgi自体は除外）
 RewriteCond %{REQUEST_URI} !index\.cgi
 RewriteRule ^api/(.*)$ api/index.cgi/$1 [L,QSA]
