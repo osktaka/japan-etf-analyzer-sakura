@@ -22,8 +22,10 @@ RewriteRule ^sitemap\.xml$ api/index.cgi/v1/sitemap.xml [L]
 RewriteCond %{REQUEST_URI} !index\.cgi
 RewriteRule ^api/(.*)$ api/index.cgi/$1 [L,QSA]
 
-# ノートページ プリレンダーHTML配信（OGP対応）
-RewriteRule ^notes/([^/.]+)$ notes/$1.html [L]
+# ノートページ OGP HTML動的生成（バックエンドAPI経由）
+RewriteRule ^notes/index\.html$ api/index.cgi/v1/notes/index.html [L]
+RewriteRule ^notes/([^/.]+)\.html$ api/index.cgi/v1/notes/$1.html [L]
+RewriteRule ^notes/([^/.]+)$ api/index.cgi/v1/notes/$1.html [L]
 
 # SPAルーティング（フロントエンド）
 # 既存ファイル・ディレクトリは直接配信

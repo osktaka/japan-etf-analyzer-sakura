@@ -169,7 +169,7 @@ ApacheのDocumentRootから`frontend/dist/`内のファイルにアクセスす�
 - `assets/` → `frontend/dist/assets/`
 - `robots.txt` → `frontend/dist/robots.txt`
 - `sitemap.xml` → `frontend/dist/sitemap.xml`
-- `notes/` → `frontend/dist/notes/`
+- `notes/` → バックエンドAPI動的生成（.htaccessでルーティング、シンボリックリンク不要）
 
 `setup.sh`で自動作成されます。
 

@@ -82,7 +82,9 @@ ln -sf frontend/dist/index.html index.html
 ln -sf frontend/dist/assets assets
 ln -sf frontend/dist/robots.txt robots.txt
 ln -sf frontend/dist/sitemap.xml sitemap.xml
-ln -sf frontend/dist/notes notes
+# notes/ シンボリックリンクは不要（OGP HTMLはバックエンドAPI動的生成、.htaccessでルーティング）
+# 既存のシンボリックリンクがあれば削除
+[ -L notes ] && rm notes
 ln -sf frontend/dist/google92af733acccacf69.html google92af733acccacf69.html
 echo "  ✓ Symbolic links created"
 

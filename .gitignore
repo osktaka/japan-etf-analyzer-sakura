@@ -44,6 +44,9 @@ coverage/
 # frontend/dist/ is tracked for Sakura server deployment (exclude from gitignore)
 !frontend/dist/
 
+# OGP HTMLはバックエンド動的生成に移行済み（静的ファイル不要）
+frontend/dist/notes/
+
 # MySQL
 *.sql
 !scripts/*.sql

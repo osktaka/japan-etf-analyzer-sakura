@@ -18,10 +18,6 @@ os.environ.setdefault("DATABASE_URL", f"sqlite:///{db_path}")
 
 sys.path.insert(0, str(BACKEND_DIR))
 
-# ベースディレクトリ（Docker: /app = CWD, 本番: PROJECT_ROOT）
-# Docker内ではPROJECT_ROOTが/になるため、CWDを使用
-BASE_DIR = Path.cwd() if str(PROJECT_ROOT) == "/" else PROJECT_ROOT
-
 
 def parse_frontmatter(text: str) -> tuple:
     """Parse YAML frontmatter and body from Markdown text.
@@ -53,84 +49,6 @@ def parse_frontmatter(text: str) -> tuple:
 def extract_slug(filepath: Path) -> str:
     """Extract slug from filename (remove .md extension)."""
     return filepath.stem
-
-
-def escape_html_attr(s: str) -> str:
-    """Escape special characters for use in HTML attribute values."""
-    return (
-        s.replace("&", "&amp;")
-        .replace('"', "&quot;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-    )
-
-
-def generate_ogp_html(slug: str, title: str, summary: str) -> None:
-    """Generate OGP-injected HTML files for the note and notes index.
-
-    Reads frontend/dist/index.html as the base template, injects OGP meta
-    tags, and writes to frontend/dist/notes/{slug}.html.
-    Also regenerates frontend/dist/notes/index.html for the notes list page.
-    """
-    site_url = "https://kima3.net/japan-etf-analyzer"
-    dist_dir = BASE_DIR / "frontend" / "dist"
-    base_html_path = dist_dir / "index.html"
-
-    if not base_html_path.exists():
-        print(f"Warning: {base_html_path} が存在しないためOGP HTML生成をスキップ")
-        return
-
-    base_html = base_html_path.read_text(encoding="utf-8")
-
-    # notes出力ディレクトリ作成
-    notes_out_dir = dist_dir / "notes"
-    notes_out_dir.mkdir(parents=True, exist_ok=True)
-
-    def inject_ogp(
-        html: str,
-        page_title: str,
-        description: str,
-        url: str,
-        og_type: str = "article",
-    ) -> str:
-        safe_title = escape_html_attr(page_title)
-        safe_desc = escape_html_attr(description)
-        safe_url = escape_html_attr(url)
-
-        meta_tags = "\n    ".join(
-            [
-                f'<meta name="description" content="{safe_desc}" />',
-                f'<meta property="og:title" content="{safe_title}" />',
-                f'<meta property="og:description" content="{safe_desc}" />',
-                f'<meta property="og:type" content="{og_type}" />',
-                f'<meta property="og:url" content="{safe_url}" />',
-                f'<meta property="og:site_name" content="Japan ETF Analyzer" />',
-                f'<link rel="canonical" href="{safe_url}" />',
-            ]
-        )
-
-        # <title>タグを置換
-        result = re.sub(r"<title>[^<]*</title>", f"<title>{safe_title}</title>", html)
-        # </head>の直前にメタタグを注入
-        result = result.replace("</head>", f"    {meta_tags}\n  </head>")
-        return result
-
-    # 個別ノート記事のOGP HTML生成
-    page_title = f"{title} - Japan ETF Analyzer"
-    url = f"{site_url}/notes/{slug}"
-    html = inject_ogp(base_html, page_title, summary, url)
-    out_path = notes_out_dir / f"{slug}.html"
-    out_path.write_text(html, encoding="utf-8")
-    print(f"OGP HTML生成: {out_path}")
-
-    # ノート一覧ページ用プリレンダーHTML生成
-    list_title = "ノート - Japan ETF Analyzer"
-    list_desc = "ETF投資に役立つ知識やコラムをまとめたノート一覧です。"
-    list_url = f"{site_url}/notes"
-    list_html = inject_ogp(base_html, list_title, list_desc, list_url, "website")
-    list_out_path = notes_out_dir / "index.html"
-    list_out_path.write_text(list_html, encoding="utf-8")
-    print(f"OGP HTML生成: {list_out_path}")
 
 
 def sync_to_production(payload: dict) -> bool:
@@ -181,8 +99,8 @@ def main():
 
     filepath = Path(args.markdown_file)
     if not filepath.is_absolute():
-        # BASE_DIRを基準に解決（Docker: /app, 本番: プロジェクトルート）
-        filepath = BASE_DIR / filepath
+        # PROJECT_ROOTを基準に解決（Docker: /app, 本番: プロジェクトルート）
+        filepath = PROJECT_ROOT / filepath
 
     if not filepath.exists():
         print(f"Error: ファイルが見つかりません: {filepath}")
@@ -227,9 +145,6 @@ def main():
         service = NoteService()
         result = service.sync_note(payload.copy())
         print(f"DB upsert OK: slug={result['slug']}, id={result['id']}")
-
-    # OGP HTML生成
-    generate_ogp_html(slug, title, summary)
 
     # Production sync
     sync_ok = None
