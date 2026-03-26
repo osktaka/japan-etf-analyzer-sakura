@@ -65,6 +65,13 @@ class PrefixMiddleware:
     def __call__(self, environ, start_response):
         if "PATH_INFO" in environ:
             environ["PATH_INFO"] = self.prefix + environ["PATH_INFO"]
+        # Apache CGI環境ではAuthorizationヘッダーが渡されないため
+        # .htaccessのRewriteRuleで設定した環境変数から復元
+        http_auth = environ.get("HTTP_AUTHORIZATION") or os.environ.get(
+            "HTTP_AUTHORIZATION"
+        )
+        if http_auth and "HTTP_AUTHORIZATION" not in environ:
+            environ["HTTP_AUTHORIZATION"] = http_auth
         return self.app(environ, start_response)
 
 

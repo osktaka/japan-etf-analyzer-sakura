@@ -11,6 +11,10 @@ Header set X-XSS-Protection "1; mode=block"
 RewriteEngine On
 RewriteBase /japan-etf-analyzer/
 
+# AuthorizationヘッダーをCGI環境変数に渡す（API key認証用）
+RewriteCond %{HTTP:Authorization} ^(.+)$
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
+
 # APIリクエストをindex.cgiにルーティング（index.cgi自体は除外）
 RewriteCond %{REQUEST_URI} !index\.cgi
 RewriteRule ^api/(.*)$ api/index.cgi/$1 [L,QSA]
