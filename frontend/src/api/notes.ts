@@ -38,6 +38,12 @@ export const notesApi = {
     return response.data.data
   },
 
+  async getBySlugAdmin(slug: string): Promise<Note> {
+    const response =
+      await apiClient.get<ApiResponse<Note>>(`/admin/notes/${slug}`)
+    return response.data.data
+  },
+
   async getAllAdmin(): Promise<NoteListItem[]> {
     const response =
       await apiClient.get<ApiResponse<NoteListItem[]>>('/admin/notes')

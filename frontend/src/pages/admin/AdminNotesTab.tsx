@@ -76,7 +76,7 @@ export function AdminNotesTab() {
   const handleEdit = useCallback(async (slug: string) => {
     setLoading(true)
     try {
-      const note = await notesApi.getBySlug(slug)
+      const note = await notesApi.getBySlugAdmin(slug)
       setForm({
         slug: note.slug,
         title: note.title,

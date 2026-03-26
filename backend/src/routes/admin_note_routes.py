@@ -27,6 +27,19 @@ def create_admin_note_bp():
         notes = repo.get_all_with_drafts()
         return api_response(data=[n.to_list_dict() for n in notes])
 
+    @bp.route("/<slug>", methods=["GET"])
+    @login_required
+    @admin_required
+    def get_note(slug: str):
+        """Get a single note by slug (including drafts).
+
+        GET /api/v1/admin/notes/<slug>
+        """
+        note = service.get_note_by_slug(slug, include_unpublished=True)
+        if not note:
+            return error_response("記事が見つかりません", 404)
+        return api_response(data=note)
+
     @bp.route("", methods=["POST"])
     @login_required
     @admin_required
