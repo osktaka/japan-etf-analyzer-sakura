@@ -9,7 +9,7 @@ aliases: ["/publish-report", "/pub-report"]
 ## 概要
 
 - `/portfolio-analysis` スキルの出力レポート（600行超）を、一般読者向けの2,000-2,500字のノート記事（通常回）に変換
-- 記事は `frontend/src/content/notes/` に配置（Viteのimport.meta.globで自動認識）
+- 記事はDBに投入（`publish_note.py`でupsert）
 - **ドラフトモード**と**確定モード**の2段階で運用
 
 ## 使用方法
@@ -37,7 +37,7 @@ aliases: ["/publish-report", "/pub-report"]
 1. Globで `reports/demo/*_demo*.md` を検索し、引数指定がなければ最新を使用（`*_demo.md` と `*_demo_v2.md` の両方に対応）
 2. レポート全文をReadで読み込む（重点セクション: エグゼクティブサマリー、市場環境、シャープレシオ、モメンタム、アロケーション、最適化提案）
 3. `reports/demo/HISTORY.md` をReadで読み込み、前回比の変化点を特定
-4. `frontend/src/content/notes/` の直近ポートフォリオ記事を確認（内容の重複回避）
+4. DBの直近ポートフォリオ記事を確認（`GET /api/v1/notes` で取得、内容の重複回避）
 
 ### Phase 2 - 記事構成の決定
 
@@ -50,7 +50,7 @@ aliases: ["/publish-report", "/pub-report"]
 
 1. `article-template.md` に従い2,000-2,500字の記事を生成（通常回）
 2. slugはSEO重視形式（例: `20260212_demo-portfolio-bank-etf-momentum.md`）
-3. frontmatter: title, summary, publishedAt
+3. frontmatter: title, summary, publishedAt, slug（`YYYYMMDD_descriptive-name` 形式、例: `20260212_demo-portfolio-bank-etf-momentum`）
 4. 記事末尾に免責文を必ず含める
 5. AskUserQuestionで全文プレビューを提示 → OK/修正指示を判断
 6. OKなら `reports/demo/drafts/YYYYMMDD_draft.md` に保存
@@ -74,8 +74,7 @@ cronスクリプトからの自動実行用。Phase 1-2 は通常モードと同
 
 ### Phase 5 - 公開・DB投入・HISTORY更新
 
-1. `frontend/src/content/notes/` にWrite
-2. DB投入: `docker compose exec backend python scripts/publish_note.py frontend/src/content/notes/<slug>.md`
+1. DB投入: `docker compose exec backend python scripts/publish_note.py reports/demo/drafts/<ドラフトファイル>`
    - cronからの自動実行時は `--sync-production` オプションを付けて本番APIにも同期
 3. HISTORY.md 更新:
    - **スナップショット保存**: 当日のスナップショットが無ければ `HISTORY.md` を `history/YYYYMMDD.md` として保存（過去のスナップショットは変更・削除しない）
@@ -101,13 +100,14 @@ cronスクリプトからの自動実行用。Phase 1-2 は通常モードと同
 
 ## ノート記事のfrontmatter仕様
 
-記事ファイルは以下の形式でなければならない（`frontend/src/content/notes/index.ts` のパーサーが読む）:
+記事ファイルは以下の形式でなければならない:
 
 ```yaml
 ---
 title: 記事タイトル
 summary: 記事の要約（80字以内）
 publishedAt: YYYY-MM-DD
+slug: url-safe-slug-name
 ---
 ```
 
@@ -147,7 +147,6 @@ publishedAt: 2026-02-20 09:00
 
 ### 確定モード
 
-- `frontend/src/content/notes/` に記事が配置されている
 - DBに記事がupsertされている（publish_note.py実行済み）
 - HISTORY.md が更新されている
 - `reports/demo/drafts/` のドラフトが削除されている
@@ -181,7 +180,7 @@ publishedAt: 2026-02-20 09:00
 ## /publish-report confirm 結果
 
 ### 公開記事
-- ファイル: `frontend/src/content/notes/{ファイル名}`
+- slug: `{slug}`
 - タイトル: {タイトル}
 - 文字数: {N}字
 
@@ -211,5 +210,4 @@ publishedAt: 2026-02-20 09:00
 | `reports/demo/*_demo*.md` | 入力レポート（v1: `*_demo.md`, v2: `*_demo_v2.md`） |
 | `reports/demo/HISTORY.md` | ポートフォリオ履歴 |
 | `reports/demo/drafts/` | ドラフト保存先 |
-| `frontend/src/content/notes/` | 公開先ディレクトリ |
-| `frontend/src/content/notes/index.ts` | ノートローダー（frontmatter形式の制約元） |
+| `backend/scripts/publish_note.py` | DB投入スクリプト |

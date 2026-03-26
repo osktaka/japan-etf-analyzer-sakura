@@ -18,7 +18,7 @@ def register_routes(app):
     from .tag_routes import create_tag_bp
     from .trade_routes import create_trade_bp
     from .admin_note_routes import create_admin_note_bp
-    from .note_routes import create_note_bp
+    from .note_routes import create_note_bp, create_sitemap_bp
     from .user_settings_routes import create_user_settings_bp
 
     api_v1 = Blueprint("api_v1", __name__, url_prefix="/api/v1")
@@ -39,5 +39,6 @@ def register_routes(app):
     api_v1.register_blueprint(create_user_settings_bp())
     api_v1.register_blueprint(create_note_bp())
     api_v1.register_blueprint(create_admin_note_bp())
+    api_v1.register_blueprint(create_sitemap_bp())
 
     app.register_blueprint(api_v1)

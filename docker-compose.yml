@@ -14,7 +14,7 @@ services:
       - ./logs:/app/logs
       - ./backend/data:/app/data
       - ./reports:/app/reports
-      - ./frontend/src/content/notes:/app/frontend/src/content/notes:ro
+      - ./frontend/dist:/app/frontend/dist
     command: flask run --host=0.0.0.0 --port=8902
 
   frontend:

@@ -66,7 +66,7 @@ reports/demo/YYYYMMDD_demo.md
 
 確定時に以下が実行される:
 
-1. ドラフトを `frontend/src/content/notes/` に配置
+1. ドラフトを `publish_note.py` でDB投入
 2. ビルド確認
 3. HISTORY.md 更新:
    - **スナップショット保存**: 当日のスナップショットが無ければ `HISTORY.md` を `history/YYYYMMDD.md` として保存

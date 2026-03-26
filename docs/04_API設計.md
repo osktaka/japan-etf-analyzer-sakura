@@ -160,10 +160,12 @@
 | GET | /notes | 公開記事一覧取得 | - | 不要 |
 | GET | /notes/{slug} | 記事詳細取得 | - | 不要 |
 | POST | /notes/sync | 記事同期 | - | APIキー |
+| GET | /sitemap.xml | サイトマップ生成 | - | 不要 |
 
 **備考:**
 - `/notes/sync` はAPIキー認証（`Authorization: Bearer <NOTES_API_KEY>`）で保護
 - 公開APIは `status=published` かつ `published_at <= 現在日時` の記事のみ返す
+- `/sitemap.xml` は静的ページと公開記事のURLを含むXMLサイトマップを動的生成
 
 ### 3.5 管理者用API
 

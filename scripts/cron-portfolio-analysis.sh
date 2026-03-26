@@ -148,28 +148,10 @@ EOF
   fi
 
   if [ -n "$LATEST_DRAFT" ]; then
-    # ドラフトのfrontmatterからslugを抽出してノート記事ファイルを特定
-    SLUG=$(grep -m1 '^slug:' "$LATEST_DRAFT" 2>/dev/null | sed 's/^slug:[[:space:]]*//' | tr -d '[:space:]')
-    if [ -z "$SLUG" ]; then
-      # slugがなければファイル名から推定（YYYYMMDD_draft.md → YYYYMMDD_*.md）
-      DRAFT_DATE=$(basename "$LATEST_DRAFT" | grep -o '^[0-9]\{8\}')
-      LATEST_NOTE=$(ls -t frontend/src/content/notes/${DRAFT_DATE}_*.md 2>/dev/null | head -1)
-    else
-      LATEST_NOTE="frontend/src/content/notes/${SLUG}.md"
-      if [ ! -f "$LATEST_NOTE" ]; then
-        echo "Warning: Expected note file not found: $LATEST_NOTE"
-        LATEST_NOTE=""
-      fi
-    fi
-
-    if [ -n "$LATEST_NOTE" ]; then
-      echo "Starting publish_note.py --sync-production for: $LATEST_NOTE"
-      docker compose exec -T backend python scripts/publish_note.py \
-        "$LATEST_NOTE" --sync-production 2>&1 || true
-      echo "publish_note.py completed."
-    else
-      echo "Warning: No note file found for draft=$LATEST_DRAFT, skipping DB sync."
-    fi
+    echo "Starting publish_note.py --sync-production for: $LATEST_DRAFT"
+    docker compose exec -T backend python scripts/publish_note.py \
+      "$LATEST_DRAFT" --sync-production 2>&1 || true
+    echo "publish_note.py completed."
   else
     echo "Warning: No draft file found, skipping DB sync."
   fi

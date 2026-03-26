@@ -1,10 +1,16 @@
 """Public note API routes."""
 
-from flask import Blueprint, request
+from datetime import date
+
+from flask import Blueprint, Response, request
+from markupsafe import escape
 
 from src.services.note_service import NoteService
 from src.utils import api_response, error_response
 from src.utils.decorators import api_key_required
+
+SITE_URL = "https://kima3.net/japan-etf-analyzer"
+STATIC_PAGES = ["/", "/compare", "/market", "/notes"]
 
 
 def create_note_bp():
@@ -60,5 +66,49 @@ def create_note_bp():
 
         note = service.sync_note(data)
         return api_response(data=note, message="記事を同期しました")
+
+    return bp
+
+
+def create_sitemap_bp():
+    """Create sitemap blueprint."""
+    bp = Blueprint("sitemap", __name__)
+    service = NoteService()
+
+    @bp.route("/sitemap.xml", methods=["GET"])
+    def sitemap():
+        """Generate sitemap.xml dynamically.
+
+        GET /api/v1/sitemap.xml
+        """
+        today = date.today().isoformat()
+        urls = []
+
+        # Static pages
+        for page in STATIC_PAGES:
+            loc = f"{SITE_URL}{page}"
+            urls.append(f"  <url>\n    <loc>{escape(loc)}</loc>"
+                        f"\n    <lastmod>{today}</lastmod>\n  </url>")
+
+        # Published notes
+        notes = service.get_published_notes()
+        for note in notes:
+            slug = escape(note["slug"])
+            lastmod = (note.get("updated_at")
+                       or note.get("published_at")
+                       or today)
+            if hasattr(lastmod, "isoformat"):
+                lastmod = lastmod.isoformat()
+            # Extract date portion (YYYY-MM-DD) from ISO datetime
+            lastmod = lastmod[:10]
+            loc = f"{SITE_URL}/notes/{slug}"
+            urls.append(f"  <url>\n    <loc>{escape(loc)}</loc>"
+                        f"\n    <lastmod>{lastmod}</lastmod>\n  </url>")
+
+        xml = ('<?xml version="1.0" encoding="UTF-8"?>\n'
+               '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+               + "\n".join(urls) + "\n</urlset>")
+
+        return Response(xml, content_type="application/xml")
 
     return bp
