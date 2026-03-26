@@ -6,6 +6,15 @@ import { useNote } from '../hooks/useNotes'
 import { ROUTES } from '../utils/constants'
 import styles from './NoteDetailPage.module.css'
 
+/** Remove leading h1 from markdown if it matches the title */
+function stripLeadingTitle(content: string, title: string): string {
+  const match = content.match(/^#\s+(.+)\n/)
+  if (match && match[1].trim() === title.trim()) {
+    return content.slice(match[0].length).trimStart()
+  }
+  return content
+}
+
 /** Note detail page */
 export function NoteDetailPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -50,11 +59,6 @@ export function NoteDetailPage() {
             <time dateTime={note.published_at}>
               {note.published_at.slice(0, 10)}
             </time>
-            {note.updated_at && (
-              <span className={styles.updated}>
-                （更新: {note.updated_at}）
-              </span>
-            )}
             {note.status === 'draft' && (
               <span className={styles.unpublishedBadge}>未公開</span>
             )}
@@ -62,7 +66,7 @@ export function NoteDetailPage() {
         </header>
         <div className={styles.content}>
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
-            {note.content}
+            {stripLeadingTitle(note.content, note.title)}
           </ReactMarkdown>
         </div>
       </article>

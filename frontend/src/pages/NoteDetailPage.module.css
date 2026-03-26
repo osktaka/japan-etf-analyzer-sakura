@@ -42,10 +42,6 @@
   color: var(--color-text-muted);
 }
 
-.updated {
-  color: var(--color-text-muted);
-}
-
 /* Markdown content styles */
 .content {
   font-size: 1.125rem;
