@@ -78,3 +78,6 @@ backend/scripts/output/
 # ポートフォリオ分析の一時ファイル
 .tmp/
 backend/data/
+
+# X投稿履歴
+.claude/x-posts-history.md
