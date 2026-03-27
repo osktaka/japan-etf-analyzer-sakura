@@ -1,4 +1,4 @@
-"""Demo API routes - read-only endpoints for unauthenticated users."""
+"""Demo API routes - endpoints for unauthenticated demo user access."""
 from flask import Blueprint, request
 
 from src.models import User
@@ -6,7 +6,7 @@ from src.services.cash_flow_service import CashFlowService
 from src.services.favorite_service import FavoriteService
 from src.services.portfolio_service import PortfolioService
 from src.services.trade_service import TradeService
-from src.utils import api_response
+from src.utils import api_response, error_response
 
 # Module-level cache for demo user PK
 _demo_user_pk = None
@@ -124,6 +124,42 @@ def create_demo_bp():
         trades = trade_service.get_user_trades(user_id=user_pk)
         return api_response(data=trades)
 
+    @bp.route("/trades", methods=["POST"])
+    def create_trade():
+        """Create a demo trade.
+
+        POST /api/v1/demo/trades
+        """
+        user_pk = _get_demo_user_pk()
+        if not user_pk:
+            return error_response("デモユーザーが見つかりません", 404)
+
+        data = request.get_json()
+        if not data:
+            return error_response("リクエストボディが必要です", 400)
+
+        required_fields = ["etf_code", "trade_type", "quantity", "price", "trade_date"]
+        for field in required_fields:
+            if field not in data:
+                return error_response(f"{field}は必須です", 400)
+
+        trade, err = trade_service.create_trade(
+            user_id=user_pk,
+            etf_code=data["etf_code"],
+            trade_type=data["trade_type"],
+            quantity=data["quantity"],
+            price=data["price"],
+            trade_date=data["trade_date"],
+            memo=data.get("memo"),
+        )
+
+        if err:
+            return error_response(err, 400)
+
+        return api_response(
+            data=trade.to_dict(), message="デモ取引を登録しました", status_code=201
+        )
+
     @bp.route("/cash-flows", methods=["GET"])
     def get_cash_flows():
         """Get demo user's cash flows.
@@ -135,5 +171,41 @@ def create_demo_bp():
             return api_response(data=[])
         cash_flows = cash_flow_service.get_user_cash_flows(user_pk)
         return api_response(data=cash_flows)
+
+    @bp.route("/cash-flows", methods=["POST"])
+    def create_cash_flow():
+        """Create a demo cash flow.
+
+        POST /api/v1/demo/cash-flows
+        """
+        user_pk = _get_demo_user_pk()
+        if not user_pk:
+            return error_response("デモユーザーが見つかりません", 404)
+
+        data = request.get_json()
+        if not data:
+            return error_response("リクエストボディが必要です", 400)
+
+        required_fields = ["flow_type", "amount", "flow_date"]
+        for field in required_fields:
+            if field not in data:
+                return error_response(f"{field}は必須です", 400)
+
+        cash_flow, err = cash_flow_service.create_cash_flow(
+            user_id=user_pk,
+            flow_type=data["flow_type"],
+            amount=data["amount"],
+            flow_date=data["flow_date"],
+            memo=data.get("memo"),
+        )
+
+        if err:
+            return error_response(err, 400)
+
+        return api_response(
+            data=cash_flow.to_dict(),
+            message="デモ入出金を登録しました",
+            status_code=201,
+        )
 
     return bp

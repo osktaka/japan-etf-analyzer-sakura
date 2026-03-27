@@ -39,6 +39,43 @@
 - v2（ブレインストーミング方式）: `/pf-v2` -- 3並列会議+マージ統合、モード指定不要
 - デフォルトで v2（`/pf-v2`）を使用する
 
+### 2.5. 取引実行（条件付き）
+
+分析結果にリバランス提案（売買アクション）が含まれ、以下の条件を満たす場合に自動実行する:
+
+1. **事前チェック**:
+   - `GET /api/v1/demo/portfolio` で現金残高・総資産を確認
+   - `GET /api/v1/demo/portfolio/holdings` で保有銘柄・数量を確認
+   - 買い: 現金残高 >= 数量 × 価格、かつ金額 <= 総資産の20%
+   - 売り: 保有数量 >= 売却数量
+
+2. **実行（開発→本番の順）**:
+   ```bash
+   # 開発環境
+   curl -X POST http://localhost:8902/api/v1/demo/trades \
+     -H "Content-Type: application/json" \
+     -d '{"etf_code":"XXXX","trade_type":"buy","quantity":N,"price":NNN.N,"trade_date":"YYYY-MM-DD","memo":"[auto] 理由"}'
+
+   # 開発が成功した場合のみ本番環境にも実行
+   curl -X POST https://kima3.net/japan-etf-analyzer/api/v1/demo/trades \
+     -H "Content-Type: application/json" \
+     -d '（同じリクエストボディ）'
+   ```
+   - 入出金が必要な場合は `POST /api/v1/demo/cash-flows` も同様に両環境へ送信
+
+3. **環境一致チェック**（全取引・入出金の登録完了後に1回実行）:
+   ```bash
+   # 開発環境のポートフォリオ取得
+   curl -s http://localhost:8902/api/v1/demo/portfolio
+
+   # 本番環境のポートフォリオ取得
+   curl -s https://kima3.net/japan-etf-analyzer/api/v1/demo/portfolio
+   ```
+   - 両環境の `total_asset`、`cash_balance`、`holdings_count` が一致していることを確認
+   - 不一致の場合は警告を出力し、差分を報告する（自動修正はしない）
+
+4. **実行後**: HISTORY.md の未実行アクションを実行済みに更新し、取引詳細（銘柄、数量、価格）を記載
+
 ### 3. レポート保存
 
 分析レポートはスキルの既定動作により `reports/demo/` に保存される:
@@ -49,7 +86,7 @@ reports/demo/YYYYMMDD_demo.md
 
 → **次のアクション**: 記事を作成する場合は `/publish-report` でドラフトを作成してください。分析のみで記事化しない場合は HISTORY.md を直接更新してください。
 
-### 4. 記事ドラフト作成
+### 4. 記事ドラフト作成（demoのみ）
 
 `/publish-report` スキル（ドラフトモード）でノート記事のドラフトを作成する。
 
@@ -60,7 +97,7 @@ reports/demo/YYYYMMDD_demo.md
 
 → **次のアクション**: ドラフトを確認し、記事確定へ進む場合は `/publish-report confirm` と指示してください。修正が必要な場合は再度 `/publish-report` を実行してください。
 
-### 5. 記事確定・公開
+### 5. 記事確定・公開（demoのみ）
 
 ユーザーの確定指示後、`/publish-report confirm` で記事を確定・公開する。
 
@@ -83,7 +120,13 @@ reports/demo/YYYYMMDD_demo.md
 
 ## 重要ルール
 
-1. **取引の登録はユーザー（人間）が実施する** -- Claude Code は提案のみ行い、実際の売買登録は行わない
+1. **取引の自動実行** -- Claude Code は分析結果に基づき、デモ用API経由で取引を自動実行できる。以下の条件を遵守すること:
+   - 買い付け前に現金残高を確認（`GET /api/v1/demo/portfolio`）し、買い付け金額が現金残高を超えないこと
+   - 売却前に保有数量を確認（`GET /api/v1/demo/portfolio/holdings`）し、売却数量が保有数量以下であること
+   - memoフィールドに `[auto]` プレフィックスと実行理由を記載すること
+   - 1日の取引回数は最大5件まで
+   - 1回の取引金額は総資産の20%以下であること
+   - 取引実行後、HISTORY.md の未実行アクションを更新すること
 2. **分析前に必ず HISTORY.md を読み込むこと** -- 過去の文脈なしに分析すると一貫性が失われる
 3. **ドラフト→確定の原則** -- 記事はまずドラフトとして作成し、ユーザーの確定指示があるまで HISTORY.md を更新しない。HISTORY.md の更新と history/ のスナップショット作成は記事確定時のみ実行する
 4. **分析のみ（記事化なし）の場合** -- 分析レポート生成後に HISTORY.md を直接更新してよい（記事化しない場合はドラフトフローは不要）
