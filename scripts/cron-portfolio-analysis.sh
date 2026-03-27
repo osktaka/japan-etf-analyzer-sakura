@@ -23,6 +23,18 @@ if ! docker compose ps --status running 2>/dev/null | grep -q "backend"; then
   exit 1
 fi
 
+# 東証取引日チェック（祝日はスキップ）
+# 土日はcrontabで除外済み。ここでは日本の祝日のみチェック
+if docker compose exec -T backend python3 -c "
+import jpholiday
+from datetime import date
+import sys
+sys.exit(0 if jpholiday.is_holiday(date.today()) else 1)
+" 2>/dev/null; then
+  echo "Holiday detected ($(date +%Y-%m-%d)), skipping portfolio analysis."
+  exit 0
+fi
+
 # --- Step 2: portfolio-analysis-v2 実行 ---
 
 # プロンプト構築（シングルクオートEOFで展開抑制→後から変数置換）
