@@ -8,7 +8,17 @@ from pathlib import Path
 # プロジェクトルートを特定（backend/scripts/ → backend/ → project root）
 SCRIPT_DIR = Path(__file__).resolve().parent
 BACKEND_DIR = SCRIPT_DIR.parent
-PROJECT_ROOT = BACKEND_DIR.parent
+# Docker環境では /app/scripts/ 構造のため、BACKEND_DIR.parent が / になる
+# APP_BASE_DIR環境変数 or ディレクトリ構造で判定
+_candidate = BACKEND_DIR.parent
+if os.environ.get("APP_BASE_DIR"):
+    PROJECT_ROOT = Path(os.environ["APP_BASE_DIR"])
+elif (_candidate / "backend" / "src").exists():
+    # 本番/ローカル: backend/scripts/ → backend/ → project root
+    PROJECT_ROOT = _candidate
+else:
+    # Docker: /app/scripts/ → BACKEND_DIR=/app がプロジェクトルート
+    PROJECT_ROOT = BACKEND_DIR
 
 # 環境変数設定（本番環境用）
 os.environ.setdefault("APP_BASE_DIR", str(PROJECT_ROOT))
