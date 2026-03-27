@@ -81,3 +81,6 @@ backend/data/
 
 # X投稿履歴
 .claude/x-posts-history.md
+
+# Claudeメモリ（ユーザーローカル）
+.claude/projects/
