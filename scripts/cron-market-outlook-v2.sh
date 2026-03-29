@@ -27,11 +27,15 @@ import os, sys
 from datetime import date, datetime
 import jpholiday
 
-timing = os.environ.get('TIMING', '')
-if not timing:
-    timing = 'am' if datetime.now().hour < 12 else 'pm'
+import zoneinfo
+JST = zoneinfo.ZoneInfo('Asia/Tokyo')
 
-today = date.today()
+timing = os.environ.get('TIMING', '')
+now_jst = datetime.now(JST)
+if not timing:
+    timing = 'am' if now_jst.hour < 12 else 'pm'
+
+today = now_jst.date()
 wd = today.weekday()  # 0=Mon ... 6=Sun
 
 if wd == 6:

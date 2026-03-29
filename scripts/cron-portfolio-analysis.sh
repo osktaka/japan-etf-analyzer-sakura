@@ -27,9 +27,11 @@ fi
 # 土日はcrontabで除外済み。ここでは日本の祝日のみチェック
 if docker compose exec -T backend python3 -c "
 import jpholiday
-from datetime import date
-import sys
-sys.exit(0 if jpholiday.is_holiday(date.today()) else 1)
+from datetime import datetime
+import zoneinfo, sys
+JST = zoneinfo.ZoneInfo('Asia/Tokyo')
+today = datetime.now(JST).date()
+sys.exit(0 if jpholiday.is_holiday(today) else 1)
 " 2>/dev/null; then
   echo "Holiday detected ($(date +%Y-%m-%d)), skipping portfolio analysis."
   exit 0
