@@ -42,7 +42,7 @@ class StockSplitRepository(BaseRepository[StockSplit]):
             .filter(
                 StockSplit.etf_code == etf_code,
                 StockSplit.is_applied.is_(True),
-                StockSplit.split_date >= since_date,
+                StockSplit.split_date > since_date,
             )
             .order_by(StockSplit.split_date.asc())
             .all()
