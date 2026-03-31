@@ -42,7 +42,7 @@ cron自動実行・対話実行の両方に対応。
 
 ### Step 3: ファイル出力
 
-`reports/tmp_x_posts_v2_HHMM.md`（HHMMは実行時の日本時間、例: `tmp_x_posts_v2_0700.md`） にWriteで出力する。
+`reports/tmp_x_posts_v2_HHMM.md`（HHMMは実行時の日本時間、例: `tmp_x_posts_v2_0700.md`） にWriteで出力する。**ユーザーへの確認は不要。Writeツールを直接実行すること。**
 
 ## AM投稿テンプレート（米国市場終了後・3投稿構成）
 

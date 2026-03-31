@@ -86,6 +86,18 @@ fi
 
 sleep 3
 
+# 新しいtmpファイルが作成されたか確認（2分以内に更新されたファイルが必要）
+LATEST_TMP=$(ls -t "$PROJECT_DIR/reports/tmp_x_posts_v2_"*.md 2>/dev/null | head -1)
+if [[ -z "$LATEST_TMP" ]]; then
+  echo "Step 2 succeeded but no tmp file found, skipping x-publish" >&2
+  exit 1
+fi
+FILE_AGE=$(( $(date +%s) - $(stat -c %Y "$LATEST_TMP") ))
+if [[ $FILE_AGE -gt 120 ]]; then
+  echo "Step 2 succeeded but tmp file is stale (${FILE_AGE}s old), skipping x-publish" >&2
+  exit 1
+fi
+
 # 3. X投稿実行
 setsid --wait claude -p "/x-publish --auto --production" \
   --allowedTools "Read Edit Bash Glob" \
