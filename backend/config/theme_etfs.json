@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "updated_at": "2026-04-16",
+  "candidates": [
+    {"key": "semiconductor_200a", "symbol": "200A.T", "name": "日経半導体株指数", "theme": "AI・半導体", "etf_code": "200A"},
+    {"key": "semiconductor_2644", "symbol": "2644.T", "name": "GX半導体関連日本株", "theme": "AI・半導体", "etf_code": "2644"},
+    {"key": "semiconductor_282a", "symbol": "282A.T", "name": "GX半導体トップ10日本株", "theme": "AI・半導体", "etf_code": "282A"},
+    {"key": "defense_466a", "symbol": "466A.T", "name": "GX防衛テック", "theme": "防衛", "etf_code": "466A"},
+    {"key": "defense_513a", "symbol": "513A.T", "name": "GX防衛テック日本株", "theme": "防衛", "etf_code": "513A"},
+    {"key": "defense_498a", "symbol": "498A.T", "name": "防衛航空宇宙欧州株", "theme": "防衛", "etf_code": "498A"},
+    {"key": "high_dividend_1489", "symbol": "1489.T", "name": "日経平均高配当株50", "theme": "高配当", "etf_code": "1489"},
+    {"key": "high_dividend_2084", "symbol": "2084.T", "name": "NF日本高配当株アクティブ", "theme": "高配当", "etf_code": "2084"},
+    {"key": "dx_2626", "symbol": "2626.T", "name": "GXデジタルイノベーション日本株", "theme": "DX", "etf_code": "2626"},
+    {"key": "dx_2836", "symbol": "2836.T", "name": "GXフィンテック日本株", "theme": "DX", "etf_code": "2836"},
+    {"key": "ev_2867", "symbol": "2867.T", "name": "GX自動運転&EV日本株", "theme": "EV", "etf_code": "2867"},
+    {"key": "clean_energy_2637", "symbol": "2637.T", "name": "GXクリーンテック日本株", "theme": "クリーンエネルギー", "etf_code": "2637"},
+    {"key": "value_2080", "symbol": "2080.T", "name": "PBR1倍割れ解消推進ETF", "theme": "バリュー", "etf_code": "2080"},
+    {"key": "value_2529", "symbol": "2529.T", "name": "NF野村株主還元70", "theme": "バリュー", "etf_code": "2529"},
+    {"key": "healthcare_2639", "symbol": "2639.T", "name": "GXバイオ&メドテック日本株", "theme": "ヘルスケア", "etf_code": "2639"},
+    {"key": "healthcare_1621", "symbol": "1621.T", "name": "NF医薬品(TOPIX-17)", "theme": "ヘルスケア", "etf_code": "1621"},
+    {"key": "inbound_497a", "symbol": "497A.T", "name": "インバウンド消費関連日本株", "theme": "インバウンド", "etf_code": "497A"},
+    {"key": "inbound_2645", "symbol": "2645.T", "name": "GXレジャー&エンタメ日本株", "theme": "インバウンド", "etf_code": "2645"},
+    {"key": "game_2640", "symbol": "2640.T", "name": "GXゲーム&アニメ日本株", "theme": "ゲーム", "etf_code": "2640"},
+    {"key": "bank_315a", "symbol": "315A.T", "name": "GX銀行高配当日本株", "theme": "金融", "etf_code": "315A"},
+    {"key": "small_cap_2516", "symbol": "2516.T", "name": "東証グロース250ETF", "theme": "小型株・グロース", "etf_code": "2516"},
+    {"key": "small_cap_1563", "symbol": "1563.T", "name": "東証グロースコアETF", "theme": "小型株・グロース", "etf_code": "1563"},
+    {"key": "reit_1343", "symbol": "1343.T", "name": "NF東証REIT指数", "theme": "REIT", "etf_code": "1343"},
+    {"key": "infra_2847", "symbol": "2847.T", "name": "GX新成長インフラ日本株", "theme": "インフラ", "etf_code": "2847"},
+    {"key": "us_tech_2244", "symbol": "2244.T", "name": "GX USテックトップ20", "theme": "米国テック", "etf_code": "2244"},
+    {"key": "us_semiconductor_2243", "symbol": "2243.T", "name": "GX半導体(米国)", "theme": "米国半導体", "etf_code": "2243"}
+  ]
+}

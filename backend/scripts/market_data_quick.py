@@ -10,6 +10,7 @@ DB接続は不要。
 """
 
 import json
+import os
 import sys
 from datetime import datetime, timezone, timedelta
 
@@ -97,6 +98,36 @@ PRE_US_TICKERS = {
 }
 
 JST = timezone(timedelta(hours=9))
+
+# テーマETF設定ファイルパス
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+ACTIVE_THEME_ETFS_PATH = os.path.join(
+    SCRIPT_DIR, "..", "config", "active_theme_etfs.json"
+)
+
+
+def _load_active_theme_etfs():
+    """動的テーマETFをactive_theme_etfs.jsonから読み込む。
+
+    PM_TICKERSと同じetf_proxy dict形式に変換して返す。
+    ファイル不在・JSON読み込みエラー時は空dictを返す（後方互換）。
+    """
+    try:
+        with open(ACTIVE_THEME_ETFS_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return {}
+
+    tickers = {}
+    for entry in data.get("active", []):
+        key = f"theme_{entry['key']}"
+        tickers[key] = {
+            "symbol": entry["symbol"],
+            "data_type": "etf_proxy",
+            "proxy_for": f"{entry['theme']}({entry['name']})",
+            "etf_code": entry["etf_code"],
+        }
+    return tickers
 
 # テクニカル指標を算出するティッカー名の定義
 # AM用: S&P500, NASDAQ に RSI のみ
@@ -413,6 +444,9 @@ def fetch_market_data(include_pm=False, include_pre_us=False):
     tickers = dict(TICKERS)
     if include_pm:
         tickers.update(PM_TICKERS)
+        active_themes = _load_active_theme_etfs()
+        if active_themes:
+            tickers.update(active_themes)
     if include_pre_us:
         tickers.update(PRE_US_TICKERS)
 

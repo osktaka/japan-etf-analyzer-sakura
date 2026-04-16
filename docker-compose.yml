@@ -11,6 +11,7 @@ services:
       - ./backend/src:/app/src
       - ./backend/tests:/app/tests
       - ./backend/scripts:/app/scripts
+      - ./backend/config:/app/config
       - ./logs:/app/logs
       - ./backend/data:/app/data
       - ./reports:/app/reports
@@ -44,6 +45,7 @@ services:
     volumes:
       - ./backend/src:/app/src
       - ./backend/scripts:/app/scripts
+      - ./backend/config:/app/config
       - ./logs:/app/logs
       - ./backend/data:/app/data
     depends_on:
