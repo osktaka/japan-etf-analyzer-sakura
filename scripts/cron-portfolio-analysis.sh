@@ -129,9 +129,11 @@ else
   fi
 fi
 
-# --- Step 4: ドラフト記事作成（demoユーザーのみ） ---
+# --- Step 4: ドラフト記事作成（demoユーザー かつ 金曜日のみ） ---
+# JSTの曜日で判定（5=金曜）
+DOW_JST=$(TZ=Asia/Tokyo date +%u)
 
-if [ "$USER" = "demo" ]; then
+if [ "$USER" = "demo" ] && [ "$DOW_JST" = "5" ]; then
   echo "Starting publish-report auto for user=$USER ..."
 
   read -r -d '' PROMPT4 << 'EOF'
@@ -267,7 +269,7 @@ STEP5EOF
   fi
 
 else
-  echo "Skipping publish-report (user=$USER is not demo)"
+  echo "Skipping publish-report (user=$USER, dow=$DOW_JST; demo以外 または 金曜以外)"
 fi
 
 echo "Done. Log: $LOGFILE"
