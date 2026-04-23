@@ -253,7 +253,7 @@ STEP5EOF
 
       echo "Starting Step 6: X publish..."
 
-      setsid --wait timeout 300 claude -p "/x-publish --auto --production" \
+      setsid --wait timeout 300 claude -p "/x-publish --auto --production --file \"$X_POSTS_FILE\"" \
         --allowedTools "Read Edit Bash Glob" \
         >> "$LOGFILE" 2>&1
       STEP6_EXIT=$?

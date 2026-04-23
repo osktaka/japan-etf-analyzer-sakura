@@ -103,10 +103,13 @@ LOGDIR="/tmp"
 unset CLAUDECODE
 
 # --now 実行時はファイル名を tmp_x_posts_v2_now.md にする
+# それ以外は NOW (HH:MM) から HHMM を生成（FAKE_TIME/通常時刻の両方に対応）
 if [[ "$FORCE_NOW" == true ]]; then
   INTRADAY_PROMPT="/market-intraday （出力ファイル名はtmp_x_posts_v2_now.mdにすること）"
+  TARGET_FILE="reports/tmp_x_posts_v2_now.md"
 else
   INTRADAY_PROMPT="/market-intraday"
+  TARGET_FILE="reports/tmp_x_posts_v2_${NOW//:/}.md"
 fi
 
 setsid --wait claude -p "$INTRADAY_PROMPT" \
@@ -127,7 +130,7 @@ fi
 sleep 3
 
 # 2. X投稿実行
-setsid --wait claude -p "/x-publish --auto --production" \
+setsid --wait claude -p "/x-publish --auto --production --file \"${TARGET_FILE}\"" \
   --allowedTools "Read Edit Bash Glob" \
   > "$LOGDIR/x-publish-intraday-${TIMESTAMP}.log" 2>&1
 STEP2_EXIT=$?
