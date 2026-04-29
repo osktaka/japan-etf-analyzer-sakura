@@ -7,6 +7,11 @@ services:
       - "8902:8902"
     env_file:
       - .env
+    environment:
+      - APP_BASE_DIR=/app
+      - STRATEGY_FILE=/app/docs/12_personal_strategy.md
+      - ADVISOR_REPORTS_DIR=/app/reports/test/daily-tasks
+      - ADVISOR_USER_ID=test
     volumes:
       - ./backend/src:/app/src
       - ./backend/tests:/app/tests
@@ -15,6 +20,7 @@ services:
       - ./logs:/app/logs
       - ./backend/data:/app/data
       - ./reports:/app/reports
+      - ./docs:/app/docs:ro
       - ./frontend/dist:/app/frontend/dist
     command: flask run --host=0.0.0.0 --port=8902
 
@@ -42,12 +48,19 @@ services:
       dockerfile: Dockerfile.scheduler
     env_file:
       - .env
+    environment:
+      - APP_BASE_DIR=/app
+      - STRATEGY_FILE=/app/docs/12_personal_strategy.md
+      - ADVISOR_REPORTS_DIR=/app/reports/test/daily-tasks
+      - ADVISOR_USER_ID=test
     volumes:
       - ./backend/src:/app/src
       - ./backend/scripts:/app/scripts
       - ./backend/config:/app/config
       - ./logs:/app/logs
       - ./backend/data:/app/data
+      - ./reports:/app/reports
+      - ./docs:/app/docs:ro
     depends_on:
       - backend
     restart: unless-stopped
