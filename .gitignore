@@ -84,3 +84,10 @@ backend/data/
 
 # Claudeメモリ（ユーザーローカル）
 .claude/projects/
+
+# Claude Code内部のロック・スケジュール状態
+.claude/scheduled_tasks.lock
+.claude/worktrees/
+
+# バッチが生成する動的データファイル
+backend/config/active_theme_etfs.json
