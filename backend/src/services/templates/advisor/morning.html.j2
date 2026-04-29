@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html><body style="font-family: sans-serif; line-height: 1.6;">
+<h1>朝のタスク {{ today.strftime('%Y-%m-%d') }}（{{ user_id }}）</h1>
+<p>戦略リビジョン: {{ strategy_revision }} / ベンチマーク: {{ benchmark }}</p>
+
+<h2>当日のアクション</h2>
+{% if sells_today %}
+<h3>売却予定</h3>
+<ul>
+{% for s in sells_today %}
+<li><strong>{{ s.code }} {{ s.name }}</strong> {{ s.quantity }}株 ({{ s.action }}) — {{ s.reason }}</li>
+{% endfor %}
+</ul>
+{% else %}
+<p>売却予定なし</p>
+{% endif %}
+
+{% if buys_today %}
+<h3>買付予定（DCA）</h3>
+<ul>
+{% for b in buys_today %}
+<li><strong>{{ b.code }}</strong> {{ b.quantity }}株</li>
+{% endfor %}
+</ul>
+{% else %}
+<p>DCA予定なし</p>
+{% endif %}
+
+<h2>前日終値ベース要約</h2>
+<ul>
+<li>総資産: {{ "{:,.0f}".format(total_asset) }} 円</li>
+<li>評価額: {{ "{:,.0f}".format(total_value) }} 円</li>
+<li>現金: {{ "{:,.0f}".format(cash_balance) }} 円</li>
+<li>保有銘柄数: {{ holdings_count }}</li>
+{% if daily_change_pct is not none %}
+<li>前日比: {{ "%+.2f"|format(daily_change_pct) }}%</li>
+{% endif %}
+</ul>
+
+{% if triggers %}
+<h2>機械ルール発動中</h2>
+<ul>
+{% for t in triggers %}
+<li><strong>[{{ t.severity }}] {{ t.rule_kind }}</strong>: {{ t.message }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+<hr>
+<p style="color:#888;font-size:12px;">このメールは自動送信されています。戦略変更は <code>docs/12_personal_strategy.md</code> を編集してください。</p>
+</body></html>

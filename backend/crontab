@@ -22,4 +22,16 @@
 # NAME: バッチ監視・自動リトライ（5分間隔）
 */5 * * * * cd /app && /usr/local/bin/python3 scripts/batch_monitor.py >> /app/logs/batch_monitor.log 2>&1
 
+# NAME: 朝のタスク通知（平日 7:00）
+0 7 * * 1-5 cd /app && /usr/local/bin/python3 scripts/daily_advisor_morning.py >> /app/logs/advisor_morning.log 2>&1
+
+# NAME: 夕方のレビュー通知（平日 17:30、update_etf_data 17:00 後）
+30 17 * * 1-5 cd /app && /usr/local/bin/python3 scripts/daily_advisor_evening.py >> /app/logs/advisor_evening.log 2>&1
+
+# NAME: 週次レビュー通知（毎週金曜 18:00）
+0 18 * * 5 cd /app && /usr/local/bin/python3 scripts/daily_advisor_weekly.py >> /app/logs/advisor_weekly.log 2>&1
+
+# NAME: 機械ルール監視（平日 9:00-15:55、5分間隔）
+*/5 9-15 * * 1-5 cd /app && /usr/local/bin/python3 scripts/mechanical_rule_watcher.py >> /app/logs/advisor_watcher.log 2>&1
+
 # 空行が必要(cronの仕様)

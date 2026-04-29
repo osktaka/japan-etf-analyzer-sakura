@@ -28,6 +28,7 @@ from .user_settings import UserSettings  # noqa: E402
 from .etf_metrics_history import EtfMetricsHistory  # noqa: E402
 from .cash_flow import CashFlow  # noqa: E402
 from .note import Note  # noqa: E402
+from .mechanical_rule_event import MechanicalRuleEvent  # noqa: E402
 
 __all__ = [
     "db",
@@ -48,4 +49,5 @@ __all__ = [
     "EtfMetricsHistory",
     "CashFlow",
     "Note",
+    "MechanicalRuleEvent",
 ]

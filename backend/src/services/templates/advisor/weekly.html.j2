@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html><body style="font-family: sans-serif; line-height: 1.6;">
+<h1>週次レビュー {{ today.strftime('%Y-%m-%d') }}（{{ user_id }}）</h1>
+<p>戦略リビジョン: {{ strategy_revision }} / 期間: {{ period_label or "過去5営業日" }}</p>
+
+<h2>サマリー</h2>
+<ul>
+<li>総資産: {{ "{:,.0f}".format(total_asset) }} 円</li>
+<li>評価額: {{ "{:,.0f}".format(total_value) }} 円</li>
+<li>現金: {{ "{:,.0f}".format(cash_balance) }} 円</li>
+<li>保有銘柄数: {{ holdings_count }}</li>
+</ul>
+
+<h2>ベンチマーク比較</h2>
+{% if portfolio_return_pct is not none and benchmark_return_pct is not none %}
+<ul>
+<li>ポートフォリオ: {{ "%+.2f"|format(portfolio_return_pct) }}%</li>
+<li>{{ benchmark }}: {{ "%+.2f"|format(benchmark_return_pct) }}%</li>
+<li>α: <strong>{{ "%+.2f"|format(alpha_pp) }}pp</strong></li>
+</ul>
+{% else %}
+<p>データ不足のためα算出不可</p>
+{% endif %}
+
+<h2>配分</h2>
+<ul>
+{% for d in allocation_drifts %}
+<li><strong>{{ d.bucket }}</strong>: {{ "%.1f"|format(d.actual_pct) }}% (目標 {{ "%.1f"|format(d.target_pct) }}%, 差 {{ "%+.2f"|format(d.drift_pp) }}pp){% if d.is_warn %} <span style="color:#c00">⚠️</span>{% endif %}</li>
+{% endfor %}
+</ul>
+
+{% if triggers %}
+<h2>今週の機械ルール発動</h2>
+<ul>
+{% for t in triggers %}
+<li><strong>[{{ t.severity }}] {{ t.rule_kind }}</strong>{% if t.code %} ({{ t.code }}){% endif %}: {{ t.message }}</li>
+{% endfor %}
+</ul>
+{% else %}
+<h2>今週の機械ルール発動</h2>
+<p>なし</p>
+{% endif %}
+
+<hr>
+<p style="color:#888;font-size:12px;">来週の振り返り対象: 配分逸脱 / α逸脱 / 売買予定の遵守</p>
+</body></html>
