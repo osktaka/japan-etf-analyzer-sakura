@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html><body style="font-family: sans-serif; line-height: 1.6;">
+<h1 style="color:#c00;">機械ルール アラート {{ today.strftime('%Y-%m-%d %H:%M') }}（{{ user_id }}）</h1>
+
+{% for t in triggers %}
+<h2>[{{ t.severity }}] {{ t.rule_kind }}{% if t.code %} - {{ t.code }}{% endif %}</h2>
+<p>{{ t.message }}</p>
+
+{% if t.payload %}
+<h3>詳細</h3>
+<ul>
+{% for k, v in t.payload.items() %}
+<li>{{ k }}: {{ v }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+<hr>
+{% endfor %}
+
+<p style="color:#888;font-size:12px;">戦略書: <code>docs/12_personal_strategy.md</code> (rev {{ strategy_revision }})</p>
+</body></html>

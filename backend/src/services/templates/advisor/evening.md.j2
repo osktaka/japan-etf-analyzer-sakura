@@ -1,0 +1,34 @@
+# 夕方のレビュー {{ today.strftime('%Y-%m-%d') }}（{{ user_id }}）
+
+戦略リビジョン: {{ strategy_revision }}
+
+## 当日終値ベースの保有状況
+
+- 総資産: {{ "{:,.0f}".format(total_asset) }} 円
+- 評価額: {{ "{:,.0f}".format(total_value) }} 円
+- 現金: {{ "{:,.0f}".format(cash_balance) }} 円
+- 保有銘柄数: {{ holdings_count }}
+{% if daily_change_pct is not none %}
+- 前日比: {{ "%+.2f"|format(daily_change_pct) }}%
+{% endif %}
+
+## 配分
+
+{% for d in allocation_drifts %}
+- **{{ d.bucket }}**: {{ "%.1f"|format(d.actual_pct) }}% (目標 {{ "%.1f"|format(d.target_pct) }}%, 差 {{ "%+.2f"|format(d.drift_pp) }}pp){% if d.is_warn %} ⚠️ 逸脱{% endif %}
+{% endfor %}
+
+{% if triggers %}
+## 機械ルール発動
+
+{% for t in triggers %}
+- **[{{ t.severity }}] {{ t.rule_kind }}**{% if t.code %} ({{ t.code }}){% endif %}: {{ t.message }}
+{% endfor %}
+{% else %}
+## 機械ルール発動
+
+なし
+{% endif %}
+
+---
+ベンチマーク: {{ benchmark }}

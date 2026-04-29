@@ -21,7 +21,12 @@ beautifulsoup4==4.12.2
 multitasking==0.0.11
 jpholiday==1.0.3
 holidays==0.65
-PyYAML>=5.0
+# Daily Advisor (毎日のタスク通知システム)
+# PyYAML 5.4.1: pure-python fallback あり、FreeBSD 13.0 互換
+PyYAML==5.4.1
+# Jinja2 はFlask 3.0.3が依存しており既にinstall済 (>=3.1.2)
+# 明示pinで本番再現性を担保
+Jinja2==3.1.6
 
 # Production (for Sakura)
 gunicorn==21.2.0
