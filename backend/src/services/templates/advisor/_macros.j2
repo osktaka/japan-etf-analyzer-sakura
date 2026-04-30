@@ -1,0 +1,28 @@
+{# 用語翻訳マクロ集. 全テンプレートでこのファイルを import する. #}
+
+{# bucket: アロケーションのカテゴリ翻訳 #}
+{%- macro bucket_label(bucket) -%}
+{{ {'core': 'コア（市場全体）', 'theme': 'テーマ', 'cash': '現金'}.get(bucket, bucket) }}
+{%- endmacro -%}
+
+{# rule_kind: 機械ルール種別の翻訳 #}
+{%- macro rule_kind_label(rule_kind) -%}
+{{ {
+    'loss_cut': '損切りライン到達',
+    'take_profit_1': '利確ライン到達（第1段）',
+    'take_profit_2': '利確ライン到達（第2段）',
+    'n225_drawdown': 'N225急落',
+    'allocation_drift': '配分逸脱'
+}.get(rule_kind, rule_kind) }}
+{%- endmacro -%}
+
+{# action: 売却/買付アクションの翻訳 (SellAction.action フィールド) #}
+{%- macro action_label(action) -%}
+{{ {
+    'all': '全量売却',
+    'schedule': '月次定期売却',
+    'sell_schedule': '月次定期売却',
+    'dca': '定期積立（DCA）',
+    'DCA': '定期積立（DCA）'
+}.get(action, action) }}
+{%- endmacro -%}

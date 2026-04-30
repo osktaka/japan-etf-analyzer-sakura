@@ -111,7 +111,8 @@ class TestRender:
         assert "1540 純金" in md
         assert "2559" in md
         assert "前日比: +0.50%" in md
-        assert "<h1>" in html
+        # h1 はインラインスタイル付与のため部分一致
+        assert "<h1" in html
         assert "1,000,000" in md
         # リード文・タグ
         assert "**要対応**" in md
@@ -120,9 +121,10 @@ class TestRender:
     def test_evening(self, renderer):
         md, html = renderer.render(_evening_ctx())
         assert "夕方のレビュー" in md
-        assert "core" in md
-        assert "theme" in md
-        assert "<h1>" in html
+        # bucket は翻訳マクロで「コア（市場全体）」「テーマ」表記
+        assert "コア（市場全体）" in md
+        assert "テーマ" in md
+        assert "<h1" in html
         # リード文
         assert "本日 -0.30%" in md
         assert "**静観**" in md
@@ -142,7 +144,8 @@ class TestRender:
         ctx = _weekly_ctx(alpha_pp=-3.0)
         md, _ = renderer.render(ctx)
         assert "来週の推奨アクション" in md
-        assert "core ETFの追加買付" in md
+        # bucket 翻訳済み: core → コア（市場全体）
+        assert "コア（市場全体）ETFの追加買付" in md
         assert "**要確認**" in md
 
     def test_alert(self, renderer):
@@ -157,26 +160,45 @@ class TestRender:
 
 
 class TestSubject:
+    """新仕様の件名フォーマット: `[M/D 区分] 結論`.
+
+    user_id は削除され、日付は短縮形（`5/7`）。
+    各 kind の代表的状態を検証する。
+    """
+
     def test_morning_subject(self, renderer):
-        s = renderer.subject_for(_morning_ctx())
-        assert "[ETF朝/要対応]" in s
-        assert "2026-05-07" in s
-        assert "test" in s
+        # morning + アクションあり → `[5/7 朝] アクション2件・所要X分`
+        ctx = _morning_ctx()  # today=2026-05-07, sells=1, buys=1
+        s = renderer.subject_for(ctx)
+        assert s.startswith(f"[{ctx.today.month}/{ctx.today.day} 朝]")
+        assert "アクション" in s
+        assert "件" in s
+        assert "所要" in s
+        # user_id (test) は件名に含めない
+        assert "test" not in s
 
     def test_morning_subject_quiet(self, renderer):
-        # 売買予定なし → 静観
+        # 売買予定なし、警告もなし → `[5/7 朝] 通常運用日`
         ctx = _morning_ctx(sells_today=(), buys_today=())
         s = renderer.subject_for(ctx)
-        assert "[ETF朝/静観]" in s
+        assert s == f"[{ctx.today.month}/{ctx.today.day} 朝] 通常運用日"
 
     def test_evening_subject_quiet(self, renderer):
-        s = renderer.subject_for(_evening_ctx())
-        assert "[ETF夕/静観]" in s
+        # 警告 drift なし → `[4/29 夕] 本日 -0.3%`
+        ctx = _evening_ctx()
+        s = renderer.subject_for(ctx)
+        assert s.startswith(f"[{ctx.today.month}/{ctx.today.day} 夕]")
+        assert "本日" in s
+        # 静観時は配分逸脱件数が含まれない
+        assert "配分逸脱" not in s
 
     def test_weekly_subject(self, renderer):
-        # α=-1.0 (>-2.0) → 静観
-        s = renderer.subject_for(_weekly_ctx())
-        assert "[ETF週次/静観]" in s
+        # α=-1.0 (>-2.0) かつ警告なし → `[5/1 週次] α -1.0pp`
+        ctx = _weekly_ctx()
+        s = renderer.subject_for(ctx)
+        assert s.startswith(f"[{ctx.today.month}/{ctx.today.day} 週次]")
+        assert "α" in s
+        assert "pp" in s
 
     def test_alert_critical_subject(self, renderer):
         ctx = NotificationContext(
@@ -193,12 +215,15 @@ class TestSubject:
             ),
         )
         s = renderer.subject_for(ctx)
-        assert "緊急" in s
-        assert "[ETF/緊急]" in s
+        # `[4/29 緊急] 損切到達: 1306` 形式
+        assert s.startswith(f"[{ctx.today.month}/{ctx.today.day} 緊急]")
+        assert "1306" in s
 
     def test_alert_warn_subject(self, renderer):
-        s = renderer.subject_for(_alert_ctx())
-        assert "[ETF/要確認]" in s
+        ctx = _alert_ctx()
+        s = renderer.subject_for(ctx)
+        # `[4/29 要確認] N225急落` 形式
+        assert s.startswith(f"[{ctx.today.month}/{ctx.today.day} 要確認]")
 
 
 class TestUrgencyTag:

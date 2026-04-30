@@ -1,13 +1,17 @@
-# 朝のタスク {{ today.strftime('%Y-%m-%d') }}（{{ user_id }}）
+{% from '_macros.j2' import bucket_label, rule_kind_label, action_label %}
+# 朝のタスク {{ today.strftime('%Y-%m-%d') }}
 
-> **{{ urgency_tag }}** — {{ summary }}
+> **{{ urgency_tag }}** — アクション{{ action_count }}件・所要{{ estimated_minutes }}分
+>
+> {{ summary | replace('\n\n', '\n>\n> ') }}
+
+## 今日の発注
 
 {% if sells_today or buys_today %}
-## 今日の発注
 {% if sells_today %}
 ### 売却
 {% for s in sells_today %}
-- **{{ s.code }} {{ s.name }}** {{ s.quantity }}株 ({{ s.action }}) — {{ s.reason }}
+- **{{ s.code }} {{ s.name }}** {{ s.quantity }}株（{{ action_label(s.action) }}） — {{ s.reason }}
 {% endfor %}
 {% endif %}
 {% if buys_today %}
@@ -16,23 +20,27 @@
 - **{{ b.code }}** {{ b.quantity }}株
 {% endfor %}
 {% endif %}
+{% else %}
+本日の発注予定なし。
 {% endif %}
 
-## 根拠データ
+## 文脈
 
-- 総資産: {{ "{:,.0f}".format(total_asset) }} 円 / 評価額: {{ "{:,.0f}".format(total_value) }} 円 / 現金: {{ "{:,.0f}".format(cash_balance) }} 円
+- 資産: {{ "{:,.0f}".format(total_asset) }}円
+{% if daily_change_pct is not none %}- 前日比: {{ "%+.2f"|format(daily_change_pct) }}%
+{% endif %}
+{% if month_start_change_pct is not none %}- 月初比: {{ "%+.2f"|format(month_start_change_pct) }}%
+{% endif %}
+- 評価額: {{ "{:,.0f}".format(total_value) }}円 / 現金: {{ "{:,.0f}".format(cash_balance) }}円
 - 保有銘柄数: {{ holdings_count }}
-{% if daily_change_pct is not none %}
-- 前日比: {{ "%+.2f"|format(daily_change_pct) }}%
-{% endif %}
 
 {% if triggers %}
-## 機械ルール（参考）
+## 機械ルール
+
 {% for t in triggers %}
-- **[{{ t.severity }}] {{ t.rule_kind }}**{% if t.code %} ({{ t.code }}){% endif %}: {{ t.message }}
+- **[{{ t.severity }}] {{ rule_kind_label(t.rule_kind) }}**{% if t.code %}（{{ t.code }}）{% endif %}: {{ t.message }}
 {% endfor %}
 {% endif %}
 
 ---
-戦略書: docs/12_personal_strategy.md (rev {{ strategy_revision }})
-ベンチマーク: {{ benchmark }}
+戦略書 rev. {{ strategy_revision }} / ベンチマーク: {{ benchmark }}

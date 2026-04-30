@@ -85,5 +85,9 @@ class NotificationContext:
     benchmark_return_pct: Optional[float] = None
     portfolio_return_pct: Optional[float] = None
 
+    # 月初比（リード文の「文脈」行で使用）
+    month_start_total_asset: Optional[float] = None
+    month_start_change_pct: Optional[float] = None
+
     # その他
     extra: Dict[str, Any] = field(default_factory=dict)

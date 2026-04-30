@@ -1,36 +1,62 @@
+{% from '_macros.j2' import bucket_label, rule_kind_label, action_label %}
 <!DOCTYPE html>
-<html><body style="font-family: sans-serif; line-height: 1.6;">
-<h1>夕方のレビュー {{ today.strftime('%Y-%m-%d') }}（{{ user_id }}）</h1>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="x-apple-disable-message-reformatting">
+<title>夕方のレビュー {{ today.strftime('%Y-%m-%d') }}</title>
+</head>
+<body style="margin:0;padding:0;background:#fff;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic',sans-serif;font-size:16px;line-height:1.6;color:#222;">
+<div style="max-width:600px;margin:0 auto;padding:16px;">
 
-<blockquote style="border-left:4px solid #888;padding:8px 12px;background:#f7f7f7;">
-<strong>{{ urgency_tag }}</strong> — {{ summary }}
-</blockquote>
+<h1 style="font-size:20px;margin:0 0 16px;">夕方のレビュー {{ today.strftime('%Y-%m-%d') }}</h1>
 
-<h2>根拠データ</h2>
-<ul>
-<li>総資産: {{ "{:,.0f}".format(total_asset) }} 円 / 評価額: {{ "{:,.0f}".format(total_value) }} 円 / 現金: {{ "{:,.0f}".format(cash_balance) }} 円</li>
-<li>保有銘柄数: {{ holdings_count }}</li>
+<div style="background:#f7f9fc;border-left:4px solid #2c5aa0;border-radius:4px;padding:16px;margin:16px 0;">
+  <p style="margin:0 0 8px;font-weight:bold;font-size:18px;">{{ urgency_tag }}</p>
+  <p style="margin:0;">{{ summary | e | replace('\n\n', '<br><br>') | replace('\n', '<br>') | safe }}</p>
+</div>
+
+<h2 style="font-size:18px;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;">本日の市場文脈</h2>
+<dl style="margin:0;">
+  <dt style="font-weight:bold;margin-top:8px;">資産</dt>
+  <dd style="margin:0 0 4px 0;">{{ "{:,.0f}".format(total_asset) }}円</dd>
 {% if daily_change_pct is not none %}
-<li>前日比: {{ "%+.2f"|format(daily_change_pct) }}%</li>
+  <dt style="font-weight:bold;margin-top:8px;">前日比</dt>
+  <dd style="margin:0 0 4px 0;">{{ "%+.2f"|format(daily_change_pct) }}%</dd>
 {% endif %}
-</ul>
+{% if month_start_change_pct is not none %}
+  <dt style="font-weight:bold;margin-top:8px;">月初比</dt>
+  <dd style="margin:0 0 4px 0;">{{ "%+.2f"|format(month_start_change_pct) }}%</dd>
+{% endif %}
+  <dt style="font-weight:bold;margin-top:8px;">評価額 / 現金</dt>
+  <dd style="margin:0 0 4px 0;">{{ "{:,.0f}".format(total_value) }}円 / {{ "{:,.0f}".format(cash_balance) }}円</dd>
+  <dt style="font-weight:bold;margin-top:8px;">保有銘柄数</dt>
+  <dd style="margin:0 0 4px 0;">{{ holdings_count }}</dd>
+</dl>
 
-<h2>配分</h2>
-<ul>
+<h2 style="font-size:18px;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;">配分</h2>
+<ul style="margin:0;padding-left:20px;">
 {% for d in allocation_drifts %}
-<li><strong>{{ d.bucket }}</strong>: {{ "%.1f"|format(d.actual_pct) }}% (目標 {{ "%.1f"|format(d.target_pct) }}%, 差 {{ "%+.2f"|format(d.drift_pp) }}pp){% if d.is_warn %} <span style="color:#c00">⚠️ 逸脱</span>{% endif %}</li>
+<li style="margin-bottom:8px;">
+  {% if d.is_warn %}<span style="display:inline-block;background:#fce4e4;color:#c00;padding:2px 8px;border-radius:4px;font-size:12px;margin-right:6px;">警告</span>{% endif %}
+  <strong>{{ bucket_label(d.bucket) }}</strong>: {{ "%.1f"|format(d.actual_pct) }}%（目標 {{ "%.1f"|format(d.target_pct) }}%、差 {{ "%+.2f"|format(d.drift_pp) }}pp）
+</li>
 {% endfor %}
 </ul>
 
 {% if triggers %}
-<h2>機械ルール</h2>
-<ul>
+<h2 style="font-size:18px;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;">機械ルール</h2>
+<ul style="margin:0;padding-left:20px;">
 {% for t in triggers %}
-<li><strong>[{{ t.severity }}] {{ t.rule_kind }}</strong>{% if t.code %} ({{ t.code }}){% endif %}: {{ t.message }}</li>
+<li style="margin-bottom:8px;"><strong>[{{ t.severity }}] {{ rule_kind_label(t.rule_kind) }}</strong>{% if t.code %}（{{ t.code }}）{% endif %}: {{ t.message }}</li>
 {% endfor %}
 </ul>
 {% endif %}
 
-<hr>
-<p style="color:#888;font-size:12px;">戦略書: <code>docs/12_personal_strategy.md</code> (rev {{ strategy_revision }}) / ベンチマーク: {{ benchmark }}</p>
-</body></html>
+<hr style="border:none;border-top:1px solid #ddd;margin:24px 0 12px;">
+<p style="color:#888;font-size:13px;margin:0;">戦略書 rev. {{ strategy_revision }} / ベンチマーク: {{ benchmark }}</p>
+
+</div>
+</body>
+</html>

@@ -1,28 +1,33 @@
-# 夕方のレビュー {{ today.strftime('%Y-%m-%d') }}（{{ user_id }}）
+{% from '_macros.j2' import bucket_label, rule_kind_label, action_label %}
+# 夕方のレビュー {{ today.strftime('%Y-%m-%d') }}
 
-> **{{ urgency_tag }}** — {{ summary }}
+> **{{ urgency_tag }}**
+>
+> {{ summary | replace('\n\n', '\n>\n> ') }}
 
-## 根拠データ
+## 本日の市場文脈
 
-- 総資産: {{ "{:,.0f}".format(total_asset) }} 円 / 評価額: {{ "{:,.0f}".format(total_value) }} 円 / 現金: {{ "{:,.0f}".format(cash_balance) }} 円
-- 保有銘柄数: {{ holdings_count }}
-{% if daily_change_pct is not none %}
-- 前日比: {{ "%+.2f"|format(daily_change_pct) }}%
+- 資産: {{ "{:,.0f}".format(total_asset) }}円
+{% if daily_change_pct is not none %}- 前日比: {{ "%+.2f"|format(daily_change_pct) }}%
 {% endif %}
+{% if month_start_change_pct is not none %}- 月初比: {{ "%+.2f"|format(month_start_change_pct) }}%
+{% endif %}
+- 評価額: {{ "{:,.0f}".format(total_value) }}円 / 現金: {{ "{:,.0f}".format(cash_balance) }}円
+- 保有銘柄数: {{ holdings_count }}
 
 ## 配分
 
-{% for d in allocation_drifts -%}
-- **{{ d.bucket }}**: {{ "%.1f"|format(d.actual_pct) }}% (目標 {{ "%.1f"|format(d.target_pct) }}%, 差 {{ "%+.2f"|format(d.drift_pp) }}pp){% if d.is_warn %} ⚠️ 逸脱{% endif +%}
+{% for d in allocation_drifts %}
+- {% if d.is_warn %}[警告] {% endif %}**{{ bucket_label(d.bucket) }}**: {{ "%.1f"|format(d.actual_pct) }}%（目標 {{ "%.1f"|format(d.target_pct) }}%、差 {{ "%+.2f"|format(d.drift_pp) }}pp）
 {% endfor %}
 
 {% if triggers %}
 ## 機械ルール
+
 {% for t in triggers %}
-- **[{{ t.severity }}] {{ t.rule_kind }}**{% if t.code %} ({{ t.code }}){% endif %}: {{ t.message }}
+- **[{{ t.severity }}] {{ rule_kind_label(t.rule_kind) }}**{% if t.code %}（{{ t.code }}）{% endif %}: {{ t.message }}
 {% endfor %}
 {% endif %}
 
 ---
-戦略書: docs/12_personal_strategy.md (rev {{ strategy_revision }})
-ベンチマーク: {{ benchmark }}
+戦略書 rev. {{ strategy_revision }} / ベンチマーク: {{ benchmark }}

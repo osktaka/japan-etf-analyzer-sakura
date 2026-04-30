@@ -1,12 +1,15 @@
 """Notification renderer: render NotificationContext into Markdown/HTML."""
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Tuple
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, select_autoescape
 
 from src.services.daily_advisor_service import NotificationContext, RuleTrigger
+
+logger = logging.getLogger(__name__)
 
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates" / "advisor"
 
@@ -26,6 +29,9 @@ _ALERT_SEVERITY_TAG = {
     "warn": "要確認",
     "info": "情報",
 }
+
+# 件名長の目安上限（全角 + 半角ASCIIを len() でカウント、25字相当として40文字）
+SUBJECT_MAX_LEN = 40
 
 
 class NotificationRenderer:
@@ -76,12 +82,30 @@ class NotificationRenderer:
             "period_label": ctx.period_label,
             "benchmark_return_pct": ctx.benchmark_return_pct,
             "portfolio_return_pct": ctx.portfolio_return_pct,
+            "month_start_total_asset": ctx.month_start_total_asset,
+            "month_start_change_pct": ctx.month_start_change_pct,
             "extra": ctx.extra,
-            # 新規: 件名タグ・リード文
+            # 新規: 件名タグ・リード文・件数系
             "urgency_tag": self.urgency_tag(ctx),
             "summary": self.summary_for(ctx),
+            "action_count": self.action_count(ctx),
+            "estimated_minutes": self.estimated_minutes(ctx),
             "recommended_action": self.recommended_action,
         }
+
+    # ------------------------------------------------------------
+    # 件数・所要時間ヘルパ
+    # ------------------------------------------------------------
+    def action_count(self, ctx: NotificationContext) -> int:
+        """当日アクション数（売り + 買い）."""
+        return len(ctx.sells_today) + len(ctx.buys_today)
+
+    def estimated_minutes(self, ctx: NotificationContext) -> int:
+        """所要時間の目安（分）. 0件なら0、それ以外は3〜30分の範囲にクリップ."""
+        n = self.action_count(ctx)
+        if n == 0:
+            return 0
+        return max(3, min(30, round(2 + 2.5 * n)))
 
     # ------------------------------------------------------------
     # 緊急度タグ
@@ -116,10 +140,14 @@ class NotificationRenderer:
         return "静観"
 
     # ------------------------------------------------------------
-    # リード文
+    # リード文（3行構造）
     # ------------------------------------------------------------
     def summary_for(self, ctx: NotificationContext) -> str:
-        """リード文 (1〜2文)."""
+        """リード文 (3行構造: 結論 / 文脈 / 根拠).
+
+        Markdown形式。改行は \\n\\n で段落分け。
+        3行目（根拠）は省略可（critical/warnのときのみ表示）。
+        """
         if ctx.kind == "morning":
             return self._summary_morning(ctx)
         if ctx.kind == "evening":
@@ -131,45 +159,127 @@ class NotificationRenderer:
         return ""
 
     @staticmethod
-    def _summary_morning(ctx: NotificationContext) -> str:
+    def _join_lines(lines: list) -> str:
+        return "\n\n".join(line for line in lines if line)
+
+    @classmethod
+    def _context_line(
+        cls,
+        ctx: NotificationContext,
+        *,
+        include_alpha: bool = False,
+    ) -> str:
+        """2行目（文脈）: 資産・前日比・月初比・α・配分状態."""
+        parts = []
+        # 資産
+        parts.append(f"資産{int(ctx.total_asset):,}円")
+
+        # 前日比
+        if ctx.daily_change_pct is not None:
+            parts.append(f"前日{ctx.daily_change_pct:+.2f}%")
+
+        # 月初比
+        if ctx.month_start_change_pct is not None:
+            parts.append(f"月初{ctx.month_start_change_pct:+.2f}%")
+
+        # α (weekly)
+        if include_alpha and ctx.alpha_pp is not None:
+            parts.append(f"α{ctx.alpha_pp:+.2f}pp")
+
+        # 配分状態
+        warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
+        if warn_drifts:
+            parts.append(f"配分逸脱{len(warn_drifts)}件")
+        else:
+            parts.append("配分は許容範囲内")
+
+        return "、".join(parts) + "。"
+
+    @classmethod
+    def _reason_line(cls, ctx: NotificationContext) -> str:
+        """3行目（根拠）: critical/warn の発動理由を簡潔に. なければ空文字."""
+        # critical 優先
         critical = next(
             (t for t in ctx.triggers if t.severity == "critical"), None
         )
         if critical is not None:
+            payload = critical.payload or {}
+            change = payload.get("change_pct")
+            threshold = payload.get("threshold_pct")
+            if critical.rule_kind == "n225_drawdown" and change is not None:
+                return (
+                    f"N225が{change:+.1f}%急落、"
+                    "戦略書5.3条のリスクオフ条項に該当。"
+                )
             return (
-                f"緊急: 機械ルール{critical.rule_kind}が発動中。寄付前に対応判断を。"
+                f"機械ルール{critical.rule_kind}が発動: {critical.message}。"
             )
 
-        n_sell = len(ctx.sells_today)
-        n_buy = len(ctx.buys_today)
-        if n_sell and n_buy:
-            return f"今日 売却{n_sell}件・買付{n_buy}件の発注予定。"
-        if n_sell:
-            return f"今日 売却{n_sell}件の発注予定。"
-        if n_buy:
-            return f"今日 買付{n_buy}件のDCA予定。"
-
+        # 配分逸脱（warn）
         warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
-        warn_other_rules = [
+        if warn_drifts:
+            worst = max(warn_drifts, key=lambda d: abs(d.drift_pp))
+            over = abs(worst.drift_pp) - 5.0
+            return (
+                f"警告閾値±5ppを{over:.1f}pp超過（{worst.bucket}）。"
+            )
+
+        # 他のwarn
+        warn_other = [
             t for t in ctx.triggers
             if t.severity == "warn" and t.rule_kind != "allocation_drift"
         ]
-        if warn_drifts or warn_other_rules:
-            n_warn = len(warn_drifts) if warn_drifts else len(warn_other_rules)
-            return (
-                f"配分逸脱{n_warn}件継続中。発注はなし、週次メールで方針確認。"
-            )
+        if warn_other:
+            t = warn_other[0]
+            return f"機械ルール{t.rule_kind}が警告レベルで発動: {t.message}。"
 
-        return "今日は発注予定なし。市場は静観でOK。"
+        return ""
 
-    @staticmethod
-    def _summary_evening(ctx: NotificationContext) -> str:
+    @classmethod
+    def _summary_morning(cls, ctx: NotificationContext) -> str:
         critical = next(
             (t for t in ctx.triggers if t.severity == "critical"), None
         )
-        if critical is not None:
-            return f"緊急: 機械ルール{critical.rule_kind}が発動。即対応検討を。"
+        n_sell = len(ctx.sells_today)
+        n_buy = len(ctx.buys_today)
 
+        # 1行目: 結論
+        if critical is not None:
+            conclusion = (
+                f"緊急: 機械ルール{critical.rule_kind}が発動中。寄付前に対応判断を。"
+            )
+        elif n_sell and n_buy:
+            conclusion = f"今日 売却{n_sell}件・買付{n_buy}件の発注予定。"
+        elif n_sell:
+            conclusion = f"今日 売却{n_sell}件の発注予定。"
+        elif n_buy:
+            conclusion = f"今日 買付{n_buy}件のDCA予定。"
+        else:
+            warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
+            warn_other_rules = [
+                t for t in ctx.triggers
+                if t.severity == "warn" and t.rule_kind != "allocation_drift"
+            ]
+            if warn_drifts or warn_other_rules:
+                n_warn = (
+                    len(warn_drifts) if warn_drifts else len(warn_other_rules)
+                )
+                conclusion = (
+                    f"配分逸脱{n_warn}件継続中。"
+                    "発注はなし、週次メールで方針確認。"
+                )
+            else:
+                conclusion = "今日は発注予定なし。市場は静観でOK。通常運用継続。"
+
+        context_line = cls._context_line(ctx)
+        reason = cls._reason_line(ctx)
+        return cls._join_lines([conclusion, context_line, reason])
+
+    @classmethod
+    def _summary_evening(cls, ctx: NotificationContext) -> str:
+        critical = next(
+            (t for t in ctx.triggers if t.severity == "critical"), None
+        )
         warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
         warn_other_rules = [
             t for t in ctx.triggers
@@ -178,48 +288,71 @@ class NotificationRenderer:
         n_drift = len(warn_drifts)
         n_rule = len(warn_other_rules)
 
-        if ctx.daily_change_pct is not None:
-            if n_drift or n_rule:
-                parts = []
-                if n_drift:
-                    parts.append(f"配分逸脱{n_drift}件")
-                if n_rule:
-                    parts.append(f"ルール警告{n_rule}件")
-                return (
-                    f"本日 {ctx.daily_change_pct:+.2f}%。"
-                    f"{' / '.join(parts)}あり、明日の見直し対象。"
+        # 1行目: 結論
+        if critical is not None:
+            conclusion = (
+                f"緊急: 機械ルール{critical.rule_kind}が発動。即対応検討を。"
+            )
+        else:
+            if ctx.daily_change_pct is not None:
+                if n_drift or n_rule:
+                    parts = []
+                    if n_drift:
+                        parts.append(f"配分逸脱{n_drift}件")
+                    if n_rule:
+                        parts.append(f"ルール警告{n_rule}件")
+                    conclusion = (
+                        f"本日 {ctx.daily_change_pct:+.2f}%。"
+                        f"{' / '.join(parts)}あり、明日の見直し対象。"
+                    )
+                else:
+                    conclusion = (
+                        f"本日 {ctx.daily_change_pct:+.2f}%。"
+                        "配分・ルール異常なし。"
+                    )
+            else:
+                suffix = "あり" if (n_drift or n_rule) else "なし"
+                conclusion = (
+                    f"終値ベースのレビュー。配分逸脱{n_drift}件{suffix}。"
                 )
-            return f"本日 {ctx.daily_change_pct:+.2f}%。配分・ルール異常なし。"
 
-        suffix = "あり" if (n_drift or n_rule) else "なし"
-        return f"終値ベースのレビュー。配分逸脱{n_drift}件{suffix}。"
+        context_line = cls._context_line(ctx)
+        reason = cls._reason_line(ctx)
+        return cls._join_lines([conclusion, context_line, reason])
 
-    @staticmethod
-    def _summary_weekly(ctx: NotificationContext) -> str:
+    @classmethod
+    def _summary_weekly(cls, ctx: NotificationContext) -> str:
         warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
         n_warn = len(warn_drifts)
         suffix = "あり" if n_warn > 0 else "なし"
 
+        # 1行目: 結論
         if ctx.alpha_pp is None:
-            return f"5営業日リターン算出不可。配分逸脱{n_warn}件{suffix}。"
-
-        if ctx.alpha_pp <= -2.0:
-            return (
-                f"今週 α {ctx.alpha_pp:+.2f}pp（{ctx.benchmark}に負け）。"
-                f"配分是正の買付/売却を推奨。"
+            conclusion = (
+                f"5営業日リターン算出不可。配分逸脱{n_warn}件{suffix}。"
             )
-        if ctx.alpha_pp <= 2.0:
-            return (
+        elif ctx.alpha_pp <= -2.0:
+            conclusion = (
+                f"今週 α {ctx.alpha_pp:+.2f}pp（{ctx.benchmark}に負け）。"
+                "配分是正の買付/売却を推奨。"
+            )
+        elif ctx.alpha_pp <= 2.0:
+            conclusion = (
                 f"今週 α {ctx.alpha_pp:+.2f}pp（ベンチマーク並み）。"
                 f"配分逸脱{n_warn}件{suffix}。"
             )
-        return (
-            f"今週 α {ctx.alpha_pp:+.2f}pp（アウトパフォーム）。"
-            f"配分逸脱{n_warn}件{suffix}。"
-        )
+        else:
+            conclusion = (
+                f"今週 α {ctx.alpha_pp:+.2f}pp（アウトパフォーム）。"
+                f"配分逸脱{n_warn}件{suffix}。"
+            )
 
-    @staticmethod
-    def _summary_alert(ctx: NotificationContext) -> str:
+        context_line = cls._context_line(ctx, include_alpha=True)
+        reason = cls._reason_line(ctx)
+        return cls._join_lines([conclusion, context_line, reason])
+
+    @classmethod
+    def _summary_alert(cls, ctx: NotificationContext) -> str:
         n = len(ctx.triggers)
         if n == 0:
             return "アラートなし。"
@@ -237,7 +370,12 @@ class NotificationRenderer:
             kinds_str = ", ".join(kinds)
         else:
             kinds_str = ", ".join(kinds[:3]) + f" ... 他{len(kinds) - 3}件"
-        return f"{sev_label}アラート{n}件: {kinds_str}"
+        conclusion = f"{sev_label}アラート{n}件: {kinds_str}"
+
+        # alertは資産情報がない可能性が高い → context_lineは出さない
+        # 根拠だけ追加
+        reason = cls._reason_line(ctx)
+        return cls._join_lines([conclusion, reason])
 
     # ------------------------------------------------------------
     # 推奨アクション
@@ -248,18 +386,123 @@ class NotificationRenderer:
         return _RECOMMENDED_ACTION.get(trigger.rule_kind, _DEFAULT_RECOMMENDED_ACTION)
 
     # ------------------------------------------------------------
-    # 件名
+    # 件名（短縮 M/D + アクション/警告/α 表記）
     # ------------------------------------------------------------
     def subject_for(self, ctx: NotificationContext) -> str:
-        """件名を生成 (タグ付き新形式)."""
-        date_str = ctx.today.strftime("%Y-%m-%d")
-        tag = self.urgency_tag(ctx)
+        """件名を生成（短縮M/D + 状況サマリ）.
+
+        フォーマット例:
+        - morning静観: `[4/30 朝] 通常運用日`
+        - morningアクション: `[4/30 朝] アクション2件・所要5分`
+        - evening静観: `[4/30 夕] 本日 +0.5%`
+        - evening警告: `[4/30 夕] 本日 -1.2% / 配分逸脱2件`
+        - weekly: `[4/30 週次] α +0.3pp` または `[4/30 週次] α -2.5pp / 来週3件`
+        - alert単発: `[4/30 緊急] 損切到達: 1306`
+        - alert複数: `[4/30 緊急] 機械ルール3件発動`
+        """
+        date_str = f"{ctx.today.month}/{ctx.today.day}"
+
         if ctx.kind == "morning":
-            return f"[ETF朝/{tag}] {date_str} {ctx.user_id}"
-        if ctx.kind == "evening":
-            return f"[ETF夕/{tag}] {date_str} {ctx.user_id}"
-        if ctx.kind == "weekly":
-            return f"[ETF週次/{tag}] {date_str} {ctx.user_id}"
-        if ctx.kind == "alert":
-            return f"[ETF/{tag}] 機械ルール {date_str}"
-        return f"[ETF/{tag}] {ctx.kind} {date_str}"
+            subject = self._subject_morning(ctx, date_str)
+        elif ctx.kind == "evening":
+            subject = self._subject_evening(ctx, date_str)
+        elif ctx.kind == "weekly":
+            subject = self._subject_weekly(ctx, date_str)
+        elif ctx.kind == "alert":
+            subject = self._subject_alert(ctx, date_str)
+        else:
+            subject = f"[{date_str} {ctx.kind}]"
+
+        # 件名長チェック（目安40文字以内）
+        if len(subject) > SUBJECT_MAX_LEN:
+            logger.warning(
+                "subject exceeds %d chars (len=%d): %s",
+                SUBJECT_MAX_LEN,
+                len(subject),
+                subject,
+            )
+        return subject
+
+    def _subject_morning(self, ctx: NotificationContext, date_str: str) -> str:
+        n = self.action_count(ctx)
+        critical = next(
+            (t for t in ctx.triggers if t.severity == "critical"), None
+        )
+        if critical is not None:
+            return f"[{date_str} 緊急] {critical.rule_kind}発動"
+        if n > 0:
+            mins = self.estimated_minutes(ctx)
+            return f"[{date_str} 朝] アクション{n}件・所要{mins}分"
+        # warn 警告のみのケース
+        warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
+        warn_other = [
+            t for t in ctx.triggers
+            if t.severity == "warn" and t.rule_kind != "allocation_drift"
+        ]
+        if warn_drifts or warn_other:
+            n_warn = len(warn_drifts) or len(warn_other)
+            return f"[{date_str} 朝] 配分逸脱{n_warn}件"
+        return f"[{date_str} 朝] 通常運用日"
+
+    def _subject_evening(self, ctx: NotificationContext, date_str: str) -> str:
+        # 当日変動率
+        if ctx.daily_change_pct is not None:
+            change_str = f"本日 {ctx.daily_change_pct:+.1f}%"
+        else:
+            change_str = "本日 -"
+
+        warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
+        warn_other = [
+            t for t in ctx.triggers
+            if t.severity == "warn" and t.rule_kind != "allocation_drift"
+        ]
+        critical = next(
+            (t for t in ctx.triggers if t.severity == "critical"), None
+        )
+        if critical is not None:
+            return f"[{date_str} 緊急] {critical.rule_kind}発動"
+        if warn_drifts or warn_other:
+            n_warn = len(warn_drifts) or len(warn_other)
+            return f"[{date_str} 夕] {change_str} / 配分逸脱{n_warn}件"
+        return f"[{date_str} 夕] {change_str}"
+
+    def _subject_weekly(self, ctx: NotificationContext, date_str: str) -> str:
+        if ctx.alpha_pp is None:
+            alpha_str = "α 算出不可"
+        else:
+            alpha_str = f"α {ctx.alpha_pp:+.1f}pp"
+
+        # 来週のアクション件数（sells/buys は週次にはないが、警告件数を併記）
+        warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
+        n_warn = len(warn_drifts)
+        if ctx.alpha_pp is not None and ctx.alpha_pp <= -2.0:
+            if n_warn > 0:
+                return f"[{date_str} 週次] {alpha_str} / 来週{n_warn}件"
+            return f"[{date_str} 週次] {alpha_str}"
+        if n_warn > 0:
+            return f"[{date_str} 週次] {alpha_str} / 配分{n_warn}件"
+        return f"[{date_str} 週次] {alpha_str}"
+
+    def _subject_alert(self, ctx: NotificationContext, date_str: str) -> str:
+        n = len(ctx.triggers)
+        tag = self.urgency_tag(ctx)  # 緊急/要確認/情報
+
+        if n == 0:
+            return f"[{date_str} {tag}] アラートなし"
+        if n >= 2:
+            return f"[{date_str} {tag}] 機械ルール{n}件発動"
+
+        # 単発トリガー
+        t = ctx.triggers[0]
+        # 既知ルールで簡潔表記
+        rule_label = {
+            "loss_cut": "損切到達",
+            "take_profit_1": "利確第1段",
+            "take_profit_2": "利確第2段",
+            "n225_drawdown": "N225急落",
+            "allocation_drift": "配分逸脱",
+        }.get(t.rule_kind, t.rule_kind)
+
+        if t.code:
+            return f"[{date_str} {tag}] {rule_label}: {t.code}"
+        return f"[{date_str} {tag}] {rule_label}"

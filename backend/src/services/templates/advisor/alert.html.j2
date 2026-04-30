@@ -1,27 +1,53 @@
+{% from '_macros.j2' import bucket_label, rule_kind_label, action_label %}
+{# severity 判定: triggers の最大重大度に応じて結論ボックス色を決定 #}
+{% set severities = triggers | map(attribute='severity') | list %}
+{% if 'critical' in severities %}
+  {% set border_color = '#c00' %}
+{% elif 'warn' in severities %}
+  {% set border_color = '#e69500' %}
+{% else %}
+  {% set border_color = '#2c5aa0' %}
+{% endif %}
 <!DOCTYPE html>
-<html><body style="font-family: sans-serif; line-height: 1.6;">
-<h1 style="color:#c00;">機械ルール アラート {{ today.strftime('%Y-%m-%d %H:%M') }}（{{ user_id }}）</h1>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="x-apple-disable-message-reformatting">
+<title>機械ルール アラート {{ today.strftime('%Y-%m-%d %H:%M') }}</title>
+</head>
+<body style="margin:0;padding:0;background:#fff;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic',sans-serif;font-size:16px;line-height:1.6;color:#222;">
+<div style="max-width:600px;margin:0 auto;padding:16px;">
 
-<blockquote style="border-left:4px solid #c00;padding:8px 12px;background:#fff5f5;">
-<strong>{{ urgency_tag }}</strong> — {{ summary }}
-</blockquote>
+<h1 style="font-size:20px;margin:0 0 16px;color:{{ border_color }};">機械ルール アラート {{ today.strftime('%Y-%m-%d %H:%M') }}</h1>
+
+<div style="background:#f7f9fc;border-left:4px solid {{ border_color }};border-radius:4px;padding:16px;margin:16px 0;">
+  <p style="margin:0 0 8px;font-weight:bold;font-size:18px;">{{ urgency_tag }}</p>
+  <p style="margin:0;">{{ summary | e | replace('\n\n', '<br><br>') | replace('\n', '<br>') | safe }}</p>
+</div>
 
 {% for t in triggers %}
-<h2>[{{ t.severity }}] {{ t.rule_kind }}{% if t.code %} - {{ t.code }}{% endif %}</h2>
-<p><strong>推奨アクション</strong>: {{ recommended_action(t) }}</p>
-<p>{{ t.message }}</p>
+<h2 style="font-size:18px;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;">{{ rule_kind_label(t.rule_kind) }}{% if t.code %} - {{ t.code }}{% endif %} [{{ t.severity }}]</h2>
+
+<p style="margin:8px 0;"><strong>推奨アクション</strong>: {{ recommended_action(t) }}</p>
+
+<p style="margin:8px 0;">{{ t.message }}</p>
 
 {% if t.payload %}
-<h3>詳細</h3>
-<ul>
+<h3 style="font-size:16px;margin:16px 0 8px;">詳細</h3>
+<dl style="margin:0;">
 {% for k, v in t.payload.items() %}
-<li>{{ k }}: {{ v }}</li>
+<dt style="font-weight:bold;margin-top:8px;">{{ k }}</dt>
+<dd style="margin:0 0 4px 0;">{{ v }}</dd>
 {% endfor %}
-</ul>
+</dl>
 {% endif %}
 
-<hr>
+<hr style="border:none;border-top:1px solid #eee;margin:16px 0;">
 {% endfor %}
 
-<p style="color:#888;font-size:12px;">戦略書: <code>docs/12_personal_strategy.md</code> (rev {{ strategy_revision }})</p>
-</body></html>
+<p style="color:#888;font-size:13px;margin:0;">戦略書 rev. {{ strategy_revision }}</p>
+
+</div>
+</body>
+</html>

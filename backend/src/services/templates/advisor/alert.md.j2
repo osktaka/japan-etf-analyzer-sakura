@@ -1,9 +1,12 @@
-# 機械ルール アラート {{ today.strftime('%Y-%m-%d %H:%M') }}（{{ user_id }}）
+{% from '_macros.j2' import bucket_label, rule_kind_label, action_label %}
+# 機械ルール アラート {{ today.strftime('%Y-%m-%d %H:%M') }}
 
-> **{{ urgency_tag }}** — {{ summary }}
+> **{{ urgency_tag }}**
+>
+> {{ summary | replace('\n\n', '\n>\n> ') }}
 
 {% for t in triggers %}
-## [{{ t.severity }}] {{ t.rule_kind }}{% if t.code %} - {{ t.code }}{% endif +%}
+## {{ rule_kind_label(t.rule_kind) }}{% if t.code %} - {{ t.code }}{% endif %} [{{ t.severity }}]
 
 **推奨アクション**: {{ recommended_action(t) }}
 
@@ -11,12 +14,13 @@
 
 {% if t.payload %}
 詳細:
+
 {% for k, v in t.payload.items() %}
-- {{ k }}: {{ v }}
+- **{{ k }}**: {{ v }}
 {% endfor %}
 {% endif %}
 
 ---
 {% endfor %}
 
-戦略書: docs/12_personal_strategy.md (rev {{ strategy_revision }})
+戦略書 rev. {{ strategy_revision }}
