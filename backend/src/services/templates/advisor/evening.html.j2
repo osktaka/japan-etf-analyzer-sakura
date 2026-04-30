@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html><body style="font-family: sans-serif; line-height: 1.6;">
 <h1>夕方のレビュー {{ today.strftime('%Y-%m-%d') }}（{{ user_id }}）</h1>
-<p>戦略リビジョン: {{ strategy_revision }}</p>
 
-<h2>当日終値ベースの保有状況</h2>
+<blockquote style="border-left:4px solid #888;padding:8px 12px;background:#f7f7f7;">
+<strong>{{ urgency_tag }}</strong> — {{ summary }}
+</blockquote>
+
+<h2>根拠データ</h2>
 <ul>
-<li>総資産: {{ "{:,.0f}".format(total_asset) }} 円</li>
-<li>評価額: {{ "{:,.0f}".format(total_value) }} 円</li>
-<li>現金: {{ "{:,.0f}".format(cash_balance) }} 円</li>
+<li>総資産: {{ "{:,.0f}".format(total_asset) }} 円 / 評価額: {{ "{:,.0f}".format(total_value) }} 円 / 現金: {{ "{:,.0f}".format(cash_balance) }} 円</li>
 <li>保有銘柄数: {{ holdings_count }}</li>
 {% if daily_change_pct is not none %}
 <li>前日比: {{ "%+.2f"|format(daily_change_pct) }}%</li>
@@ -22,17 +23,14 @@
 </ul>
 
 {% if triggers %}
-<h2>機械ルール発動</h2>
+<h2>機械ルール</h2>
 <ul>
 {% for t in triggers %}
 <li><strong>[{{ t.severity }}] {{ t.rule_kind }}</strong>{% if t.code %} ({{ t.code }}){% endif %}: {{ t.message }}</li>
 {% endfor %}
 </ul>
-{% else %}
-<h2>機械ルール発動</h2>
-<p>なし</p>
 {% endif %}
 
 <hr>
-<p style="color:#888;font-size:12px;">ベンチマーク: {{ benchmark }}</p>
+<p style="color:#888;font-size:12px;">戦略書: <code>docs/12_personal_strategy.md</code> (rev {{ strategy_revision }}) / ベンチマーク: {{ benchmark }}</p>
 </body></html>

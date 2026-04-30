@@ -7,13 +7,14 @@ from __future__ import annotations
 
 import json
 import logging
-import os
-from dataclasses import asdict
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Tuple
+from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
+
+JST = ZoneInfo("Asia/Tokyo")
 
 KindT = Literal["morning", "evening", "weekly", "alert"]
 
@@ -114,7 +115,7 @@ class AdvisorRunner:
             logger.exception("Strategy load failed: %s", e)
             return 1
 
-        today = date.today()
+        today = datetime.now(JST).date()
         ctx = self._build_context(kind, strategy, deps, today)
         if ctx is None:
             logger.error("Failed to build context for kind=%s", kind)
@@ -352,7 +353,7 @@ class AdvisorRunner:
         self.reports_dir.mkdir(parents=True, exist_ok=True)
         suffix = today.strftime("%Y%m%d")
         if kind == "alert":
-            now = datetime.now()
+            now = datetime.now(JST)
             path = self.reports_dir / f"{suffix}_{kind}_{now.strftime('%H%M%S')}.md"
         else:
             path = self.reports_dir / f"{suffix}_{kind}.md"

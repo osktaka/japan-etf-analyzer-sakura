@@ -1,13 +1,12 @@
 # 週次レビュー {{ today.strftime('%Y-%m-%d') }}（{{ user_id }}）
 
-戦略リビジョン: {{ strategy_revision }}
+> **{{ urgency_tag }}** — {{ summary }}
+
 期間: {{ period_label or "過去5営業日" }}
 
-## サマリー
+## 根拠データ
 
-- 総資産: {{ "{:,.0f}".format(total_asset) }} 円
-- 評価額: {{ "{:,.0f}".format(total_value) }} 円
-- 現金: {{ "{:,.0f}".format(cash_balance) }} 円
+- 総資産: {{ "{:,.0f}".format(total_asset) }} 円 / 評価額: {{ "{:,.0f}".format(total_value) }} 円 / 現金: {{ "{:,.0f}".format(cash_balance) }} 円
 - 保有銘柄数: {{ holdings_count }}
 
 ## ベンチマーク比較
@@ -22,21 +21,33 @@
 
 ## 配分
 
-{% for d in allocation_drifts %}
-- **{{ d.bucket }}**: {{ "%.1f"|format(d.actual_pct) }}% (目標 {{ "%.1f"|format(d.target_pct) }}%, 差 {{ "%+.2f"|format(d.drift_pp) }}pp){% if d.is_warn %} ⚠️{% endif %}
+{% for d in allocation_drifts -%}
+- **{{ d.bucket }}**: {{ "%.1f"|format(d.actual_pct) }}% (目標 {{ "%.1f"|format(d.target_pct) }}%, 差 {{ "%+.2f"|format(d.drift_pp) }}pp){% if d.is_warn %} ⚠️{% endif +%}
 {% endfor %}
+
+{% set drift_buys = allocation_drifts | selectattr("drift_pp", "lt", -5.0) | list %}
+{% set drift_sells = allocation_drifts | selectattr("drift_pp", "gt", 5.0) | list %}
+{% if (alpha_pp is not none and alpha_pp <= -2.0) or drift_buys or drift_sells %}
+## 来週の推奨アクション
+{% if alpha_pp is not none and alpha_pp <= -2.0 %}
+- core ETFの追加買付を検討（α {{ "%+.2f"|format(alpha_pp) }}pp）
+- 現金比率が高い場合は段階的に投入を検討
+{% endif %}
+{% for d in drift_buys %}
+- `{{ d.bucket }}` が {{ "%.1f"|format(d.drift_pp | abs) }}pp 不足 — 買付推奨
+{% endfor %}
+{% for d in drift_sells %}
+- `{{ d.bucket }}` が +{{ "%.1f"|format(d.drift_pp) }}pp 過剰 — 売却検討
+{% endfor %}
+{% endif %}
 
 {% if triggers %}
 ## 今週の機械ルール発動
-
 {% for t in triggers %}
 - **[{{ t.severity }}] {{ t.rule_kind }}**{% if t.code %} ({{ t.code }}){% endif %}: {{ t.message }}
 {% endfor %}
-{% else %}
-## 今週の機械ルール発動
-
-なし
 {% endif %}
 
 ---
-来週の振り返り対象: 配分逸脱 / α逸脱 / 売買予定の遵守
+戦略書: docs/12_personal_strategy.md (rev {{ strategy_revision }})
+ベンチマーク: {{ benchmark }}

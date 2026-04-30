@@ -1,7 +1,11 @@
 # 機械ルール アラート {{ today.strftime('%Y-%m-%d %H:%M') }}（{{ user_id }}）
 
+> **{{ urgency_tag }}** — {{ summary }}
+
 {% for t in triggers %}
-## [{{ t.severity }}] {{ t.rule_kind }}{% if t.code %} - {{ t.code }}{% endif %}
+## [{{ t.severity }}] {{ t.rule_kind }}{% if t.code %} - {{ t.code }}{% endif +%}
+
+**推奨アクション**: {{ recommended_action(t) }}
 
 {{ t.message }}
 

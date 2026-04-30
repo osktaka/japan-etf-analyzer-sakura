@@ -2,8 +2,13 @@
 <html><body style="font-family: sans-serif; line-height: 1.6;">
 <h1 style="color:#c00;">機械ルール アラート {{ today.strftime('%Y-%m-%d %H:%M') }}（{{ user_id }}）</h1>
 
+<blockquote style="border-left:4px solid #c00;padding:8px 12px;background:#fff5f5;">
+<strong>{{ urgency_tag }}</strong> — {{ summary }}
+</blockquote>
+
 {% for t in triggers %}
 <h2>[{{ t.severity }}] {{ t.rule_kind }}{% if t.code %} - {{ t.code }}{% endif %}</h2>
+<p><strong>推奨アクション</strong>: {{ recommended_action(t) }}</p>
 <p>{{ t.message }}</p>
 
 {% if t.payload %}

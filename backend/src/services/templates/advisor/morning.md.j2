@@ -1,45 +1,38 @@
 # 朝のタスク {{ today.strftime('%Y-%m-%d') }}（{{ user_id }}）
 
-戦略リビジョン: {{ strategy_revision }}
-ベンチマーク: {{ benchmark }}
+> **{{ urgency_tag }}** — {{ summary }}
 
-## 当日のアクション
-
+{% if sells_today or buys_today %}
+## 今日の発注
 {% if sells_today %}
-### 売却予定
+### 売却
 {% for s in sells_today %}
 - **{{ s.code }} {{ s.name }}** {{ s.quantity }}株 ({{ s.action }}) — {{ s.reason }}
 {% endfor %}
-{% else %}
-- 売却予定なし
 {% endif %}
-
 {% if buys_today %}
-### 買付予定（DCA）
+### 買付（DCA）
 {% for b in buys_today %}
 - **{{ b.code }}** {{ b.quantity }}株
 {% endfor %}
-{% else %}
-- DCA予定なし
+{% endif %}
 {% endif %}
 
-## 前日終値ベース要約
+## 根拠データ
 
-- 総資産: {{ "{:,.0f}".format(total_asset) }} 円
-- 評価額: {{ "{:,.0f}".format(total_value) }} 円
-- 現金: {{ "{:,.0f}".format(cash_balance) }} 円
+- 総資産: {{ "{:,.0f}".format(total_asset) }} 円 / 評価額: {{ "{:,.0f}".format(total_value) }} 円 / 現金: {{ "{:,.0f}".format(cash_balance) }} 円
 - 保有銘柄数: {{ holdings_count }}
 {% if daily_change_pct is not none %}
 - 前日比: {{ "%+.2f"|format(daily_change_pct) }}%
 {% endif %}
 
 {% if triggers %}
-## 機械ルール発動中
-
+## 機械ルール（参考）
 {% for t in triggers %}
-- **[{{ t.severity }}] {{ t.rule_kind }}**: {{ t.message }}
+- **[{{ t.severity }}] {{ t.rule_kind }}**{% if t.code %} ({{ t.code }}){% endif %}: {{ t.message }}
 {% endfor %}
 {% endif %}
 
 ---
-このメールは自動送信されています。戦略変更は `docs/12_personal_strategy.md` を編集してください。
+戦略書: docs/12_personal_strategy.md (rev {{ strategy_revision }})
+ベンチマーク: {{ benchmark }}
