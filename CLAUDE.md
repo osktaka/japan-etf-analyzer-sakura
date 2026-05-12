@@ -103,6 +103,99 @@ frontend/
 └── public/             # 静的ファイル
 ```
 
+## 定期バッチ
+
+開発環境のバッチは **ホストcron + `scripts/cron-batch.sh`（ディスパッチャ）** で起動する。schedulerコンテナは2026-04-29に廃止済み（Dockerfile.scheduler / backend/crontab も削除）。
+
+### ホストcron 1エントリ
+
+```cron
+*/5 * * * * /home/t_osaka/_mydev/_test_kabu/japan-etf-analyzer-sakura/scripts/cron-batch.sh >> /home/t_osaka/_mydev/_test_kabu/japan-etf-analyzer-sakura/logs/cron-batch.log 2>&1
+```
+
+5分間隔で起動し、内部で時刻判定して該当ジョブを `docker compose exec -T backend python3 scripts/<NAME>.py` で発火する。各バッチは `flock` で多重起動防止 + バックグラウンド並列実行。
+
+### 環境プロファイル（`CRON_BATCH_PROFILE`）
+
+| 値 | 用途 |
+|---|---|
+| `dev`（デフォルト） | 開発環境。全ジョブ実行（advisor 4本＋theme_etfs＋watcher を含む） |
+| `prod` | 本番環境想定。dev限定5ジョブを除外 |
+
+不正値（dev/prod以外）は `exit 2` で起動拒否される。`.env` の `CRON_BATCH_PROFILE` で設定。
+
+### 集約ジョブ一覧（時刻はJST）
+
+| 時刻 | 曜日 | バッチ | プロファイル | ログ |
+|------|------|--------|------------|------|
+| `*/5` | 毎日（祝日含む） | `batch_monitor` | both | `batch_monitor.log` |
+| 05:00 | 毎日（祝日含む） | `rotate_logs` | both | `rotate.log` |
+| 06:00 | 月（祝日でも実行） | `sync_etf_from_jpx` → `update_scores_master --skip-dep-check` → `sync_historical_splits --all --rate-limit 3.0` | both | `master_sync.log` / `score_update.log` / `split_sync.log` |
+| 16:00 | 平日（祝日スキップ） | `update_etf_data --smart --rate-limit 3.0` | both | `etf_update.log` |
+| 16:00 | 平日（祝日スキップ） | `sync_from_minkabu --rate-limit 1.5` | both | `minkabu_sync.log` |
+| `*/10 16-20` | 平日（祝日スキップ） | `update_scores` | both | `score_update.log` |
+| 03:00 | 日 | `update_theme_etfs` | **dev** | `theme_etfs.log` |
+| 07:00 | 平日（祝日スキップ） | `daily_advisor_morning` | **dev** | `advisor_morning.log` |
+| 17:30 | 平日（祝日スキップ） | `daily_advisor_evening` | **dev** | `advisor_evening.log` |
+| 18:00 | 金（祝日でも実行） | `daily_advisor_weekly` | **dev** | `advisor_weekly.log` |
+| `*/5 9-15` | 平日（祝日スキップ） | `mechanical_rule_watcher` | **dev** | `advisor_watcher.log` |
+
+月曜06:00は `run_chain` による fail-stop 連結（同期実行）。途中で失敗した場合、後続バッチはスキップされる（本番crontabの `&&` 連結と同等の挙動）。
+
+### よく使うオプション
+
+```bash
+# 時刻偽装ドライラン（ジョブ発火判定の確認）
+bash scripts/cron-batch.sh --at 17:00 --dow 3 --dry-run
+
+# 単一バッチを即時実行（時刻条件を無視）
+bash scripts/cron-batch.sh --only daily_advisor_morning
+
+# ヘルプ
+bash scripts/cron-batch.sh --help
+```
+
+### 設計上の注意
+
+- **`set -e` を使わない**: 1ジョブの失敗が他ジョブを止めないようにする。
+- **ログはコンテナ内シェル経由で書き込む**: 既存ログがコンテナroot所有のため、ホスト側から `>>` でappendするとPermission deniedになる。`docker compose exec -T backend bash -c "... >> /app/logs/<NAME>.log"` で統一。
+- **現状開発環境のみ運用**: Docker非依存版（venv直接実行ラッパー）の実装後に本番デプロイ予定。本番デプロイ時は `.env` で `CRON_BATCH_PROFILE=prod` を設定すれば、開発専用ジョブ5本（advisor 4本＋theme_etfs＋mechanical_rule_watcher）が自動的に除外される。
+
+### 当日キャッチアップ機構
+
+`cron-batch.sh` は通常の時刻発火に加え、末尾で **`catch_up_sweep`（pull型 sweep）** を1回呼び出す。これにより、マシン停止やネットワーク断で予定時刻ピッタリの発火を逃したバッチを、当日中であれば自動的に追走できる。
+
+**仕組み**:
+- 5分ごとに `CATCHUP_JOBS` 配列の各エントリを評価
+- 「予定時刻を過ぎている AND 打ち切り時刻以内 AND 曜日OK AND 祝日OK AND プロファイル一致 AND 当日まだ成功記録なし」を全部満たせば発火
+- 「当日成功したか」は `backend/scripts/has_succeeded_today.py`（`get_latest_success_time` ラッパー）で判定
+- 連鎖は **次の */5 サイクル**に委ねる（fixed-point ループは導入しない）。前提バッチ完了 → 5分後 sweep で後続が条件を満たし発火
+- 翌日には持ち越さない（JST 0:00 で `get_latest_success_time` の参照基準が切り替わるため自然にリセット）
+
+**対象バッチ一覧** (sched は発火開始、until は打ち切り時刻):
+
+| バッチ | sched | until | 曜日 | プロファイル |
+|-------|-------|-------|------|------------|
+| `update_etf_data` | 16:00 | 22:00 | 平日（祝日スキップ） | both |
+| `sync_from_minkabu` | 16:00 | 22:00 | 平日（祝日スキップ） | both |
+| `daily_advisor_morning` | 07:00 | 09:00 | 平日（祝日スキップ） | dev |
+| `daily_advisor_evening` | 17:30 | 22:00 | 平日（祝日スキップ） | dev |
+| `daily_advisor_weekly` | 18:00 | 22:00 | 金（祝日でも実行） | dev |
+| `update_theme_etfs` | 03:00 | 23:59 | 日 | dev |
+| `rotate_logs` | 05:00 | 23:59 | 毎日 | both |
+
+**対象外**:
+- 高頻度バッチ: `batch_monitor`（*/5）/ `update_scores`（*/10 16-20）/ `mechanical_rule_watcher`（*/5 9-15）— 短期サイクル内で自然リカバリされるため
+- 月曜マスタチェーン: `sync_etf_from_jpx` / `update_scores_master` / `sync_historical_splits` — `run_chain` による fail-stop 同期実行が前提。`update_scores_master` は実体 `update_scores.py` の `check_window=(16:30, 22:00)` により午前帯の発火がほぼ skip され、`sync_historical_splits` は `depends_on` を持たないため並列発火時の順序保証ができない。月曜障害時は手動で `--only` 連続実行または `run_chain` 再実行で対応する。
+
+**制限**:
+- 当日中のみ（翌日に持ち越さない）
+- 連鎖は最大5分遅延を許容
+- sched ピッタリは通常 dispatch が拾うため catch-up からは除外（重複防止）
+- catch-up で発火しても、対象バッチが `depends_on` を持つ場合は `_check_dependencies()` により前提未充足なら exit 0（skip）で安全停止
+
+**手動キャッチアップ**: 既存の `--only NAME` で個別実行可能（catch-up 判定をバイパス）。
+
 ## さくらレンタルサーバーへのデプロイ
 
 ### デプロイフロー

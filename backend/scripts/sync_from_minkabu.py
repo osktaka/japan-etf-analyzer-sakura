@@ -323,7 +323,13 @@ class SyncFromMinkabuScript(BaseBatchScript):
                 self._final_progress_update(last_item_code=codes[-1])
 
             # Finish batch log
-            self._finish_batch_log(success=True)
+            # success_count / total_count を渡すことで、全件失敗ケースを
+            # BaseBatchScript._finish_batch_log で status='failed' に補正させる
+            self._finish_batch_log(
+                success=True,
+                success_count=success_count,
+                total_count=len(codes),
+            )
 
             # Summary
             self.logger.info("-" * 60)

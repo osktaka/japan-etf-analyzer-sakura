@@ -741,7 +741,15 @@ class UpdateEtfDataScript(BaseBatchScript):
                 update_momentum_labels(codes, self.logger)
 
             # バッチログ終了（成功）
-            self._finish_batch_log(success=True)
+            # skipped は「事前判定で fetch 不要」のため処理件数に算入する。
+            # 全件failed（success=0 & skip=0）のときのみ failed に補正される。
+            processed_total = success_count + skip_count + fail_count
+            effective_success = success_count + skip_count
+            self._finish_batch_log(
+                success=True,
+                success_count=effective_success,
+                total_count=processed_total,
+            )
 
             self.logger.info("=" * 60)
             self.logger.info(f"Update completed: {success_count} success, {skip_count} skipped, {fail_count} failed")

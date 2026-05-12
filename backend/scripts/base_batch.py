@@ -193,17 +193,55 @@ class BaseBatchScript(ABC):
             )
             self.logger.info(f"Batch log created: id={self.batch_log.id}")
 
-    def _finish_batch_log(self, success: bool, error_message: str = None) -> None:
-        """バッチログ終了"""
+    def _finish_batch_log(
+        self,
+        success: bool,
+        error_message: str = None,
+        success_count: Optional[int] = None,
+        total_count: Optional[int] = None,
+    ) -> None:
+        """バッチログ終了
+
+        Args:
+            success: 呼び出し側が判定した成功フラグ
+            error_message: 失敗時のエラーメッセージ
+            success_count: 個別処理の成功件数（任意）
+            total_count: 個別処理の総処理件数（任意）
+
+        Note:
+            success_count と total_count を両方指定した場合、
+            「total_count > 0 かつ success_count == 0」のとき
+            呼び出し側の success=True を上書きして status='failed' とする。
+            これは全件失敗（例: ネットワーク断によるDNS失敗）の検知用。
+            部分成功（例: 206/454）は success のまま維持する。
+        """
         if not self.batch_log_repo or not self.batch_log:
             return
 
-        status = "success" if success else "failed"
+        # 全件失敗ガード: 処理件数が報告されていて、かつ全件失敗なら failed に強制
+        final_success = success
+        final_error = error_message
+        if (
+            success
+            and success_count is not None
+            and total_count is not None
+            and total_count > 0
+            and success_count == 0
+        ):
+            final_success = False
+            reason = (
+                f"All {total_count} items failed (0 success). "
+                "Marking batch as failed."
+            )
+            final_error = reason if not error_message else f"{error_message}; {reason}"
+            self.logger.warning(reason)
+
+        status = "success" if final_success else "failed"
         self.batch_log_repo.update(
             self.batch_log.id,
             status=status,
             finished_at=datetime.utcnow(),
-            error_message=error_message,
+            error_message=final_error,
         )
         self.logger.info(f"Batch log updated: id={self.batch_log.id}, status={status}")
 
