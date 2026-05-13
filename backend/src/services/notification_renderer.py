@@ -85,6 +85,8 @@ class NotificationRenderer:
             "month_start_total_asset": ctx.month_start_total_asset,
             "month_start_change_pct": ctx.month_start_change_pct,
             "extra": ctx.extra,
+            # リバランス（kind="rebalance" のみ使用）
+            "rebalance_plan": ctx.rebalance_plan,
             # 新規: 件名タグ・リード文・件数系
             "urgency_tag": self.urgency_tag(ctx),
             "summary": self.summary_for(ctx),
@@ -121,6 +123,21 @@ class NotificationRenderer:
                 return "要確認"
             return "情報"
 
+        # rebalance: critical/warn 件数 + 四半期末日で判定
+        if ctx.kind == "rebalance":
+            plan = ctx.rebalance_plan
+            if plan is None:
+                return "静観"
+            if plan.is_rebalance_day and (
+                plan.sell_actions or plan.buy_actions
+            ):
+                return "要対応"
+            if plan.critical_count > 0:
+                return "要確認"
+            if plan.warn_count > 0:
+                return "要確認"
+            return "静観"
+
         has_critical = any(t.severity == "critical" for t in ctx.triggers)
         has_warn = any(t.severity == "warn" for t in ctx.triggers)
         has_action = bool(ctx.sells_today or ctx.buys_today)
@@ -156,6 +173,8 @@ class NotificationRenderer:
             return self._summary_weekly(ctx)
         if ctx.kind == "alert":
             return self._summary_alert(ctx)
+        if ctx.kind == "rebalance":
+            return self._summary_rebalance(ctx)
         return ""
 
     @staticmethod
@@ -352,6 +371,48 @@ class NotificationRenderer:
         return cls._join_lines([conclusion, context_line, reason])
 
     @classmethod
+    def _summary_rebalance(cls, ctx: NotificationContext) -> str:
+        """リバランス通知のリード文（結論／文脈／根拠）."""
+        plan = ctx.rebalance_plan
+        if plan is None:
+            return "リバランス計画なし。"
+
+        # 1行目: 結論
+        if plan.is_rebalance_day:
+            n_sell = len(plan.sell_actions)
+            n_buy = len(plan.buy_actions)
+            conclusion = (
+                f"本日は四半期末リバランス日。売却{n_sell}件・買付{n_buy}件を執行検討。"
+            )
+        else:
+            conclusion = (
+                f"次回リバランスまで{plan.days_to_next_rebalance}日。"
+                f"逸脱{plan.critical_count + plan.warn_count}件、本日は監視のみ。"
+            )
+
+        # 2行目: 文脈
+        ctx_parts = [f"資産{int(plan.total_asset):,}円"]
+        if plan.daily_pnl_pct is not None:
+            ctx_parts.append(f"前日{plan.daily_pnl_pct:+.2f}%")
+        cash_pct = (
+            (plan.current_cash / plan.total_asset * 100.0)
+            if plan.total_asset > 0
+            else 0.0
+        )
+        ctx_parts.append(f"現金{cash_pct:.1f}%（目標10%）")
+        context_line = "、".join(ctx_parts) + "。"
+
+        # 3行目: 根拠
+        if plan.critical_count > 0:
+            reason = f"CRITICAL逸脱{plan.critical_count}件（±5pp超過）。"
+        elif plan.warn_count > 0:
+            reason = f"WARN逸脱{plan.warn_count}件（±3〜5pp）。"
+        else:
+            reason = ""
+
+        return cls._join_lines([conclusion, context_line, reason])
+
+    @classmethod
     def _summary_alert(cls, ctx: NotificationContext) -> str:
         n = len(ctx.triggers)
         if n == 0:
@@ -410,17 +471,18 @@ class NotificationRenderer:
             subject = self._subject_weekly(ctx, date_str)
         elif ctx.kind == "alert":
             subject = self._subject_alert(ctx, date_str)
+        elif ctx.kind == "rebalance":
+            subject = self._subject_rebalance(ctx, date_str)
         else:
             subject = f"[{date_str} {ctx.kind}]"
 
-        # 件名長チェック（目安40文字以内）
+        # 件名40字超は自動切り詰め（末尾省略）
         if len(subject) > SUBJECT_MAX_LEN:
             logger.warning(
-                "subject exceeds %d chars (len=%d): %s",
-                SUBJECT_MAX_LEN,
-                len(subject),
-                subject,
+                "subject exceeds %d chars (len=%d), truncating: %s",
+                SUBJECT_MAX_LEN, len(subject), subject,
             )
+            subject = subject[: SUBJECT_MAX_LEN - 1] + "…"
         return subject
 
     def _subject_morning(self, ctx: NotificationContext, date_str: str) -> str:
@@ -482,6 +544,28 @@ class NotificationRenderer:
         if n_warn > 0:
             return f"[{date_str} 週次] {alpha_str} / 配分{n_warn}件"
         return f"[{date_str} 週次] {alpha_str}"
+
+    def _subject_rebalance(self, ctx: NotificationContext, date_str: str) -> str:
+        """リバランス通知件名 `[M/D RB] 次回まで X日 / 逸脱 N件 / 損益 ±X.X%`."""
+        plan = ctx.rebalance_plan
+        if plan is None:
+            return f"[{date_str} RB] 計画なし"
+
+        parts = [f"[{date_str} RB]"]
+        if plan.is_rebalance_day:
+            n_action = len(plan.sell_actions) + len(plan.buy_actions)
+            parts.append(f"本日実行 / 計{n_action}件")
+        else:
+            parts.append(f"次回まで{plan.days_to_next_rebalance}日")
+
+        n_drift = plan.critical_count + plan.warn_count
+        if n_drift > 0:
+            parts.append(f"/ 逸脱{n_drift}件")
+
+        if plan.daily_pnl_pct is not None:
+            parts.append(f"/ 損益{plan.daily_pnl_pct:+.1f}%")
+
+        return " ".join(parts)
 
     def _subject_alert(self, ctx: NotificationContext, date_str: str) -> str:
         n = len(ctx.triggers)

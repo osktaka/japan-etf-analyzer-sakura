@@ -33,6 +33,7 @@ __all__ = [
     "build_alert_context",
     "build_evening_context",
     "build_morning_context",
+    "build_rebalance_context",
     "build_weekly_context",
     "classify_buckets",
     "compute_allocation_drift",
@@ -423,6 +424,7 @@ from src.services.daily_advisor_contexts import (  # noqa: E402
     build_alert_context,
     build_evening_context,
     build_morning_context,
+    build_rebalance_context,
     build_weekly_context,
 )
 

@@ -1,0 +1,60 @@
+{% from '_macros.j2' import bucket_label, rule_kind_label, action_label %}
+# リバランス通知 {{ today.strftime('%Y-%m-%d') }}
+
+> **{{ urgency_tag }}** — 次回まで{{ rebalance_plan.days_to_next_rebalance }}日（{{ rebalance_plan.next_rebalance_date.strftime('%Y-%m-%d') }}）
+>
+> {{ summary | replace('\n\n', '\n>\n> ') }}
+
+## 現状サマリ
+
+- 総資産: {{ "{:,.0f}".format(rebalance_plan.total_asset) }}円
+{% if rebalance_plan.daily_pnl_pct is not none %}- 当日損益: {{ "%+.2f"|format(rebalance_plan.daily_pnl_pct) }}%
+{% endif %}
+- 現金残: {{ "{:,.0f}".format(rebalance_plan.current_cash) }}円（目標 {{ "{:,.0f}".format(rebalance_plan.target_cash) }}円、乖離 {{ "%+.2f"|format(rebalance_plan.cash_deviation_pp) }}pp）
+- 個別逸脱: CRITICAL {{ rebalance_plan.critical_count }}件 / WARN {{ rebalance_plan.warn_count }}件
+
+## 保有・配分テーブル
+
+| 銘柄 | 数量 | 評価額 | 損益% | 実績 | 目標 | 乖離 | 区分 |
+|------|-----:|-------:|------:|-----:|-----:|-----:|:-----|
+{% for s in rebalance_plan.holdings_snapshots %}
+| {{ s.etf_code }} {{ s.name }}{% if not s.is_adopted %}*{% endif %} | {{ "{:,.0f}".format(s.quantity) }} | {{ "{:,.0f}".format(s.current_value) }}円 | {% if s.quantity == 0 or s.pnl_pct is none %}—{% else %}{{ "%+.2f"|format(s.pnl_pct) }}%{% endif %} | {{ "%.2f"|format(s.actual_pct) }}% | {{ "%.2f"|format(s.target_pct) }}% | {{ "%+.2f"|format(s.drift_pp) }}pp | {{ s.classification }} |
+{% endfor %}
+| **現金** | — | {{ "{:,.0f}".format(rebalance_plan.current_cash) }}円 | — | {{ "%.2f"|format(rebalance_plan.current_cash / rebalance_plan.total_asset * 100.0 if rebalance_plan.total_asset > 0 else 0) }}% | 10.00% | {{ "%+.2f"|format(rebalance_plan.cash_deviation_pp) }}pp | {% if rebalance_plan.cash_deviation_pp|abs >= 5.0 %}CRITICAL{% elif rebalance_plan.cash_deviation_pp|abs >= 3.0 %}WARN{% else %}OK{% endif %} |
+
+*=採用外保有銘柄（全量売却推奨）
+
+## アクション提案
+
+{% if rebalance_plan.is_rebalance_day %}
+本日は**四半期末リバランス基準日**です。以下を執行検討してください。
+
+{% if rebalance_plan.sell_actions %}
+### 売却
+
+{% for a in rebalance_plan.sell_actions %}
+- **{{ a.etf_code }}** {{ a.quantity }}株（約{{ "{:,.0f}".format(a.amount) }}円） — {{ a.reason }}
+{% endfor %}
+{% endif %}
+{% if rebalance_plan.buy_actions %}
+### 買付
+
+{% for a in rebalance_plan.buy_actions %}
+- **{{ a.etf_code }}** {{ a.quantity }}株（約{{ "{:,.0f}".format(a.amount) }}円） — {{ a.reason }}
+{% endfor %}
+{% endif %}
+{% if not rebalance_plan.sell_actions and not rebalance_plan.buy_actions %}
+売買アクションなし（floor単元未満で全て繰越）。
+{% endif %}
+{% else %}
+本日は監視のみ。次回リバランス（{{ rebalance_plan.next_rebalance_date.strftime('%Y-%m-%d') }}）まで{{ rebalance_plan.days_to_next_rebalance }}日です。
+
+{% if rebalance_plan.critical_count > 0 or rebalance_plan.warn_count > 0 %}
+**逸脱状況の参考**: CRITICAL {{ rebalance_plan.critical_count }}件 / WARN {{ rebalance_plan.warn_count }}件。次回基準日に上記アクションを執行予定。
+{% else %}
+逸脱なし。通常運用継続。
+{% endif %}
+{% endif %}
+
+---
+戦略書 rev. {{ strategy_revision }} / ベンチマーク: {{ benchmark }}

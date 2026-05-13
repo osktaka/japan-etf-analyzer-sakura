@@ -131,6 +131,34 @@ def build_weekly_context(
     )
 
 
+def build_rebalance_context(
+    *,
+    strategy: Strategy,
+    today: date,
+    user_id: str,
+    summary: Dict[str, Any],
+    rebalance_plan,
+) -> NotificationContext:
+    """リバランス通知のコンテキスト.
+
+    PortfolioRebalanceService.calculate_rebalance_plan() の結果を保持.
+    summary には PortfolioService.get_portfolio_summary() を渡す.
+    """
+    return NotificationContext(
+        kind="rebalance",
+        today=today,
+        user_id=user_id,
+        strategy_revision=strategy.revision,
+        benchmark=strategy.benchmark,
+        total_asset=float(summary.get("total_asset", 0.0)),
+        total_value=float(summary.get("total_value", 0.0)),
+        cash_balance=float(summary.get("cash_balance", 0.0)),
+        daily_change_pct=summary.get("daily_change_total_asset_percent"),
+        holdings_count=int(summary.get("holdings_count", 0)),
+        rebalance_plan=rebalance_plan,
+    )
+
+
 def build_alert_context(
     *,
     strategy: Strategy,

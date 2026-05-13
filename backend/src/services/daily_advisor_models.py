@@ -6,7 +6,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from src.services.portfolio_rebalance_service import RebalancePlan
 
 
 @dataclass(frozen=True)
@@ -88,6 +91,9 @@ class NotificationContext:
     # 月初比（リード文の「文脈」行で使用）
     month_start_total_asset: Optional[float] = None
     month_start_change_pct: Optional[float] = None
+
+    # リバランス計画（kind="rebalance" のみ使用）
+    rebalance_plan: Optional["RebalancePlan"] = None
 
     # その他
     extra: Dict[str, Any] = field(default_factory=dict)
