@@ -153,6 +153,7 @@ frontend/
 - **idempotency**: マーカーファイル `reports/demo/.trades_posted_YYYYMMDD` ＋ DB重複検査（plan_id 有り → memo に plan_id 含有＋etf_code/trade_type 一致、plan_id 無し → memo `[auto]` プレフィックス＋etf_code/trade_type 一致）の二段構え
 - **exit code**: 0=全成功 or dry-run / 2=部分成功 / 1=全失敗 or 設定エラー
 - **ログ**: `logs/execute_demo_trades.log`（stdout 同時出力）＋ `batch_logs` テーブル（name=`demo_trade_post`）
+- **通知メール**: POST 完了直後、`backend/src/services/demo_portfolio_notifier.py:notify()` がポートフォリオ変更レポートを送信。`DEMO_PORTFOLIO_REPORT_ENABLED=1` のとき有効（既定 `0`）、`DEMO_PORTFOLIO_REPORT_TRIGGER=on_trade|always|never`（既定 `on_trade`）で送信条件制御。宛先は `NOTIFY_TO_EMAIL`（advisor 系と共有）。SMTP 失敗は内部捕捉して exit code に影響させず、cron 全体を止めない。件名・本文 7 セクション・モバイル最適化方針・テンプレ（`templates/demo/portfolio_change.{md,html}.j2`）の詳細仕様は `docs/06b_メール通知仕様.md` の「デモユーザー向けポートフォリオ変更通知」章を参照
 
 ### よく使うオプション
 

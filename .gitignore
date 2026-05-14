@@ -71,6 +71,9 @@ reports/demo/metrics.json
 reports/demo/HISTORY.md.bak
 reports/demo/history/
 reports/demo/[0-9]*_*.md
+# cron Step 7（execute_demo_trades.py）が日々生成するファイル
+reports/demo/trades_execution_plan.json
+reports/demo/.trades_posted_*
 
 # バックテスト出力
 backend/scripts/output/

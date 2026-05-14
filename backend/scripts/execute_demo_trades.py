@@ -161,34 +161,94 @@ def _exit_code(succeeded: int, failed: int, skipped: int) -> int:
     return 1
 
 
+def _build_result(
+    trade: Dict[str, Any],
+    payload: Dict[str, Any],
+    status: str,
+    http_status: Optional[int] = None,
+    error_message: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Build a single trade_results dict (notifier-compatible shape)."""
+    return {
+        "etf_code": trade.get("etf_code"),
+        "trade_type": trade.get("trade_type"),
+        "quantity": trade.get("quantity"),
+        "price": trade.get("price"),
+        "memo": payload.get("memo", trade.get("memo") or ""),
+        "status": status,
+        "http_status": http_status,
+        "error_message": error_message,
+    }
+
+
+def _parse_http_status(msg: str) -> Optional[int]:
+    """Extract integer HTTP status from post_trade message. None if not parseable."""
+    # Messages look like "HTTP 201" or "HTTP 500: boom" or "connection error: ..."
+    if not msg.startswith("HTTP "):
+        return None
+    try:
+        rest = msg[len("HTTP "):]
+        head = rest.split(":", 1)[0].strip()
+        return int(head)
+    except (ValueError, IndexError):
+        return None
+
+
 def _process_trades(
     trades: List[Dict[str, Any]],
     existing_trades: List[Any],
     base_url: str,
     effective_execute: bool,
     today_iso: str,
-) -> Tuple[int, int, int]:
-    """Iterate the plan and post each trade. Returns (succeeded, failed, skipped)."""
+) -> Tuple[int, int, int, List[Dict[str, Any]]]:
+    """Iterate the plan and post each trade.
+
+    Returns (succeeded, failed, skipped, results).
+    ``results`` は notifier に渡せる形式の dict のリスト。
+    """
     succeeded = failed = skipped = 0
+    results: List[Dict[str, Any]] = []
     for idx, trade in enumerate(trades, 1):
         label = f"[{idx}/{len(trades)}] {trade.get('etf_code')} {trade.get('trade_type')} x{trade.get('quantity')}"
         if is_duplicate(trade, existing_trades):
             logger.info(f"skipped (already posted today): {label}")
             skipped += 1
+            results.append(
+                _build_result(
+                    trade,
+                    {"memo": trade.get("memo") or ""},
+                    status="skipped",
+                    error_message="duplicate",
+                )
+            )
             continue
         payload = build_payload(trade, today_iso)
         if not effective_execute:
             logger.info(f"sending (dry-run): {label} payload={payload}")
+            results.append(_build_result(trade, payload, status="dry_run"))
             continue
         logger.info(f"sending: {label}")
         ok, msg = post_trade(base_url, payload)
+        http_status = _parse_http_status(msg)
         if ok:
             logger.info(f"sent: {label} ({msg})")
             succeeded += 1
+            results.append(
+                _build_result(trade, payload, status="success", http_status=http_status)
+            )
         else:
             logger.error(f"failed: {label} ({msg})")
             failed += 1
-    return succeeded, failed, skipped
+            results.append(
+                _build_result(
+                    trade,
+                    payload,
+                    status="failed",
+                    http_status=http_status,
+                    error_message=msg,
+                )
+            )
+    return succeeded, failed, skipped, results
 
 
 def main() -> int:
@@ -250,7 +310,7 @@ def main() -> int:
         )
 
         base_url = BASE_URLS[args.env]
-        succeeded, failed, skipped = _process_trades(
+        succeeded, failed, skipped, results = _process_trades(
             trades, existing, base_url, effective_execute, today_iso
         )
 
@@ -273,6 +333,29 @@ def main() -> int:
             marker_path.parent.mkdir(parents=True, exist_ok=True)
             marker_path.write_text(today_iso, encoding="utf-8")
             logger.info(f"marker created: {marker_path}")
+
+        # ポートフォリオ変更レポートメール（通知失敗は exit code に影響させない）
+        try:
+            from src.services import demo_portfolio_notifier  # local import
+
+            sent = demo_portfolio_notifier.notify(
+                trade_results=results,
+                today_jst=today_jst,
+                dry_run=(not effective_execute),
+                batch_log_id=batch_log.id,
+                base_url=base_url,
+            )
+            if sent:
+                logger.info("portfolio report email sent")
+            else:
+                logger.info(
+                    "portfolio report email not sent "
+                    "(trigger condition / SMTP failed / disabled)"
+                )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                f"portfolio report notification error (continuing): {exc}"
+            )
 
     return _exit_code(succeeded, failed, skipped)
 

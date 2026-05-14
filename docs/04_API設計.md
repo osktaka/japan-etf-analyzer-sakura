@@ -164,6 +164,12 @@
 - idempotency: マーカーファイル `reports/demo/.trades_posted_YYYYMMDD` ＋ DB重複検査（memo の `[auto]` プレフィックスまたは plan_id 一致＋etf_code/trade_type）で二重POSTを防止
 - 詳細仕様は `docs/10_バッチ処理設計.md` 6.5節 を参照
 
+**自動利用者（GET /demo/portfolio 系）:**
+- `execute_demo_trades.py` が POST 後、ポートフォリオ変更レポートメール生成のため `GET /demo/portfolio` / `GET /demo/portfolio/holdings` / `GET /demo/portfolio/valuation-history?period=1m` を呼び出す
+- 呼び出し元: `backend/src/services/demo_portfolio_notifier.py:notify()`
+- 取得データはメール本文の「ポートフォリオ概況」「保有銘柄スナップショット」「過去1週間の資産推移」セクションに反映
+- API 呼び出し失敗時は WARN ログを残してメール送信をスキップ（cron 全体には影響させない）
+
 ### 3.4 ノート記事API
 
 | メソッド | パス | 機能 | 対応機能ID | 認証 |

@@ -1,0 +1,185 @@
+{# Demo portfolio change report (HTML, mobile-optimized) #}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="x-apple-disable-message-reformatting">
+<title>{{ subject }}</title>
+</head>
+<body style="margin:0;padding:0;background:#fff;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic',sans-serif;font-size:14px;line-height:1.6;color:#222;">
+<div style="max-width:600px;margin:0 auto;padding:16px;">
+
+<h1 style="font-size:20px;margin:0 0 16px;color:#222;">{{ subject }}</h1>
+
+{% if failed > 0 %}
+<div style="background:#fff8e1;border-left:4px solid #c79100;border-radius:4px;padding:16px;margin:16px 0;">
+{% else %}
+<div style="background:#f7f9fc;border-left:4px solid #2c5aa0;border-radius:4px;padding:16px;margin:16px 0;">
+{% endif %}
+  <p style="margin:0 0 8px;font-weight:bold;font-size:16px;">本日の取引サマリ</p>
+  <p style="margin:4px 0;">モード: {% if dry_run %}dry-run（POST未実行）{% else %}execute{% endif %}</p>
+  <p style="margin:4px 0;">
+    成功 <strong style="color:#27ae60;">{{ succeeded }}</strong>件 /
+    失敗 <strong style="color:#c0392b;">{{ failed }}</strong>件 /
+    スキップ <strong style="color:#666;">{{ skipped }}</strong>件
+  </p>
+  <p style="margin:4px 0;color:#666;font-size:13px;">batch_logs.id: {{ batch_log_id if batch_log_id is not none else 'N/A' }}</p>
+</div>
+
+<div style="margin:16px 0;">
+  <h2 style="font-size:16px;margin:0 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;color:#222;">本日のPOST取引一覧</h2>
+  {% if trade_results %}
+  <table style="border-collapse:collapse;width:100%;font-size:14px;">
+    <thead>
+      <tr style="background:#eef2f7;">
+        <th style="padding:6px 8px;text-align:left;border:1px solid #ddd;">ETF</th>
+        <th style="padding:6px 8px;text-align:left;border:1px solid #ddd;">売買</th>
+        <th style="padding:6px 8px;text-align:right;border:1px solid #ddd;">数量</th>
+        <th style="padding:6px 8px;text-align:right;border:1px solid #ddd;">参考価格</th>
+        <th style="padding:6px 8px;text-align:right;border:1px solid #ddd;">約定金額</th>
+        <th style="padding:6px 8px;text-align:left;border:1px solid #ddd;">結果</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in trade_results %}
+      <tr style="background:{{ '#fff' if loop.index is odd else '#fafbfc' }};">
+        <td style="padding:6px 8px;border:1px solid #ddd;">
+          <strong>{{ t.etf_code }}</strong><br>
+          <span style="color:#666;font-size:12px;">{{ t.etf_name|default('-') }}</span>
+        </td>
+        <td style="padding:6px 8px;border:1px solid #ddd;">
+          {% if t.trade_type == 'buy' %}<span style="color:#27ae60;">買</span>{% else %}<span style="color:#c0392b;">売</span>{% endif %}
+        </td>
+        <td style="padding:6px 8px;border:1px solid #ddd;text-align:right;">{{ "{:,}".format(t.quantity|int) }}</td>
+        <td style="padding:6px 8px;border:1px solid #ddd;text-align:right;">{{ "{:,.0f}".format(t.price|float) }}円</td>
+        <td style="padding:6px 8px;border:1px solid #ddd;text-align:right;">{{ "{:,.0f}".format((t.quantity|float) * (t.price|float)) }}円</td>
+        <td style="padding:6px 8px;border:1px solid #ddd;">
+          {% if t.status == 'success' %}<span style="color:#27ae60;">{{ t.status_label|default('✅ 成功') }}</span>{% elif t.status == 'failed' %}<span style="color:#c0392b;">{{ t.status_label|default('❌ 失敗') }}</span>{% elif t.status == 'skipped' %}<span style="color:#666;">{{ t.status_label|default('⏭ スキップ') }}</span>{% else %}<span style="color:#2c5aa0;">{{ t.status_label|default(t.status) }}</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="margin:8px 0;color:#666;">取引なし</p>
+  {% endif %}
+</div>
+
+<div style="margin:16px 0;">
+  <h2 style="font-size:16px;margin:0 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;color:#222;">ポートフォリオ概況（取引後）</h2>
+  {% if snapshot.portfolio %}
+  <dl style="margin:0;">
+    <dt style="font-weight:bold;margin-top:8px;">資産合計</dt>
+    <dd style="margin:0 0 4px 0;font-size:16px;">¥{{ "{:,}".format(snapshot.portfolio.total_asset|int) }}</dd>
+    <dt style="font-weight:bold;margin-top:8px;">前日比</dt>
+    <dd style="margin:0 0 4px 0;color:{{ daily_change_color }};">{{ daily_change_text }}</dd>
+    <dt style="font-weight:bold;margin-top:8px;">評価額 / 現金残高</dt>
+    <dd style="margin:0 0 4px 0;">¥{{ "{:,}".format(snapshot.portfolio.total_value|int) }} / ¥{{ "{:,}".format(snapshot.portfolio.cash_balance|int) }}</dd>
+    <dt style="font-weight:bold;margin-top:8px;">保有銘柄数</dt>
+    <dd style="margin:0 0 4px 0;">{{ snapshot.portfolio.holdings_count }}件</dd>
+  </dl>
+  {% else %}
+  <p style="margin:8px 0;color:#c0392b;">データ取得失敗（{{ snapshot.errors|join(', ') }}）</p>
+  {% endif %}
+</div>
+
+<div style="margin:16px 0;">
+  <h2 style="font-size:16px;margin:0 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;color:#222;">保有銘柄スナップショット</h2>
+  {% if snapshot.holdings %}
+  <table style="border-collapse:collapse;width:100%;font-size:14px;">
+    <thead>
+      <tr style="background:#eef2f7;">
+        <th style="padding:6px 8px;text-align:left;border:1px solid #ddd;">ETF</th>
+        <th style="padding:6px 8px;text-align:right;border:1px solid #ddd;">数量</th>
+        <th style="padding:6px 8px;text-align:right;border:1px solid #ddd;">現在値</th>
+        <th style="padding:6px 8px;text-align:right;border:1px solid #ddd;">評価額</th>
+        <th style="padding:6px 8px;text-align:right;border:1px solid #ddd;">含み損益</th>
+        <th style="padding:6px 8px;text-align:right;border:1px solid #ddd;">構成比</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for h in holdings_sorted %}
+      <tr style="background:{{ '#fff' if loop.index is odd else '#fafbfc' }};">
+        <td style="padding:6px 8px;border:1px solid #ddd;">
+          <strong>{{ h.etf_code }}</strong><br>
+          <span style="color:#666;font-size:12px;">{{ h.etf_name|default('-') }}</span>
+        </td>
+        <td style="padding:6px 8px;border:1px solid #ddd;text-align:right;">{{ "{:,}".format(h.quantity|int) }}</td>
+        <td style="padding:6px 8px;border:1px solid #ddd;text-align:right;">{{ "{:,.0f}".format(h.current_price|float) }}円</td>
+        <td style="padding:6px 8px;border:1px solid #ddd;text-align:right;">{{ "{:,.0f}".format(h.current_value|float) }}円</td>
+        <td style="padding:6px 8px;border:1px solid #ddd;text-align:right;color:{% if (h.unrealized_pnl|float) >= 0 %}#27ae60{% else %}#c0392b{% endif %};">
+          {{ "{:+,.0f}".format(h.unrealized_pnl|float) }}円<br>
+          <span style="font-size:12px;">({{ "%+.2f"|format(h.unrealized_pnl_percent|float) }}%)</span>
+        </td>
+        <td style="padding:6px 8px;border:1px solid #ddd;text-align:right;">{{ "%.2f"|format(h.weight_pct|float) }}%</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="margin:8px 0;color:#666;">データ取得失敗</p>
+  {% endif %}
+</div>
+
+<div style="margin:16px 0;">
+  <h2 style="font-size:16px;margin:0 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;color:#222;">過去1週間の資産推移</h2>
+  {% if snapshot.valuation_history %}
+  <table style="border-collapse:collapse;width:100%;font-size:14px;">
+    <thead>
+      <tr style="background:#eef2f7;">
+        <th style="padding:6px 8px;text-align:left;border:1px solid #ddd;">日付</th>
+        <th style="padding:6px 8px;text-align:right;border:1px solid #ddd;">資産合計</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for v in snapshot.valuation_history %}
+      <tr style="background:{{ '#fff' if loop.index is odd else '#fafbfc' }};">
+        <td style="padding:6px 8px;border:1px solid #ddd;">{{ v.date }}</td>
+        <td style="padding:6px 8px;border:1px solid #ddd;text-align:right;">¥{{ "{:,}".format(v.value|int) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p style="margin:8px 0;color:#666;">データ取得失敗</p>
+  {% endif %}
+</div>
+
+{% if failed_details %}
+<div style="margin:16px 0;">
+  <h2 style="font-size:16px;margin:0 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;color:#c0392b;">失敗詳細</h2>
+  <table style="border-collapse:collapse;width:100%;font-size:14px;">
+    <thead>
+      <tr style="background:#fdecec;">
+        <th style="padding:6px 8px;text-align:left;border:1px solid #ddd;">ETF</th>
+        <th style="padding:6px 8px;text-align:left;border:1px solid #ddd;">売買</th>
+        <th style="padding:6px 8px;text-align:right;border:1px solid #ddd;">数量</th>
+        <th style="padding:6px 8px;text-align:left;border:1px solid #ddd;">HTTP</th>
+        <th style="padding:6px 8px;text-align:left;border:1px solid #ddd;">error</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for f in failed_details %}
+      <tr style="background:{{ '#fff' if loop.index is odd else '#fafbfc' }};">
+        <td style="padding:6px 8px;border:1px solid #ddd;"><strong>{{ f.etf_code }}</strong></td>
+        <td style="padding:6px 8px;border:1px solid #ddd;">{{ '買' if f.trade_type == 'buy' else '売' }}</td>
+        <td style="padding:6px 8px;border:1px solid #ddd;text-align:right;">{{ "{:,}".format(f.quantity|int) }}</td>
+        <td style="padding:6px 8px;border:1px solid #ddd;">{{ f.http_status|default('-') }}</td>
+        <td style="padding:6px 8px;border:1px solid #ddd;font-size:13px;color:#c0392b;">{{ f.error_message|default('-') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<hr style="border:none;border-top:1px solid #ddd;margin:24px 0 12px;">
+<p style="color:#666;font-size:12px;margin:0;">
+  ログ: logs/execute_demo_trades.log<br>
+  レポート: reports/demo/{{ today_iso }}_demo_v2.md
+</p>
+
+</div>
+</body>
+</html>

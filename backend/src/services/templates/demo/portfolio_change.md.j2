@@ -1,0 +1,64 @@
+{# Demo portfolio change report (Markdown) #}
+# {{ subject }}
+
+## 本日の取引サマリ
+- モード: {% if dry_run %}dry-run（POST未実行）{% else %}execute{% endif +%}
+- 取引件数: 成功 {{ succeeded }}件 / 失敗 {{ failed }}件 / スキップ {{ skipped }}件
+- batch_logs.id: {{ batch_log_id if batch_log_id is not none else 'N/A' }}
+
+## 本日のPOST取引一覧
+{% if trade_results %}
+| ETFコード | 銘柄名 | 売買 | 数量 | 参考価格 | 約定金額 | 結果 | memo |
+|----------|--------|------|-----:|--------:|--------:|------|------|
+{% for t in trade_results %}
+| {{ t.etf_code }} | {{ t.etf_name|default('-') }} | {{ '買' if t.trade_type == 'buy' else '売' }} | {{ "{:,}".format(t.quantity|int) }} | {{ "{:,.0f}".format(t.price|float) }}円 | {{ "{:,.0f}".format((t.quantity|float) * (t.price|float)) }}円 | {{ t.status_label|default(t.status) }} | {{ t.memo|default('') }} |
+{% endfor %}
+{% else %}
+- 取引なし
+{% endif %}
+
+## ポートフォリオ概況（取引後）
+{% if snapshot.portfolio %}
+- 現金残高: ¥{{ "{:,}".format(snapshot.portfolio.cash_balance|int) }}
+- 保有銘柄数: {{ snapshot.portfolio.holdings_count }}件
+- 評価額合計: ¥{{ "{:,}".format(snapshot.portfolio.total_value|int) }}
+- 資産合計: ¥{{ "{:,}".format(snapshot.portfolio.total_asset|int) }}
+- 前日比: {{ daily_change_text }}
+{% else %}
+- データ取得失敗（{{ snapshot.errors|join(', ') }}）
+{% endif %}
+
+## 保有銘柄スナップショット
+{% if snapshot.holdings %}
+| ETFコード | 銘柄名 | 数量 | 現在値 | 評価額 | 含み損益 | 構成比 |
+|----------|--------|-----:|-------:|-------:|--------:|------:|
+{% for h in holdings_sorted %}
+| {{ h.etf_code }} | {{ h.etf_name|default('-') }} | {{ "{:,}".format(h.quantity|int) }} | {{ "{:,.0f}".format(h.current_price|float) }}円 | {{ "{:,.0f}".format(h.current_value|float) }}円 | {{ "{:+,.0f}".format(h.unrealized_pnl|float) }}円 ({{ "%+.2f"|format(h.unrealized_pnl_percent|float) }}%) | {{ "%.2f"|format(h.weight_pct|float) }}% |
+{% endfor %}
+{% else %}
+- データ取得失敗
+{% endif %}
+
+## 過去1週間の資産推移
+{% if snapshot.valuation_history %}
+| 日付 | 資産合計 |
+|------|---------:|
+{% for v in snapshot.valuation_history %}
+| {{ v.date }} | ¥{{ "{:,}".format(v.value|int) }} |
+{% endfor %}
+{% else %}
+- データ取得失敗
+{% endif %}
+
+{% if failed_details %}
+## 失敗詳細
+| ETFコード | 売買 | 数量 | HTTPステータス | error_message |
+|----------|------|-----:|---------------|---------------|
+{% for f in failed_details %}
+| {{ f.etf_code }} | {{ '買' if f.trade_type == 'buy' else '売' }} | {{ "{:,}".format(f.quantity|int) }} | {{ f.http_status|default('-') }} | {{ f.error_message|default('-') }} |
+{% endfor %}
+{% endif %}
+
+---
+ログ: logs/execute_demo_trades.log
+レポート: reports/demo/{{ today_iso }}_demo_v2.md

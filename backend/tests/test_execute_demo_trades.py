@@ -190,3 +190,76 @@ class TestMain:
         rc = _run_main(["execute_demo_trades.py", "--user", "demo", "--execute"])
         assert rc == 0
         patched_main["post"].assert_not_called()
+
+
+# ---- 通知統合のテスト --------------------------------------------------
+
+class TestNotifierIntegration:
+    """demo_portfolio_notifier との統合（main 末尾の notify 呼び出し）."""
+
+    def test_notify_called_after_post(self, patched_main, tmp_path):
+        """main() の末尾で notifier.notify が1回呼ばれる."""
+        _make_plan(tmp_path, "demo", [_trade(plan_id="P1")])
+        from src.services import demo_portfolio_notifier as notifier_mod
+        with patch.object(notifier_mod, "notify", return_value=True) as notify_mock:
+            rc = _run_main(["execute_demo_trades.py", "--user", "demo", "--execute"])
+
+        assert rc == 0
+        notify_mock.assert_called_once()
+        call_kwargs = notify_mock.call_args.kwargs
+        assert isinstance(call_kwargs["trade_results"], list)
+        assert call_kwargs["dry_run"] is False
+        assert call_kwargs["batch_log_id"] == 99
+
+    def test_notify_disabled_does_not_call_email_client(
+        self, patched_main, tmp_path, monkeypatch
+    ):
+        """DEMO_PORTFOLIO_REPORT_ENABLED 未設定時、内部で EmailClient.send が呼ばれない."""
+        _make_plan(tmp_path, "demo", [_trade(plan_id="P1")])
+        monkeypatch.delenv("DEMO_PORTFOLIO_REPORT_ENABLED", raising=False)
+
+        from src.services import demo_portfolio_notifier as notifier_mod
+        mock_client = MagicMock()
+        with patch.object(
+            notifier_mod, "EmailClient", return_value=mock_client
+        ), patch.object(
+            notifier_mod, "fetch_portfolio_snapshot", return_value={}
+        ) as fetch_mock:
+            rc = _run_main(["execute_demo_trades.py", "--user", "demo", "--execute"])
+
+        assert rc == 0
+        mock_client.send.assert_not_called()
+        # disabled の場合、fetch も呼ばれない（should_send で早期 False）
+        fetch_mock.assert_not_called()
+
+    def test_notify_failure_does_not_affect_exit_code(
+        self, patched_main, tmp_path
+    ):
+        """notify が例外を投げても main() の exit code は変わらない."""
+        _make_plan(tmp_path, "demo", [_trade(plan_id="P1")])
+        from src.services import demo_portfolio_notifier as notifier_mod
+        with patch.object(
+            notifier_mod, "notify", side_effect=RuntimeError("notify crashed")
+        ):
+            rc = _run_main(["execute_demo_trades.py", "--user", "demo", "--execute"])
+
+        # 取引は全成功なので exit code = 0
+        assert rc == 0
+        patched_main["post"].assert_called_once()
+
+    def test_results_includes_dry_run_status(self, patched_main, tmp_path):
+        """dry-run モードで notify に渡される results が status='dry_run' を含む."""
+        _make_plan(tmp_path, "demo", [_trade(plan_id="P1"), _trade(plan_id="P2", etf="2516")])
+        from src.services import demo_portfolio_notifier as notifier_mod
+        with patch.object(
+            notifier_mod, "notify", return_value=False
+        ) as notify_mock:
+            rc = _run_main(["execute_demo_trades.py", "--user", "demo", "--dry-run"])
+
+        assert rc == 0
+        notify_mock.assert_called_once()
+        results = notify_mock.call_args.kwargs["trade_results"]
+        assert len(results) == 2
+        assert all(r["status"] == "dry_run" for r in results)
+        # POST は呼ばれていない
+        patched_main["post"].assert_not_called()
