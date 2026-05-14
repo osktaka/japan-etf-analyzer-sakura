@@ -1,70 +1,39 @@
 ---
-revision: 2026-04-29
+revision: 2026-05-14
 owner: test
 benchmark: ^N225
 review_frequency: weekly_friday
 
-target_allocation:
-  core: 0.65
-  theme: 0.25
-  cash: 0.10
+target_buckets:
+  group_a: { label_ja: "A群（コア・逆相関）", weight_pct: 45.00 }
+  group_b: { label_ja: "B群（日本株テーマ）", weight_pct: 45.00 }
+  cash:    { label_ja: "現金",              weight_pct: 10.00 }
 
 target_holdings:
-  core:
-    - { code: "2559", name: "MAXIS全世界株", weight: 0.35 }
-    - { code: "1655", name: "iShares S&P500", weight: 0.20 }
-    - { code: "1306", name: "NF TOPIX", weight: 0.10 }
-  theme:
-    - { code: "200A", name: "NF日経半導体", weight: 0.10 }
-    - { code: "1545", name: "NF NASDAQ100", weight: 0.08 }
-    - { code: "2638", name: "GXロボティクス&AI日本", weight: 0.07 }
-
-sell_schedule:
-  - { date: "2026-05-07", code: "1540", name: "純金", quantity: 10, action: "all", reason: "金過剰、含み損損益通算枠" }
-  - { date: "2026-05-11", code: "2646", name: "メタル", quantity: 50, action: "all", reason: "テーマ枠を半導体/AIへ振替" }
-  - { date: "2026-05-13", code: "1627", name: "電力ガス", quantity: 15, action: "all", reason: "α-11.2pp、単一業種ベット撤収" }
-  - { date: "2026-05-14", code: "1629", name: "商社", quantity: 700, action: "all", reason: "α-12.2pp" }
-  - { date: "2026-05-19", code: "1618", name: "エネルギー", quantity: 4, action: "all", reason: "α-22.0pp" }
-  - { date: "2026-05-22", code: "466A", name: "防衛テック", quantity: 65, action: "all", reason: "α-23.6pp" }
-
-buy_dca_schedule:
-  - { date: "2026-05-20", code: "2559", quantity: 3 }
-  - { date: "2026-05-20", code: "1306", quantity: 8 }
-  - { date: "2026-05-20", code: "1655", quantity: 105 }
-  - { date: "2026-05-20", code: "200A", quantity: 4 }
-  - { date: "2026-05-20", code: "1545", quantity: 1 }
-  - { date: "2026-05-20", code: "2638", quantity: 11 }
-  - { date: "2026-06-24", code: "2559", quantity: 3 }
-  - { date: "2026-06-24", code: "1306", quantity: 8 }
-  - { date: "2026-06-24", code: "1655", quantity: 105 }
-  - { date: "2026-06-24", code: "200A", quantity: 4 }
-  - { date: "2026-06-24", code: "2638", quantity: 12 }
-  - { date: "2026-07-22", code: "2559", quantity: 3 }
-  - { date: "2026-07-22", code: "1306", quantity: 8 }
-  - { date: "2026-07-22", code: "1655", quantity: 105 }
-  - { date: "2026-07-22", code: "200A", quantity: 4 }
-  - { date: "2026-07-22", code: "1545", quantity: 1 }
-  - { date: "2026-07-22", code: "2638", quantity: 12 }
-  - { date: "2026-08-19", code: "2559", quantity: 3 }
-  - { date: "2026-08-19", code: "1306", quantity: 8 }
-  - { date: "2026-08-19", code: "1655", quantity: 105 }
-  - { date: "2026-08-19", code: "200A", quantity: 3 }
-  - { date: "2026-08-19", code: "1545", quantity: 1 }
-  - { date: "2026-08-19", code: "2638", quantity: 11 }
+  - { code: "2559", name: "オルカン",       bucket: "group_a", weight_pct: 15.00 }
+  - { code: "1540", name: "純金",           bucket: "group_a", weight_pct: 15.00 }
+  - { code: "200A", name: "半導体",         bucket: "group_a", weight_pct: 15.00 }
+  - { code: "1306", name: "TOPIX",          bucket: "group_b", weight_pct:  9.00 }
+  - { code: "1629", name: "商社",           bucket: "group_b", weight_pct:  9.00 }
+  - { code: "1615", name: "銀行",           bucket: "group_b", weight_pct:  9.00 }
+  - { code: "2646", name: "メタル",         bucket: "group_b", weight_pct:  9.00 }
+  - { code: "1618", name: "エネルギー資源", bucket: "group_b", weight_pct:  9.00 }
 
 mechanical_rules:
   min_holding_months: 6
   loss_cut_pct: -20.0
   take_profit_pct: [50.0, 100.0]
   n225_drawdown_trigger_pct: -5.0
-  n225_drawdown_basis: "previous_close"
+  n225_drawdown_basis: previous_close
   n225_dca_lookback_days: 10
   alpha_deviation_threshold_pp: 10.0
-  rebalance_threshold_pct: 5.0
-  rebalance_check_basis: "close"
+  drift_ok_pp: 3.0
+  drift_warn_pp: 5.0
+  rebalance_check_basis: close
 
 revision_history:
-  - { date: "2026-04-29", note: "初版・案1B戦略確定（コア65%/テーマ25%/現金10%）" }
+  - { date: "2026-05-14", note: "A群/B群モデル統一、core/theme廃止、sell_schedule/buy_dca_schedule撤去、rebalance通知をmorningに統合" }
+  - { date: "2026-04-29", note: "初版・案1B戦略確定" }
 ---
 
 # testユーザー個人投資戦略
@@ -80,35 +49,33 @@ revision_history:
 
 この反省を踏まえ、**機械的なルール**と**日々のリマインド**で行動を縛り直すための戦略書を策定する。
 
-## 2. 全体方針（案1B採用）
+## 2. 全体方針（A群/B群モデル採用）
 
 | 区分 | 配分 | 役割 |
 |------|------|------|
-| コア | 65% | 全世界・S&P500・TOPIXの広域インデックス |
-| テーマ | 25% | 半導体・NASDAQ100・ロボティクスAI（4ヶ月DCAで段階構築） |
+| A群（コア・逆相関） | 45% | オルカン(15%) + 純金(15%) + 半導体(15%)。互いに相関の低い3資産で大局を構成 |
+| B群（日本株テーマ） | 45% | TOPIX / 商社 / 銀行 / メタル / エネルギー資源 各9%。日本株5テーマに均等配分 |
 | 現金 | 10% | 急落時の機動枠 |
 
 ベンチマークは **^N225（日経平均）** を継続。^N225 比較で α が ±10pp を超えて逸脱したら警告。
 
-## 3. 売却スケジュール
+採用銘柄および目標配分は frontmatter `target_buckets` / `target_holdings` を参照。
 
-α劣後・テーマ重複・損益通算を加味した順序で 2026-05-07 〜 2026-05-22 に段階売却する。詳細は frontmatter `sell_schedule` を参照。
+## 3. 現状からのリバランス
 
-主な根拠:
+採用外で保有している銘柄は **次回四半期末（3/6/9/12月末営業日）に全量売却** を推奨する。
+採用8銘柄については、各銘柄の目標配分と現状配分の乖離 (`drift_pp`) に応じて、四半期末リバランスで売買数量を **自動算出** する。
 
-- **1540 純金**: コモディティ枠が過剰（金 + メタル ≈ 18%）。含み損で損益通算枠として活用
-- **2646 メタル**: テーマ枠を半導体/AI/全世界株に振替（戦略整合性）
-- **1627 電力ガス / 1629 商社 / 1618 エネルギー / 466A 防衛テック**: α逸脱が10pp超の単一業種集中銘柄、撤収して6銘柄ポートフォリオに集約
+日付固定の売却スケジュール（旧 `sell_schedule`）は廃止した。日々の `morning` 通知に当日の推奨アクション（採用外売却＋採用銘柄の不足/超過調整）が組み込まれる。
 
-## 4. 買付（DCA）スケジュール
+## 4. 買付方針
 
-売却完了後の現金を **4ヶ月 DCA**（毎月第3水曜前後、計4回）で6銘柄に投入。各回約25万円、6銘柄に等分の数量で購入。詳細は frontmatter `buy_dca_schedule` を参照。
+月次DCA（旧 `buy_dca_schedule`）は廃止。四半期末リバランスでのみ目標配分に追従する。
 
-DCA を使う理由:
+理由:
 
-- 一括投入で底値判断ミスのリスクを排除
-- 行動の習慣化（毎月のリマインド受信→約定→記帳）
-- 急落時は前倒しで投入（後述の「N225 -5%下落」ルール）
+- A群/B群モデルでは目標配分そのものが分散効果を担うため、追加買付タイミングを月次に細分化する優位性が小さい
+- 緊急時の機動枠（現金10%）は維持し、N225 急落（-5%）時のみ前倒し買付を検討する
 
 ## 5. 機械ルール
 
@@ -127,10 +94,11 @@ DCA を使う理由:
 
 | ルール | 閾値 | 説明 |
 |--------|------|------|
-| N225 急落（watcher） | -5.0%（前日終値比） | アラートメール送信、DCA前倒し検討 |
-| N225 直近10営業日DD | -5.0% | DCA前倒しトリガー |
-| 配分逸脱 | 5pp | コア/テーマ/現金の目標配分から終値ベースで5pp逸脱で warn |
-| α逸脱 | 10pp | ベンチマーク比 ±10pp を超えた銘柄を週次レビューで強調 |
+| N225 急落（watcher） | -5.0%（前日終値比） | アラートメール送信、買付前倒し検討 |
+| N225 直近10営業日DD | -5.0% | 買付前倒しトリガー |
+| 配分逸脱 OK | `drift_ok_pp` (3.0pp) | A群/B群/現金の目標配分から終値ベースで 3pp 未満なら問題なし |
+| 配分逸脱 WARN | `drift_warn_pp` (5.0pp) | 3pp 以上 5pp 未満で warn、5pp 以上で critical |
+| α逸脱 | `alpha_deviation_threshold_pp` (10pp) | ベンチマーク比 ±10pp を超えた銘柄を週次レビューで強調 |
 
 ### 5.3 fingerprint による重複通知抑止
 
@@ -138,16 +106,16 @@ DCA を使う理由:
 
 ## 6. レビュー頻度
 
-- **毎日朝7時**: 当日の売買予定・前日比をメール
-- **平日17:30**: 当日終値ベースの保有状況・配分・α 概況
-- **金曜18時**: 過去5営業日の振り返り（α、配分逸脱、機械ルール発動履歴）
-- **平日 9:00-15:00 5分間隔**: N225・個別銘柄の機械ルール監視（イベント発生時のみメール）
+- **毎日朝7時（morning）**: 当日の推奨売買・配分状況・前日比をメール（rebalance kind は morning に統合済み）
+- **平日17:30（evening）**: 当日終値ベースの保有状況・配分・α 概況
+- **金曜18時（weekly）**: 過去5営業日の振り返り（α、配分逸脱、機械ルール発動履歴）
+- **平日 9:00-15:00 5分間隔（watcher）**: N225・個別銘柄の機械ルール監視（イベント発生時のみメール）
 
 ## 7. 改訂ルール
 
 - 戦略変更は frontmatter の `revision` 日付を更新し、`revision_history` に追記
 - 機械ルール閾値の変更は **月次以上の頻度では行わない**（短期相場で揺れる）
-- 売買スケジュール完了後、実績と乖離があれば次月の改訂で反映
+- 採用銘柄の入替（`target_holdings`）は四半期末以降の reflection を待って判断
 
 ---
 

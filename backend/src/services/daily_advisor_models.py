@@ -35,14 +35,15 @@ class BuyAction:
 class AllocationDrift:
     """配分逸脱."""
 
-    bucket: str  # "core" | "theme" | "cash"
+    bucket: str  # "group_a" | "group_b" | "cash" | "other"
     target_pct: float
     actual_pct: float
     drift_pp: float
+    warn_threshold_pp: float  # mechanical_rules.drift_warn_pp 由来（SSOT、必須）
 
     @property
     def is_warn(self) -> bool:
-        return abs(self.drift_pp) > 5.0
+        return abs(self.drift_pp) > self.warn_threshold_pp
 
 
 @dataclass(frozen=True)
@@ -61,15 +62,15 @@ class RuleTrigger:
 class NotificationContext:
     """通知レンダリング用のコンテキスト."""
 
-    kind: str  # "morning" | "evening" | "weekly" | "alert"
+    kind: str  # "morning" | "evening" | "weekly" | "alert"  # 旧 "rebalance" は morning に統合
     today: date
     user_id: str
     strategy_revision: date
     benchmark: str
 
-    # 当日アクション
-    sells_today: Tuple[SellAction, ...] = ()
-    buys_today: Tuple[BuyAction, ...] = ()
+    # 配分閾値（strategy.mechanical_rules から注入。SSOT、必須）
+    drift_ok_pp: float
+    drift_warn_pp: float
 
     # 保有・配分
     total_asset: float = 0.0
@@ -92,7 +93,8 @@ class NotificationContext:
     month_start_total_asset: Optional[float] = None
     month_start_change_pct: Optional[float] = None
 
-    # リバランス計画（kind="rebalance" のみ使用）
+    # リバランス計画（kind="morning" に統合: 配分テーブル・採用外保有・
+    # 次回リバランス日カウントダウン・四半期末日の本日アクション表示用）
     rebalance_plan: Optional["RebalancePlan"] = None
 
     # その他

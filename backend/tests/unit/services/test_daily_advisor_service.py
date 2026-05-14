@@ -21,41 +21,40 @@ from src.services.daily_advisor_service import (
     compute_allocation_drift,
     compute_return_from_history,
     evaluate_mechanical_rules,
-    is_dca_day,
-    is_sell_day,
     is_weekly_review_day,
     make_fingerprint,
 )
 from src.services.strategy_loader import StrategyLoader
 
 VALID = """---
-revision: 2026-04-29
+revision: 2026-05-14
 owner: test
 benchmark: ^N225
 review_frequency: weekly_friday
-target_allocation:
-  core: 0.65
-  theme: 0.25
-  cash: 0.10
+target_buckets:
+  group_a: { label_ja: "A群（コア・逆相関）", weight_pct: 45.00 }
+  group_b: { label_ja: "B群（日本株テーマ）", weight_pct: 45.00 }
+  cash:    { label_ja: "現金",              weight_pct: 10.00 }
 target_holdings:
-  core:
-    - { code: "2559", name: "MAXIS全世界株", weight: 0.35 }
-  theme:
-    - { code: "200A", name: "NF日経半導体", weight: 0.10 }
-sell_schedule:
-  - { date: "2026-05-07", code: "1540", name: "純金", quantity: 10, action: "all", reason: "金過剰" }
-buy_dca_schedule:
-  - { date: "2026-05-20", code: "2559", quantity: 3 }
+  - { code: "2559", name: "オルカン",       bucket: "group_a", weight_pct: 15.00 }
+  - { code: "1540", name: "純金",           bucket: "group_a", weight_pct: 15.00 }
+  - { code: "200A", name: "半導体",         bucket: "group_a", weight_pct: 15.00 }
+  - { code: "1306", name: "TOPIX",          bucket: "group_b", weight_pct:  9.00 }
+  - { code: "1629", name: "商社",           bucket: "group_b", weight_pct:  9.00 }
+  - { code: "1615", name: "銀行",           bucket: "group_b", weight_pct:  9.00 }
+  - { code: "2646", name: "メタル",         bucket: "group_b", weight_pct:  9.00 }
+  - { code: "1618", name: "エネルギー資源", bucket: "group_b", weight_pct:  9.00 }
 mechanical_rules:
   min_holding_months: 6
   loss_cut_pct: -20.0
   take_profit_pct: [50.0, 100.0]
   n225_drawdown_trigger_pct: -5.0
-  n225_drawdown_basis: "previous_close"
+  n225_drawdown_basis: previous_close
   n225_dca_lookback_days: 10
   alpha_deviation_threshold_pp: 10.0
-  rebalance_threshold_pct: 5.0
-  rebalance_check_basis: "close"
+  drift_ok_pp: 3.0
+  drift_warn_pp: 5.0
+  rebalance_check_basis: close
 ---
 本文"""
 
@@ -71,18 +70,6 @@ def strategy():
 
 
 class TestDatePredicates:
-    def test_is_sell_day_true(self, strategy):
-        assert is_sell_day(strategy, date(2026, 5, 7)) is True
-
-    def test_is_sell_day_false(self, strategy):
-        assert is_sell_day(strategy, date(2026, 5, 8)) is False
-
-    def test_is_dca_day_true(self, strategy):
-        assert is_dca_day(strategy, date(2026, 5, 20)) is True
-
-    def test_is_dca_day_false(self, strategy):
-        assert is_dca_day(strategy, date(2026, 5, 21)) is False
-
     def test_is_weekly_review_day_friday(self):
         assert is_weekly_review_day(date(2026, 5, 1)) is True  # 金曜
 
@@ -255,20 +242,45 @@ class TestMinHoldingPeriod:
 
 
 class TestAllocationDrift:
-    def test_compute_drift(self):
-        target = {"core": 0.65, "theme": 0.25, "cash": 0.10}
-        actual = {"core": 0.40, "theme": 0.25, "cash": 0.35}
+    def test_compute_drift(self, strategy):
+        # group_a target=0.45, group_b target=0.45, cash target=0.10
+        actual = {"group_a": 0.30, "group_b": 0.45, "cash": 0.25, "other": 0.0}
         drifts = compute_allocation_drift(
-            target_allocation=target, actual_buckets=actual
+            strategy=strategy, actual_buckets=actual
         )
         d_map = {d.bucket: d for d in drifts}
-        assert d_map["core"].drift_pp == -25.0
-        assert d_map["cash"].drift_pp == 25.0
-        assert d_map["theme"].drift_pp == 0.0
+        assert d_map["group_a"].drift_pp == -15.0
+        assert d_map["group_b"].drift_pp == 0.0
+        assert d_map["cash"].drift_pp == 15.0
+        # other は actual=0 のため drift エントリは生成されない
+        assert "other" not in d_map
+
+    def test_compute_drift_with_other(self, strategy):
+        """採用外保有がある場合、other バケットが drift に出る."""
+        actual = {"group_a": 0.40, "group_b": 0.40, "cash": 0.10, "other": 0.10}
+        drifts = compute_allocation_drift(
+            strategy=strategy, actual_buckets=actual
+        )
+        d_map = {d.bucket: d for d in drifts}
+        assert "other" in d_map
+        assert d_map["other"].target_pct == 0.0
+        assert d_map["other"].actual_pct == 10.0
+        assert d_map["other"].drift_pp == 10.0
+
+    def test_compute_drift_warn_threshold_propagates(self, strategy):
+        actual = {"group_a": 0.45, "group_b": 0.45, "cash": 0.10}
+        drifts = compute_allocation_drift(
+            strategy=strategy, actual_buckets=actual
+        )
+        for d in drifts:
+            assert d.warn_threshold_pp == 5.0
 
     def test_check_drift_warn_above_threshold(self):
         drifts = (
-            AllocationDrift(bucket="core", target_pct=65.0, actual_pct=58.0, drift_pp=-7.0),
+            AllocationDrift(
+                bucket="group_a", target_pct=45.0, actual_pct=38.0,
+                drift_pp=-7.0, warn_threshold_pp=5.0,
+            ),
         )
         rs = _check_allocation_drift(
             drifts, threshold_pct=5.0, today=date.today(), user_id="test"
@@ -278,7 +290,10 @@ class TestAllocationDrift:
 
     def test_check_drift_under_threshold(self):
         drifts = (
-            AllocationDrift(bucket="core", target_pct=65.0, actual_pct=62.0, drift_pp=-3.0),
+            AllocationDrift(
+                bucket="group_a", target_pct=45.0, actual_pct=42.0,
+                drift_pp=-3.0, warn_threshold_pp=5.0,
+            ),
         )
         rs = _check_allocation_drift(
             drifts, threshold_pct=5.0, today=date.today(), user_id="test"
@@ -347,20 +362,40 @@ class TestFingerprint:
 
 class TestClassifyBuckets:
     def test_basic_classification(self, strategy):
+        # group_a 採用銘柄: 2559/1540/200A, group_b 採用銘柄: 1306/1629/1615/2646/1618
         holdings = [
-            {"etf_code": "2559", "current_value": 650_000.0},  # core
-            {"etf_code": "200A", "current_value": 250_000.0},  # theme
-            {"etf_code": "9999", "current_value": 0.0},        # other
+            {"etf_code": "2559", "current_value": 450_000.0},  # group_a
+            {"etf_code": "1306", "current_value": 450_000.0},  # group_b
         ]
-        b = classify_buckets(holdings=holdings, cash_balance=100_000.0, strategy=strategy)
-        assert round(b["core"], 2) == 0.65
-        assert round(b["theme"], 2) == 0.25
+        b = classify_buckets(
+            holdings=holdings, cash_balance=100_000.0, strategy=strategy
+        )
+        assert round(b["group_a"], 2) == 0.45
+        assert round(b["group_b"], 2) == 0.45
         assert round(b["cash"], 2) == 0.10
         assert b["other"] == 0.0
 
+    def test_other_bucket_for_unlisted_codes(self, strategy):
+        """採用外銘柄は other バケットに分類される."""
+        holdings = [
+            {"etf_code": "2559", "current_value": 400_000.0},  # group_a
+            {"etf_code": "1306", "current_value": 400_000.0},  # group_b
+            {"etf_code": "9999", "current_value": 100_000.0},  # 採用外 → other
+        ]
+        b = classify_buckets(
+            holdings=holdings, cash_balance=100_000.0, strategy=strategy
+        )
+        assert round(b["other"], 2) == 0.10
+        assert round(b["group_a"], 2) == 0.40
+        assert round(b["group_b"], 2) == 0.40
+        assert round(b["cash"], 2) == 0.10
+
     def test_empty_returns_zeros(self, strategy):
         b = classify_buckets(holdings=[], cash_balance=0.0, strategy=strategy)
-        assert b["core"] == 0.0
+        assert b["group_a"] == 0.0
+        assert b["group_b"] == 0.0
+        assert b["cash"] == 0.0
+        assert b["other"] == 0.0
 
 
 # ============================================================
@@ -499,13 +534,21 @@ class TestContextBuilders:
             },
         )
         assert ctx.kind == "morning"
-        assert len(ctx.sells_today) == 1
-        assert ctx.sells_today[0].code == "1540"
+        # 旧 sells_today/buys_today フィールドは NotificationContext から撤去済み.
+        # 本日の発注情報はテンプレ側で rebalance_plan から導出する.
         assert ctx.daily_change_pct == 0.5
+        # rebalance_plan 未指定時は None (rebalance_plan は morning kind 専用フィールド).
+        assert ctx.rebalance_plan is None
+        # 配分閾値が strategy から正しく注入されている
+        assert ctx.drift_ok_pp == strategy.mechanical_rules.drift_ok_pp
+        assert ctx.drift_warn_pp == strategy.mechanical_rules.drift_warn_pp
 
     def test_evening_context(self, strategy):
         drifts = (
-            AllocationDrift(bucket="core", target_pct=65.0, actual_pct=63.0, drift_pp=-2.0),
+            AllocationDrift(
+                bucket="group_a", target_pct=45.0, actual_pct=43.0,
+                drift_pp=-2.0, warn_threshold_pp=5.0,
+            ),
         )
         ctx = build_evening_context(
             strategy=strategy,
@@ -520,7 +563,14 @@ class TestContextBuilders:
             triggers=(),
         )
         assert ctx.kind == "evening"
-        assert ctx.allocation_drifts == drifts
+        # warn_threshold_pp が strategy 由来で揃えられている
+        assert all(
+            d.warn_threshold_pp == strategy.mechanical_rules.drift_warn_pp
+            for d in ctx.allocation_drifts
+        )
+        # 内容は変わらない
+        assert ctx.allocation_drifts[0].bucket == "group_a"
+        assert ctx.allocation_drifts[0].drift_pp == -2.0
 
     def test_weekly_context_alpha(self, strategy):
         ctx = build_weekly_context(

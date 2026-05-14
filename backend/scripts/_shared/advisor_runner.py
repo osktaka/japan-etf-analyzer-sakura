@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 JST = ZoneInfo("Asia/Tokyo")
 
-KindT = Literal["morning", "evening", "weekly", "alert", "rebalance"]
+KindT = Literal["morning", "evening", "weekly", "alert"]
 
 
 def _import_late():
@@ -32,7 +32,6 @@ def _import_late():
         build_alert_context,
         build_evening_context,
         build_morning_context,
-        build_rebalance_context,
         build_weekly_context,
         classify_buckets,
         compute_allocation_drift,
@@ -56,7 +55,6 @@ def _import_late():
         "build_alert_context": build_alert_context,
         "build_evening_context": build_evening_context,
         "build_morning_context": build_morning_context,
-        "build_rebalance_context": build_rebalance_context,
         "build_weekly_context": build_weekly_context,
         "classify_buckets": classify_buckets,
         "compute_allocation_drift": compute_allocation_drift,
@@ -122,18 +120,6 @@ class AdvisorRunner:
             return 1
 
         today = datetime.now(JST).date()
-        # rebalance kind は対象ユーザー不在時に build_context が None を返すため、
-        # ctx 構築前に user 解決状況を直接チェックし、skip 時は exit 0 で正常終了する。
-        if kind == "rebalance":
-            user_id_int = _resolve_user_id(
-                deps["UserRepository"], self.user_id_str
-            )
-            if user_id_int is None:
-                logger.warning(
-                    "rebalance: user %r not found, skipping notification",
-                    self.user_id_str,
-                )
-                return 0
         ctx = self._build_context(kind, strategy, deps, today)
         if ctx is None:
             logger.error("Failed to build context for kind=%s", kind)
@@ -182,7 +168,7 @@ class AdvisorRunner:
         if kind == "alert":
             return self._build_alert_context(strategy, deps, today)
 
-        # morning/evening/weekly/rebalance は portfolio が必要
+        # morning/evening/weekly は portfolio が必要
         user_id_int = _resolve_user_id(deps["UserRepository"], self.user_id_str)
         if user_id_int is None:
             logger.warning(
@@ -203,30 +189,24 @@ class AdvisorRunner:
                 holdings = []
 
         if kind == "morning":
+            # リバランス計画（配分テーブル・採用外保有・カウントダウン・四半期末アクション）を統合
+            rebalance_plan = None
+            if user_id_int is not None:
+                try:
+                    rebalance_plan = deps["PortfolioRebalanceService"](
+                        strategy
+                    ).calculate_rebalance_plan(
+                        user_id=user_id_int,
+                        as_of_date=today,
+                    )
+                except Exception as e:  # noqa: BLE001
+                    logger.warning(
+                        "Rebalance plan calculation failed (continuing without it): %s",
+                        e,
+                    )
             return deps["build_morning_context"](
                 strategy=strategy, today=today, user_id=self.user_id_str,
-                summary=summary, triggers=(),
-            )
-
-        if kind == "rebalance":
-            if user_id_int is None:
-                # alert と同じく、対象ユーザー不在時は空 plan を送信しない
-                logger.warning(
-                    "rebalance: user %r not found, skipping notification",
-                    self.user_id_str,
-                )
-                return None
-            try:
-                plan = deps["PortfolioRebalanceService"]().calculate_rebalance_plan(
-                    user_id=user_id_int,
-                    as_of_date=today,
-                )
-            except Exception as e:  # noqa: BLE001
-                logger.exception("Rebalance plan calculation failed: %s", e)
-                return None
-            return deps["build_rebalance_context"](
-                strategy=strategy, today=today, user_id=self.user_id_str,
-                summary=summary, rebalance_plan=plan,
+                summary=summary, rebalance_plan=rebalance_plan, triggers=(),
             )
 
         # evening/weekly: 配分・トリガー計算
@@ -236,7 +216,7 @@ class AdvisorRunner:
             strategy=strategy,
         )
         drifts = deps["compute_allocation_drift"](
-            target_allocation=strategy.target_allocation,
+            strategy=strategy,
             actual_buckets=actual,
         )
         n225_change = self._fetch_n225_change(deps)

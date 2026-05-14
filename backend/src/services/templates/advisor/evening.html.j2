@@ -37,13 +37,25 @@
 
 <h2 style="font-size:18px;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;">配分</h2>
 <ul style="margin:0;padding-left:20px;">
-{% for d in allocation_drifts %}
+{% for d in allocation_drifts if d.bucket != "other" %}
 <li style="margin-bottom:8px;">
   {% if d.is_warn %}<span style="display:inline-block;background:#fce4e4;color:#c00;padding:2px 8px;border-radius:4px;font-size:12px;margin-right:6px;">警告</span>{% endif %}
   <strong>{{ bucket_label(d.bucket) }}</strong>: {{ "%.1f"|format(d.actual_pct) }}%（目標 {{ "%.1f"|format(d.target_pct) }}%、差 {{ "%+.2f"|format(d.drift_pp) }}pp）
 </li>
 {% endfor %}
 </ul>
+
+{% set non_adopted = allocation_drifts | selectattr("bucket", "equalto", "other") | list %}
+{% if non_adopted %}
+<h2 style="font-size:18px;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;">採用外保有</h2>
+<ul style="margin:0;padding-left:20px;">
+{% for d in non_adopted %}
+<li style="margin-bottom:8px;">
+  <strong>{{ bucket_label(d.bucket) }}</strong>: {{ "%.1f"|format(d.actual_pct) }}% — 次回リバランスで売却推奨
+</li>
+{% endfor %}
+</ul>
+{% endif %}
 
 {% if triggers %}
 <h2 style="font-size:18px;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;">機械ルール</h2>

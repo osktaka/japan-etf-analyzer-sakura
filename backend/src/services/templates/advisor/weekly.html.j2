@@ -1,7 +1,8 @@
 {% from '_macros.j2' import bucket_label, rule_kind_label, action_label %}
+{% set _adopted_drifts = allocation_drifts | rejectattr("bucket", "equalto", "other") | list %}
 {% set warn_drifts = allocation_drifts | selectattr("is_warn") | list %}
-{% set drift_buys = allocation_drifts | selectattr("drift_pp", "lt", -5.0) | list %}
-{% set drift_sells = allocation_drifts | selectattr("drift_pp", "gt", 5.0) | list %}
+{% set drift_buys = _adopted_drifts | selectattr("drift_pp", "lt", -drift_warn_pp) | list %}
+{% set drift_sells = _adopted_drifts | selectattr("drift_pp", "gt", drift_warn_pp) | list %}
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -47,7 +48,7 @@
 
 <h2 style="font-size:18px;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;">配分カテゴリ別</h2>
 <ul style="margin:0;padding-left:20px;">
-{% for d in allocation_drifts %}
+{% for d in _adopted_drifts %}
 <li style="margin-bottom:8px;">
   {% if d.is_warn %}<span style="display:inline-block;background:#fce4e4;color:#c00;padding:2px 8px;border-radius:4px;font-size:12px;margin-right:6px;">警告</span>{% endif %}
   <strong>{{ bucket_label(d.bucket) }}</strong>: {{ "%.1f"|format(d.actual_pct) }}%（目標 {{ "%.1f"|format(d.target_pct) }}%、差 {{ "%+.2f"|format(d.drift_pp) }}pp）
@@ -55,11 +56,23 @@
 {% endfor %}
 </ul>
 
+{% set non_adopted = allocation_drifts | selectattr("bucket", "equalto", "other") | list %}
+{% if non_adopted %}
+<h2 style="font-size:18px;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;">採用外保有</h2>
+<ul style="margin:0;padding-left:20px;">
+{% for d in non_adopted %}
+<li style="margin-bottom:8px;">
+  <strong>{{ bucket_label(d.bucket) }}</strong>: {{ "%.1f"|format(d.actual_pct) }}% — 次回リバランスで売却推奨
+</li>
+{% endfor %}
+</ul>
+{% endif %}
+
 {% if (alpha_pp is not none and alpha_pp <= -2.0) or drift_buys or drift_sells %}
 <h2 style="font-size:18px;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;">来週の推奨アクション</h2>
 <ul style="margin:0;padding-left:20px;">
 {% if alpha_pp is not none and alpha_pp <= -2.0 %}
-<li style="margin-bottom:8px;">コア（市場全体）ETFの追加買付を検討（α {{ "%+.2f"|format(alpha_pp) }}pp）</li>
+<li style="margin-bottom:8px;">A群（コア・逆相関）ETFの追加買付を検討（α {{ "%+.2f"|format(alpha_pp) }}pp）</li>
 <li style="margin-bottom:8px;">現金比率が高い場合は段階的に投入を検討</li>
 {% endif %}
 {% for d in drift_buys %}

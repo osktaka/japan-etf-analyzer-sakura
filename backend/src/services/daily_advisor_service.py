@@ -33,7 +33,6 @@ __all__ = [
     "build_alert_context",
     "build_evening_context",
     "build_morning_context",
-    "build_rebalance_context",
     "build_weekly_context",
     "classify_buckets",
     "compute_allocation_drift",
@@ -41,8 +40,6 @@ __all__ = [
     "compute_return_from_history",
     "context_to_payload",
     "evaluate_mechanical_rules",
-    "is_dca_day",
-    "is_sell_day",
     "is_weekly_review_day",
     "make_fingerprint",
 ]
@@ -51,16 +48,6 @@ __all__ = [
 # ============================================================
 # Pure date predicates
 # ============================================================
-
-
-def is_sell_day(strategy: Strategy, target: date) -> bool:
-    """指定日に売却予定があるか."""
-    return any(s.date == target for s in strategy.sell_schedule)
-
-
-def is_dca_day(strategy: Strategy, target: date) -> bool:
-    """指定日にDCA買付予定があるか."""
-    return any(b.date == target for b in strategy.buy_dca_schedule)
 
 
 def is_weekly_review_day(target: date) -> bool:
@@ -194,28 +181,45 @@ def _check_min_holding_period(
 
 def compute_allocation_drift(
     *,
-    target_allocation: Dict[str, float],
+    strategy: Strategy,
     actual_buckets: Dict[str, float],
 ) -> Tuple[AllocationDrift, ...]:
     """目標配分との差を計算.
 
     Args:
-        target_allocation: {"core": 0.65, "theme": 0.25, "cash": 0.10}
-        actual_buckets:    {"core": 0.40, "theme": 0.25, "cash": 0.35}（実配分）
+        strategy: target_buckets と mechanical_rules.drift_warn_pp を提供.
+        actual_buckets: {"group_a": 0.45, "group_b": 0.45, "cash": 0.10, "other": 0.0}.
 
     Returns:
-        各bucketのdrift（pp単位）
+        各bucket(group_a/group_b/cash/other)のdrift（pp単位）.
+        other は target=0% で扱い、保有があれば自動で逸脱として表示される.
     """
+    warn_pp = strategy.mechanical_rules.drift_warn_pp
     drifts: List[AllocationDrift] = []
-    for bucket, target in target_allocation.items():
-        actual = actual_buckets.get(bucket, 0.0)
+    # target_buckets に含まれる group_a/group_b/cash を順に処理.
+    for bucket_key, bucket_def in strategy.target_buckets.items():
+        actual = actual_buckets.get(bucket_key, 0.0)
+        target = bucket_def.weight_pct / 100.0
         drift_pp = (actual - target) * 100.0
         drifts.append(
             AllocationDrift(
-                bucket=bucket,
+                bucket=bucket_key,
                 target_pct=target * 100.0,
                 actual_pct=actual * 100.0,
                 drift_pp=round(drift_pp, 2),
+                warn_threshold_pp=warn_pp,
+            )
+        )
+    # other（採用外保有）: target=0%
+    other_actual = actual_buckets.get("other", 0.0)
+    if other_actual > 0.0:
+        drifts.append(
+            AllocationDrift(
+                bucket="other",
+                target_pct=0.0,
+                actual_pct=other_actual * 100.0,
+                drift_pp=round(other_actual * 100.0, 2),
+                warn_threshold_pp=warn_pp,
             )
         )
     return tuple(drifts)
@@ -311,7 +315,7 @@ def evaluate_mechanical_rules(
     triggers.extend(
         _check_allocation_drift(
             allocation_drifts,
-            threshold_pct=rules.rebalance_threshold_pct,
+            threshold_pct=rules.drift_warn_pp,
             today=today,
             user_id=user_id,
         )
@@ -331,35 +335,37 @@ def classify_buckets(
     cash_balance: float,
     strategy: Strategy,
 ) -> Dict[str, float]:
-    """保有銘柄を core/theme/cash に分類し、各bucketの構成比を返す.
+    """保有銘柄を group_a/group_b/cash/other に分類し、各bucketの構成比を返す.
 
     分類ルール:
-    - 戦略の target_holdings_core にある銘柄 → core
-    - 戦略の target_holdings_theme にある銘柄 → theme
-    - それ以外の保有銘柄 → "other"（売却予定として temp 扱い）
+    - 戦略の target_holdings で bucket=="group_a" の銘柄 → group_a
+    - 戦略の target_holdings で bucket=="group_b" の銘柄 → group_b
+    - 上記いずれにも含まれない保有銘柄 → "other"（採用外）
+    - 現金 → "cash"
     """
-    core_codes = {h.code for h in strategy.target_holdings_core}
-    theme_codes = {h.code for h in strategy.target_holdings_theme}
+    # 銘柄コード -> bucket dict（採用銘柄のみ）
+    bucket_of: Dict[str, str] = {h.code: h.bucket for h in strategy.target_holdings}
 
-    core_value = 0.0
-    theme_value = 0.0
+    group_a_value = 0.0
+    group_b_value = 0.0
     other_value = 0.0
     for h in holdings:
         code = h.get("etf_code")
         v = float(h.get("current_value", 0.0))
-        if code in core_codes:
-            core_value += v
-        elif code in theme_codes:
-            theme_value += v
+        bucket = bucket_of.get(code)
+        if bucket == "group_a":
+            group_a_value += v
+        elif bucket == "group_b":
+            group_b_value += v
         else:
             other_value += v
 
-    total = core_value + theme_value + other_value + cash_balance
+    total = group_a_value + group_b_value + other_value + cash_balance
     if total <= 0:
-        return {"core": 0.0, "theme": 0.0, "cash": 0.0, "other": 0.0}
+        return {"group_a": 0.0, "group_b": 0.0, "cash": 0.0, "other": 0.0}
     return {
-        "core": core_value / total,
-        "theme": theme_value / total,
+        "group_a": group_a_value / total,
+        "group_b": group_b_value / total,
         "cash": cash_balance / total,
         "other": other_value / total,
     }
@@ -424,7 +430,6 @@ from src.services.daily_advisor_contexts import (  # noqa: E402
     build_alert_context,
     build_evening_context,
     build_morning_context,
-    build_rebalance_context,
     build_weekly_context,
 )
 

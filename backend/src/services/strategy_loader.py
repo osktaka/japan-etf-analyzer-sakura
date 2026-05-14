@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 import yaml
 
@@ -14,32 +14,21 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class TargetHolding:
-    """目標保有銘柄."""
+    """目標保有銘柄（フラット配列の1要素）."""
 
     code: str
     name: str
-    weight: float
+    bucket: str  # "group_a" | "group_b"
+    weight_pct: float  # 0〜100
 
 
 @dataclass(frozen=True)
-class SellAction:
-    """売却スケジュール項目."""
+class BucketDef:
+    """バケット定義（group_a / group_b / cash）."""
 
-    date: date
-    code: str
-    name: str
-    quantity: int
-    action: str  # "all" | "half" | "quarter" 等
-    reason: str
-
-
-@dataclass(frozen=True)
-class BuyAction:
-    """DCA買付スケジュール項目."""
-
-    date: date
-    code: str
-    quantity: int
+    code: str  # "group_a" | "group_b" | "cash"
+    label_ja: str
+    weight_pct: float  # 0〜100
 
 
 @dataclass(frozen=True)
@@ -53,37 +42,34 @@ class MechanicalRules:
     n225_drawdown_basis: str
     n225_dca_lookback_days: int
     alpha_deviation_threshold_pp: float
-    rebalance_threshold_pct: float
+    drift_ok_pp: float
+    drift_warn_pp: float
     rebalance_check_basis: str
 
 
 @dataclass(frozen=True)
 class Strategy:
-    """戦略SSOT."""
+    """戦略SSOT.
+
+    A群/B群モデル統一後のスキーマ.
+
+    Attributes:
+        target_buckets: {"group_a": BucketDef, "group_b": BucketDef, "cash": BucketDef}
+        target_holdings: 採用銘柄のフラット配列（bucket フィールドで群を識別）
+    """
 
     revision: date
     owner: str
     benchmark: str
     review_frequency: str
-    target_allocation: Dict[str, float]
-    target_holdings_core: Tuple[TargetHolding, ...]
-    target_holdings_theme: Tuple[TargetHolding, ...]
-    sell_schedule: Tuple[SellAction, ...]
-    buy_dca_schedule: Tuple[BuyAction, ...]
+    target_buckets: Dict[str, BucketDef]
+    target_holdings: Tuple[TargetHolding, ...]
     mechanical_rules: MechanicalRules
     body_markdown: str = ""
 
-    def all_target_holdings(self) -> Tuple[TargetHolding, ...]:
-        """コア＋テーマの全目標銘柄."""
-        return self.target_holdings_core + self.target_holdings_theme
-
-    def get_sells_on(self, target_date: date) -> List[SellAction]:
-        """指定日の売却予定."""
-        return [s for s in self.sell_schedule if s.date == target_date]
-
-    def get_buys_on(self, target_date: date) -> List[BuyAction]:
-        """指定日のDCA買付予定."""
-        return [b for b in self.buy_dca_schedule if b.date == target_date]
+    def holdings_by_bucket(self, bucket: str) -> Tuple[TargetHolding, ...]:
+        """指定バケットに属する採用銘柄."""
+        return tuple(h for h in self.target_holdings if h.bucket == bucket)
 
 
 class StrategyLoader:
@@ -93,12 +79,12 @@ class StrategyLoader:
         "revision",
         "owner",
         "benchmark",
-        "target_allocation",
+        "target_buckets",
         "target_holdings",
-        "sell_schedule",
-        "buy_dca_schedule",
         "mechanical_rules",
     )
+
+    REQUIRED_BUCKET_KEYS = ("group_a", "group_b", "cash")
 
     @staticmethod
     def _split_frontmatter(text: str) -> Tuple[str, str]:
@@ -132,53 +118,69 @@ class StrategyLoader:
             raise ValueError(f"Strategy missing required keys: {missing}")
 
     @classmethod
-    def _build_holdings(cls, raw: List[Dict]) -> Tuple[TargetHolding, ...]:
-        result = []
-        for item in raw or []:
-            if "code" not in item or "name" not in item or "weight" not in item:
-                raise ValueError(f"target_holdings item missing fields: {item}")
+    def _build_buckets(cls, raw: Any) -> Dict[str, BucketDef]:
+        """target_buckets をパース."""
+        if not isinstance(raw, dict):
+            raise ValueError("target_buckets must be a mapping")
+        missing = [k for k in cls.REQUIRED_BUCKET_KEYS if k not in raw]
+        if missing:
+            raise ValueError(f"target_buckets missing keys: {missing}")
+        buckets: Dict[str, BucketDef] = {}
+        for key in cls.REQUIRED_BUCKET_KEYS:
+            item = raw[key]
+            if not isinstance(item, dict):
+                raise ValueError(f"target_buckets.{key} must be a mapping")
+            for f in ("label_ja", "weight_pct"):
+                if f not in item:
+                    raise ValueError(f"target_buckets.{key} missing '{f}'")
+            buckets[key] = BucketDef(
+                code=key,
+                label_ja=str(item["label_ja"]),
+                weight_pct=float(item["weight_pct"]),
+            )
+        total = sum(b.weight_pct for b in buckets.values())
+        if abs(total - 100.0) >= 0.001:
+            raise ValueError(
+                f"target_buckets weight_pct must sum to 100.0, got {total}"
+            )
+        return buckets
+
+    @classmethod
+    def _build_holdings(
+        cls, raw: Any, buckets: Dict[str, BucketDef]
+    ) -> Tuple[TargetHolding, ...]:
+        """target_holdings (フラット配列) をパース."""
+        if not isinstance(raw, list):
+            raise ValueError("target_holdings must be a list")
+        result: List[TargetHolding] = []
+        valid_buckets = set(buckets.keys()) - {"cash"}
+        for item in raw:
+            for f in ("code", "name", "bucket", "weight_pct"):
+                if f not in item:
+                    raise ValueError(f"target_holdings item missing '{f}': {item}")
+            bucket = str(item["bucket"])
+            if bucket not in valid_buckets:
+                raise ValueError(
+                    f"target_holdings item bucket '{bucket}' is invalid; "
+                    f"must be one of {sorted(valid_buckets)}: {item}"
+                )
             result.append(
                 TargetHolding(
                     code=str(item["code"]),
                     name=str(item["name"]),
-                    weight=float(item["weight"]),
+                    bucket=bucket,
+                    weight_pct=float(item["weight_pct"]),
                 )
             )
-        return tuple(result)
-
-    @classmethod
-    def _build_sells(cls, raw: List[Dict]) -> Tuple[SellAction, ...]:
-        result = []
-        for item in raw or []:
-            for f in ("date", "code", "name", "quantity", "action", "reason"):
-                if f not in item:
-                    raise ValueError(f"sell_schedule item missing '{f}': {item}")
-            result.append(
-                SellAction(
-                    date=cls._parse_date(item["date"], "sell_schedule.date"),
-                    code=str(item["code"]),
-                    name=str(item["name"]),
-                    quantity=int(item["quantity"]),
-                    action=str(item["action"]),
-                    reason=str(item["reason"]),
+        # 各 bucket 内の weight_pct 合計が buckets[bucket].weight_pct と一致するか検証
+        for bucket_key in valid_buckets:
+            actual = sum(h.weight_pct for h in result if h.bucket == bucket_key)
+            expected = buckets[bucket_key].weight_pct
+            if abs(actual - expected) >= 0.001:
+                raise ValueError(
+                    f"target_holdings weight_pct sum for bucket '{bucket_key}' "
+                    f"is {actual}, expected {expected} (from target_buckets)"
                 )
-            )
-        return tuple(result)
-
-    @classmethod
-    def _build_buys(cls, raw: List[Dict]) -> Tuple[BuyAction, ...]:
-        result = []
-        for item in raw or []:
-            for f in ("date", "code", "quantity"):
-                if f not in item:
-                    raise ValueError(f"buy_dca_schedule item missing '{f}': {item}")
-            result.append(
-                BuyAction(
-                    date=cls._parse_date(item["date"], "buy_dca_schedule.date"),
-                    code=str(item["code"]),
-                    quantity=int(item["quantity"]),
-                )
-            )
         return tuple(result)
 
     @classmethod
@@ -191,7 +193,8 @@ class StrategyLoader:
             "n225_drawdown_basis",
             "n225_dca_lookback_days",
             "alpha_deviation_threshold_pp",
-            "rebalance_threshold_pct",
+            "drift_ok_pp",
+            "drift_warn_pp",
             "rebalance_check_basis",
         )
         missing = [k for k in required if k not in raw]
@@ -200,6 +203,13 @@ class StrategyLoader:
         tp = raw["take_profit_pct"]
         if not isinstance(tp, list) or not tp:
             raise ValueError("mechanical_rules.take_profit_pct must be non-empty list")
+        drift_ok = float(raw["drift_ok_pp"])
+        drift_warn = float(raw["drift_warn_pp"])
+        if not (drift_ok < drift_warn):
+            raise ValueError(
+                f"mechanical_rules.drift_ok_pp ({drift_ok}) must be less than "
+                f"drift_warn_pp ({drift_warn})"
+            )
         return MechanicalRules(
             min_holding_months=int(raw["min_holding_months"]),
             loss_cut_pct=float(raw["loss_cut_pct"]),
@@ -208,7 +218,8 @@ class StrategyLoader:
             n225_drawdown_basis=str(raw["n225_drawdown_basis"]),
             n225_dca_lookback_days=int(raw["n225_dca_lookback_days"]),
             alpha_deviation_threshold_pp=float(raw["alpha_deviation_threshold_pp"]),
-            rebalance_threshold_pct=float(raw["rebalance_threshold_pct"]),
+            drift_ok_pp=drift_ok,
+            drift_warn_pp=drift_warn,
             rebalance_check_basis=str(raw["rebalance_check_basis"]),
         )
 
@@ -234,23 +245,16 @@ class StrategyLoader:
 
         cls._validate_top_keys(data)
 
-        target_holdings = data["target_holdings"]
-        if not isinstance(target_holdings, dict):
-            raise ValueError("target_holdings must be a mapping with core/theme keys")
-        target_allocation = data["target_allocation"]
-        if not isinstance(target_allocation, dict):
-            raise ValueError("target_allocation must be a mapping")
+        buckets = cls._build_buckets(data["target_buckets"])
+        holdings = cls._build_holdings(data["target_holdings"], buckets)
 
         return Strategy(
             revision=cls._parse_date(data["revision"], "revision"),
             owner=str(data["owner"]),
             benchmark=str(data["benchmark"]),
             review_frequency=str(data.get("review_frequency", "weekly_friday")),
-            target_allocation={k: float(v) for k, v in target_allocation.items()},
-            target_holdings_core=cls._build_holdings(target_holdings.get("core") or []),
-            target_holdings_theme=cls._build_holdings(target_holdings.get("theme") or []),
-            sell_schedule=cls._build_sells(data.get("sell_schedule") or []),
-            buy_dca_schedule=cls._build_buys(data.get("buy_dca_schedule") or []),
+            target_buckets=buckets,
+            target_holdings=holdings,
             mechanical_rules=cls._build_rules(data["mechanical_rules"]),
             body_markdown=body.strip(),
         )

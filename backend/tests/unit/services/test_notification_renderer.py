@@ -7,10 +7,8 @@ import pytest
 
 from src.services.daily_advisor_service import (
     AllocationDrift,
-    BuyAction,
     NotificationContext,
     RuleTrigger,
-    SellAction,
 )
 from src.services.notification_renderer import NotificationRenderer
 
@@ -27,8 +25,8 @@ def _morning_ctx(**overrides) -> NotificationContext:
         user_id="test",
         strategy_revision=date(2026, 4, 29),
         benchmark="^N225",
-        sells_today=(SellAction(code="1540", name="純金", quantity=10, action="all", reason="金過剰"),),
-        buys_today=(BuyAction(code="2559", quantity=3),),
+        drift_ok_pp=3.0,
+        drift_warn_pp=5.0,
         total_asset=1_000_000.0,
         total_value=900_000.0,
         cash_balance=100_000.0,
@@ -46,14 +44,16 @@ def _evening_ctx(**overrides) -> NotificationContext:
         user_id="test",
         strategy_revision=date(2026, 4, 29),
         benchmark="^N225",
+        drift_ok_pp=3.0,
+        drift_warn_pp=5.0,
         total_asset=1_000_000.0,
         total_value=900_000.0,
         cash_balance=100_000.0,
         daily_change_pct=-0.3,
         holdings_count=6,
         allocation_drifts=(
-            AllocationDrift(bucket="core", target_pct=65.0, actual_pct=63.0, drift_pp=-2.0),
-            AllocationDrift(bucket="theme", target_pct=25.0, actual_pct=27.0, drift_pp=2.0),
+            AllocationDrift(bucket="group_a", target_pct=45.0, actual_pct=43.0, drift_pp=-2.0, warn_threshold_pp=5.0),
+            AllocationDrift(bucket="group_b", target_pct=45.0, actual_pct=47.0, drift_pp=2.0, warn_threshold_pp=5.0),
         ),
         triggers=(),
     )
@@ -68,12 +68,14 @@ def _weekly_ctx(**overrides) -> NotificationContext:
         user_id="test",
         strategy_revision=date(2026, 4, 29),
         benchmark="^N225",
+        drift_ok_pp=3.0,
+        drift_warn_pp=5.0,
         total_asset=1_000_000.0,
         total_value=900_000.0,
         cash_balance=100_000.0,
         holdings_count=6,
         allocation_drifts=(
-            AllocationDrift(bucket="core", target_pct=65.0, actual_pct=60.0, drift_pp=-5.0),
+            AllocationDrift(bucket="group_a", target_pct=45.0, actual_pct=40.0, drift_pp=-5.0, warn_threshold_pp=5.0),
         ),
         triggers=(),
         alpha_pp=-1.0,
@@ -92,6 +94,8 @@ def _alert_ctx(**overrides) -> NotificationContext:
         user_id="test",
         strategy_revision=date(2026, 4, 29),
         benchmark="^N225",
+        drift_ok_pp=3.0,
+        drift_warn_pp=5.0,
         triggers=(
             RuleTrigger(
                 rule_kind="n225_drawdown", code=None, severity="warn",
@@ -108,22 +112,21 @@ class TestRender:
     def test_morning(self, renderer):
         md, html = renderer.render(_morning_ctx())
         assert "朝のタスク" in md
-        assert "1540 純金" in md
-        assert "2559" in md
         assert "前日比: +0.50%" in md
         # h1 はインラインスタイル付与のため部分一致
         assert "<h1" in html
         assert "1,000,000" in md
-        # リード文・タグ
-        assert "**要対応**" in md
-        assert "今日の発注" in md
+        # 旧「今日の発注」セクションは削除済み
+        assert "今日の発注" not in md
+        # rebalance_plan なしの通常日 → 「静観」
+        assert "**静観**" in md
 
     def test_evening(self, renderer):
         md, html = renderer.render(_evening_ctx())
         assert "夕方のレビュー" in md
-        # bucket は翻訳マクロで「コア（市場全体）」「テーマ」表記
-        assert "コア（市場全体）" in md
-        assert "テーマ" in md
+        # bucket は翻訳マクロで「A群（コア・逆相関）」「B群（日本株テーマ）」表記
+        assert "A群（コア・逆相関）" in md
+        assert "B群（日本株テーマ）" in md
         assert "<h1" in html
         # リード文
         assert "本日 -0.30%" in md
@@ -144,8 +147,8 @@ class TestRender:
         ctx = _weekly_ctx(alpha_pp=-3.0)
         md, _ = renderer.render(ctx)
         assert "来週の推奨アクション" in md
-        # bucket 翻訳済み: core → コア（市場全体）
-        assert "コア（市場全体）ETFの追加買付" in md
+        # bucket 翻訳済み: group_a → A群（コア・逆相関）
+        assert "A群（コア・逆相関）ETFの追加買付" in md
         assert "**要確認**" in md
 
     def test_alert(self, renderer):
@@ -166,22 +169,14 @@ class TestSubject:
     各 kind の代表的状態を検証する。
     """
 
-    def test_morning_subject(self, renderer):
-        # morning + アクションあり → `[5/7 朝] アクション2件・所要X分`
-        ctx = _morning_ctx()  # today=2026-05-07, sells=1, buys=1
-        s = renderer.subject_for(ctx)
-        assert s.startswith(f"[{ctx.today.month}/{ctx.today.day} 朝]")
-        assert "アクション" in s
-        assert "件" in s
-        assert "所要" in s
-        # user_id (test) は件名に含めない
-        assert "test" not in s
-
     def test_morning_subject_quiet(self, renderer):
-        # 売買予定なし、警告もなし → `[5/7 朝] 通常運用日`
-        ctx = _morning_ctx(sells_today=(), buys_today=())
+        # 旧 sells_today/buys_today は撤去済み。
+        # rebalance_plan なし & 警告なし → `[5/7 朝] 通常運用日`
+        ctx = _morning_ctx()
         s = renderer.subject_for(ctx)
         assert s == f"[{ctx.today.month}/{ctx.today.day} 朝] 通常運用日"
+        # user_id (test) は件名に含めない
+        assert "test" not in s
 
     def test_evening_subject_quiet(self, renderer):
         # 警告 drift なし → `[4/29 夕] 本日 -0.3%`
@@ -207,6 +202,8 @@ class TestSubject:
             user_id="test",
             strategy_revision=date(2026, 4, 29),
             benchmark="^N225",
+            drift_ok_pp=3.0,
+            drift_warn_pp=5.0,
             triggers=(
                 RuleTrigger(
                     rule_kind="loss_cut", code="1306", severity="critical",
@@ -236,10 +233,6 @@ class TestUrgencyTag:
         ))
         assert renderer.urgency_tag(ctx) == "緊急"
 
-    def test_morning_with_action(self, renderer):
-        # sells/buys あり、critical なし → 要対応
-        assert renderer.urgency_tag(_morning_ctx()) == "要対応"
-
     def test_warn_in_evening(self, renderer):
         ctx = _evening_ctx(triggers=(
             RuleTrigger(
@@ -254,7 +247,7 @@ class TestUrgencyTag:
         assert renderer.urgency_tag(ctx) == "要確認"
 
     def test_quiet(self, renderer):
-        ctx = _morning_ctx(sells_today=(), buys_today=(), triggers=())
+        ctx = _morning_ctx(triggers=())
         assert renderer.urgency_tag(ctx) == "静観"
 
     def test_alert_info(self, renderer):
@@ -279,35 +272,22 @@ class TestSummary:
         assert "緊急" in s
         assert "loss_cut" in s
 
-    def test_morning_with_action_both(self, renderer):
-        # sells=1, buys=1
-        s = renderer.summary_for(_morning_ctx())
-        assert "売却1件" in s
-        assert "買付1件" in s
-
-    def test_morning_buy_only(self, renderer):
-        ctx = _morning_ctx(sells_today=(), buys_today=(BuyAction(code="2559", quantity=3),))
-        s = renderer.summary_for(ctx)
-        assert "買付1件のDCA" in s
-
     def test_morning_quiet(self, renderer):
-        ctx = _morning_ctx(sells_today=(), buys_today=())
+        # rebalance_plan なし & 警告なし → 静観
+        ctx = _morning_ctx()
         s = renderer.summary_for(ctx)
         assert "発注予定なし" in s
-        assert "静観" in s
 
     def test_morning_no_double_count_allocation_drift(self, renderer):
         # allocation_drift trigger と is_warn drift のダブルカウント防止
         ctx = _morning_ctx(
-            sells_today=(),
-            buys_today=(),
             allocation_drifts=(
-                AllocationDrift(bucket="core", target_pct=65.0, actual_pct=55.0, drift_pp=-10.0),
+                AllocationDrift(bucket="group_a", target_pct=45.0, actual_pct=35.0, drift_pp=-10.0, warn_threshold_pp=5.0),
             ),
             triggers=(
                 RuleTrigger(
                     rule_kind="allocation_drift", code=None, severity="warn",
-                    message="配分逸脱: core", fingerprint="a"
+                    message="配分逸脱: group_a", fingerprint="a"
                 ),
             ),
         )
@@ -321,7 +301,7 @@ class TestSummary:
 
     def test_evening_with_warn(self, renderer):
         ctx = _evening_ctx(allocation_drifts=(
-            AllocationDrift(bucket="core", target_pct=65.0, actual_pct=55.0, drift_pp=-10.0),
+            AllocationDrift(bucket="group_a", target_pct=45.0, actual_pct=35.0, drift_pp=-10.0, warn_threshold_pp=5.0),
         ))
         s = renderer.summary_for(ctx)
         assert "本日 -0.30%" in s
@@ -331,14 +311,14 @@ class TestSummary:
         # allocation_drift trigger と is_warn drift を二重に数えないこと
         ctx = _evening_ctx(
             allocation_drifts=(
-                AllocationDrift(bucket="core", target_pct=65.0, actual_pct=55.0, drift_pp=-10.0),
-                AllocationDrift(bucket="theme", target_pct=25.0, actual_pct=10.0, drift_pp=-15.0),
+                AllocationDrift(bucket="group_a", target_pct=45.0, actual_pct=35.0, drift_pp=-10.0, warn_threshold_pp=5.0),
+                AllocationDrift(bucket="group_b", target_pct=45.0, actual_pct=30.0, drift_pp=-15.0, warn_threshold_pp=5.0),
             ),
             triggers=(
                 RuleTrigger(rule_kind="allocation_drift", code=None, severity="warn",
-                            message="配分逸脱: core", fingerprint="a"),
+                            message="配分逸脱: group_a", fingerprint="a"),
                 RuleTrigger(rule_kind="allocation_drift", code=None, severity="warn",
-                            message="配分逸脱: theme", fingerprint="b"),
+                            message="配分逸脱: group_b", fingerprint="b"),
             ),
         )
         s = renderer.summary_for(ctx)
@@ -349,7 +329,7 @@ class TestSummary:
         # allocation_drift 以外の warn は ルール警告として別カウント
         ctx = _evening_ctx(
             allocation_drifts=(
-                AllocationDrift(bucket="core", target_pct=65.0, actual_pct=55.0, drift_pp=-10.0),
+                AllocationDrift(bucket="group_a", target_pct=45.0, actual_pct=35.0, drift_pp=-10.0, warn_threshold_pp=5.0),
             ),
             triggers=(
                 RuleTrigger(rule_kind="n225_drawdown", code=None, severity="warn",

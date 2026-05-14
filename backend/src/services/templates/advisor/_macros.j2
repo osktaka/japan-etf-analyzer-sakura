@@ -1,8 +1,14 @@
 {# 用語翻訳マクロ集. 全テンプレートでこのファイルを import する. #}
 
-{# bucket: アロケーションのカテゴリ翻訳 #}
+{# bucket: アロケーションのカテゴリ翻訳 (A群/B群 モデル) #}
 {%- macro bucket_label(bucket) -%}
-{{ {'core': 'コア（市場全体）', 'theme': 'テーマ', 'cash': '現金'}.get(bucket, bucket) }}
+{%- set _labels = {
+    'group_a': 'A群（コア・逆相関）',
+    'group_b': 'B群（日本株テーマ）',
+    'cash':    '現金',
+    'other':   '採用外'
+} -%}
+{{ _labels.get(bucket, bucket) }}
 {%- endmacro -%}
 
 {# rule_kind: 機械ルール種別の翻訳 #}
@@ -21,7 +27,6 @@
 {{ {
     'all': '全量売却',
     'schedule': '月次定期売却',
-    'sell_schedule': '月次定期売却',
     'dca': '定期積立（DCA）',
     'DCA': '定期積立（DCA）'
 }.get(action, action) }}

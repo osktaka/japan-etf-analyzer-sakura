@@ -17,9 +17,18 @@
 
 ## 配分
 
-{% for d in allocation_drifts %}
+{% for d in allocation_drifts if d.bucket != "other" %}
 - {% if d.is_warn %}[警告] {% endif %}**{{ bucket_label(d.bucket) }}**: {{ "%.1f"|format(d.actual_pct) }}%（目標 {{ "%.1f"|format(d.target_pct) }}%、差 {{ "%+.2f"|format(d.drift_pp) }}pp）
 {% endfor %}
+
+{% set non_adopted = allocation_drifts | selectattr("bucket", "equalto", "other") | list %}
+{% if non_adopted %}
+## 採用外保有
+
+{% for d in non_adopted %}
+- **{{ bucket_label(d.bucket) }}**: {{ "%.1f"|format(d.actual_pct) }}% → 次回リバランスで売却推奨
+{% endfor %}
+{% endif %}
 
 {% if triggers %}
 ## 機械ルール

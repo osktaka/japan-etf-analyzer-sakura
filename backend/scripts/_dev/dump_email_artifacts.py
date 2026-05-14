@@ -40,10 +40,8 @@ sys.path.insert(0, str(BACKEND_DIR))
 
 from src.services.daily_advisor_models import (  # noqa: E402
     AllocationDrift,
-    BuyAction,
     NotificationContext,
     RuleTrigger,
-    SellAction,
 )
 from src.services.notification_renderer import NotificationRenderer  # noqa: E402
 
@@ -61,10 +59,8 @@ def _morning_ctx(**overrides) -> NotificationContext:
         user_id="test",
         strategy_revision=date(2026, 4, 29),
         benchmark="^N225",
-        sells_today=(
-            SellAction(code="1540", name="純金", quantity=10, action="all", reason="金過剰"),
-        ),
-        buys_today=(BuyAction(code="2559", quantity=3),),
+        drift_ok_pp=3.0,
+        drift_warn_pp=5.0,
         total_asset=1_000_000.0,
         total_value=900_000.0,
         cash_balance=100_000.0,
@@ -82,14 +78,16 @@ def _evening_ctx(**overrides) -> NotificationContext:
         user_id="test",
         strategy_revision=date(2026, 4, 29),
         benchmark="^N225",
+        drift_ok_pp=3.0,
+        drift_warn_pp=5.0,
         total_asset=1_000_000.0,
         total_value=900_000.0,
         cash_balance=100_000.0,
         daily_change_pct=-0.3,
         holdings_count=6,
         allocation_drifts=(
-            AllocationDrift(bucket="core", target_pct=65.0, actual_pct=63.0, drift_pp=-2.0),
-            AllocationDrift(bucket="theme", target_pct=25.0, actual_pct=27.0, drift_pp=2.0),
+            AllocationDrift(bucket="group_a", target_pct=45.0, actual_pct=43.0, drift_pp=-2.0, warn_threshold_pp=5.0),
+            AllocationDrift(bucket="group_b", target_pct=45.0, actual_pct=47.0, drift_pp=2.0, warn_threshold_pp=5.0),
         ),
         triggers=(),
     )
@@ -104,12 +102,14 @@ def _weekly_ctx(**overrides) -> NotificationContext:
         user_id="test",
         strategy_revision=date(2026, 4, 29),
         benchmark="^N225",
+        drift_ok_pp=3.0,
+        drift_warn_pp=5.0,
         total_asset=1_000_000.0,
         total_value=900_000.0,
         cash_balance=100_000.0,
         holdings_count=6,
         allocation_drifts=(
-            AllocationDrift(bucket="core", target_pct=65.0, actual_pct=60.0, drift_pp=-5.0),
+            AllocationDrift(bucket="group_a", target_pct=45.0, actual_pct=40.0, drift_pp=-5.0, warn_threshold_pp=5.0),
         ),
         triggers=(),
         alpha_pp=-1.0,
@@ -128,6 +128,8 @@ def _alert_ctx(**overrides) -> NotificationContext:
         user_id="test",
         strategy_revision=date(2026, 4, 29),
         benchmark="^N225",
+        drift_ok_pp=3.0,
+        drift_warn_pp=5.0,
         triggers=(
             RuleTrigger(
                 rule_kind="n225_drawdown",
@@ -153,27 +155,13 @@ def _build_cases() -> list[tuple[str, str, NotificationContext]]:
     """
     cases: list[tuple[str, str, NotificationContext]] = []
 
-    # ---- morning: 4ケース ----
+    # ---- morning: 2ケース ----
+    # 旧 sells_today/buys_today 経由のケースは撤去済み（model から削除）
     # 静観: 売買なし、トリガーなし
     cases.append((
         "morning",
         "seikan",
-        _morning_ctx(sells_today=(), buys_today=(), triggers=()),
-    ))
-    # 要対応 (買付のみ)
-    cases.append((
-        "morning",
-        "action_buy_only",
-        _morning_ctx(
-            sells_today=(),
-            buys_today=(BuyAction(code="2559", quantity=3),),
-        ),
-    ))
-    # 要対応 (売却+買付): デフォルト
-    cases.append((
-        "morning",
-        "action_sell_buy",
-        _morning_ctx(),
+        _morning_ctx(triggers=()),
     ))
     # 緊急 (critical trigger)
     cases.append((
@@ -205,14 +193,14 @@ def _build_cases() -> list[tuple[str, str, NotificationContext]]:
         "warn_drift",
         _evening_ctx(
             allocation_drifts=(
-                AllocationDrift(bucket="core", target_pct=65.0, actual_pct=55.0, drift_pp=-10.0),
+                AllocationDrift(bucket="group_a", target_pct=45.0, actual_pct=35.0, drift_pp=-10.0, warn_threshold_pp=5.0),
             ),
             triggers=(
                 RuleTrigger(
                     rule_kind="allocation_drift",
                     code=None,
                     severity="warn",
-                    message="配分逸脱: core",
+                    message="配分逸脱: group_a",
                     fingerprint="f-drift",
                 ),
             ),

@@ -62,6 +62,9 @@ class NotificationRenderer:
 
         StrictUndefined を使っているため、テンプレートで参照される全フィールドを
         明示的に渡す必要がある.
+
+        配分閾値は ctx.drift_ok_pp / ctx.drift_warn_pp（strategy SSOT 由来）を
+        そのまま渡す。導出フォールバック（warn*0.6）は廃止済み。
         """
         return {
             "kind": ctx.kind,
@@ -69,8 +72,6 @@ class NotificationRenderer:
             "user_id": ctx.user_id,
             "strategy_revision": ctx.strategy_revision,
             "benchmark": ctx.benchmark,
-            "sells_today": ctx.sells_today,
-            "buys_today": ctx.buys_today,
             "total_asset": ctx.total_asset,
             "total_value": ctx.total_value,
             "cash_balance": ctx.cash_balance,
@@ -85,9 +86,13 @@ class NotificationRenderer:
             "month_start_total_asset": ctx.month_start_total_asset,
             "month_start_change_pct": ctx.month_start_change_pct,
             "extra": ctx.extra,
-            # リバランス（kind="rebalance" のみ使用）
+            # リバランス計画（kind="morning" に統合済み。
+            # 通常日は配分テーブル・カウントダウン用、四半期末日は本日アクション表示用）
             "rebalance_plan": ctx.rebalance_plan,
-            # 新規: 件名タグ・リード文・件数系
+            # 配分閾値（テンプレ動的化用、全 kind 共通、strategy SSOT 直結）
+            "drift_warn_pp": ctx.drift_warn_pp,
+            "drift_ok_pp": ctx.drift_ok_pp,
+            # 件名タグ・リード文
             "urgency_tag": self.urgency_tag(ctx),
             "summary": self.summary_for(ctx),
             "action_count": self.action_count(ctx),
@@ -99,8 +104,13 @@ class NotificationRenderer:
     # 件数・所要時間ヘルパ
     # ------------------------------------------------------------
     def action_count(self, ctx: NotificationContext) -> int:
-        """当日アクション数（売り + 買い）."""
-        return len(ctx.sells_today) + len(ctx.buys_today)
+        """当日アクション数. morning kind では rebalance_plan の本日実行件数."""
+        if ctx.kind == "morning":
+            plan = ctx.rebalance_plan
+            if plan is not None and plan.is_rebalance_day:
+                return len(plan.sell_actions) + len(plan.buy_actions)
+            return 0
+        return 0
 
     def estimated_minutes(self, ctx: NotificationContext) -> int:
         """所要時間の目安（分）. 0件なら0、それ以外は3〜30分の範囲にクリップ."""
@@ -123,29 +133,28 @@ class NotificationRenderer:
                 return "要確認"
             return "情報"
 
-        # rebalance: critical/warn 件数 + 四半期末日で判定
-        if ctx.kind == "rebalance":
+        has_critical = any(t.severity == "critical" for t in ctx.triggers)
+        has_warn = any(t.severity == "warn" for t in ctx.triggers)
+
+        # morning: 統合された rebalance_plan を主軸に評価
+        if ctx.kind == "morning":
             plan = ctx.rebalance_plan
-            if plan is None:
-                return "静観"
-            if plan.is_rebalance_day and (
+            if has_critical:
+                return "緊急"
+            if plan is not None and plan.is_rebalance_day and (
                 plan.sell_actions or plan.buy_actions
             ):
                 return "要対応"
-            if plan.critical_count > 0:
+            if plan is not None and plan.critical_count > 0:
                 return "要確認"
-            if plan.warn_count > 0:
+            if has_warn:
+                return "要確認"
+            if plan is not None and plan.warn_count > 0:
                 return "要確認"
             return "静観"
 
-        has_critical = any(t.severity == "critical" for t in ctx.triggers)
-        has_warn = any(t.severity == "warn" for t in ctx.triggers)
-        has_action = bool(ctx.sells_today or ctx.buys_today)
-
         if has_critical:
             return "緊急"
-        if ctx.kind == "morning" and has_action:
-            return "要対応"
         if has_warn:
             return "要確認"
         if (
@@ -173,8 +182,6 @@ class NotificationRenderer:
             return self._summary_weekly(ctx)
         if ctx.kind == "alert":
             return self._summary_alert(ctx)
-        if ctx.kind == "rebalance":
-            return self._summary_rebalance(ctx)
         return ""
 
     @staticmethod
@@ -238,9 +245,10 @@ class NotificationRenderer:
         warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
         if warn_drifts:
             worst = max(warn_drifts, key=lambda d: abs(d.drift_pp))
-            over = abs(worst.drift_pp) - 5.0
+            warn_pp = worst.warn_threshold_pp
+            over = abs(worst.drift_pp) - warn_pp
             return (
-                f"警告閾値±5ppを{over:.1f}pp超過（{worst.bucket}）。"
+                f"警告閾値±{warn_pp:.1f}ppを{over:.1f}pp超過（{worst.bucket}）。"
             )
 
         # 他のwarn
@@ -259,26 +267,29 @@ class NotificationRenderer:
         critical = next(
             (t for t in ctx.triggers if t.severity == "critical"), None
         )
-        n_sell = len(ctx.sells_today)
-        n_buy = len(ctx.buys_today)
+        plan = ctx.rebalance_plan
 
         # 1行目: 結論
         if critical is not None:
             conclusion = (
                 f"緊急: 機械ルール{critical.rule_kind}が発動中。寄付前に対応判断を。"
             )
-        elif n_sell and n_buy:
-            conclusion = f"今日 売却{n_sell}件・買付{n_buy}件の発注予定。"
-        elif n_sell:
-            conclusion = f"今日 売却{n_sell}件の発注予定。"
-        elif n_buy:
-            conclusion = f"今日 買付{n_buy}件のDCA予定。"
+        elif plan is not None and plan.is_rebalance_day and (
+            plan.sell_actions or plan.buy_actions
+        ):
+            n_rb_sell = len(plan.sell_actions)
+            n_rb_buy = len(plan.buy_actions)
+            conclusion = (
+                f"本日は四半期末リバランス基準日。売却{n_rb_sell}件・買付{n_rb_buy}件を執行検討。"
+            )
         else:
             warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
             warn_other_rules = [
                 t for t in ctx.triggers
                 if t.severity == "warn" and t.rule_kind != "allocation_drift"
             ]
+            n_rb_critical = plan.critical_count if plan is not None else 0
+            n_rb_warn = plan.warn_count if plan is not None else 0
             if warn_drifts or warn_other_rules:
                 n_warn = (
                     len(warn_drifts) if warn_drifts else len(warn_other_rules)
@@ -286,6 +297,20 @@ class NotificationRenderer:
                 conclusion = (
                     f"配分逸脱{n_warn}件継続中。"
                     "発注はなし、週次メールで方針確認。"
+                )
+            elif n_rb_critical > 0 or n_rb_warn > 0:
+                if plan is not None:
+                    conclusion = (
+                        f"次回リバランスまで{plan.days_to_next_rebalance}日。"
+                        f"配分逸脱 CRITICAL{n_rb_critical}件 / WARN{n_rb_warn}件、本日は監視のみ。"
+                    )
+                else:
+                    conclusion = (
+                        f"配分逸脱 CRITICAL{n_rb_critical}件 / WARN{n_rb_warn}件、本日は監視のみ。"
+                    )
+            elif plan is not None:
+                conclusion = (
+                    f"本日は通常運用日。次回リバランス（{plan.next_rebalance_date.strftime('%Y-%m-%d')}）まで{plan.days_to_next_rebalance}日。"
                 )
             else:
                 conclusion = "今日は発注予定なし。市場は静観でOK。通常運用継続。"
@@ -371,48 +396,6 @@ class NotificationRenderer:
         return cls._join_lines([conclusion, context_line, reason])
 
     @classmethod
-    def _summary_rebalance(cls, ctx: NotificationContext) -> str:
-        """リバランス通知のリード文（結論／文脈／根拠）."""
-        plan = ctx.rebalance_plan
-        if plan is None:
-            return "リバランス計画なし。"
-
-        # 1行目: 結論
-        if plan.is_rebalance_day:
-            n_sell = len(plan.sell_actions)
-            n_buy = len(plan.buy_actions)
-            conclusion = (
-                f"本日は四半期末リバランス日。売却{n_sell}件・買付{n_buy}件を執行検討。"
-            )
-        else:
-            conclusion = (
-                f"次回リバランスまで{plan.days_to_next_rebalance}日。"
-                f"逸脱{plan.critical_count + plan.warn_count}件、本日は監視のみ。"
-            )
-
-        # 2行目: 文脈
-        ctx_parts = [f"資産{int(plan.total_asset):,}円"]
-        if plan.daily_pnl_pct is not None:
-            ctx_parts.append(f"前日{plan.daily_pnl_pct:+.2f}%")
-        cash_pct = (
-            (plan.current_cash / plan.total_asset * 100.0)
-            if plan.total_asset > 0
-            else 0.0
-        )
-        ctx_parts.append(f"現金{cash_pct:.1f}%（目標10%）")
-        context_line = "、".join(ctx_parts) + "。"
-
-        # 3行目: 根拠
-        if plan.critical_count > 0:
-            reason = f"CRITICAL逸脱{plan.critical_count}件（±5pp超過）。"
-        elif plan.warn_count > 0:
-            reason = f"WARN逸脱{plan.warn_count}件（±3〜5pp）。"
-        else:
-            reason = ""
-
-        return cls._join_lines([conclusion, context_line, reason])
-
-    @classmethod
     def _summary_alert(cls, ctx: NotificationContext) -> str:
         n = len(ctx.triggers)
         if n == 0:
@@ -471,8 +454,6 @@ class NotificationRenderer:
             subject = self._subject_weekly(ctx, date_str)
         elif ctx.kind == "alert":
             subject = self._subject_alert(ctx, date_str)
-        elif ctx.kind == "rebalance":
-            subject = self._subject_rebalance(ctx, date_str)
         else:
             subject = f"[{date_str} {ctx.kind}]"
 
@@ -486,24 +467,34 @@ class NotificationRenderer:
         return subject
 
     def _subject_morning(self, ctx: NotificationContext, date_str: str) -> str:
-        n = self.action_count(ctx)
+        plan = ctx.rebalance_plan
         critical = next(
             (t for t in ctx.triggers if t.severity == "critical"), None
         )
         if critical is not None:
             return f"[{date_str} 緊急] {critical.rule_kind}発動"
-        if n > 0:
-            mins = self.estimated_minutes(ctx)
-            return f"[{date_str} 朝] アクション{n}件・所要{mins}分"
+        # 四半期末リバランス基準日: アクションがあれば最優先で件名に
+        if plan is not None and plan.is_rebalance_day and (
+            plan.sell_actions or plan.buy_actions
+        ):
+            n_sell = len(plan.sell_actions)
+            n_buy = len(plan.buy_actions)
+            return (
+                f"[{date_str} 朝] リバランス実行日／売{n_sell}件・買{n_buy}件"
+            )
         # warn 警告のみのケース
         warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
         warn_other = [
             t for t in ctx.triggers
             if t.severity == "warn" and t.rule_kind != "allocation_drift"
         ]
+        # リバランス計画上の critical/warn 件数も拾う
+        n_rb_critical = plan.critical_count if plan is not None else 0
         if warn_drifts or warn_other:
             n_warn = len(warn_drifts) or len(warn_other)
             return f"[{date_str} 朝] 配分逸脱{n_warn}件"
+        if n_rb_critical > 0:
+            return f"[{date_str} 朝] 配分逸脱{n_rb_critical}件"
         return f"[{date_str} 朝] 通常運用日"
 
     def _subject_evening(self, ctx: NotificationContext, date_str: str) -> str:
@@ -544,28 +535,6 @@ class NotificationRenderer:
         if n_warn > 0:
             return f"[{date_str} 週次] {alpha_str} / 配分{n_warn}件"
         return f"[{date_str} 週次] {alpha_str}"
-
-    def _subject_rebalance(self, ctx: NotificationContext, date_str: str) -> str:
-        """リバランス通知件名 `[M/D RB] 次回まで X日 / 逸脱 N件 / 損益 ±X.X%`."""
-        plan = ctx.rebalance_plan
-        if plan is None:
-            return f"[{date_str} RB] 計画なし"
-
-        parts = [f"[{date_str} RB]"]
-        if plan.is_rebalance_day:
-            n_action = len(plan.sell_actions) + len(plan.buy_actions)
-            parts.append(f"本日実行 / 計{n_action}件")
-        else:
-            parts.append(f"次回まで{plan.days_to_next_rebalance}日")
-
-        n_drift = plan.critical_count + plan.warn_count
-        if n_drift > 0:
-            parts.append(f"/ 逸脱{n_drift}件")
-
-        if plan.daily_pnl_pct is not None:
-            parts.append(f"/ 損益{plan.daily_pnl_pct:+.1f}%")
-
-        return " ".join(parts)
 
     def _subject_alert(self, ctx: NotificationContext, date_str: str) -> str:
         n = len(ctx.triggers)

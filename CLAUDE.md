@@ -18,7 +18,7 @@
 | 画面・モーダル仕様を確認したい | docs/05a_画面仕様.md | 各画面の詳細、ワイヤーフレーム |
 | UIスタイルガイドを確認したい | docs/05b_UIスタイルガイド.md | コンポーネント、カラー、A11y |
 | インフラ設計を確認したい | docs/06_インフラ設計.md | Docker構成、さくらサーバー対応 |
-| メール通知仕様を確認したい | docs/06b_メール通知仕様.md | Daily Advisor 4種メール（件名・本文・モバイルCSS・用語翻訳・スナップショット） |
+| メール通知仕様を確認したい | docs/06b_メール通知仕様.md | Daily Advisor 3種メール（morning統合済、+alert）（件名・本文・モバイルCSS・用語翻訳・スナップショット） |
 | テスト設計を確認したい | docs/07_テスト設計.md | テスト戦略・方針・概要 |
 | テストケース詳細を確認したい | docs/07a_テストケース詳細.md | 個別テスト実装例 |
 | おすすめ銘柄の評価設計を確認したい | docs/08_おすすめ銘柄設計.md | 5軸評価・6切り口・重み付けモデル |
@@ -119,8 +119,8 @@ frontend/
 
 | 値 | 用途 |
 |---|---|
-| `dev`（デフォルト） | 開発環境。全ジョブ実行（advisor 5本＋theme_etfs＋watcher を含む） |
-| `prod` | 本番環境想定。dev限定6ジョブを除外 |
+| `dev`（デフォルト） | 開発環境。全ジョブ実行（advisor 3本＋theme_etfs＋watcher を含む） |
+| `prod` | 本番環境想定。dev限定5ジョブを除外 |
 
 不正値（dev/prod以外）は `exit 2` で起動拒否される。`.env` の `CRON_BATCH_PROFILE` で設定。
 
@@ -135,8 +135,7 @@ frontend/
 | 16:00 | 平日（祝日スキップ） | `sync_from_minkabu --rate-limit 1.5` | both | `minkabu_sync.log` |
 | `*/10 16-20` | 平日（祝日スキップ） | `update_scores` | both | `score_update.log` |
 | 03:00 | 日 | `update_theme_etfs` | **dev** | `theme_etfs.log` |
-| 07:00 | 平日（祝日スキップ） | `daily_advisor_morning` | **dev** | `advisor_morning.log` |
-| 07:15 | 平日（祝日スキップ） | `daily_advisor_rebalance` | **dev** | `advisor_rebalance.log` |
+| 07:00 | 平日（祝日スキップ） | `daily_advisor_morning`（リバランス計画統合済） | **dev** | `advisor_morning.log` |
 | 17:30 | 平日（祝日スキップ） | `daily_advisor_evening` | **dev** | `advisor_evening.log` |
 | 18:00 | 金（祝日でも実行） | `daily_advisor_weekly` | **dev** | `advisor_weekly.log` |
 | `*/5 9-15` | 平日（祝日スキップ） | `mechanical_rule_watcher` | **dev** | `advisor_watcher.log` |
@@ -160,7 +159,7 @@ bash scripts/cron-batch.sh --help
 
 - **`set -e` を使わない**: 1ジョブの失敗が他ジョブを止めないようにする。
 - **ログはコンテナ内シェル経由で書き込む**: 既存ログがコンテナroot所有のため、ホスト側から `>>` でappendするとPermission deniedになる。`docker compose exec -T backend bash -c "... >> /app/logs/<NAME>.log"` で統一。
-- **現状開発環境のみ運用**: Docker非依存版（venv直接実行ラッパー）の実装後に本番デプロイ予定。本番デプロイ時は `.env` で `CRON_BATCH_PROFILE=prod` を設定すれば、開発専用ジョブ6本（advisor 5本＋theme_etfs＋mechanical_rule_watcher）が自動的に除外される。
+- **現状開発環境のみ運用**: Docker非依存版（venv直接実行ラッパー）の実装後に本番デプロイ予定。本番デプロイ時は `.env` で `CRON_BATCH_PROFILE=prod` を設定すれば、開発専用ジョブ5本（advisor 3本＝morning/evening/weekly ＋theme_etfs＋mechanical_rule_watcher）が自動的に除外される。
 
 ### 当日キャッチアップ機構
 
@@ -180,7 +179,6 @@ bash scripts/cron-batch.sh --help
 | `update_etf_data` | 16:00 | 22:00 | 平日（祝日スキップ） | both |
 | `sync_from_minkabu` | 16:00 | 22:00 | 平日（祝日スキップ） | both |
 | `daily_advisor_morning` | 07:00 | 09:00 | 平日（祝日スキップ） | dev |
-| `daily_advisor_rebalance` | 07:15 | 09:00 | 平日（祝日スキップ） | dev |
 | `daily_advisor_evening` | 17:30 | 22:00 | 平日（祝日スキップ） | dev |
 | `daily_advisor_weekly` | 18:00 | 22:00 | 金（祝日でも実行） | dev |
 | `update_theme_etfs` | 03:00 | 23:59 | 日 | dev |

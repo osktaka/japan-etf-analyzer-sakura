@@ -9,33 +9,10 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from src.services.daily_advisor_models import (
     AllocationDrift,
-    BuyAction,
     NotificationContext,
     RuleTrigger,
-    SellAction,
 )
-from src.services.strategy_loader import (
-    BuyAction as StrategyBuy,
-    SellAction as StrategySell,
-    Strategy,
-)
-
-
-def _to_sell_actions(strategy_sells: List[StrategySell]) -> Tuple[SellAction, ...]:
-    return tuple(
-        SellAction(
-            code=s.code,
-            name=s.name,
-            quantity=s.quantity,
-            action=s.action,
-            reason=s.reason,
-        )
-        for s in strategy_sells
-    )
-
-
-def _to_buy_actions(strategy_buys: List[StrategyBuy]) -> Tuple[BuyAction, ...]:
-    return tuple(BuyAction(code=b.code, quantity=b.quantity) for b in strategy_buys)
+from src.services.strategy_loader import Strategy
 
 
 def build_morning_context(
@@ -44,25 +21,59 @@ def build_morning_context(
     today: date,
     user_id: str,
     summary: Dict[str, Any],
+    rebalance_plan=None,
     triggers: Tuple[RuleTrigger, ...] = (),
 ) -> NotificationContext:
-    """朝のコンテキスト: 当日のアクション + 前日終値ベースの要約."""
-    sells = strategy.get_sells_on(today)
-    buys = strategy.get_buys_on(today)
+    """朝のコンテキスト: 前日終値ベースの要約 + リバランス計画統合.
+
+    Step 4 で旧 sell_schedule/buy_dca_schedule の代替として
+    PortfolioRebalanceService.calculate_rebalance_plan() の結果を統合する.
+
+    - 通常日: rebalance_plan は配分テーブル・採用外保有・カウントダウンの表示用
+    - 四半期末日 (is_rebalance_day=True): sell_actions/buy_actions の本日実行案内も表示
+
+    Args:
+        rebalance_plan: PortfolioRebalanceService.calculate_rebalance_plan() の結果.
+            None の場合はリバランス情報なしで構築する.
+    """
     return NotificationContext(
         kind="morning",
         today=today,
         user_id=user_id,
         strategy_revision=strategy.revision,
         benchmark=strategy.benchmark,
-        sells_today=_to_sell_actions(sells),
-        buys_today=_to_buy_actions(buys),
+        drift_ok_pp=strategy.mechanical_rules.drift_ok_pp,
+        drift_warn_pp=strategy.mechanical_rules.drift_warn_pp,
         total_asset=float(summary.get("total_asset", 0.0)),
         total_value=float(summary.get("total_value", 0.0)),
         cash_balance=float(summary.get("cash_balance", 0.0)),
         daily_change_pct=summary.get("daily_change_total_asset_percent"),
         holdings_count=int(summary.get("holdings_count", 0)),
         triggers=triggers,
+        rebalance_plan=rebalance_plan,
+    )
+
+
+def _normalize_drifts(
+    drifts: Tuple[AllocationDrift, ...],
+    *,
+    warn_threshold_pp: float,
+) -> Tuple[AllocationDrift, ...]:
+    """drifts の warn_threshold_pp を strategy 由来の値で揃える.
+
+    呼び出し元（advisor_runner / dry-run / テスト）が strategy 渡しの
+    compute_allocation_drift を経由していれば既に正しい値が入っているが、
+    防御的に上書きする.
+    """
+    return tuple(
+        AllocationDrift(
+            bucket=d.bucket,
+            target_pct=d.target_pct,
+            actual_pct=d.actual_pct,
+            drift_pp=d.drift_pp,
+            warn_threshold_pp=warn_threshold_pp,
+        )
+        for d in drifts
     )
 
 
@@ -76,18 +87,22 @@ def build_evening_context(
     triggers: Tuple[RuleTrigger, ...],
 ) -> NotificationContext:
     """夕方のコンテキスト: 当日終値ベース + 配分・トリガー."""
+    warn_pp = strategy.mechanical_rules.drift_warn_pp
+    normalized = _normalize_drifts(drifts, warn_threshold_pp=warn_pp)
     return NotificationContext(
         kind="evening",
         today=today,
         user_id=user_id,
         strategy_revision=strategy.revision,
         benchmark=strategy.benchmark,
+        drift_ok_pp=strategy.mechanical_rules.drift_ok_pp,
+        drift_warn_pp=warn_pp,
         total_asset=float(summary.get("total_asset", 0.0)),
         total_value=float(summary.get("total_value", 0.0)),
         cash_balance=float(summary.get("cash_balance", 0.0)),
         daily_change_pct=summary.get("daily_change_total_asset_percent"),
         holdings_count=int(summary.get("holdings_count", 0)),
-        allocation_drifts=drifts,
+        allocation_drifts=normalized,
         triggers=triggers,
     )
 
@@ -112,50 +127,26 @@ def build_weekly_context(
         portfolio_return_pct=portfolio_return_pct,
         benchmark_return_pct=benchmark_return_pct,
     )
+    warn_pp = strategy.mechanical_rules.drift_warn_pp
+    normalized = _normalize_drifts(drifts, warn_threshold_pp=warn_pp)
     return NotificationContext(
         kind="weekly",
         today=today,
         user_id=user_id,
         strategy_revision=strategy.revision,
         benchmark=strategy.benchmark,
+        drift_ok_pp=strategy.mechanical_rules.drift_ok_pp,
+        drift_warn_pp=warn_pp,
         total_asset=float(summary.get("total_asset", 0.0)),
         total_value=float(summary.get("total_value", 0.0)),
         cash_balance=float(summary.get("cash_balance", 0.0)),
         holdings_count=int(summary.get("holdings_count", 0)),
-        allocation_drifts=drifts,
+        allocation_drifts=normalized,
         triggers=triggers,
         alpha_pp=alpha,
         period_label=period_label,
         benchmark_return_pct=benchmark_return_pct,
         portfolio_return_pct=portfolio_return_pct,
-    )
-
-
-def build_rebalance_context(
-    *,
-    strategy: Strategy,
-    today: date,
-    user_id: str,
-    summary: Dict[str, Any],
-    rebalance_plan,
-) -> NotificationContext:
-    """リバランス通知のコンテキスト.
-
-    PortfolioRebalanceService.calculate_rebalance_plan() の結果を保持.
-    summary には PortfolioService.get_portfolio_summary() を渡す.
-    """
-    return NotificationContext(
-        kind="rebalance",
-        today=today,
-        user_id=user_id,
-        strategy_revision=strategy.revision,
-        benchmark=strategy.benchmark,
-        total_asset=float(summary.get("total_asset", 0.0)),
-        total_value=float(summary.get("total_value", 0.0)),
-        cash_balance=float(summary.get("cash_balance", 0.0)),
-        daily_change_pct=summary.get("daily_change_total_asset_percent"),
-        holdings_count=int(summary.get("holdings_count", 0)),
-        rebalance_plan=rebalance_plan,
     )
 
 
@@ -173,5 +164,7 @@ def build_alert_context(
         user_id=user_id,
         strategy_revision=strategy.revision,
         benchmark=strategy.benchmark,
+        drift_ok_pp=strategy.mechanical_rules.drift_ok_pp,
+        drift_warn_pp=strategy.mechanical_rules.drift_warn_pp,
         triggers=triggers,
     )

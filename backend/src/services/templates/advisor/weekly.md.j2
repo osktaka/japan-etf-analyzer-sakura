@@ -1,7 +1,8 @@
 {% from '_macros.j2' import bucket_label, rule_kind_label, action_label %}
+{% set _adopted_drifts = allocation_drifts | rejectattr("bucket", "equalto", "other") | list %}
 {% set warn_drifts = allocation_drifts | selectattr("is_warn") | list %}
-{% set drift_buys = allocation_drifts | selectattr("drift_pp", "lt", -5.0) | list %}
-{% set drift_sells = allocation_drifts | selectattr("drift_pp", "gt", 5.0) | list %}
+{% set drift_buys = _adopted_drifts | selectattr("drift_pp", "lt", -drift_warn_pp) | list %}
+{% set drift_sells = _adopted_drifts | selectattr("drift_pp", "gt", drift_warn_pp) | list %}
 # 週次レビュー {{ today.strftime('%Y-%m-%d') }}
 
 {% if alpha_pp is not none %}
@@ -27,15 +28,24 @@
 
 ## 配分カテゴリ別
 
-{% for d in allocation_drifts %}
+{% for d in _adopted_drifts %}
 - {% if d.is_warn %}[警告] {% endif %}**{{ bucket_label(d.bucket) }}**: {{ "%.1f"|format(d.actual_pct) }}%（目標 {{ "%.1f"|format(d.target_pct) }}%、差 {{ "%+.2f"|format(d.drift_pp) }}pp）
 {% endfor %}
+
+{% set non_adopted = allocation_drifts | selectattr("bucket", "equalto", "other") | list %}
+{% if non_adopted %}
+## 採用外保有
+
+{% for d in non_adopted %}
+- **{{ bucket_label(d.bucket) }}**: {{ "%.1f"|format(d.actual_pct) }}% → 次回リバランスで売却推奨
+{% endfor %}
+{% endif %}
 
 {% if (alpha_pp is not none and alpha_pp <= -2.0) or drift_buys or drift_sells %}
 ## 来週の推奨アクション
 
 {% if alpha_pp is not none and alpha_pp <= -2.0 %}
-- コア（市場全体）ETFの追加買付を検討（α {{ "%+.2f"|format(alpha_pp) }}pp）
+- A群（コア・逆相関）ETFの追加買付を検討（α {{ "%+.2f"|format(alpha_pp) }}pp）
 - 現金比率が高い場合は段階的に投入を検討
 {% endif %}
 {% for d in drift_buys %}

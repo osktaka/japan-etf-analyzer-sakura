@@ -27,7 +27,7 @@ cd "$PROJECT_DIR"
 
 # --- 環境プロファイル ---
 # CRON_BATCH_PROFILE=dev|prod (default: dev)
-#   dev : 開発環境（advisor 4本 + theme_etfs + watcher を含む全ジョブ）
+#   dev : 開発環境（advisor 3本 + theme_etfs + watcher を含む全ジョブ）
 #   prod: 本番環境（さくら）想定。dev限定ジョブを除外
 # 不正値は exit 2 で起動拒否（誤設定での意図しない発火事故を防ぐ）
 declare -ra JOB_PROFILES=(
@@ -43,7 +43,6 @@ declare -ra JOB_PROFILES=(
   "daily_advisor_morning|dev"
   "daily_advisor_evening|dev"
   "daily_advisor_weekly|dev"
-  "daily_advisor_rebalance|dev"
   "mechanical_rule_watcher|dev"
 )
 PROFILE="${CRON_BATCH_PROFILE:-dev}"
@@ -175,7 +174,6 @@ log_name_for() {
     daily_advisor_morning)   echo "advisor_morning" ;;
     daily_advisor_evening)   echo "advisor_evening" ;;
     daily_advisor_weekly)    echo "advisor_weekly" ;;
-    daily_advisor_rebalance) echo "advisor_rebalance" ;;
     mechanical_rule_watcher) echo "advisor_watcher" ;;
     *)                       echo "$1" ;;
   esac
@@ -328,7 +326,6 @@ declare -ra CATCHUP_JOBS=(
   "update_etf_data|16:00|22:00|weekday|both"
   "sync_from_minkabu|16:00|22:00|weekday|both"
   "daily_advisor_morning|07:00|09:00|weekday|dev"
-  "daily_advisor_rebalance|07:15|09:00|weekday|dev"
   "daily_advisor_evening|17:30|22:00|weekday|dev"
   "daily_advisor_weekly|18:00|22:00|fri|dev"
   "update_theme_etfs|03:00|23:59|sun|dev"
@@ -467,7 +464,6 @@ if [[ -n "$ONLY_NAME" ]]; then
     daily_advisor_morning)    run_batch daily_advisor_morning ;;
     daily_advisor_evening)    run_batch daily_advisor_evening ;;
     daily_advisor_weekly)     run_batch daily_advisor_weekly ;;
-    daily_advisor_rebalance)  run_batch daily_advisor_rebalance ;;
     mechanical_rule_watcher)  run_batch mechanical_rule_watcher ;;
     *)
       echo "Unknown --only target: $ONLY_NAME" >&2
@@ -522,13 +518,9 @@ if at_time "03:00" && [[ "$DOW" == "7" ]]; then
 fi
 
 # 8) daily_advisor_morning: 0 7 * * 1-5  平日（祝日スキップ）  [dev限定]
+#    リバランス計画は morning 内に統合済み（旧 daily_advisor_rebalance 07:15 は廃止）。
 if at_time "07:00" && is_weekday && ! is_holiday; then
   run_batch daily_advisor_morning
-fi
-
-# 8.5) daily_advisor_rebalance: 15 7 * * 1-5  平日（祝日スキップ）  [dev限定]
-if at_time "07:15" && is_weekday && ! is_holiday; then
-  run_batch daily_advisor_rebalance
 fi
 
 # 9) daily_advisor_evening: 30 17 * * 1-5  平日（祝日スキップ）  [dev限定]
