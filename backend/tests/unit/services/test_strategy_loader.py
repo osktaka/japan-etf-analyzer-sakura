@@ -13,25 +13,25 @@ from src.services.strategy_loader import (
 
 
 VALID_FRONTMATTER = """---
-revision: 2026-05-14
+revision: 2026-05-16
 owner: test
 benchmark: ^N225
 review_frequency: weekly_friday
 
 target_buckets:
-  group_a: { label_ja: "A群（コア・逆相関）", weight_pct: 45.00 }
+  group_a: { label_ja: "A群（コア・ヘッジ）", weight_pct: 45.00 }
   group_b: { label_ja: "B群（日本株テーマ）", weight_pct: 45.00 }
   cash:    { label_ja: "現金",              weight_pct: 10.00 }
 
 target_holdings:
-  - { code: "2559", name: "オルカン",       bucket: "group_a", weight_pct: 15.00 }
+  - { code: "1547", name: "S&P500",         bucket: "group_a", weight_pct: 15.00 }
   - { code: "1540", name: "純金",           bucket: "group_a", weight_pct: 15.00 }
-  - { code: "200A", name: "半導体",         bucket: "group_a", weight_pct: 15.00 }
+  - { code: "1629", name: "商社",           bucket: "group_a", weight_pct: 15.00 }
   - { code: "1306", name: "TOPIX",          bucket: "group_b", weight_pct:  9.00 }
-  - { code: "1629", name: "商社",           bucket: "group_b", weight_pct:  9.00 }
   - { code: "1615", name: "銀行",           bucket: "group_b", weight_pct:  9.00 }
   - { code: "2646", name: "メタル",         bucket: "group_b", weight_pct:  9.00 }
   - { code: "1618", name: "エネルギー資源", bucket: "group_b", weight_pct:  9.00 }
+  - { code: "200A", name: "半導体",         bucket: "group_b", weight_pct:  9.00 }
 
 mechanical_rules:
   min_holding_months: 6
@@ -54,7 +54,7 @@ A群/B群モデルを採用する。
 class TestStrategyLoaderLoads:
     def test_loads_valid_frontmatter(self):
         s = StrategyLoader.loads(VALID_FRONTMATTER)
-        assert s.revision == date(2026, 5, 14)
+        assert s.revision == date(2026, 5, 16)
         assert s.owner == "test"
         assert s.benchmark == "^N225"
         assert s.review_frequency == "weekly_friday"
@@ -64,7 +64,7 @@ class TestStrategyLoaderLoads:
         s = StrategyLoader.loads(VALID_FRONTMATTER)
         assert set(s.target_buckets.keys()) == {"group_a", "group_b", "cash"}
         assert s.target_buckets["group_a"] == BucketDef(
-            code="group_a", label_ja="A群（コア・逆相関）", weight_pct=45.0
+            code="group_a", label_ja="A群（コア・ヘッジ）", weight_pct=45.0
         )
         assert s.target_buckets["group_b"].weight_pct == 45.0
         assert s.target_buckets["cash"].weight_pct == 10.0
@@ -74,7 +74,7 @@ class TestStrategyLoaderLoads:
         assert len(s.target_holdings) == 8
         h0 = s.target_holdings[0]
         assert h0 == TargetHolding(
-            code="2559", name="オルカン", bucket="group_a", weight_pct=15.0
+            code="1547", name="S&P500", bucket="group_a", weight_pct=15.0
         )
         # bucket フィールドが正しく分類されている
         group_a = [h for h in s.target_holdings if h.bucket == "group_a"]
@@ -122,15 +122,15 @@ class TestStrategyLoaderInvalid:
 
     def test_invalid_date_format(self):
         bad = VALID_FRONTMATTER.replace(
-            "revision: 2026-05-14", 'revision: "not-a-date"'
+            "revision: 2026-05-16", 'revision: "not-a-date"'
         )
         with pytest.raises(ValueError, match="Invalid date format"):
             StrategyLoader.loads(bad)
 
     def test_target_holdings_missing_field(self):
         bad = VALID_FRONTMATTER.replace(
-            '- { code: "2559", name: "オルカン",       bucket: "group_a", weight_pct: 15.00 }',
-            '- { code: "2559", bucket: "group_a", weight_pct: 15.00 }',
+            '- { code: "1547", name: "S&P500",         bucket: "group_a", weight_pct: 15.00 }',
+            '- { code: "1547", bucket: "group_a", weight_pct: 15.00 }',
         )
         with pytest.raises(ValueError, match="target_holdings item missing"):
             StrategyLoader.loads(bad)
@@ -157,8 +157,8 @@ class TestStrategyLoaderInvalid:
     def test_target_holdings_weight_sum_mismatch(self):
         """target_holdings の bucket 内 weight_pct 合計が target_buckets[bucket].weight_pct と一致しない."""
         bad = VALID_FRONTMATTER.replace(
-            '- { code: "2559", name: "オルカン",       bucket: "group_a", weight_pct: 15.00 }',
-            '- { code: "2559", name: "オルカン",       bucket: "group_a", weight_pct: 10.00 }',
+            '- { code: "1547", name: "S&P500",         bucket: "group_a", weight_pct: 15.00 }',
+            '- { code: "1547", name: "S&P500",         bucket: "group_a", weight_pct: 10.00 }',
         )
         with pytest.raises(
             ValueError,

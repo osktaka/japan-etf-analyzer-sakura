@@ -84,11 +84,19 @@ class RebalancePlan:
 class PortfolioRebalanceService:
     """リバランス計算サービス（strategy 駆動）."""
 
-    def __init__(self, strategy: "Strategy", portfolio_service=None):
+    def __init__(
+        self,
+        strategy: "Strategy",
+        portfolio_service=None,
+        etf_repository=None,
+    ):
         """
         Args:
             strategy: Strategy インスタンス（SSOT、必須）
             portfolio_service: PortfolioService（テスト時のみ注入）
+            etf_repository: ETFRepository（テスト時のみ注入）。
+                保有ゼロの採用銘柄について etfs.market_price を
+                current_price のフォールバック値として取得するために使用。
         """
         self.strategy = strategy
 
@@ -106,6 +114,11 @@ class PortfolioRebalanceService:
             from src.services.portfolio_service import PortfolioService
             portfolio_service = PortfolioService()
         self.portfolio_service = portfolio_service
+
+        if etf_repository is None:
+            from src.repositories.etf_repository import ETFRepository
+            etf_repository = ETFRepository()
+        self.etf_repository = etf_repository
 
     # ------------------------------------------------------------
     # ヘルパ（strategy 経由の参照）
@@ -164,6 +177,27 @@ class PortfolioRebalanceService:
         adopted_names = self._adopted_names
         cash_target_pct = self._cash_target_pct
 
+        # 保有ゼロの採用銘柄向け: ETFマスタから current_price をフォールバック取得.
+        # portfolio_service.get_holdings() も etf.market_price を current_price の
+        # ソースにしているため、ここも同じソースを使うことで整合性を保つ.
+        master_prices: Dict[str, float] = {}
+        try:
+            etfs_by_code = self.etf_repository.get_by_codes(
+                list(adopted_target_pct.keys())
+            )
+            for code, etf_obj in etfs_by_code.items():
+                price_raw = getattr(etf_obj, "market_price", None)
+                master_prices[code] = (
+                    float(price_raw) if price_raw is not None else 0.0
+                )
+        except Exception as e:  # noqa: BLE001
+            # マスタ取得失敗時は従来通り 0.0 フォールバックで継続
+            logger.warning(
+                "Failed to fetch master prices for adopted ETFs (continuing "
+                "with empty fallback): %s",
+                e,
+            )
+
         target_cash = total_asset * (cash_target_pct / 100.0)
         cash_actual_pct = (
             (current_cash / total_asset * 100.0) if total_asset > 0 else 0.0
@@ -182,7 +216,9 @@ class PortfolioRebalanceService:
 
             h = holdings_by_code.get(code)
             if h is None:
-                current_price = 0.0
+                # 保有ゼロでもマスタ価格があれば current_price を埋めて
+                # 買付プランの候補に含める（current_value/quantity は 0 のまま）.
+                current_price = master_prices.get(code, 0.0)
                 current_value = 0.0
                 quantity_held = 0.0
                 pnl_pct = None

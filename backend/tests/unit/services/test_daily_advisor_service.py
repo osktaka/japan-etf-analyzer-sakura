@@ -29,23 +29,23 @@ from src.services.daily_advisor_service import (
 from src.services.strategy_loader import StrategyLoader
 
 VALID = """---
-revision: 2026-05-14
+revision: 2026-05-16
 owner: test
 benchmark: ^N225
 review_frequency: weekly_friday
 target_buckets:
-  group_a: { label_ja: "A群（コア・逆相関）", weight_pct: 45.00 }
+  group_a: { label_ja: "A群（コア・ヘッジ）", weight_pct: 45.00 }
   group_b: { label_ja: "B群（日本株テーマ）", weight_pct: 45.00 }
   cash:    { label_ja: "現金",              weight_pct: 10.00 }
 target_holdings:
-  - { code: "2559", name: "オルカン",       bucket: "group_a", weight_pct: 15.00 }
+  - { code: "1547", name: "S&P500",         bucket: "group_a", weight_pct: 15.00 }
   - { code: "1540", name: "純金",           bucket: "group_a", weight_pct: 15.00 }
-  - { code: "200A", name: "半導体",         bucket: "group_a", weight_pct: 15.00 }
+  - { code: "1629", name: "商社",           bucket: "group_a", weight_pct: 15.00 }
   - { code: "1306", name: "TOPIX",          bucket: "group_b", weight_pct:  9.00 }
-  - { code: "1629", name: "商社",           bucket: "group_b", weight_pct:  9.00 }
   - { code: "1615", name: "銀行",           bucket: "group_b", weight_pct:  9.00 }
   - { code: "2646", name: "メタル",         bucket: "group_b", weight_pct:  9.00 }
   - { code: "1618", name: "エネルギー資源", bucket: "group_b", weight_pct:  9.00 }
+  - { code: "200A", name: "半導体",         bucket: "group_b", weight_pct:  9.00 }
 mechanical_rules:
   min_holding_months: 6
   loss_cut_pct: -20.0
@@ -364,9 +364,9 @@ class TestFingerprint:
 
 class TestClassifyBuckets:
     def test_basic_classification(self, strategy):
-        # group_a 採用銘柄: 2559/1540/200A, group_b 採用銘柄: 1306/1629/1615/2646/1618
+        # group_a 採用銘柄: 1547/1540/1629, group_b 採用銘柄: 1306/1615/2646/1618
         holdings = [
-            {"etf_code": "2559", "current_value": 450_000.0},  # group_a
+            {"etf_code": "1547", "current_value": 450_000.0},  # group_a
             {"etf_code": "1306", "current_value": 450_000.0},  # group_b
         ]
         b = classify_buckets(
@@ -380,7 +380,7 @@ class TestClassifyBuckets:
     def test_other_bucket_for_unlisted_codes(self, strategy):
         """採用外銘柄は other バケットに分類される."""
         holdings = [
-            {"etf_code": "2559", "current_value": 400_000.0},  # group_a
+            {"etf_code": "1547", "current_value": 400_000.0},  # group_a
             {"etf_code": "1306", "current_value": 400_000.0},  # group_b
             {"etf_code": "9999", "current_value": 100_000.0},  # 採用外 → other
         ]
@@ -485,7 +485,7 @@ class TestReturnFromHistory:
 class TestEvaluateRules:
     def test_no_triggers(self, strategy):
         holdings = [
-            {"etf_code": "2559", "unrealized_pnl_percent": 5.0, "holding_days": 200,
+            {"etf_code": "1547", "unrealized_pnl_percent": 5.0, "holding_days": 200,
              "current_value": 650_000.0},
         ]
         triggers = evaluate_mechanical_rules(
@@ -500,7 +500,7 @@ class TestEvaluateRules:
 
     def test_loss_cut_and_n225_drawdown(self, strategy):
         holdings = [
-            {"etf_code": "2559", "unrealized_pnl_percent": -25.0, "holding_days": 200,
+            {"etf_code": "1547", "unrealized_pnl_percent": -25.0, "holding_days": 200,
              "current_value": 500_000.0},
         ]
         triggers = evaluate_mechanical_rules(

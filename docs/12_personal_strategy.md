@@ -1,23 +1,23 @@
 ---
-revision: 2026-05-14
+revision: 2026-05-16
 owner: test
 benchmark: ^N225
 review_frequency: weekly_friday
 
 target_buckets:
-  group_a: { label_ja: "A群（コア・逆相関）", weight_pct: 45.00 }
+  group_a: { label_ja: "A群（コア・ヘッジ）", weight_pct: 45.00 }
   group_b: { label_ja: "B群（日本株テーマ）", weight_pct: 45.00 }
   cash:    { label_ja: "現金",              weight_pct: 10.00 }
 
 target_holdings:
-  - { code: "2559", name: "オルカン",       bucket: "group_a", weight_pct: 15.00 }
+  - { code: "1547", name: "S&P500",         bucket: "group_a", weight_pct: 15.00 }
   - { code: "1540", name: "純金",           bucket: "group_a", weight_pct: 15.00 }
-  - { code: "200A", name: "半導体",         bucket: "group_a", weight_pct: 15.00 }
+  - { code: "1629", name: "商社",           bucket: "group_a", weight_pct: 15.00 }
   - { code: "1306", name: "TOPIX",          bucket: "group_b", weight_pct:  9.00 }
-  - { code: "1629", name: "商社",           bucket: "group_b", weight_pct:  9.00 }
   - { code: "1615", name: "銀行",           bucket: "group_b", weight_pct:  9.00 }
   - { code: "2646", name: "メタル",         bucket: "group_b", weight_pct:  9.00 }
   - { code: "1618", name: "エネルギー資源", bucket: "group_b", weight_pct:  9.00 }
+  - { code: "200A", name: "半導体",         bucket: "group_b", weight_pct:  9.00 }
 
 mechanical_rules:
   min_holding_months: 6
@@ -32,6 +32,8 @@ mechanical_rules:
   rebalance_check_basis: close
 
 revision_history:
+  - { date: "2026-05-16", note: "200A 半導体をA群採用外売却対象からB群テーマ銘柄9%に変更。B群を5銘柄各9%に戻し、配分構造を2026-05-14版に近づける。A群（1547/1540/1629 各15%）は維持" }
+  - { date: "2026-05-15", note: "A群を1547/1540/1629に再構成。10年バックテスト(reports/research/a_group_patterns_20260514.md)でシャープ1.708・最大DD-11.71%を確認。旧2559は1547と相関0.96で実質重複、200Aはデータ1.9年で長期評価不可のため除外。1629はB群から移動し、B群は4銘柄各11.25%に再配分（単一銘柄集中回避）" }
   - { date: "2026-05-14", note: "A群/B群モデル統一、core/theme廃止、sell_schedule/buy_dca_schedule撤去、rebalance通知をmorningに統合" }
   - { date: "2026-04-29", note: "初版・案1B戦略確定" }
 ---
@@ -53,8 +55,8 @@ revision_history:
 
 | 区分 | 配分 | 役割 |
 |------|------|------|
-| A群（コア・逆相関） | 45% | オルカン(15%) + 純金(15%) + 半導体(15%)。互いに相関の低い3資産で大局を構成 |
-| B群（日本株テーマ） | 45% | TOPIX / 商社 / 銀行 / メタル / エネルギー資源 各9%。日本株5テーマに均等配分 |
+| A群（コア・ヘッジ） | 45% | S&P500(15%) + 純金(15%) + 商社(15%)。米国株コア + 金ヘッジ + 配当・資源敏感性の3軸で構成。10年バックテストでシャープ1.708/最大DD-11.71%を実証 |
+| B群（日本株テーマ） | 45% | TOPIX / 銀行 / メタル / エネルギー資源 / 半導体 各9%。日本株5テーマに均等配分（商社はA群へ昇格、半導体はB群テーマ枠で保持） |
 | 現金 | 10% | 急落時の機動枠 |
 
 ベンチマークは **^N225（日経平均）** を継続。^N225 比較で α が ±10pp を超えて逸脱したら警告。
@@ -67,6 +69,17 @@ revision_history:
 採用8銘柄については、各銘柄の目標配分と現状配分の乖離 (`drift_pp`) に応じて、四半期末リバランスで売買数量を **自動算出** する。
 
 日付固定の売却スケジュール（旧 `sell_schedule`）は廃止した。日々の `morning` 通知に当日の推奨アクション（採用外売却＋採用銘柄の不足/超過調整）が組み込まれる。
+
+> 2026-05-16 追補: 200A 半導体は採用外売却対象を撤回し、B群テーマ銘柄として9%枠で保持する。長期データ不足の評価リスクは残るが、日本株半導体テーマとしての成長エクスポージャーを切らさないことを優先する。
+>
+> 2026-05-15 改訂に伴い、旧A群銘柄のうち以下は採用外となるため、次回四半期末（2026-06-30）に全量売却を推奨する:
+> - 2559 オルカン: 1547と相関0.96で実質重複
+>
+> 新規取得対象:
+> - 1547 S&P500（新A群コア）
+> - 1629 商社（旧B群から移動、買増 7%相当）
+>
+> B群の旧1629分（9%）は、TOPIX/銀行/メタル/エネルギー資源 各銘柄に **据え置きの9%** ＋ 半導体200A 9% を加えて5銘柄構成に戻す。
 
 ## 4. 買付方針
 

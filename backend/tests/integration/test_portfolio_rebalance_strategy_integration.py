@@ -52,13 +52,13 @@ class TestStrategyLoadedFromRealFile:
         assert abs(total - 100.0) < 0.01
 
     def test_target_holdings_count(self, real_strategy):
-        # 採用8銘柄
+        # 採用8銘柄（2026-05-16改訂で200AをB群に追加、B群5銘柄各9%）
         assert len(real_strategy.target_holdings) == 8
 
     def test_target_holdings_codes(self, real_strategy):
         codes = {h.code for h in real_strategy.target_holdings}
-        # A群: 2559/1540/200A, B群: 1306/1629/1615/2646/1618
-        expected = {"2559", "1540", "200A", "1306", "1629", "1615", "2646", "1618"}
+        # A群: 1547/1540/1629, B群: 1306/1615/2646/1618/200A
+        expected = {"1547", "1540", "1629", "1306", "1615", "2646", "1618", "200A"}
         assert codes == expected
 
     def test_mechanical_rules_drift_thresholds(self, real_strategy):

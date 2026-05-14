@@ -45,7 +45,7 @@
 ## 来週の推奨アクション
 
 {% if alpha_pp is not none and alpha_pp <= -2.0 %}
-- A群（コア・逆相関）ETFの追加買付を検討（α {{ "%+.2f"|format(alpha_pp) }}pp）
+- A群（コア・ヘッジ）ETFの追加買付を検討（α {{ "%+.2f"|format(alpha_pp) }}pp）
 - 現金比率が高い場合は段階的に投入を検討
 {% endif %}
 {% for d in drift_buys %}

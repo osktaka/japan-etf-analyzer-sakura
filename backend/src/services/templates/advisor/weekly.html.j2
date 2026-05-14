@@ -72,7 +72,7 @@
 <h2 style="font-size:18px;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;">来週の推奨アクション</h2>
 <ul style="margin:0;padding-left:20px;">
 {% if alpha_pp is not none and alpha_pp <= -2.0 %}
-<li style="margin-bottom:8px;">A群（コア・逆相関）ETFの追加買付を検討（α {{ "%+.2f"|format(alpha_pp) }}pp）</li>
+<li style="margin-bottom:8px;">A群（コア・ヘッジ）ETFの追加買付を検討（α {{ "%+.2f"|format(alpha_pp) }}pp）</li>
 <li style="margin-bottom:8px;">現金比率が高い場合は段階的に投入を検討</li>
 {% endif %}
 {% for d in drift_buys %}

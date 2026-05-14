@@ -32,14 +32,28 @@ class EmailClient:
         max_retries: int = 3,
         backoff_base: float = 2.0,
     ):
-        self.host = host or os.environ.get("SMTP_HOST", "")
-        self.port = int(port or os.environ.get("SMTP_PORT", "587"))
-        self.username = username or os.environ.get("SMTP_USER", "")
-        self.password = password or os.environ.get("SMTP_PASSWORD", "")
-        self.sender = (
-            sender or os.environ.get("SMTP_SENDER") or self.username
+        # 引数が None の場合のみ環境変数フォールバック。
+        # 空文字列("")が渡された場合は明示的に「未設定」を意図しているため、
+        # 環境変数を参照せずそのまま空文字列として扱う。
+        self.host = host if host is not None else os.environ.get("SMTP_HOST", "")
+        self.port = int(
+            port if port is not None else os.environ.get("SMTP_PORT", "587")
         )
-        self.recipient = recipient or os.environ.get("NOTIFY_TO_EMAIL", "")
+        self.username = (
+            username if username is not None else os.environ.get("SMTP_USER", "")
+        )
+        self.password = (
+            password if password is not None
+            else os.environ.get("SMTP_PASSWORD", "")
+        )
+        if sender is not None:
+            self.sender = sender
+        else:
+            self.sender = os.environ.get("SMTP_SENDER") or self.username
+        self.recipient = (
+            recipient if recipient is not None
+            else os.environ.get("NOTIFY_TO_EMAIL", "")
+        )
         self.timeout = timeout
         self.max_retries = max_retries
         self.backoff_base = backoff_base

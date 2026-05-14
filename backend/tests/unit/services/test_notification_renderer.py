@@ -124,8 +124,8 @@ class TestRender:
     def test_evening(self, renderer):
         md, html = renderer.render(_evening_ctx())
         assert "夕方のレビュー" in md
-        # bucket は翻訳マクロで「A群（コア・逆相関）」「B群（日本株テーマ）」表記
-        assert "A群（コア・逆相関）" in md
+        # bucket は翻訳マクロで「A群（コア・ヘッジ）」「B群（日本株テーマ）」表記
+        assert "A群（コア・ヘッジ）" in md
         assert "B群（日本株テーマ）" in md
         assert "<h1" in html
         # リード文
@@ -147,8 +147,8 @@ class TestRender:
         ctx = _weekly_ctx(alpha_pp=-3.0)
         md, _ = renderer.render(ctx)
         assert "来週の推奨アクション" in md
-        # bucket 翻訳済み: group_a → A群（コア・逆相関）
-        assert "A群（コア・逆相関）ETFの追加買付" in md
+        # bucket 翻訳済み: group_a → A群（コア・ヘッジ）
+        assert "A群（コア・ヘッジ）ETFの追加買付" in md
         assert "**要確認**" in md
 
     def test_alert(self, renderer):
@@ -525,7 +525,7 @@ class TestEveningTemplateRebalancePlan:
         # 売買プラン概要セクションも出ない（rebalance_plan が無いため）
         assert "売買プラン概要" not in md
         # A群/B群サマリは出る
-        assert "A群（コア・逆相関）" in md
+        assert "A群（コア・ヘッジ）" in md
 
     def test_render_with_rebalance_plan(self, renderer):
         """rebalance_plan あり: 銘柄別配分・売買プランが描画される."""
