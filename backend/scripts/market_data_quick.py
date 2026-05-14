@@ -647,6 +647,96 @@ def fetch_market_data(include_pm=False, include_pre_us=False):
     return result
 
 
+# ============================================================
+# 朝バッチ (daily_advisor_morning) 用: overnight サマリ取得
+# ============================================================
+
+# 朝メールの overnight セクションで利用する最小ティッカー集合
+# AdvisorRunner から import して使用される
+OVERNIGHT_TICKERS = {
+    "sp500": {"symbol": "^GSPC", "data_type": "index"},
+    "nasdaq": {"symbol": "^IXIC", "data_type": "index"},
+    "dow": {"symbol": "^DJI", "data_type": "index"},
+    "vix": {"symbol": "^VIX", "data_type": "index"},
+    "usdjpy": {"symbol": "USDJPY=X", "data_type": "fx"},
+    "nikkei_futures": {"symbol": "NKD=F", "data_type": "futures"},
+}
+
+
+def fetch_overnight_data():
+    """朝メール用に米国指数・先物・為替・VIX の overnight サマリを取得する.
+
+    `fetch_market_data()` と同じ取得経路（yfinance）を使うが、対象は
+    `OVERNIGHT_TICKERS` の6銘柄に限定して所要時間を短縮する.
+
+    Returns:
+        dict: {ticker_name: {"price": float, "change_pct": float,
+                              "prev_close": float|None, "status": str,
+                              "data_type": str},
+               ...,
+               "fetched_at": isoformat,
+               "errors": [str, ...]}
+
+    Raises:
+        全ティッカーが取得失敗した場合は RuntimeError を送出する.
+        部分失敗（一部 success / 一部 fail）は errors に残しつつ dict を返す.
+    """
+    start_time = datetime.now(JST)
+    result = {}
+    errors = []
+
+    for name, info in OVERNIGHT_TICKERS.items():
+        symbol = info["symbol"]
+        try:
+            ticker = yf.Ticker(symbol)
+            hist = ticker.history(period="5d")
+            if len(hist) == 0:
+                errors.append(f"{name} ({symbol}): データなし")
+                continue
+            latest = hist.iloc[-1]
+            price = float(latest["Close"])
+            if len(hist) >= 2:
+                prev_close = float(hist.iloc[-2]["Close"])
+                change_pct = ((price - prev_close) / prev_close) * 100
+            else:
+                prev_close = None
+                change_pct = 0.0
+            latest_date = hist.index[-1].date()
+            today_jst = datetime.now(JST).date()
+            status = "trading" if latest_date == today_jst else "closed"
+            entry = {
+                "price": round(price, 2),
+                "change_pct": round(change_pct, 2),
+                "prev_close": round(prev_close, 2) if prev_close is not None else None,
+                "status": status,
+                "data_type": info["data_type"],
+            }
+            # VIX のみポイント変動も付与（fetch_market_data と整合）
+            if name == "vix" and prev_close is not None:
+                entry["change"] = round(price - prev_close, 2)
+            result[name] = entry
+        except Exception as e:  # noqa: BLE001
+            errors.append(f"{name} ({symbol}): {str(e)}")
+
+    end_time = datetime.now(JST)
+    result["fetched_at"] = end_time.isoformat()
+    result["fetch_duration_sec"] = round((end_time - start_time).total_seconds(), 1)
+    result["errors"] = errors
+
+    # 1件も取得できなかった場合は呼び出し側に例外で通知（呼び出し側で try/except）
+    success_count = sum(
+        1 for k, v in result.items()
+        if k not in {"fetched_at", "fetch_duration_sec", "errors"}
+        and isinstance(v, dict)
+    )
+    if success_count == 0:
+        raise RuntimeError(
+            f"fetch_overnight_data: 全ティッカー取得失敗 errors={errors}"
+        )
+
+    return result
+
+
 def main():
     include_pm = "--pm" in sys.argv
     include_pre_us = "--pre-us" in sys.argv

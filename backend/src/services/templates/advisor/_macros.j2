@@ -31,3 +31,200 @@
     'DCA': '定期積立（DCA）'
 }.get(action, action) }}
 {%- endmacro -%}
+
+
+{# =====================================================================
+   銘柄別配分・採用外保有・売買プラン用マクロ（朝/夕共通、現状は evening で使用）
+   DRY: 朝メールから移管した銘柄テーブル・売買セクションをマクロに切り出し、
+   今後 weekly 等でも再利用可能にしておく.
+   ===================================================================== #}
+
+{# 採用銘柄配分テーブル (Markdown) #}
+{%- macro holdings_table_md(plan, drift_warn_pp, drift_ok_pp) -%}
+| 銘柄 | 実績 | 目標 | 乖離 | 区分 |
+|------|-----:|-----:|-----:|:-----|
+{% for s in plan.holdings_snapshots if s.is_adopted -%}
+| {{ s.etf_code }} {{ s.name }} | {{ "%.2f"|format(s.actual_pct) }}% | {{ "%.2f"|format(s.target_pct) }}% | {{ "%+.2f"|format(s.drift_pp) }}pp | {{ s.classification }} |
+{% endfor -%}
+{% set cash_actual = (plan.current_cash / plan.total_asset * 100.0) if plan.total_asset > 0 else 0 -%}
+{% set cash_abs = plan.cash_deviation_pp|abs -%}
+{% if cash_abs >= drift_warn_pp -%}
+{% set cash_class = "CRITICAL" -%}
+{% elif cash_abs >= drift_ok_pp -%}
+{% set cash_class = "WARN" -%}
+{% else -%}
+{% set cash_class = "OK" -%}
+{% endif -%}
+| **現金** | {{ "%.2f"|format(cash_actual) }}% | {{ "%.2f"|format(plan.target_cash_pct) }}% | {{ "%+.2f"|format(plan.cash_deviation_pp) }}pp | {{ cash_class }} |
+{%- endmacro -%}
+
+{# 採用銘柄配分テーブル (HTML, モバイル最適化) #}
+{%- macro holdings_table_html(plan, drift_warn_pp, drift_ok_pp) -%}
+<ul style="margin:0;padding-left:20px;">
+{% for s in plan.holdings_snapshots if s.is_adopted %}
+<li style="margin-bottom:10px;">
+  {% if s.classification == 'CRITICAL' %}<span style="display:inline-block;background:#fdecec;color:#c0392b;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:6px;">CRITICAL</span>
+  {% elif s.classification == 'WARN' %}<span style="display:inline-block;background:#fff8e1;color:#c79100;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:6px;">WARN</span>
+  {% endif %}
+  <strong>{{ s.etf_code }} {{ s.name }}</strong><br>
+  <span style="color:#555;font-size:14px;">
+    実績 {{ "%.2f"|format(s.actual_pct) }}% → 目標 {{ "%.2f"|format(s.target_pct) }}% （乖離 {{ "%+.2f"|format(s.drift_pp) }}pp）
+  </span>
+</li>
+{% endfor %}
+<li style="margin-bottom:10px;">
+  {% set cash_abs = plan.cash_deviation_pp|abs %}
+  {% if cash_abs >= drift_warn_pp %}<span style="display:inline-block;background:#fdecec;color:#c0392b;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:6px;">CRITICAL</span>
+  {% elif cash_abs >= drift_ok_pp %}<span style="display:inline-block;background:#fff8e1;color:#c79100;padding:2px 6px;border-radius:3px;font-size:11px;margin-right:6px;">WARN</span>
+  {% endif %}
+  <strong>現金</strong><br>
+  <span style="color:#555;font-size:14px;">
+    実績 {{ "%.2f"|format(plan.current_cash / plan.total_asset * 100.0 if plan.total_asset > 0 else 0) }}% → 目標 {{ "%.2f"|format(plan.target_cash_pct) }}% （乖離 {{ "%+.2f"|format(plan.cash_deviation_pp) }}pp）
+  </span>
+</li>
+</ul>
+{%- endmacro -%}
+
+{# 採用外保有リスト (Markdown) #}
+{%- macro non_adopted_md(plan) -%}
+{% set non_adopted = plan.holdings_snapshots | rejectattr("is_adopted") | list -%}
+{% if non_adopted -%}
+{% for s in non_adopted %}
+- **{{ s.etf_code }} {{ s.name }}**: {{ "{:,.0f}".format(s.quantity) }}株 / {{ "{:,.0f}".format(s.current_value) }}円（実績 {{ "%.2f"|format(s.actual_pct) }}%）
+{% endfor -%}
+{% endif -%}
+{%- endmacro -%}
+
+{# 採用外保有リスト (HTML) #}
+{%- macro non_adopted_html(plan) -%}
+{% set non_adopted = plan.holdings_snapshots | rejectattr("is_adopted") | list %}
+{% if non_adopted %}
+<ul style="margin:0;padding-left:20px;">
+{% for s in non_adopted %}
+<li style="margin-bottom:8px;">
+  <strong>{{ s.etf_code }} {{ s.name }}</strong> — {{ "{:,.0f}".format(s.quantity) }}株 / {{ "{:,.0f}".format(s.current_value) }}円（実績 {{ "%.2f"|format(s.actual_pct) }}%）
+</li>
+{% endfor %}
+</ul>
+{% endif %}
+{%- endmacro -%}
+
+{# 売買アクション一覧 (Markdown) #}
+{%- macro trade_actions_md(sell_actions, buy_actions) -%}
+{% if sell_actions -%}
+### 売却
+
+{% for a in sell_actions %}
+- **{{ a.etf_code }}** {{ a.quantity }}株（約{{ "{:,.0f}".format(a.amount) }}円） — {{ a.reason }}
+{% endfor -%}
+{% endif -%}
+{% if buy_actions %}
+
+### 買付
+
+{% for a in buy_actions %}
+- **{{ a.etf_code }}** {{ a.quantity }}株（約{{ "{:,.0f}".format(a.amount) }}円） — {{ a.reason }}
+{% endfor -%}
+{% endif -%}
+{% if not sell_actions and not buy_actions -%}
+売買アクションなし（単元未満で全て繰越）。
+{% endif -%}
+{%- endmacro -%}
+
+{# 売買アクション一覧 (HTML) #}
+{%- macro trade_actions_html(sell_actions, buy_actions) -%}
+{% if sell_actions %}
+<h3 style="font-size:16px;margin:16px 0 8px;">売却</h3>
+<ul style="margin:0;padding-left:20px;">
+{% for a in sell_actions %}
+<li style="margin-bottom:8px;"><strong>{{ a.etf_code }}</strong> {{ a.quantity }}株（約{{ "{:,.0f}".format(a.amount) }}円） — {{ a.reason }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% if buy_actions %}
+<h3 style="font-size:16px;margin:16px 0 8px;">買付</h3>
+<ul style="margin:0;padding-left:20px;">
+{% for a in buy_actions %}
+<li style="margin-bottom:8px;"><strong>{{ a.etf_code }}</strong> {{ a.quantity }}株（約{{ "{:,.0f}".format(a.amount) }}円） — {{ a.reason }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% if not sell_actions and not buy_actions %}
+<p style="margin:8px 0;">売買アクションなし（単元未満で全て繰越）。</p>
+{% endif %}
+{%- endmacro -%}
+
+
+{# =====================================================================
+   売買プラン「概要」用マクロ（朝メールの前夜リマインダーと同じ見た目）.
+   - 件数（売却 X 件 / 買付 Y 件）
+   - 主な売却候補 top3（リスト）
+   - 主な買付候補 top3（リスト）
+   ===================================================================== #}
+
+{# 売買プラン概要 (Markdown) #}
+{%- macro trade_summary_md(sell_count, buy_count, sell_top3, buy_top3, next_rebalance_date, days_to_next_rebalance) -%}
+- 次回リバランス基準日: **{{ next_rebalance_date.strftime('%Y-%m-%d') }}**（あと **{{ days_to_next_rebalance }}日**）
+- 売買プラン件数: **売却 {{ sell_count }} 件 / 買付 {{ buy_count }} 件**
+{% if sell_top3 %}
+- 主な売却候補:
+{% for s in sell_top3 %}    - {{ s.etf_code }} {{ s.name }}（約{{ "{:,.0f}".format(s.amount) }}円）
+{% endfor %}
+{% endif %}
+{% if buy_top3 %}
+- 主な買付候補:
+{% for s in buy_top3 %}    - {{ s.etf_code }} {{ s.name }}（約{{ "{:,.0f}".format(s.amount) }}円）
+{% endfor %}
+{% endif %}
+{% if not sell_top3 and not buy_top3 and sell_count == 0 and buy_count == 0 %}
+- 売買アクションなし（次回基準日まで通常運用）。
+{% endif %}
+{%- endmacro -%}
+
+{# 売買プラン概要 (HTML) #}
+{%- macro trade_summary_html(sell_count, buy_count, sell_top3, buy_top3, next_rebalance_date, days_to_next_rebalance) -%}
+<p style="margin:8px 0;">次回リバランス基準日: <strong>{{ next_rebalance_date.strftime('%Y-%m-%d') }}</strong>（あと <strong>{{ days_to_next_rebalance }}日</strong>）</p>
+<p style="margin:8px 0;">売買プラン件数: <strong>売却 {{ sell_count }} 件 / 買付 {{ buy_count }} 件</strong></p>
+{% if sell_top3 %}
+<p style="margin:8px 0 4px;font-weight:bold;font-size:14px;">主な売却候補</p>
+<ul style="margin:0 0 8px;padding-left:20px;">
+{% for s in sell_top3 %}
+<li style="margin-bottom:4px;font-size:14px;"><strong>{{ s.etf_code }}</strong> {{ s.name }}（約{{ "{:,.0f}".format(s.amount) }}円）</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% if buy_top3 %}
+<p style="margin:8px 0 4px;font-weight:bold;font-size:14px;">主な買付候補</p>
+<ul style="margin:0 0 8px;padding-left:20px;">
+{% for s in buy_top3 %}
+<li style="margin-bottom:4px;font-size:14px;"><strong>{{ s.etf_code }}</strong> {{ s.name }}（約{{ "{:,.0f}".format(s.amount) }}円）</li>
+{% endfor %}
+</ul>
+{% endif %}
+{% if not sell_top3 and not buy_top3 and sell_count == 0 and buy_count == 0 %}
+<p style="margin:8px 0;color:#555;">売買アクションなし（次回基準日まで通常運用）。</p>
+{% endif %}
+{%- endmacro -%}
+
+
+{# overnight 市況 1 行表示 (Markdown). 値がない（取得失敗）場合は空文字 #}
+{%- macro overnight_line_md(label, entry) -%}
+{% if entry is mapping and entry.price is defined -%}
+- {{ label }}: {{ "{:,.2f}".format(entry.price) }}（{{ "%+.2f"|format(entry.change_pct) }}%
+{%- if entry.change is defined %} / {{ "%+.2f"|format(entry.change) }}pt{% endif -%}
+）
+{% endif -%}
+{%- endmacro -%}
+
+{# overnight 市況 1 行表示 (HTML テーブル行) #}
+{%- macro overnight_row_html(label, entry) -%}
+{% if entry is mapping and entry.price is defined %}
+<tr>
+  <td style="padding:6px 8px;border-bottom:1px solid #eee;font-weight:bold;white-space:nowrap;">{{ label }}</td>
+  <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;">{{ "{:,.2f}".format(entry.price) }}</td>
+  <td style="padding:6px 8px;border-bottom:1px solid #eee;text-align:right;color:{% if entry.change_pct >= 0 %}#1b7f3a{% else %}#c0392b{% endif %};">
+    {{ "%+.2f"|format(entry.change_pct) }}%{% if entry.change is defined %}<br><span style="font-size:11px;color:#666;">{{ "%+.2f"|format(entry.change) }}pt</span>{% endif %}
+  </td>
+</tr>
+{% endif %}
+{%- endmacro -%}

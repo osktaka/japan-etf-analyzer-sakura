@@ -86,9 +86,20 @@ class NotificationRenderer:
             "month_start_total_asset": ctx.month_start_total_asset,
             "month_start_change_pct": ctx.month_start_change_pct,
             "extra": ctx.extra,
-            # リバランス計画（kind="morning" に統合済み。
-            # 通常日は配分テーブル・カウントダウン用、四半期末日は本日アクション表示用）
+            # リバランス計画（朝/夕構成見直し後:
+            # - evening: 銘柄別配分テーブル・採用外保有・売却/買付プランの本体表示
+            # - morning: 次回リバランス日カウントダウン・四半期末日の本日アクション表示用要約）
             "rebalance_plan": ctx.rebalance_plan,
+            # 朝メール: overnight 市況サマリ（None なら overnight セクション skip）
+            "overnight": ctx.overnight,
+            # 朝メール: 前夜決定事項リマインダー（None ならリマインダー欄 skip）
+            "previous_evening_summary": ctx.previous_evening_summary,
+            # 夕方メール: 売買プラン概要セクション（常時表示）の top3
+            "sell_top3": ctx.sell_top3,
+            "buy_top3": ctx.buy_top3,
+            # 夕方メール: 詳細表ガード閾値（is_rebalance_day or
+            # days_to_next_rebalance <= threshold で詳細表を表示）
+            "rebalance_detail_threshold_days": ctx.rebalance_detail_threshold_days,
             # 配分閾値（テンプレ動的化用、全 kind 共通、strategy SSOT 直結）
             "drift_warn_pp": ctx.drift_warn_pp,
             "drift_ok_pp": ctx.drift_ok_pp,
@@ -435,14 +446,15 @@ class NotificationRenderer:
     def subject_for(self, ctx: NotificationContext) -> str:
         """件名を生成（短縮M/D + 状況サマリ）.
 
-        フォーマット例:
-        - morning静観: `[4/30 朝] 通常運用日`
-        - morningアクション: `[4/30 朝] アクション2件・所要5分`
-        - evening静観: `[4/30 夕] 本日 +0.5%`
-        - evening警告: `[4/30 夕] 本日 -1.2% / 配分逸脱2件`
-        - weekly: `[4/30 週次] α +0.3pp` または `[4/30 週次] α -2.5pp / 来週3件`
-        - alert単発: `[4/30 緊急] 損切到達: 1306`
-        - alert複数: `[4/30 緊急] 機械ルール3件発動`
+        フォーマット例（朝/夕構成見直し後）:
+        - morning静観:    `【寄り付き前】Daily Advisor / 4/30`
+        - morningリバランス: `【寄り付き前】Daily Advisor / 4/30 リバランス売2買3`
+        - morning警告:    `【寄り付き前】Daily Advisor / 4/30 逸脱2件`
+        - evening静観:    `【終値ベース】Daily Advisor / 4/30 +0.5%`
+        - evening警告:    `【終値ベース】Daily Advisor / 4/30 -1.2% 逸脱2件`
+        - weekly:        `[4/30 週次] α +0.3pp` または `[4/30 週次] α -2.5pp / 来週3件`
+        - alert単発:     `[4/30 緊急] 損切到達: 1306`
+        - alert複数:     `[4/30 緊急] 機械ルール3件発動`
         """
         date_str = f"{ctx.today.month}/{ctx.today.day}"
 
@@ -467,42 +479,47 @@ class NotificationRenderer:
         return subject
 
     def _subject_morning(self, ctx: NotificationContext, date_str: str) -> str:
+        """朝メール件名: 「【寄り付き前】Daily Advisor / {today}」基準.
+
+        critical / リバランス実行日 / warn / 通常 の状態を末尾の補足タグで示す.
+        """
         plan = ctx.rebalance_plan
         critical = next(
             (t for t in ctx.triggers if t.severity == "critical"), None
         )
         if critical is not None:
-            return f"[{date_str} 緊急] {critical.rule_kind}発動"
-        # 四半期末リバランス基準日: アクションがあれば最優先で件名に
+            return f"【寄り付き前】Daily Advisor / {date_str} 緊急"
+        # 四半期末リバランス基準日: アクションがあれば件名末尾に補足
         if plan is not None and plan.is_rebalance_day and (
             plan.sell_actions or plan.buy_actions
         ):
             n_sell = len(plan.sell_actions)
             n_buy = len(plan.buy_actions)
             return (
-                f"[{date_str} 朝] リバランス実行日／売{n_sell}件・買{n_buy}件"
+                f"【寄り付き前】Daily Advisor / {date_str} "
+                f"リバランス売{n_sell}買{n_buy}"
             )
-        # warn 警告のみのケース
         warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
         warn_other = [
             t for t in ctx.triggers
             if t.severity == "warn" and t.rule_kind != "allocation_drift"
         ]
-        # リバランス計画上の critical/warn 件数も拾う
         n_rb_critical = plan.critical_count if plan is not None else 0
         if warn_drifts or warn_other:
             n_warn = len(warn_drifts) or len(warn_other)
-            return f"[{date_str} 朝] 配分逸脱{n_warn}件"
+            return f"【寄り付き前】Daily Advisor / {date_str} 逸脱{n_warn}件"
         if n_rb_critical > 0:
-            return f"[{date_str} 朝] 配分逸脱{n_rb_critical}件"
-        return f"[{date_str} 朝] 通常運用日"
+            return (
+                f"【寄り付き前】Daily Advisor / {date_str} 逸脱{n_rb_critical}件"
+            )
+        return f"【寄り付き前】Daily Advisor / {date_str}"
 
     def _subject_evening(self, ctx: NotificationContext, date_str: str) -> str:
-        # 当日変動率
+        """夕方メール件名: 「【終値ベース】Daily Advisor / {today}」基準."""
         if ctx.daily_change_pct is not None:
-            change_str = f"本日 {ctx.daily_change_pct:+.1f}%"
+            change_str = f"{ctx.daily_change_pct:+.1f}%"
         else:
-            change_str = "本日 -"
+            change_str = "-"
 
         warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
         warn_other = [
@@ -513,11 +530,14 @@ class NotificationRenderer:
             (t for t in ctx.triggers if t.severity == "critical"), None
         )
         if critical is not None:
-            return f"[{date_str} 緊急] {critical.rule_kind}発動"
+            return f"【終値ベース】Daily Advisor / {date_str} 緊急"
         if warn_drifts or warn_other:
             n_warn = len(warn_drifts) or len(warn_other)
-            return f"[{date_str} 夕] {change_str} / 配分逸脱{n_warn}件"
-        return f"[{date_str} 夕] {change_str}"
+            return (
+                f"【終値ベース】Daily Advisor / {date_str} "
+                f"{change_str} 逸脱{n_warn}件"
+            )
+        return f"【終値ベース】Daily Advisor / {date_str} {change_str}"
 
     def _subject_weekly(self, ctx: NotificationContext, date_str: str) -> str:
         if ctx.alpha_pp is None:

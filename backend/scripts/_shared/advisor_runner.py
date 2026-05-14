@@ -7,9 +7,10 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import date, datetime
+import sys
+from datetime import date, datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple
 from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,8 @@ logger = logging.getLogger(__name__)
 JST = ZoneInfo("Asia/Tokyo")
 
 KindT = Literal["morning", "evening", "weekly", "alert"]
+
+EVENING_SUMMARY_FALLBACK_DAYS = 5
 
 
 def _import_late():
@@ -36,6 +39,7 @@ def _import_late():
         classify_buckets,
         compute_allocation_drift,
         compute_return_from_history,
+        compute_top_n_actions,
         evaluate_mechanical_rules,
         make_fingerprint,
     )
@@ -59,6 +63,7 @@ def _import_late():
         "classify_buckets": classify_buckets,
         "compute_allocation_drift": compute_allocation_drift,
         "compute_return_from_history": compute_return_from_history,
+        "compute_top_n_actions": compute_top_n_actions,
         "evaluate_mechanical_rules": evaluate_mechanical_rules,
         "make_fingerprint": make_fingerprint,
         "NotificationRenderer": NotificationRenderer,
@@ -189,24 +194,18 @@ class AdvisorRunner:
                 holdings = []
 
         if kind == "morning":
-            # リバランス計画（配分テーブル・採用外保有・カウントダウン・四半期末アクション）を統合
-            rebalance_plan = None
-            if user_id_int is not None:
-                try:
-                    rebalance_plan = deps["PortfolioRebalanceService"](
-                        strategy
-                    ).calculate_rebalance_plan(
-                        user_id=user_id_int,
-                        as_of_date=today,
-                    )
-                except Exception as e:  # noqa: BLE001
-                    logger.warning(
-                        "Rebalance plan calculation failed (continuing without it): %s",
-                        e,
-                    )
+            # リバランス計画（カウントダウン・四半期末アクション要約用）を統合
+            rebalance_plan = self._calculate_rebalance_plan(
+                deps, strategy, user_id_int, today
+            )
+            # overnight 市況サマリと前夜サマリ JSON を取得（失敗時は None）
+            overnight = self._fetch_overnight_safe()
+            previous_evening_summary = self._load_previous_evening_summary(today)
             return deps["build_morning_context"](
                 strategy=strategy, today=today, user_id=self.user_id_str,
                 summary=summary, rebalance_plan=rebalance_plan, triggers=(),
+                overnight=overnight,
+                previous_evening_summary=previous_evening_summary,
             )
 
         # evening/weekly: 配分・トリガー計算
@@ -228,9 +227,17 @@ class AdvisorRunner:
         )
 
         if kind == "evening":
+            # リバランス計画（夕方メールが本体表示）
+            rebalance_plan = self._calculate_rebalance_plan(
+                deps, strategy, user_id_int, today
+            )
+            # 翌朝のリマインダー欄向けに JSON 永続化（user_id=test の場合のみ）
+            if rebalance_plan is not None and self.user_id_str == "test":
+                self._persist_evening_summary(today, rebalance_plan)
             return deps["build_evening_context"](
                 strategy=strategy, today=today, user_id=self.user_id_str,
                 summary=summary, drifts=drifts, triggers=triggers,
+                rebalance_plan=rebalance_plan,
             )
 
         # weekly
@@ -343,6 +350,114 @@ class AdvisorRunner:
             return round((latest - base) / base * 100.0, 2)
         except Exception as e:  # noqa: BLE001
             logger.warning("Failed to fetch benchmark return: %s", e)
+            return None
+
+    def _calculate_rebalance_plan(
+        self, deps, strategy, user_id_int: Optional[int], today: date
+    ):
+        """リバランス計画を計算（失敗時は None / warning ログのみ）.
+
+        morning / evening の両方から呼ばれる共通ヘルパ.
+        """
+        if user_id_int is None:
+            return None
+        try:
+            return deps["PortfolioRebalanceService"](
+                strategy
+            ).calculate_rebalance_plan(
+                user_id=user_id_int, as_of_date=today,
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.warning(
+                "Rebalance plan calculation failed (continuing without it): %s", e
+            )
+            return None
+
+    def _persist_evening_summary(self, today: date, plan) -> None:
+        """夕方サマリを reports/test/daily-tasks/evening_summary_YYYYMMDD.json に保存.
+
+        翌朝の morning バッチが「前夜決定事項リマインダー」として読み込む.
+        失敗してもメール本処理を止めない（warning ログのみ）.
+
+        ``sell_top3`` / ``buy_top3`` は ``compute_top_n_actions`` 経由で
+        共通化（夕方メールの売買プラン概要セクションも同関数を利用）.
+        """
+        try:
+            from src.services.daily_advisor_service import compute_top_n_actions
+
+            summary_dict: Dict[str, Any] = {
+                "date": today.isoformat(),
+                "is_rebalance_day": bool(plan.is_rebalance_day),
+                "next_rebalance_date": (
+                    plan.next_rebalance_date.isoformat()
+                    if plan.next_rebalance_date is not None else None
+                ),
+                "days_to_next_rebalance": int(plan.days_to_next_rebalance),
+                "sell_actions_count": len(plan.sell_actions),
+                "buy_actions_count": len(plan.buy_actions),
+                "sell_top3": compute_top_n_actions(
+                    plan.sell_actions, plan.holdings_snapshots
+                ),
+                "buy_top3": compute_top_n_actions(
+                    plan.buy_actions, plan.holdings_snapshots
+                ),
+            }
+            out_path = (
+                self.reports_dir / f"evening_summary_{today.strftime('%Y%m%d')}.json"
+            )
+            self.reports_dir.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(
+                json.dumps(summary_dict, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            logger.info("Evening summary persisted: %s", out_path)
+        except Exception as e:  # noqa: BLE001
+            logger.warning("Failed to persist evening summary: %s", e)
+
+    def _load_previous_evening_summary(self, today: date) -> Optional[Dict[str, Any]]:
+        """前夜の evening_summary_*.json を読み込む.
+
+        当日 → 直近営業日（最大 EVENING_SUMMARY_FALLBACK_DAYS 日前まで遡る）の順で探索. 見つからなければ None.
+        """
+        for delta in range(0, EVENING_SUMMARY_FALLBACK_DAYS + 1):
+            candidate_date = today - timedelta(days=delta)
+            candidate = (
+                self.reports_dir
+                / f"evening_summary_{candidate_date.strftime('%Y%m%d')}.json"
+            )
+            if not candidate.exists():
+                continue
+            try:
+                data = json.loads(candidate.read_text(encoding="utf-8"))
+                logger.info("Loaded previous evening summary: %s", candidate)
+                return data
+            except Exception as e:  # noqa: BLE001
+                logger.warning("Failed to read %s: %s", candidate, e)
+        logger.info(
+            "No previous evening summary found within %d days of %s",
+            EVENING_SUMMARY_FALLBACK_DAYS, today,
+        )
+        return None
+
+    def _fetch_overnight_safe(self) -> Optional[Dict[str, Any]]:
+        """overnight 市況サマリを取得（失敗時は None / warning ログのみ）.
+
+        market_data_quick.fetch_overnight_data() を呼び出す.
+        テスト等から呼ぶ場合でも sys.path 解決できるよう backend/scripts を補助挿入.
+        """
+        try:
+            scripts_dir = Path(__file__).resolve().parent.parent  # backend/scripts
+            scripts_dir_str = str(scripts_dir)
+            if scripts_dir_str not in sys.path:
+                sys.path.insert(0, scripts_dir_str)
+            from market_data_quick import fetch_overnight_data  # type: ignore
+
+            return fetch_overnight_data()
+        except Exception as e:  # noqa: BLE001
+            logger.warning(
+                "Failed to fetch overnight market data (continuing without it): %s",
+                e,
+            )
             return None
 
     def _fetch_n225_change(self, deps) -> Optional[float]:

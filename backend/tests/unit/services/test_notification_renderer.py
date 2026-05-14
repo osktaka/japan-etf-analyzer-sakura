@@ -163,29 +163,31 @@ class TestRender:
 
 
 class TestSubject:
-    """新仕様の件名フォーマット: `[M/D 区分] 結論`.
+    """件名フォーマット.
 
-    user_id は削除され、日付は短縮形（`5/7`）。
-    各 kind の代表的状態を検証する。
+    朝/夕構成見直し後の仕様:
+    - morning: `【寄り付き前】Daily Advisor / M/D [補足]`
+    - evening: `【終値ベース】Daily Advisor / M/D [変動率] [補足]`
+    - weekly/alert: 旧仕様 `[M/D 区分] 結論` を維持
     """
 
     def test_morning_subject_quiet(self, renderer):
-        # 旧 sells_today/buys_today は撤去済み。
-        # rebalance_plan なし & 警告なし → `[5/7 朝] 通常運用日`
+        # rebalance_plan なし & 警告なし → 末尾補足なし
         ctx = _morning_ctx()
         s = renderer.subject_for(ctx)
-        assert s == f"[{ctx.today.month}/{ctx.today.day} 朝] 通常運用日"
+        assert s == f"【寄り付き前】Daily Advisor / {ctx.today.month}/{ctx.today.day}"
         # user_id (test) は件名に含めない
         assert "test" not in s
 
     def test_evening_subject_quiet(self, renderer):
-        # 警告 drift なし → `[4/29 夕] 本日 -0.3%`
+        # 警告 drift なし → `【終値ベース】Daily Advisor / 4/29 -0.3%`
         ctx = _evening_ctx()
         s = renderer.subject_for(ctx)
-        assert s.startswith(f"[{ctx.today.month}/{ctx.today.day} 夕]")
-        assert "本日" in s
-        # 静観時は配分逸脱件数が含まれない
-        assert "配分逸脱" not in s
+        assert s.startswith(
+            f"【終値ベース】Daily Advisor / {ctx.today.month}/{ctx.today.day}"
+        )
+        # 静観時は変動率のみ・配分逸脱件数が含まれない
+        assert "逸脱" not in s
 
     def test_weekly_subject(self, renderer):
         # α=-1.0 (>-2.0) かつ警告なし → `[5/1 週次] α -1.0pp`
@@ -396,3 +398,264 @@ class TestRecommendedAction:
             message="x", fingerprint="f-unk",
         )
         assert renderer.recommended_action(t) == "戦略書を確認してください。"
+
+
+# ============================================================
+# 朝/夕構成見直し（Step 3）で追加された新セクションの
+# レンダリング回帰テスト. StrictUndefined のため、テンプレート
+# 側で参照される全フィールドが揃っているかを確認する.
+# ============================================================
+def _make_rebalance_plan(
+    *,
+    is_rebalance_day=False,
+    days_to_next=10,
+    holdings_snapshots=(),
+    sell_actions=(),
+    buy_actions=(),
+):
+    """テンプレ描画用の最小 RebalancePlan モック."""
+    from src.services.portfolio_rebalance_service import RebalancePlan
+
+    return RebalancePlan(
+        target_weights={"2559": 15.0, "1306": 9.0},
+        current_weights={"2559": 14.5, "1306": 9.5, "CASH": 10.0},
+        deviations={"2559": -0.5, "1306": 0.5},
+        sell_actions=tuple(sell_actions),
+        buy_actions=tuple(buy_actions),
+        total_asset=1_000_000.0,
+        target_cash=100_000.0,
+        target_cash_pct=10.0,
+        current_cash=100_000.0,
+        cash_deviation_pp=0.0,
+        days_to_next_rebalance=days_to_next,
+        next_rebalance_date=date(2026, 6, 30),
+        is_rebalance_day=is_rebalance_day,
+        daily_pnl_pct=None,
+        holdings_snapshots=tuple(holdings_snapshots),
+        warn_count=0,
+        critical_count=0,
+    )
+
+
+def _overnight_payload():
+    """fetch_overnight_data 戻り値の最小再現."""
+    return {
+        "sp500": {"price": 5_100.5, "change_pct": 0.32, "status": "closed"},
+        "nasdaq": {"price": 16_200.0, "change_pct": 0.45, "status": "closed"},
+        "dow": {"price": 38_900.0, "change_pct": 0.10, "status": "closed"},
+        "vix": {"price": 14.5, "change_pct": -2.0, "change": -0.3, "status": "closed"},
+        "usdjpy": {"price": 156.30, "change_pct": 0.18, "status": "closed"},
+        "nikkei_futures": {"price": 39_200.0, "change_pct": 0.5, "status": "closed"},
+        "fetched_at": "2026-05-07T07:00:00+09:00",
+        "errors": [],
+    }
+
+
+def _previous_evening_summary(*, has_actions=True):
+    return {
+        "date": "2026-05-06",
+        "is_rebalance_day": False,
+        "next_rebalance_date": "2026-06-30",
+        "days_to_next_rebalance": 54,
+        "sell_actions_count": 2 if has_actions else 0,
+        "buy_actions_count": 1 if has_actions else 0,
+        "sell_top3": [
+            {"etf_code": "1306", "name": "TOPIX", "amount": 30000},
+            {"etf_code": "1615", "name": "銀行", "amount": 10000},
+        ] if has_actions else [],
+        "buy_top3": [
+            {"etf_code": "2559", "name": "オルカン", "amount": 50000},
+        ] if has_actions else [],
+    }
+
+
+class TestMorningTemplateNewSections:
+    """朝テンプレ: overnight / 前夜サマリの有無の組合せで render が成功する."""
+
+    def test_render_with_overnight_only(self, renderer):
+        ctx = _morning_ctx(overnight=_overnight_payload())
+        md, html = renderer.render(ctx)
+        assert "overnight 市況サマリ" in md
+        # 主要ティッカーが本文に展開される
+        assert "S&P500" in md
+        assert "USD/JPY" in md
+        # html 側にも overnight テーブルが出る
+        assert "overnight" in html.lower() or "S&amp;P500" in html or "S&P500" in html
+
+    def test_render_with_previous_evening_summary_only(self, renderer):
+        ctx = _morning_ctx(
+            previous_evening_summary=_previous_evening_summary(has_actions=True),
+        )
+        md, _ = renderer.render(ctx)
+        assert "前夜決定事項リマインダー" in md
+        assert "売却 2 件" in md
+        assert "買付 1 件" in md
+        # top3 の銘柄コードが本文に出る
+        assert "1306" in md and "2559" in md
+
+    def test_render_with_both_sections(self, renderer):
+        ctx = _morning_ctx(
+            overnight=_overnight_payload(),
+            previous_evening_summary=_previous_evening_summary(has_actions=False),
+        )
+        md, _ = renderer.render(ctx)
+        # 両セクションとも表示される（previous_evening_summary は売買 0 件）
+        assert "overnight 市況サマリ" in md
+        assert "前夜決定事項リマインダー" in md
+        assert "売買アクションなし" in md or "通常運用" in md
+
+    def test_render_without_new_sections(self, renderer):
+        """overnight も previous_evening_summary も無くても render 成功."""
+        ctx = _morning_ctx()
+        md, _ = renderer.render(ctx)
+        # 各セクションが出ないこと
+        assert "overnight 市況サマリ" not in md
+        assert "前夜決定事項リマインダー" not in md
+
+
+class TestEveningTemplateRebalancePlan:
+    """夕方テンプレ: rebalance_plan ありなし両方で render が成功する."""
+
+    def test_render_without_rebalance_plan(self, renderer):
+        """rebalance_plan が None でも StrictUndefined エラーが出ない."""
+        ctx = _evening_ctx()
+        md, _ = renderer.render(ctx)
+        # 銘柄別配分セクションは出ない
+        assert "採用銘柄配分" not in md
+        # 売買プラン概要セクションも出ない（rebalance_plan が無いため）
+        assert "売買プラン概要" not in md
+        # A群/B群サマリは出る
+        assert "A群（コア・逆相関）" in md
+
+    def test_render_with_rebalance_plan(self, renderer):
+        """rebalance_plan あり: 銘柄別配分・売買プランが描画される."""
+        from src.services.portfolio_rebalance_service import (
+            HoldingSnapshot,
+            RebalanceAction,
+        )
+
+        snapshots = (
+            HoldingSnapshot(
+                etf_code="2559", name="オルカン", quantity=10.0,
+                current_price=15000.0, current_value=150_000.0,
+                pnl_pct=2.0, target_pct=15.0, actual_pct=15.0,
+                drift_pp=0.0, classification="OK", is_adopted=True,
+            ),
+        )
+        actions = (
+            RebalanceAction(
+                etf_code="2559", action_type="buy", quantity=1,
+                amount=15000.0, reason="目標到達",
+            ),
+        )
+        plan = _make_rebalance_plan(
+            holdings_snapshots=snapshots, buy_actions=actions,
+        )
+
+        ctx = _evening_ctx(
+            rebalance_plan=plan,
+            buy_top3=(
+                {"etf_code": "2559", "name": "オルカン", "amount": 15000},
+            ),
+            rebalance_detail_threshold_days=3,
+        )
+        md, html = renderer.render(ctx)
+        # 銘柄別配分テーブルが含まれる
+        assert "採用銘柄配分" in md
+        assert "2559" in md
+        # 売買プラン概要が常時表示
+        assert "売買プラン概要" in md
+        assert "売却 0 件 / 買付 1 件" in md
+        # HTML 側もエラーなく生成
+        assert "<h1" in html
+        assert "売買プラン概要" in html
+
+
+class TestEveningTemplateDetailGating:
+    """売買プラン詳細表が日数閾値で表示/非表示になるかの分岐検証."""
+
+    def _plan_with_action(self, *, days_to_next: int, is_rebalance_day: bool):
+        from src.services.portfolio_rebalance_service import (
+            HoldingSnapshot,
+            RebalanceAction,
+        )
+
+        snapshots = (
+            HoldingSnapshot(
+                etf_code="2559", name="オルカン", quantity=10.0,
+                current_price=15000.0, current_value=150_000.0,
+                pnl_pct=2.0, target_pct=15.0, actual_pct=15.0,
+                drift_pp=0.0, classification="OK", is_adopted=True,
+            ),
+        )
+        actions = (
+            RebalanceAction(
+                etf_code="2559", action_type="buy", quantity=1,
+                amount=15000.0, reason="目標到達",
+            ),
+        )
+        return _make_rebalance_plan(
+            is_rebalance_day=is_rebalance_day,
+            days_to_next=days_to_next,
+            holdings_snapshots=snapshots,
+            buy_actions=actions,
+        )
+
+    def test_detail_hidden_when_far_from_rebalance(self, renderer):
+        """基準日まで 10 日 (> 閾値 3) → 詳細表セクションは出ず概要のみ."""
+        plan = self._plan_with_action(days_to_next=10, is_rebalance_day=False)
+        ctx = _evening_ctx(
+            rebalance_plan=plan,
+            buy_top3=(
+                {"etf_code": "2559", "name": "オルカン", "amount": 15000},
+            ),
+            rebalance_detail_threshold_days=3,
+        )
+        md, _ = renderer.render(ctx)
+        # 概要は出る
+        assert "売買プラン概要" in md
+        # 「（詳細）」見出し（または「本日のリバランス実行」）は出ない
+        assert "（詳細）" not in md
+        assert "本日のリバランス実行" not in md
+
+    def test_detail_hidden_at_threshold_plus_one(self, renderer):
+        """基準日まで 4 日 (= 閾値 3 の +1, off-by-one 境界) → 詳細表は出ない."""
+        plan = self._plan_with_action(days_to_next=4, is_rebalance_day=False)
+        ctx = _evening_ctx(
+            rebalance_plan=plan,
+            buy_top3=(
+                {"etf_code": "2559", "name": "オルカン", "amount": 15000},
+            ),
+            rebalance_detail_threshold_days=3,
+        )
+        md, _ = renderer.render(ctx)
+        assert "売買プラン概要" in md
+        assert "（詳細）" not in md
+
+    def test_detail_shown_when_within_threshold(self, renderer):
+        """基準日まで 3 日 (== 閾値) → 詳細表セクションが出る."""
+        plan = self._plan_with_action(days_to_next=3, is_rebalance_day=False)
+        ctx = _evening_ctx(
+            rebalance_plan=plan,
+            buy_top3=(
+                {"etf_code": "2559", "name": "オルカン", "amount": 15000},
+            ),
+            rebalance_detail_threshold_days=3,
+        )
+        md, _ = renderer.render(ctx)
+        assert "売買プラン概要" in md
+        assert "（詳細）" in md
+
+    def test_detail_shown_on_rebalance_day(self, renderer):
+        """基準日当日（残り 0 日相当）→ 「本日のリバランス実行」が出る."""
+        plan = self._plan_with_action(days_to_next=0, is_rebalance_day=True)
+        ctx = _evening_ctx(
+            rebalance_plan=plan,
+            buy_top3=(
+                {"etf_code": "2559", "name": "オルカン", "amount": 15000},
+            ),
+            rebalance_detail_threshold_days=3,
+        )
+        md, _ = renderer.render(ctx)
+        assert "売買プラン概要" in md
+        assert "本日のリバランス実行" in md

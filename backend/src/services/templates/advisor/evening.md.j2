@@ -1,4 +1,4 @@
-{% from '_macros.j2' import bucket_label, rule_kind_label, action_label %}
+{% from '_macros.j2' import bucket_label, rule_kind_label, action_label, holdings_table_md, non_adopted_md, trade_actions_md, trade_summary_md %}
 # 夕方のレビュー {{ today.strftime('%Y-%m-%d') }}
 
 > **{{ urgency_tag }}**
@@ -21,13 +21,42 @@
 - {% if d.is_warn %}[警告] {% endif %}**{{ bucket_label(d.bucket) }}**: {{ "%.1f"|format(d.actual_pct) }}%（目標 {{ "%.1f"|format(d.target_pct) }}%、差 {{ "%+.2f"|format(d.drift_pp) }}pp）
 {% endfor %}
 
-{% set non_adopted = allocation_drifts | selectattr("bucket", "equalto", "other") | list %}
+{% if rebalance_plan is not none %}
+## 採用銘柄配分
+
+{{ holdings_table_md(rebalance_plan, drift_warn_pp, drift_ok_pp) }}
+
+{% set non_adopted = rebalance_plan.holdings_snapshots | rejectattr("is_adopted") | list %}
 {% if non_adopted %}
+## 採用外保有（次回リバランスで全量売却推奨）
+
+{{ non_adopted_md(rebalance_plan) }}
+{% endif %}
+
+## 売買プラン概要
+
+{{ trade_summary_md(rebalance_plan.sell_actions|length, rebalance_plan.buy_actions|length, sell_top3, buy_top3, rebalance_plan.next_rebalance_date, rebalance_plan.days_to_next_rebalance) }}
+
+{% if rebalance_plan.is_rebalance_day or rebalance_plan.days_to_next_rebalance <= rebalance_detail_threshold_days %}
+{% if rebalance_plan.is_rebalance_day %}
+## 本日のリバランス実行
+
+{{ trade_actions_md(rebalance_plan.sell_actions, rebalance_plan.buy_actions) }}
+{% else %}
+## 次回基準日（{{ rebalance_plan.next_rebalance_date.strftime('%Y-%m-%d') }}、あと {{ rebalance_plan.days_to_next_rebalance }} 日）への売却/買付プラン（詳細）
+
+{{ trade_actions_md(rebalance_plan.sell_actions, rebalance_plan.buy_actions) }}
+{% endif %}
+{% endif %}
+{% else %}
+{% set non_adopted_drifts = allocation_drifts | selectattr("bucket", "equalto", "other") | list %}
+{% if non_adopted_drifts %}
 ## 採用外保有
 
-{% for d in non_adopted %}
+{% for d in non_adopted_drifts %}
 - **{{ bucket_label(d.bucket) }}**: {{ "%.1f"|format(d.actual_pct) }}% → 次回リバランスで売却推奨
 {% endfor %}
+{% endif %}
 {% endif %}
 
 {% if triggers %}

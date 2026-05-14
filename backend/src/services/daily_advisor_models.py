@@ -93,9 +93,32 @@ class NotificationContext:
     month_start_total_asset: Optional[float] = None
     month_start_change_pct: Optional[float] = None
 
-    # リバランス計画（kind="morning" に統合: 配分テーブル・採用外保有・
-    # 次回リバランス日カウントダウン・四半期末日の本日アクション表示用）
+    # リバランス計画（kind="morning"/"evening" 両方で使用:
+    # - evening: 銘柄別配分テーブル・採用外保有・売却/買付プランの本体表示
+    # - morning: 次回リバランス日カウントダウン・四半期末日の本日アクション表示用
+    # ※ 朝/夕構成見直し後は evening が「本体」、morning は要約のみ）
     rebalance_plan: Optional["RebalancePlan"] = None
+
+    # 朝メール用: overnight 市況サマリ（米国指数・先物・USDJPY・VIX）
+    # market_data_quick.fetch_overnight_data() の返り値 dict 形式
+    overnight: Optional[Dict[str, Any]] = None
+
+    # 朝メール用: 前夜の夕方バッチが残した決定事項サマリ JSON
+    # evening 実行時に reports/test/daily-tasks/evening_summary_YYYYMMDD.json に
+    # 保存され、翌朝の morning 実行時に読み込まれる
+    previous_evening_summary: Optional[Dict[str, Any]] = None
+
+    # 夕方メール用: 売買プラン概要セクション（常時表示）の top3 一覧.
+    # ``compute_top_n_actions(plan.sell_actions, plan.holdings_snapshots)`` の戻り値.
+    # rebalance_plan が None のときは空タプル（テンプレ側でセクションごと skip）.
+    sell_top3: Tuple[Dict[str, Any], ...] = ()
+    buy_top3: Tuple[Dict[str, Any], ...] = ()
+
+    # 夕方メール用: 詳細表（trade_actions_md/html）を表示する閾値（日数）.
+    # ``rebalance_plan.is_rebalance_day`` または
+    # ``rebalance_plan.days_to_next_rebalance <= rebalance_detail_threshold_days``
+    # のときのみ詳細表を出す.
+    rebalance_detail_threshold_days: int = 0
 
     # その他
     extra: Dict[str, Any] = field(default_factory=dict)

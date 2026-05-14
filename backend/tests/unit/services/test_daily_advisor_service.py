@@ -6,6 +6,7 @@ from datetime import date
 import pytest
 
 from src.services.daily_advisor_service import (
+    TOP_N,
     AllocationDrift,
     _check_allocation_drift,
     _check_loss_cut,
@@ -20,6 +21,7 @@ from src.services.daily_advisor_service import (
     compute_alpha_vs_benchmark,
     compute_allocation_drift,
     compute_return_from_history,
+    compute_top_n_actions,
     evaluate_mechanical_rules,
     is_weekly_review_day,
     make_fingerprint,
@@ -603,3 +605,259 @@ class TestContextBuilders:
         )
         assert ctx.kind == "alert"
         assert len(ctx.triggers) == 1
+
+    # --------------------------------------------------------
+    # 朝/夕構成見直し（Step 1〜3）で追加された新引数の回帰テスト
+    # --------------------------------------------------------
+    def test_build_evening_context_with_rebalance_plan(self, strategy):
+        """evening: rebalance_plan を渡すと NotificationContext に格納される."""
+        from unittest.mock import MagicMock
+
+        fake_plan = MagicMock(name="RebalancePlan")
+        ctx = build_evening_context(
+            strategy=strategy,
+            today=date(2026, 4, 29),
+            user_id="test",
+            summary={
+                "total_asset": 1_000_000.0, "total_value": 900_000.0,
+                "cash_balance": 100_000.0, "holdings_count": 6,
+                "daily_change_total_asset_percent": -0.3,
+            },
+            drifts=(),
+            triggers=(),
+            rebalance_plan=fake_plan,
+        )
+        assert ctx.rebalance_plan is fake_plan
+        # evening は overnight / previous_evening_summary は None のまま
+        assert ctx.overnight is None
+        assert ctx.previous_evening_summary is None
+
+    def test_build_morning_context_with_overnight(self, strategy):
+        """morning: overnight を渡すと NotificationContext に格納される."""
+        overnight = {
+            "sp500": {"price": 5_100.5, "change_pct": 0.5, "status": "closed"},
+            "fetched_at": "2026-05-07T07:00:00+09:00",
+            "errors": [],
+        }
+        ctx = build_morning_context(
+            strategy=strategy,
+            today=date(2026, 5, 7),
+            user_id="test",
+            summary={"total_asset": 0.0, "holdings_count": 0},
+            overnight=overnight,
+        )
+        assert ctx.overnight is overnight
+        assert ctx.overnight["sp500"]["change_pct"] == 0.5
+        # 既存フィールドは影響を受けない
+        assert ctx.previous_evening_summary is None
+        assert ctx.rebalance_plan is None
+
+    def test_build_morning_context_with_previous_evening_summary(self, strategy):
+        """morning: previous_evening_summary を渡すと格納される."""
+        summary = {
+            "date": "2026-05-06",
+            "is_rebalance_day": False,
+            "sell_actions_count": 2,
+            "buy_actions_count": 1,
+            "sell_top3": [{"etf_code": "1306", "name": "TOPIX", "amount": 30000}],
+            "buy_top3": [{"etf_code": "2559", "name": "オルカン", "amount": 50000}],
+        }
+        ctx = build_morning_context(
+            strategy=strategy,
+            today=date(2026, 5, 7),
+            user_id="test",
+            summary={"total_asset": 0.0, "holdings_count": 0},
+            previous_evening_summary=summary,
+        )
+        assert ctx.previous_evening_summary is summary
+        assert ctx.previous_evening_summary["sell_actions_count"] == 2
+
+    def test_build_morning_context_default_args_backward_compat(self, strategy):
+        """新引数 overnight / previous_evening_summary を省略しても従来通り動作."""
+        ctx = build_morning_context(
+            strategy=strategy,
+            today=date(2026, 5, 7),
+            user_id="test",
+            summary={
+                "total_asset": 1_000_000.0,
+                "total_value": 900_000.0,
+                "cash_balance": 100_000.0,
+                "daily_change_total_asset_percent": 0.5,
+                "holdings_count": 6,
+            },
+        )
+        # 新フィールドは None デフォルト
+        assert ctx.overnight is None
+        assert ctx.previous_evening_summary is None
+        # 既存の test_morning_context と同等の状態であること
+        assert ctx.kind == "morning"
+        assert ctx.daily_change_pct == 0.5
+
+
+# ============================================================
+# compute_top_n_actions
+# ============================================================
+
+
+class _StubAction:
+    def __init__(self, etf_code: str, amount: float):
+        self.etf_code = etf_code
+        self.amount = amount
+
+
+class _StubSnapshot:
+    def __init__(self, etf_code: str, name: str):
+        self.etf_code = etf_code
+        self.name = name
+
+
+class TestComputeTopNActions:
+    def test_orders_by_amount_descending(self):
+        """金額降順に並び替えられる."""
+        actions = [
+            _StubAction("1306", 10000),
+            _StubAction("1615", 30000),
+            _StubAction("2559", 20000),
+        ]
+        snaps = [
+            _StubSnapshot("1306", "TOPIX"),
+            _StubSnapshot("1615", "銀行"),
+            _StubSnapshot("2559", "オルカン"),
+        ]
+        result = compute_top_n_actions(actions, snaps)
+        assert [r["etf_code"] for r in result] == ["1615", "2559", "1306"]
+        # name lookup
+        assert result[0]["name"] == "銀行"
+        # amount は int(round(...))
+        assert result[0]["amount"] == 30000
+
+    def test_name_falls_back_to_code(self):
+        """holdings_snapshots に name が無ければ code をそのまま使う."""
+        actions = [_StubAction("9999", 500.0)]
+        result = compute_top_n_actions(actions, ())
+        assert result == [{"etf_code": "9999", "name": "9999", "amount": 500}]
+
+    def test_n_limits_results(self):
+        """n を指定すると上位 n 件のみ返す."""
+        actions = [_StubAction(f"X{i}", i * 100) for i in range(1, 6)]
+        # n=2 → 上位 2 件のみ
+        result = compute_top_n_actions(actions, (), n=2)
+        assert len(result) == 2
+        assert [r["amount"] for r in result] == [500, 400]
+        # デフォルト n（=TOP_N=3）
+        result_default = compute_top_n_actions(actions, ())
+        assert len(result_default) == TOP_N
+
+    def test_empty_actions_returns_empty(self):
+        assert compute_top_n_actions([], []) == []
+        assert compute_top_n_actions(None, None) == []
+
+
+# ============================================================
+# build_evening_context: 売買プラン概要（top3 / 詳細閾値）
+# ============================================================
+
+
+class TestEveningContextRebalanceSummary:
+    def _evening_summary(self):
+        return {
+            "total_asset": 1_000_000.0,
+            "total_value": 900_000.0,
+            "cash_balance": 100_000.0,
+            "holdings_count": 6,
+            "daily_change_total_asset_percent": -0.3,
+        }
+
+    def test_context_includes_rebalance_detail_threshold(self, strategy):
+        """build_evening_context は rebalance_detail_threshold_days を載せる."""
+        ctx = build_evening_context(
+            strategy=strategy,
+            today=date(2026, 4, 29),
+            user_id="test",
+            summary=self._evening_summary(),
+            drifts=(),
+            triggers=(),
+        )
+        # 閾値定数は contexts モジュールの REBALANCE_DETAIL_THRESHOLD_DAYS と一致
+        from src.services.daily_advisor_contexts import (
+            REBALANCE_DETAIL_THRESHOLD_DAYS,
+        )
+
+        assert ctx.rebalance_detail_threshold_days == REBALANCE_DETAIL_THRESHOLD_DAYS
+        # rebalance_plan 未指定なら top3 は空タプル
+        assert ctx.sell_top3 == ()
+        assert ctx.buy_top3 == ()
+
+    def test_context_populates_top3_from_plan(self, strategy):
+        """rebalance_plan を渡すと sell_top3 / buy_top3 が populate される."""
+        from src.services.portfolio_rebalance_service import (
+            HoldingSnapshot,
+            RebalanceAction,
+            RebalancePlan,
+        )
+
+        snapshots = (
+            HoldingSnapshot(
+                etf_code="1306", name="TOPIX", quantity=1.0,
+                current_price=1000.0, current_value=1000.0, pnl_pct=0.0,
+                target_pct=9.0, actual_pct=9.0, drift_pp=0.0,
+                classification="OK", is_adopted=True,
+            ),
+            HoldingSnapshot(
+                etf_code="2559", name="オルカン", quantity=1.0,
+                current_price=15000.0, current_value=15000.0, pnl_pct=0.0,
+                target_pct=15.0, actual_pct=15.0, drift_pp=0.0,
+                classification="OK", is_adopted=True,
+            ),
+        )
+        sells = (
+            RebalanceAction(
+                etf_code="1306", action_type="sell", quantity=10,
+                amount=30000.0, reason="目標超過",
+            ),
+        )
+        buys = (
+            RebalanceAction(
+                etf_code="2559", action_type="buy", quantity=3,
+                amount=45000.0, reason="不足",
+            ),
+        )
+        plan = RebalancePlan(
+            target_weights={"2559": 15.0},
+            current_weights={"2559": 15.0},
+            deviations={},
+            sell_actions=sells,
+            buy_actions=buys,
+            total_asset=1_000_000.0,
+            target_cash=100_000.0,
+            target_cash_pct=10.0,
+            current_cash=100_000.0,
+            cash_deviation_pp=0.0,
+            days_to_next_rebalance=10,
+            next_rebalance_date=date(2026, 6, 30),
+            is_rebalance_day=False,
+            daily_pnl_pct=None,
+            holdings_snapshots=snapshots,
+            warn_count=0,
+            critical_count=0,
+        )
+
+        ctx = build_evening_context(
+            strategy=strategy,
+            today=date(2026, 6, 20),
+            user_id="test",
+            summary=self._evening_summary(),
+            drifts=(),
+            triggers=(),
+            rebalance_plan=plan,
+        )
+
+        # top3 が populate されている
+        assert len(ctx.sell_top3) == 1
+        assert ctx.sell_top3[0]["etf_code"] == "1306"
+        assert ctx.sell_top3[0]["name"] == "TOPIX"
+        assert ctx.sell_top3[0]["amount"] == 30000
+
+        assert len(ctx.buy_top3) == 1
+        assert ctx.buy_top3[0]["etf_code"] == "2559"
+        assert ctx.buy_top3[0]["amount"] == 45000

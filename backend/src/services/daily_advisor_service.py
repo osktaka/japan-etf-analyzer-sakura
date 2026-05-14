@@ -23,6 +23,9 @@ from src.services.strategy_loader import Strategy
 
 logger = logging.getLogger(__name__)
 
+# 夕方サマリ／朝リマインダー／概要セクションで共通利用する上位件数
+TOP_N = 3
+
 # Re-export for backward compatibility
 __all__ = [
     "AllocationDrift",
@@ -30,6 +33,7 @@ __all__ = [
     "NotificationContext",
     "RuleTrigger",
     "SellAction",
+    "TOP_N",
     "build_alert_context",
     "build_evening_context",
     "build_morning_context",
@@ -38,11 +42,41 @@ __all__ = [
     "compute_allocation_drift",
     "compute_alpha_vs_benchmark",
     "compute_return_from_history",
+    "compute_top_n_actions",
     "context_to_payload",
     "evaluate_mechanical_rules",
     "is_weekly_review_day",
     "make_fingerprint",
 ]
+
+
+def compute_top_n_actions(actions, holdings_snapshots, n: int = TOP_N) -> List[Dict[str, Any]]:
+    """売買アクション一覧を金額降順で上位 n 件抽出し、テンプレ表示用 dict に整形.
+
+    Args:
+        actions: ``RebalanceAction`` 互換のイテラブル（``etf_code`` / ``amount`` 属性を持つ）.
+        holdings_snapshots: ``HoldingSnapshot`` 互換のイテラブル（``etf_code`` / ``name`` 属性）.
+            ``name`` 逆引き用. 該当 code が無ければ ``etf_code`` をそのまま name に使う.
+        n: 抽出件数. デフォルト ``TOP_N`` (=3).
+
+    Returns:
+        ``[{"etf_code": str, "name": str, "amount": int}, ...]`` 形式のリスト.
+        ``amount`` は ``int(round(a.amount))``（円）.
+    """
+    holdings_by_code = {h.etf_code: h for h in (holdings_snapshots or ())}
+    ranked = sorted(actions or (), key=lambda a: a.amount, reverse=True)[:n]
+    return [
+        {
+            "etf_code": a.etf_code,
+            "name": (
+                holdings_by_code[a.etf_code].name
+                if a.etf_code in holdings_by_code
+                else a.etf_code
+            ),
+            "amount": int(round(a.amount)),
+        }
+        for a in ranked
+    ]
 
 
 # ============================================================

@@ -1,4 +1,4 @@
-{% from '_macros.j2' import bucket_label, rule_kind_label, action_label %}
+{% from '_macros.j2' import bucket_label, rule_kind_label, action_label, overnight_line_md %}
 # 朝のタスク {{ today.strftime('%Y-%m-%d') }}
 
 > **{{ urgency_tag }}** — アクション{{ action_count }}件・所要{{ estimated_minutes }}分
@@ -8,11 +8,11 @@
 ## 結論
 
 {% if rebalance_plan is not none and rebalance_plan.is_rebalance_day %}
-**本日は四半期末リバランス基準日**です。下記「本日のリバランス実行」を確認してください。
+**本日は四半期末リバランス基準日**です。詳細配分・売買計画は前夜の夕方レポートを参照してください。
 {% elif rebalance_plan is not none %}
-本日は通常運用日（次回リバランス **{{ rebalance_plan.next_rebalance_date.strftime('%Y-%m-%d') }}** まで **{{ rebalance_plan.days_to_next_rebalance }}日**）。
+本日は通常運用日（次回リバランス **{{ rebalance_plan.next_rebalance_date.strftime('%Y-%m-%d') }}** まで **{{ rebalance_plan.days_to_next_rebalance }}日**）。詳細配分・売買計画は前夜の夕方レポート参照。
 {% else %}
-本日は通常運用日。
+本日は通常運用日。詳細配分・売買計画は前夜の夕方レポート参照。
 {% endif %}
 
 ## 文脈
@@ -28,45 +28,36 @@
 - 個別逸脱: CRITICAL {{ rebalance_plan.critical_count }}件 / WARN {{ rebalance_plan.warn_count }}件
 {% endif %}
 
-{% if rebalance_plan is not none %}
-## 採用銘柄配分
+{% if overnight %}
+## overnight 市況サマリ
 
-| 銘柄 | 実績 | 目標 | 乖離 | 区分 |
-|------|-----:|-----:|-----:|:-----|
-{% for s in rebalance_plan.holdings_snapshots if s.is_adopted %}
-| {{ s.etf_code }} {{ s.name }} | {{ "%.2f"|format(s.actual_pct) }}% | {{ "%.2f"|format(s.target_pct) }}% | {{ "%+.2f"|format(s.drift_pp) }}pp | {{ s.classification }} |
-{% endfor %}
-| **現金** | {{ "%.2f"|format(rebalance_plan.current_cash / rebalance_plan.total_asset * 100.0 if rebalance_plan.total_asset > 0 else 0) }}% | {{ "%.2f"|format(rebalance_plan.target_cash_pct) }}% | {{ "%+.2f"|format(rebalance_plan.cash_deviation_pp) }}pp | {% if rebalance_plan.cash_deviation_pp|abs >= drift_warn_pp %}CRITICAL{% elif rebalance_plan.cash_deviation_pp|abs >= drift_ok_pp %}WARN{% else %}OK{% endif %} |
-
-{% set non_adopted = rebalance_plan.holdings_snapshots | rejectattr("is_adopted") | list %}
-{% if non_adopted %}
-## 採用外保有（次回リバランスで全量売却推奨）
-
-{% for s in non_adopted %}
-- **{{ s.etf_code }} {{ s.name }}**: {{ "{:,.0f}".format(s.quantity) }}株 / {{ "{:,.0f}".format(s.current_value) }}円（実績 {{ "%.2f"|format(s.actual_pct) }}%）
-{% endfor %}
-
+{{ overnight_line_md('S&P500', overnight.get('sp500')) -}}
+{{ overnight_line_md('NASDAQ', overnight.get('nasdaq')) -}}
+{{ overnight_line_md('DOW',    overnight.get('dow')) -}}
+{{ overnight_line_md('USD/JPY', overnight.get('usdjpy')) -}}
+{{ overnight_line_md('VIX',    overnight.get('vix')) -}}
+{{ overnight_line_md('日経先物 (NKD)', overnight.get('nikkei_futures')) -}}
 {% endif %}
-{% if rebalance_plan.is_rebalance_day %}
-## 本日のリバランス実行
 
-{% if rebalance_plan.sell_actions %}
-### 売却
+{% if previous_evening_summary %}
+## 前夜決定事項リマインダー
 
-{% for a in rebalance_plan.sell_actions %}
-- **{{ a.etf_code }}** {{ a.quantity }}株（約{{ "{:,.0f}".format(a.amount) }}円） — {{ a.reason }}
+{% if previous_evening_summary.is_rebalance_day %}
+- 本日は四半期末リバランス基準日。詳細は前夜の夕方レポート参照。
+{% elif (previous_evening_summary.sell_actions_count or 0) > 0 or (previous_evening_summary.buy_actions_count or 0) > 0 %}
+- 夕方レポート策定の売買プラン: 売却 {{ previous_evening_summary.sell_actions_count }} 件 / 買付 {{ previous_evening_summary.buy_actions_count }} 件（詳細は夕方レポート参照）
+{% if previous_evening_summary.sell_top3 %}
+- 主な売却候補:
+{% for s in previous_evening_summary.sell_top3 %}    - {{ s.etf_code }} {{ s.name }}（約{{ "{:,.0f}".format(s.amount) }}円）
 {% endfor %}
 {% endif %}
-{% if rebalance_plan.buy_actions %}
-### 買付
-
-{% for a in rebalance_plan.buy_actions %}
-- **{{ a.etf_code }}** {{ a.quantity }}株（約{{ "{:,.0f}".format(a.amount) }}円） — {{ a.reason }}
+{% if previous_evening_summary.buy_top3 %}
+- 主な買付候補:
+{% for s in previous_evening_summary.buy_top3 %}    - {{ s.etf_code }} {{ s.name }}（約{{ "{:,.0f}".format(s.amount) }}円）
 {% endfor %}
 {% endif %}
-{% if not rebalance_plan.sell_actions and not rebalance_plan.buy_actions %}
-売買アクションなし（単元未満で全て繰越）。
-{% endif %}
+{% else %}
+- 前夜時点で売買アクションなし（通常運用）。
 {% endif %}
 {% endif %}
 

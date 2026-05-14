@@ -18,7 +18,7 @@
 | 画面・モーダル仕様を確認したい | docs/05a_画面仕様.md | 各画面の詳細、ワイヤーフレーム |
 | UIスタイルガイドを確認したい | docs/05b_UIスタイルガイド.md | コンポーネント、カラー、A11y |
 | インフラ設計を確認したい | docs/06_インフラ設計.md | Docker構成、さくらサーバー対応 |
-| メール通知仕様を確認したい | docs/06b_メール通知仕様.md | Daily Advisor 3種メール（morning統合済、+alert）（件名・本文・モバイルCSS・用語翻訳・スナップショット） |
+| メール通知仕様を確認したい | docs/06b_メール通知仕様.md | Daily Advisor 3種メール（朝=寄り付き前/夕=終値ベース完全状態、+alert）。件名「【寄り付き前】/【終値ベース】Daily Advisor / M/D」・本文・モバイルCSS・用語翻訳・前夜サマリJSON・スナップショット |
 | テスト設計を確認したい | docs/07_テスト設計.md | テスト戦略・方針・概要 |
 | テストケース詳細を確認したい | docs/07a_テストケース詳細.md | 個別テスト実装例 |
 | おすすめ銘柄の評価設計を確認したい | docs/08_おすすめ銘柄設計.md | 5軸評価・6切り口・重み付けモデル |
@@ -135,12 +135,16 @@ frontend/
 | 16:00 | 平日（祝日スキップ） | `sync_from_minkabu --rate-limit 1.5` | both | `minkabu_sync.log` |
 | `*/10 16-20` | 平日（祝日スキップ） | `update_scores` | both | `score_update.log` |
 | 03:00 | 日 | `update_theme_etfs` | **dev** | `theme_etfs.log` |
-| 07:00 | 平日（祝日スキップ） | `daily_advisor_morning`（リバランス計画統合済） | **dev** | `advisor_morning.log` |
-| 17:30 | 平日（祝日スキップ） | `daily_advisor_evening` | **dev** | `advisor_evening.log` |
+| 07:00 | 平日（祝日スキップ） | `daily_advisor_morning`（寄り付き前: overnight市況＋前夜決定事項リマインダー） | **dev** | `advisor_morning.log` |
+| 17:30 | 平日（祝日スキップ） | `daily_advisor_evening`（終値ベース完全状態: 銘柄別配分＋採用外＋売買プラン。前夜サマリJSON永続化） | **dev** | `advisor_evening.log` |
 | 18:00 | 金（祝日でも実行） | `daily_advisor_weekly` | **dev** | `advisor_weekly.log` |
 | `*/5 9-15` | 平日（祝日スキップ） | `mechanical_rule_watcher` | **dev** | `advisor_watcher.log` |
 
 月曜06:00は `run_chain` による fail-stop 連結（同期実行）。途中で失敗した場合、後続バッチはスキップされる（本番crontabの `&&` 連結と同等の挙動）。
+
+### Daily Advisor 朝/夕の前夜サマリ JSON
+
+evening は終値確定後に銘柄別配分・売買プランを算出してメール送信した後、`reports/test/daily-tasks/evening_summary_YYYYMMDD.json`（test ユーザーのみ）にサマリ（`is_rebalance_day` / `next_rebalance_date` / `days_to_next_rebalance` / `sell_actions_count` / `buy_actions_count` / `sell_top3` / `buy_top3`）を永続化する。翌朝の morning は当日 → 直近営業日まで最大 5 日前まで遡って読み込み、「前夜決定事項リマインダー」セクションに反映する。JSON 欠落・読込失敗はセクション skip のみ（メール本体は送信継続）。詳細スキーマは `docs/06b_メール通知仕様.md` を参照。
 
 ### demo取引POST自動化（Step 7）
 
