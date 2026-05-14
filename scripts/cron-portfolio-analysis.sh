@@ -272,5 +272,42 @@ else
   echo "Skipping publish-report (user=$USER, dow=$DOW_JST; demo以外 または 金曜以外)"
 fi
 
+# --- Step 7: demo ユーザー取引POST（demo + 平日のみ） ---
+if [ "$USER" = "demo" ]; then
+  echo "Starting Step 7: demo trade POST ..."
+
+  JSON_PATH="reports/${USER}/trades_execution_plan.json"
+
+  if [ ! -f "$PROJECT_DIR/$JSON_PATH" ]; then
+    echo "Step 7 skipped: $JSON_PATH not found."
+  else
+    # 既定は dry-run。環境変数で本実行に切替
+    EXEC_FLAG="--dry-run"
+    if [ "${DEMO_TRADE_POST_ENABLED:-0}" = "1" ]; then
+      EXEC_FLAG="--execute"
+      echo "Step 7: DEMO_TRADE_POST_ENABLED=1 detected, using --execute mode."
+    else
+      echo "Step 7: DEMO_TRADE_POST_ENABLED not set, using --dry-run mode."
+    fi
+
+    # docker compose 経由で実行（コンテナ内Python）
+    setsid --wait timeout 120 docker compose exec -T \
+      -e DEMO_TRADE_POST_ENABLED="${DEMO_TRADE_POST_ENABLED:-0}" \
+      backend python scripts/execute_demo_trades.py \
+      --user "$USER" --env dev "$EXEC_FLAG" 2>&1 | tee -a "$LOGFILE"
+    STEP7_EXIT=${PIPESTATUS[0]}
+
+    if [ "$STEP7_EXIT" -eq 0 ]; then
+      echo "Step 7 succeeded (exit=$STEP7_EXIT)."
+    elif [ "$STEP7_EXIT" -eq 2 ]; then
+      echo "Warning: Step 7 partial success (exit=$STEP7_EXIT), some trades failed."
+    else
+      echo "Warning: Step 7 failed (exit=$STEP7_EXIT), continuing..."
+    fi
+  fi
+else
+  echo "Step 7 skipped: user is '$USER' (only demo is supported)."
+fi
+
 echo "Done. Log: $LOGFILE"
 exit 0

@@ -156,6 +156,14 @@
 - デモユーザー（user_id='demo'）のデータを対象とする
 - デモユーザーが存在しない場合は空データを返す（GETの場合）またはエラーを返す（POSTの場合）
 
+**自動利用者（POST /demo/trades）:**
+- `cron-portfolio-analysis.sh` の Step 7（`backend/scripts/execute_demo_trades.py`）が毎営業日18:00以降（分析バッチ完了後）に呼び出す
+- 既定動作は `--dry-run`（ログ出力のみ・POST非実行）
+- 環境変数 `DEMO_TRADE_POST_ENABLED=1` が設定されている場合のみ `--execute` で実POSTを行う
+- 入力ソース: `reports/demo/trades_execution_plan.json`（`/portfolio-analysis-v2` スキルが生成）
+- idempotency: マーカーファイル `reports/demo/.trades_posted_YYYYMMDD` ＋ DB重複検査（memo の `[auto]` プレフィックスまたは plan_id 一致＋etf_code/trade_type）で二重POSTを防止
+- 詳細仕様は `docs/10_バッチ処理設計.md` 6.5節 を参照
+
 ### 3.4 ノート記事API
 
 | メソッド | パス | 機能 | 対応機能ID | 認証 |

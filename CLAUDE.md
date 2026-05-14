@@ -142,6 +142,18 @@ frontend/
 
 月曜06:00は `run_chain` による fail-stop 連結（同期実行）。途中で失敗した場合、後続バッチはスキップされる（本番crontabの `&&` 連結と同等の挙動）。
 
+### demo取引POST自動化（Step 7）
+
+`scripts/cron-portfolio-analysis.sh` の **Step 7** で `backend/scripts/execute_demo_trades.py` を起動し、`/portfolio-analysis-v2` スキルが生成した `reports/demo/trades_execution_plan.json` を `POST /api/v1/demo/trades` に転送する。`USER=demo` の場合のみ実行され、それ以外のユーザーでは skip メッセージのみ出力。
+
+- **発火タイミング**: `cron-portfolio-analysis.sh` 既存末尾処理直前（Step 6 publish-report の後）
+- **対象ユーザー**: `demo` のみ（cronの `USER=demo` で起動された場合）
+- **有効化**: 環境変数 `DEMO_TRADE_POST_ENABLED=1` が設定されている場合のみ `--execute` で実POST。未設定または `0` は強制 dry-run（ログ出力のみ・DB変更なし）
+- **環境切替**: `--env dev` で `http://localhost:8902`、`--env prod` で `https://kima3.net/japan-etf-analyzer`。本番POSTは `--confirm-production` 併用必須
+- **idempotency**: マーカーファイル `reports/demo/.trades_posted_YYYYMMDD` ＋ DB重複検査（plan_id 有り → memo に plan_id 含有＋etf_code/trade_type 一致、plan_id 無し → memo `[auto]` プレフィックス＋etf_code/trade_type 一致）の二段構え
+- **exit code**: 0=全成功 or dry-run / 2=部分成功 / 1=全失敗 or 設定エラー
+- **ログ**: `logs/execute_demo_trades.log`（stdout 同時出力）＋ `batch_logs` テーブル（name=`demo_trade_post`）
+
 ### よく使うオプション
 
 ```bash

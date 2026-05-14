@@ -87,6 +87,7 @@
 | 13. 補足資料 | `05_shared_calculations.md` + テンプレート基本用語 |
 | 14. まとめ | 全セクションの統合 |
 | 15. 実行時間 | `timing.json` |
+| `trades_execution_plan.json`（機械可読出力） | セクション10.5の判定結果（手順11.5参照） |
 
 ### セクション9: ブレインストーミング議論サマリー
 
@@ -366,8 +367,91 @@ Phase 1の内部分析（会議トランスクリプト）では率直な表現�
 8. `./reports/{username}/` ディレクトリを作成（存在しない場合）
 9. レポート本体を保存: `./reports/{username}/YYYYMMDD_{username}_v2.md`
 10. `reports/{username}/metrics.json` に追記（v1 phase34-integration.md の手順7a参照）
-11. 実行時間・コンテキスト使用量をセクション15に記載
-12. メインに保存先パスのみ返す
+11. **取引実行プラン JSON を出力**: `./reports/{username}/trades_execution_plan.json`（手順11.5参照）
+12. 実行時間・コンテキスト使用量をセクション15に記載
+13. メインに保存先パスのみ返す
+
+---
+
+## 手順11.5: 取引実行プラン JSON 出力（必須）
+
+### 目的
+
+セクション10.5「取引実行判定」の結果を機械可読な JSON ファイルに固定値で書き出す。後段の `backend/scripts/execute_demo_trades.py` がこれを読み込み、`POST /api/v1/demo/trades` で実取引する。Markdown 側の「約5口」「約10,000円目安」等の曖昧表記は JSON 側では一切許容しない。
+
+### 出力先
+
+`./reports/{username}/trades_execution_plan.json`
+
+### 出力タイミング
+
+セクション10.5の生成完了後、レポート本体の保存（手順9）と同タイミングで書き出す。レポート保存より前後どちらでも可だが、必ず同じ run 内で出力すること。
+
+### 出力ルール（必須）
+
+- **即時実行対象がない営業日も、必ず `trades: []` の空配列で出力する**（後段スクリプトが「ファイル未生成」と「取引なし」を区別できるようにするため）
+- 数量は確定値 `int`（口数 >= 1）。「約N口」「N口前後」のような曖昧表記は禁止
+- 価格は確定値 `float`（円, > 0）。直近終値ベースで小数を保持する
+- 「約」「目安」「程度」等の表記は JSON フィールド内で一切使用しない（メモ・rationale 含む）
+- 保留した提案（市場環境フィルター・価格乖離5%超・現金不足・取引枠超過・矛盾検知 等）は `trades` には入れず、`skipped` 配列に理由文字列付きで記録する
+- 進行中計画（HISTORY.md由来）由来の取引は `plan_id` を埋める。新規提案由来は `plan_id` を `null` にする
+- `memo` は先頭に必ず `[auto]` プレフィックスを付ける（後段 API 側で自動取引と手動取引を区別するため）
+- 出力前に `json.dumps(..., ensure_ascii=False, indent=2)` 相当でフォーマットし、UTF-8（BOMなし）で保存する
+
+### スキーマ仕様
+
+詳細スキーマと完全なサンプルは `{skill_dir}/report-guide.md` の「JSON スキーマ（trades_execution_plan.json）」セクションを参照。
+
+| フィールド | 型 | 必須 | 説明 |
+|-----------|-----|-----|------|
+| `generated_at` | str (ISO8601 +09:00) | ○ | レポート生成時刻（JST） |
+| `user_id` | str | ○ | 対象ユーザーID（例: "demo"） |
+| `trade_date` | str (YYYY-MM-DD) | ○ | 取引対象日（営業日） |
+| `trades` | array | ○ | 即時実行対象の取引一覧（空配列可） |
+| `trades[].plan_id` | str \| null | ○ | 進行中計画ID（例: "PLAN-202605-001/S1"）。新規提案由来は null |
+| `trades[].etf_code` | str | ○ | ETFコード（例: "2510"） |
+| `trades[].trade_type` | "buy" \| "sell" | ○ | 売買方向 |
+| `trades[].quantity` | int (>=1) | ○ | 口数（確定値） |
+| `trades[].price` | float (>0) | ○ | 取引参考価格（直近終値ベース、確定値） |
+| `trades[].reference_price` | float (>0) | ○ | 価格乖離チェック用の基準価格（通常 price と同値、分析時点の終値） |
+| `trades[].memo` | str | ○ | 取引メモ（先頭に `[auto]` 必須、計画ID・戦略名等を含める） |
+| `trades[].rationale` | str | ○ | 採用根拠（例: "提案1"、"PLAN-202605-001 緊急トリガー充足"） |
+| `skipped` | array | ○ | 保留・除外した提案一覧（空配列可） |
+| `skipped[].etf_code` | str | ○ | 保留対象のETFコード |
+| `skipped[].reason` | str | ○ | 保留理由（例: "価格乖離5%超", "現金不足", "VI急騰で1日待機"） |
+
+### 生成手順
+
+1. セクション10.5生成時にメモリ上で `trades` / `skipped` の Python リストを構築する
+2. Markdown テーブルに記載する曖昧表記とは別に、JSON 側では確定値（int / float）を保持する
+3. ATR上限額・価格乖離・現金不足等で減量・保留した提案は `skipped` 側に回し、`reason` を簡潔な日本語文字列で記録する
+4. 即時実行対象がゼロでも `trades: []` で必ずファイル出力する（**スキップ禁止**）
+5. ファイル書き出しは `./reports/{username}/trades_execution_plan.json` で固定（日付別ファイルは作らない。後段スクリプトはこのパス1つを参照する）
+
+### 出力サンプル
+
+```json
+{
+  "generated_at": "2026-05-14T18:30:00+09:00",
+  "user_id": "demo",
+  "trade_date": "2026-05-14",
+  "trades": [
+    {
+      "plan_id": "PLAN-202605-001/S1",
+      "etf_code": "2510",
+      "trade_type": "buy",
+      "quantity": 5,
+      "price": 10000.0,
+      "reference_price": 10000.0,
+      "memo": "[auto] PLAN-202605-001/S1: 一挙五得戦略",
+      "rationale": "提案1"
+    }
+  ],
+  "skipped": [
+    {"etf_code": "1615", "reason": "価格乖離5%超"}
+  ]
+}
+```
 
 ---
 

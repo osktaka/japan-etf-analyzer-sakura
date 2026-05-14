@@ -42,6 +42,12 @@
 
 ### 2.5. 取引実行（条件付き）
 
+> **【自動化済み】** `cron-portfolio-analysis.sh` の Step 7 で `backend/scripts/execute_demo_trades.py` が `reports/demo/trades_execution_plan.json` を読み取り、`POST /api/v1/demo/trades` へ自動POSTする運用に移行している。`/portfolio-analysis-v2` スキルが必ず同JSON（`trades: []` 空配列でも可）を出力するため、通常の日次運用ではこの 2.5 セクションの手作業curlは不要。
+>
+> 環境変数 `DEMO_TRADE_POST_ENABLED=1` が設定されている場合のみ `--execute` で実POSTし、未設定なら強制 dry-run（ログ出力のみ）。idempotency はマーカーファイル `reports/demo/.trades_posted_YYYYMMDD` ＋ DB重複検査（plan_id 一致 or `[auto]` memo ＋ etf_code/trade_type）の二段構えで保証される。
+>
+> 以下の手作業curl手順は **(a) cron Step 7 が失敗した際の緊急フォールバック**、**(b) JSON出力を持たない旧レポートの手動補正**、**(c) 本番環境（kima3.net）への手動同期**用途に限定する。ログは `logs/execute_demo_trades.log` を参照。
+
 レポートのセクション10.5「取引実行判定」を参照し、「即時実行対象あり」の場合のみ以下を実行する。「即時実行対象なし」の場合はこのステップをスキップする。実行対象はセクション10.5のテーブルに記載された銘柄・数量・価格のみとし、テーブル外の取引は行わない。
 
 1. **事前チェック**:

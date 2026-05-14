@@ -946,3 +946,79 @@
 1. セクション13（補足資料）のうち初回以降の用語解説を削除
 2. セクション9（議論サマリー）の詳細を箇条書きに圧縮
 3. セクション2-7の注記・コメントを削減（数値テーブルは維持）
+
+## JSON スキーマ（trades_execution_plan.json）
+
+セクション10.5「取引実行判定」の結果は、Markdown レポートと同タイミングで機械可読 JSON にも書き出す（後段 `backend/scripts/execute_demo_trades.py` が `POST /api/v1/demo/trades` で実取引するため）。
+
+### 出力先
+
+`./reports/{user_id}/trades_execution_plan.json`（最新の1ファイルのみを上書き保存）
+
+### 必須ルール
+
+- **即時実行対象がない営業日も、必ず `trades: []` の空配列で出力する**（後段スクリプトが「ファイル未生成」と「取引なし」を区別できるようにするため）
+- 数量は確定値 `int`（口数 >= 1）。「約N口」「N口前後」等の曖昧表記は禁止
+- 価格は確定値 `float`（円, > 0）。直近終値ベースで小数を保持する
+- フィールド値内で「約」「目安」「程度」を使用しない
+- 保留した提案（市場環境フィルター・価格乖離5%超・現金不足・取引枠超過・矛盾検知 等）は `trades` ではなく `skipped` 配列に理由文字列で記録する
+- `memo` は先頭に必ず `[auto]` プレフィックスを付ける
+- 進行中計画由来の取引は `plan_id` を埋め、新規提案由来は `plan_id` を `null` にする
+- ファイルは UTF-8（BOMなし）、`indent=2` で整形して保存
+
+### フィールド定義
+
+| フィールド | 型 | 必須 | 説明 |
+|-----------|-----|-----|------|
+| `generated_at` | str (ISO8601 +09:00) | ○ | レポート生成時刻（JST） |
+| `user_id` | str | ○ | 対象ユーザーID（例: "demo"） |
+| `trade_date` | str (YYYY-MM-DD) | ○ | 取引対象日（営業日） |
+| `trades` | array | ○ | 即時実行対象の取引一覧（空配列可） |
+| `trades[].plan_id` | str \| null | ○ | 進行中計画ID（例: "PLAN-202605-001/S1"）。新規提案由来は null |
+| `trades[].etf_code` | str | ○ | ETFコード（例: "2510"） |
+| `trades[].trade_type` | "buy" \| "sell" | ○ | 売買方向 |
+| `trades[].quantity` | int (>=1) | ○ | 口数（確定値） |
+| `trades[].price` | float (>0) | ○ | 取引参考価格（直近終値ベース、確定値） |
+| `trades[].reference_price` | float (>0) | ○ | 価格乖離チェック用の基準価格（通常 price と同値、分析時点の終値） |
+| `trades[].memo` | str | ○ | 取引メモ（先頭に `[auto]` 必須、計画ID・戦略名等を含める） |
+| `trades[].rationale` | str | ○ | 採用根拠（例: "提案1"、"PLAN-202605-001 緊急トリガー充足"） |
+| `skipped` | array | ○ | 保留・除外した提案一覧（空配列可） |
+| `skipped[].etf_code` | str | ○ | 保留対象のETFコード |
+| `skipped[].reason` | str | ○ | 保留理由（例: "価格乖離5%超", "現金不足", "VI急騰で1日待機"） |
+
+### 完全なサンプル
+
+```json
+{
+  "generated_at": "2026-05-14T18:30:00+09:00",
+  "user_id": "demo",
+  "trade_date": "2026-05-14",
+  "trades": [
+    {
+      "plan_id": "PLAN-202605-001/S1",
+      "etf_code": "2510",
+      "trade_type": "buy",
+      "quantity": 5,
+      "price": 10000.0,
+      "reference_price": 10000.0,
+      "memo": "[auto] PLAN-202605-001/S1: 一挙五得戦略",
+      "rationale": "提案1"
+    }
+  ],
+  "skipped": [
+    {"etf_code": "1615", "reason": "価格乖離5%超"}
+  ]
+}
+```
+
+### 即時実行対象なしの場合のサンプル
+
+```json
+{
+  "generated_at": "2026-05-14T18:30:00+09:00",
+  "user_id": "demo",
+  "trade_date": "2026-05-14",
+  "trades": [],
+  "skipped": []
+}
+```
