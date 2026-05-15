@@ -109,6 +109,21 @@ EXCLUDE_KEYWORDS = ["レバレッジ", "インバース", "ダブル", "ベア",
 # move) and the whole series is excluded from screening/backtest.
 MAX_DAILY_JUMP = 0.60
 
+# --- zero-based core-eligibility screening (--core-screen) constants ---
+# Common-window requirement (months). Reuses the same 100-month bar the
+# partner screening uses, so "short history" is defined identically.
+CORE_SCREEN_MIN_COMMON_MONTHS = 100
+# Return floor default (% annualized CAGR over the common window). Names
+# below this are dropped as "return-insufficient" for a long-hold core.
+CORE_SCREEN_DEFAULT_MIN_CAGR = 5.0
+# Composite core-fitness weights (must sum to 1.0). Diversification is
+# weighted highest because the screen's purpose is to surface names that
+# genuinely de-correlate a long-hold core; risk-adjusted quality (Sharpe)
+# is second; drawdown resilience third (it partly overlaps with vol).
+CORE_FIT_W_DIVERSIFICATION = 0.40  # 1 - mean |pairwise corr| (higher=better)
+CORE_FIT_W_RISK_QUALITY = 0.35  # min-max normalized Sharpe within survivors
+CORE_FIT_W_DRAWDOWN = 0.25  # 1 - normalized |MDD| within survivors
+
 ENV_BASE = {
     "dev": "http://localhost:8902",
     "prod": "https://kima3.net/japan-etf-analyzer",
@@ -379,6 +394,376 @@ def screen_candidates(
         "max_daily_jump_limit": MAX_DAILY_JUMP,
         "min_common_months": min_common_months,
     }
+
+
+# ---------------------------------------------------------------------------
+# Core-screen mode: zero-based core-eligibility screening (--core-screen)
+# ---------------------------------------------------------------------------
+
+
+def _max_drawdown_from_monthly(rets: Dict[Tuple[int, int], float]) -> float:
+    """Largest peak-to-trough drop of the compounded monthly series (>=0)."""
+    vals = [rets[k] for k in sorted(rets)]
+    equity = 1.0
+    peak = 1.0
+    worst = 0.0
+    for r in vals:
+        equity *= 1.0 + r
+        peak = max(peak, equity)
+        if peak > 0:
+            worst = max(worst, (peak - equity) / peak)
+    return worst
+
+
+def _core_screen_filter(
+    etfs: List[Dict],
+    price_map: Dict[str, Dict[date, float]],
+    name_map: Dict[str, str],
+    min_cagr: float,
+) -> Dict:
+    """Apply the population guards + return floor; return survivors+exclusions.
+
+    Guards (zero-based; no core concept here): name-based leverage/inverse
+    exclusion, non-physical discontinuity (max_daily_jump), short history,
+    then a CAGR floor over the common window.
+    """
+    excluded_name: List[Dict] = []
+    excluded_bad_data: List[Dict] = []
+    excluded_short: List[Dict] = []
+    excluded_low_return: List[Dict] = []
+    survivors: List[Dict] = []
+    for e in etfs:
+        code = e.get("code")
+        name = name_map.get(code, e.get("name") or "")
+        if any(k in name for k in EXCLUDE_KEYWORDS):
+            excluded_name.append(
+                {"code": code, "name": name, "reason": "leverage/inverse name"}
+            )
+            continue
+        dm = price_map.get(code, {})
+        jump = max_daily_jump(dm)
+        if jump > MAX_DAILY_JUMP:
+            excluded_bad_data.append(
+                {
+                    "code": code,
+                    "name": name,
+                    "max_daily_jump": round(jump, 4),
+                    "reason": f"max_daily_jump>{MAX_DAILY_JUMP}",
+                }
+            )
+            continue
+        monthly = _monthly_returns(dm)
+        if len(monthly) < CORE_SCREEN_MIN_COMMON_MONTHS:
+            excluded_short.append(
+                {
+                    "code": code,
+                    "name": name,
+                    "common_months": len(monthly),
+                    "reason": f"common_months<{CORE_SCREEN_MIN_COMMON_MONTHS}",
+                }
+            )
+            continue
+        st = _stats_from_monthly(monthly)
+        if st["cagr"] * 100.0 < min_cagr:
+            excluded_low_return.append(
+                {
+                    "code": code,
+                    "name": name,
+                    "cagr": round(st["cagr"], 6),
+                    "reason": f"cagr<{min_cagr}%",
+                }
+            )
+            continue
+        survivors.append(
+            {
+                "code": code,
+                "name": name,
+                "monthly": monthly,
+                "cagr": st["cagr"],
+                "vol": st["vol"],
+                "sharpe": st["sharpe"],
+                "mdd": _max_drawdown_from_monthly(monthly),
+                "common_months": len(monthly),
+            }
+        )
+    return {
+        "survivors": survivors,
+        "excluded_name": excluded_name,
+        "excluded_bad_data": excluded_bad_data,
+        "excluded_short_history": excluded_short,
+        "excluded_low_return": excluded_low_return,
+    }
+
+
+def _mean_abs_correlation(
+    target: Dict[Tuple[int, int], float],
+    others: List[Dict[Tuple[int, int], float]],
+) -> float:
+    """Mean |pairwise Pearson| of `target` vs every other monthly series."""
+    if not others:
+        return 0.0
+    acc = 0.0
+    for o in others:
+        xs, ys = _aligned(target, o)
+        acc += abs(_pearson(xs, ys))
+    return acc / len(others)
+
+
+def _normalize_0_1(values: List[float]) -> List[float]:
+    lo, hi = min(values), max(values)
+    span = (hi - lo) or 1.0
+    return [(v - lo) / span for v in values]
+
+
+def core_screen(
+    etfs: List[Dict],
+    price_map: Dict[str, Dict[date, float]],
+    name_map: Dict[str, str],
+    min_cagr: float,
+) -> Dict:
+    """Zero-based core-eligibility screen: guards -> return floor -> rank."""
+    filt = _core_screen_filter(etfs, price_map, name_map, min_cagr)
+    survivors = filt["survivors"]
+
+    ranking: List[Dict] = []
+    if survivors:
+        monthly_list = [s["monthly"] for s in survivors]
+        for i, s in enumerate(survivors):
+            others = monthly_list[:i] + monthly_list[i + 1 :]
+            s["mean_abs_corr"] = _mean_abs_correlation(s["monthly"], others)
+            s["diversification"] = 1.0 - s["mean_abs_corr"]
+
+        sharpe_norm = _normalize_0_1([s["sharpe"] for s in survivors])
+        mdd_norm = _normalize_0_1([abs(s["mdd"]) for s in survivors])
+        for s, sn, mn in zip(survivors, sharpe_norm, mdd_norm):
+            composite = (
+                CORE_FIT_W_DIVERSIFICATION * s["diversification"]
+                + CORE_FIT_W_RISK_QUALITY * sn
+                + CORE_FIT_W_DRAWDOWN * (1.0 - mn)
+            )
+            ranking.append(
+                {
+                    "code": s["code"],
+                    "name": s["name"],
+                    "cagr": round(s["cagr"], 6),
+                    "vol": round(s["vol"], 6),
+                    "sharpe": round(s["sharpe"], 6),
+                    "mdd": round(s["mdd"], 6),
+                    "mean_abs_corr": round(s["mean_abs_corr"], 4),
+                    "diversification": round(s["diversification"], 4),
+                    "risk_quality_norm": round(sn, 4),
+                    "drawdown_resilience": round(1.0 - mn, 4),
+                    "composite": round(composite, 4),
+                    "common_months": s["common_months"],
+                }
+            )
+        ranking.sort(key=lambda r: r["composite"], reverse=True)
+
+    logger.info(
+        "core-screen: survivors=%d (name_excl=%d bad=%d short=%d lowret=%d)",
+        len(ranking),
+        len(filt["excluded_name"]),
+        len(filt["excluded_bad_data"]),
+        len(filt["excluded_short_history"]),
+        len(filt["excluded_low_return"]),
+    )
+    return {
+        "ranking": ranking,
+        "min_cagr": min_cagr,
+        "min_common_months": CORE_SCREEN_MIN_COMMON_MONTHS,
+        "max_daily_jump_limit": MAX_DAILY_JUMP,
+        "weights": {
+            "diversification": CORE_FIT_W_DIVERSIFICATION,
+            "risk_quality": CORE_FIT_W_RISK_QUALITY,
+            "drawdown_resilience": CORE_FIT_W_DRAWDOWN,
+        },
+        "excluded_name": filt["excluded_name"],
+        "excluded_bad_data": filt["excluded_bad_data"],
+        "excluded_short_history": filt["excluded_short_history"],
+        "excluded_low_return": filt["excluded_low_return"],
+    }
+
+
+def _core_screen_md(screen: Dict) -> List[str]:
+    """Build the core-screen markdown (h3 max, numbered sections)."""
+    w = screen.get("weights", {})
+    lines: List[str] = []
+    lines.append("# コア適格銘柄スクリーニング（ゼロベース）")
+    lines.append("")
+    lines.append(f"**生成日時**: {datetime.now().isoformat()}  ")
+    lines.append(
+        "**目的**: コア指定銘柄の概念を置かず、母集団全体から長期保有コア"
+        "に適格な銘柄をゼロベースで抽出・序列化する。  "
+    )
+    lines.append(
+        f"**リターン下限**: 10年共通期間 CAGR ≥ {screen['min_cagr']:.1f}%  "
+    )
+    lines.append(
+        f"**適格者数**: {len(screen['ranking'])}銘柄  "
+    )
+    lines.append("")
+    lines.append("## 1. 適用ガードと閾値")
+    lines.append("")
+    lines.append(
+        f"- 名称除外: {', '.join(EXCLUDE_KEYWORDS)} を含む銘柄  "
+    )
+    lines.append(
+        "- データ不整合除外: API系列の非物理的単日急変（上場単位/通貨基準の"
+        f"不連続, 日次変動>{screen['max_daily_jump_limit']}）  "
+    )
+    lines.append(
+        f"- 短履歴除外: 共通月数 < {screen['min_common_months']}  "
+    )
+    lines.append(
+        f"- リターン下限: CAGR < {screen['min_cagr']:.1f}% を除外  "
+    )
+    lines.append(
+        "- 複合スコア = "
+        f"{w.get('diversification')}×分散貢献 + "
+        f"{w.get('risk_quality')}×リスク調整後品質 + "
+        f"{w.get('drawdown_resilience')}×ドローダウン耐性  "
+    )
+    lines.append("")
+    lines.append("## 2. 除外内訳")
+    lines.append("")
+    _append_exclusion_block(
+        lines, "名称除外（レバレッジ/インバース等）",
+        screen["excluded_name"], lambda x: x["code"],
+    )
+    _append_exclusion_block(
+        lines, "データ不整合で除外", screen["excluded_bad_data"],
+        lambda x: f"{x['code']}(最大単日{x['max_daily_jump']:.0%})",
+    )
+    _append_exclusion_block(
+        lines,
+        f"短履歴で除外（共通月数<{screen['min_common_months']}）",
+        screen["excluded_short_history"],
+        lambda x: f"{x['code']}({x['common_months']}ヶ月)",
+    )
+    _append_exclusion_block(
+        lines,
+        f"リターン不足で除外（CAGR<{screen['min_cagr']:.1f}%）",
+        screen["excluded_low_return"],
+        lambda x: f"{x['code']}({x['cagr']:.1%})",
+    )
+    lines.append("## 3. コア適格ランキング")
+    lines.append("")
+    lines.append(
+        "| 順位 | コード | 名称 | CAGR | ボラ | シャープ | MDD | "
+        "平均相関 | 分散貢献 | 複合スコア | 共通月数 |"
+    )
+    lines.append("|---|---|---|---|---|---|---|---|---|---|---|")
+    for i, r in enumerate(screen["ranking"], 1):
+        lines.append(
+            f"| {i} | {r['code']} | {r['name'][:24]} | "
+            f"{r['cagr']:.2%} | {r['vol']:.2%} | {r['sharpe']:.3f} | "
+            f"{r['mdd']:.2%} | {r['mean_abs_corr']:.3f} | "
+            f"{r['diversification']:.3f} | {r['composite']:.3f} | "
+            f"{r['common_months']} |"
+        )
+    lines.append("")
+    lines.append("## 4. コア適格 上位の結論")
+    lines.append("")
+    top = screen["ranking"][:3]
+    if top:
+        for i, r in enumerate(top, 1):
+            lines.append(
+                f"{i}. **{r['code']} {r['name'][:24]}** — 複合スコア "
+                f"{r['composite']:.3f}（分散貢献 {r['diversification']:.3f} / "
+                f"Sharpe {r['sharpe']:.3f} / MDD {r['mdd']:.2%}）。"
+                f"CAGR {r['cagr']:.2%} でリターン下限を通過。  "
+            )
+        lines.append("")
+        lines.append(
+            "**根拠**: 分散貢献を最重視（重み "
+            f"{w.get('diversification')}）した複合スコアにより、リターン下限"
+            "を満たしつつ既存通過集合と相関の低い銘柄が上位化されている。  "
+        )
+    else:
+        lines.append("（リターン下限を通過した適格銘柄がありませんでした）")
+    lines.append("")
+    lines.append("## 5. 免責")
+    lines.append("")
+    lines.append(
+        "本結果は過去データに基づく機械的スクリーニングであり将来を保証"
+        "しない。売買コスト・税・分配金・スリッページを無視した単純化"
+        "モデル。CAGR/ボラ/Sharpe/MDD は月次リターンから算出した近似値。"
+    )
+    lines.append("")
+    return lines
+
+
+def _append_exclusion_block(lines, title, items, fmt) -> None:
+    """Append one '### title' exclusion line (count + comma list)."""
+    lines.append(f"### {title}")
+    lines.append("")
+    if items:
+        lines.append(
+            f"{len(items)}件: " + ", ".join(fmt(x) for x in items)
+        )
+    else:
+        lines.append("該当なし")
+    lines.append("")
+
+
+def write_core_screen_reports(
+    screen: Dict, output_dir: Path, period: str
+) -> Tuple[Path, Path]:
+    """Write reports/research/core_screen_YYYYMMDD.{json,md}."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+    today = datetime.now().strftime("%Y%m%d")
+    json_doc = {
+        "generated_at": datetime.now().isoformat(),
+        "mode": "core-screen (zero-based core eligibility)",
+        "period": period,
+        "data_source": "API only (/api/v1/etfs/chart/batch); no DB reads",
+        **screen,
+    }
+    json_path = output_dir / f"core_screen_{today}.json"
+    json_path.write_text(
+        json.dumps(json_doc, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    md_path = output_dir / f"core_screen_{today}.md"
+    md_path.write_text("\n".join(_core_screen_md(screen)), encoding="utf-8")
+    return json_path, md_path
+
+
+def run_core_screen_mode(args, base_url: str, output_dir: Path) -> int:
+    """Driver for --core-screen: universe -> API prices -> screen -> report."""
+    universe = fetch_universe(base_url)
+    name_map = {e["code"]: e.get("name", "") for e in universe}
+    codes = [e["code"] for e in universe if e.get("code")]
+    price_map = fetch_price_map(codes, base_url, period=args.period)
+    screen = core_screen(universe, price_map, name_map, args.min_cagr)
+    json_path, md_path = write_core_screen_reports(
+        screen, output_dir, args.period
+    )
+    logger.info("=== core-screen outputs ===")
+    logger.info("  JSON: %s", json_path)
+    logger.info("  MD:   %s", md_path)
+
+    # Spot verification: a survivor's first price vs the raw API.
+    if screen["ranking"]:
+        top_code = screen["ranking"][0]["code"]
+        raw = _http_get_json(
+            f"{base_url}/api/v1/etfs/chart/batch"
+            f"?codes={top_code}&period={args.period}"
+        )
+        series = (raw["data"].get(top_code) or {}).get("data") or []
+        if series:
+            s0 = series[0]
+            used = price_map.get(top_code, {}).get(
+                date.fromisoformat(s0["date"])
+            )
+            logger.info(
+                "[spot] %s %s API close=%.2f / used=%.2f -> %s",
+                top_code,
+                s0["date"],
+                float(s0["close"]),
+                used if used is not None else float("nan"),
+                "MATCH" if used == float(s0["close"]) else "MISMATCH",
+            )
+    return 0
 
 
 # ---------------------------------------------------------------------------
@@ -1338,6 +1723,17 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
         action="store_true",
         help="also run the fixed-union sub-period robustness analysis",
     )
+    p.add_argument(
+        "--core-screen",
+        action="store_true",
+        help="zero-based core-eligibility screening mode (no partner core)",
+    )
+    p.add_argument(
+        "--min-cagr",
+        type=float,
+        default=CORE_SCREEN_DEFAULT_MIN_CAGR,
+        help="core-screen return floor: %% annualized CAGR (default 5.0)",
+    )
     return p.parse_args(argv)
 
 
@@ -1357,6 +1753,11 @@ def main(argv: List[str]) -> int:
     config = BacktestConfig()
     output_dir = resolve_output_dir(args.output_dir)
     logger.info("env=%s base=%s output_dir=%s", args.env, base_url, output_dir)
+
+    # Zero-based core-eligibility screening mode (independent of the
+    # partner-探索 pipeline below; no core concept, API-only).
+    if args.core_screen:
+        return run_core_screen_mode(args, base_url, output_dir)
 
     # Step 2a: universe + prefilter (cheap list call).
     universe = fetch_universe(base_url)
