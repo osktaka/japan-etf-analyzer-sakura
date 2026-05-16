@@ -130,6 +130,53 @@ export function calculateRegressionLine(
 }
 
 /**
+ * Calculate explicit Y-axis domain including regression line endpoints.
+ * Scans close and moving-average values (null/undefined/non-finite skipped),
+ * also considers regression line endpoints when provided.
+ * Returns undefined for empty input or when no finite value is found.
+ * Padding: range>0 ? range*5% : abs(max)*5% (falls back to 1 when 0).
+ */
+export function calculateYAxisDomain(
+  points: {
+    close: number
+    ma5?: number | null
+    ma25?: number | null
+    ma75?: number | null
+    ma200?: number | null
+  }[],
+  regressionLine: RegressionLineResult | null
+): [number, number] | undefined {
+  if (points.length === 0) return undefined
+
+  let min = Infinity
+  let max = -Infinity
+  const consider = (value: number | null | undefined) => {
+    if (value == null || !Number.isFinite(value)) return
+    if (value < min) min = value
+    if (value > max) max = value
+  }
+
+  points.forEach((point) => {
+    consider(point.close)
+    consider(point.ma5)
+    consider(point.ma25)
+    consider(point.ma75)
+    consider(point.ma200)
+  })
+
+  if (regressionLine) {
+    consider(regressionLine.startY)
+    consider(regressionLine.endY)
+  }
+
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return undefined
+
+  const range = max - min
+  const pad = range > 0 ? range * 0.05 : Math.abs(max) * 0.05 || 1
+  return [min - pad, max + pad]
+}
+
+/**
  * Calculate linear regression line for normalized (percent change) data
  * Returns start and end Y values for the regression line
  */

@@ -18,6 +18,7 @@ import {
   getMovingAveragePeriods,
   calculateMovingAverage,
   calculateRegressionLine,
+  calculateYAxisDomain,
   decimateChartData,
   MA_COLORS,
 } from '../../utils'
@@ -118,6 +119,13 @@ export const PriceChart = React.memo(function PriceChart({
     ]
   }, [regressionLine, data])
 
+  // Calculate explicit Y-axis domain including regression line endpoints
+  const yDomain = useMemo(
+    (): [number, number] | undefined =>
+      calculateYAxisDomain(chartData, regressionLine),
+    [chartData, regressionLine]
+  )
+
   if (data.length === 0) {
     return (
       <div className={styles.empty}>
@@ -145,7 +153,7 @@ export const PriceChart = React.memo(function PriceChart({
           <YAxis
             tick={{ fontSize: 12 }}
             tickFormatter={(value) => formatPrice(value).replace('¥', '')}
-            domain={['auto', 'auto']}
+            domain={yDomain ?? ['auto', 'auto']}
           />
           <Tooltip
             formatter={(value: number, name: string) => {
@@ -218,6 +226,7 @@ export const PriceChart = React.memo(function PriceChart({
               stroke="#666"
               strokeWidth={1}
               strokeDasharray="5 5"
+              ifOverflow="extendDomain"
             />
           )}
           {trades && trades.length > 0 && (

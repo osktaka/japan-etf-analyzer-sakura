@@ -18,7 +18,9 @@ vi.mock('recharts', () => ({
   YAxis: () => <div data-testid="y-axis" />,
   CartesianGrid: () => <div data-testid="cartesian-grid" />,
   Tooltip: () => <div data-testid="tooltip" />,
-  ReferenceLine: () => <div data-testid="reference-line" />,
+  ReferenceLine: ({ ifOverflow }: { ifOverflow?: string }) => (
+    <div data-testid="reference-line" data-if-overflow={ifOverflow} />
+  ),
 }))
 
 const mockChartData: ChartDataPoint[] = [
@@ -87,5 +89,12 @@ describe('PriceChart', () => {
     expect(screen.getByTestId('y-axis')).toBeInTheDocument()
     expect(screen.getByTestId('cartesian-grid')).toBeInTheDocument()
     expect(screen.getByTestId('tooltip')).toBeInTheDocument()
+  })
+
+  it('回帰線表示時、ReferenceLine に ifOverflow="extendDomain" が渡される', () => {
+    render(<PriceChart data={mockChartData} showRegressionLine />)
+
+    const referenceLine = screen.getByTestId('reference-line')
+    expect(referenceLine).toHaveAttribute('data-if-overflow', 'extendDomain')
   })
 })
