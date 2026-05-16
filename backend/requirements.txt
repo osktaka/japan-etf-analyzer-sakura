@@ -22,8 +22,9 @@ multitasking==0.0.11
 jpholiday==1.0.3
 holidays==0.65
 # Daily Advisor (毎日のタスク通知システム)
-# PyYAML 5.4.1: pure-python fallback あり、FreeBSD 13.0 互換
-PyYAML==5.4.1
+# PyYAML 6.0.2: Cython3/新setuptoolsでwheelビルド可（5.4.1はcython_sources
+# エラーでFreeBSD本番のビルド失敗）。用途はyaml.safe_loadのみで6.x互換
+PyYAML==6.0.2
 # Jinja2 はFlask 3.0.3が依存しており既にinstall済 (>=3.1.2)
 # 明示pinで本番再現性を担保
 Jinja2==3.1.6
