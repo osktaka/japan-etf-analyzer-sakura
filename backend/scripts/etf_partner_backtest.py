@@ -778,8 +778,15 @@ def _equal_weights(codes: List[str]) -> Dict[str, float]:
     return w
 
 
+# Calendar+threshold hybrid: quarter-end full rebalance plus a band-
+# triggered partial rebalance. User-confirmed fixed values (no CLI option:
+# YAGNI / keeps the fixed case-count coherence check valid).
+HYBRID_BANDS: List[float] = [0.01, 0.02, 0.03]  # ±1% / ±2% / ±3%
+HYBRID_RESTORE: float = 0.70  # restore until |dev| <= band * 0.70
+
+
 def build_specs(union_codes: List[str]) -> List[CaseSpec]:
-    """Singles (buy_hold) + combos (buy_hold & quarter-end rebalance)."""
+    """Singles (buy_hold) + combos (buy_hold, rebalance, hybrid x3)."""
     specs: List[CaseSpec] = []
     # Singles: core proxy, gold, each candidate (buy & hold only).
     for code in [CORE_PROXY, CORE_GOLD] + union_codes:
@@ -809,6 +816,19 @@ def build_specs(union_codes: List[str]) -> List[CaseSpec]:
                     strategy=strat,
                     codes=list(codes),
                     target_weights=dict(weights),
+                )
+            )
+        for n, band in enumerate(HYBRID_BANDS, 1):
+            specs.append(
+                CaseSpec(
+                    case_id=f"combo_{label}_hybrid_b{n}",
+                    group="combo",
+                    allocation="equal",
+                    strategy=f"hybrid_b{n}",
+                    codes=list(codes),
+                    target_weights=dict(weights),
+                    band=band,
+                    restore_fraction=HYBRID_RESTORE,
                 )
             )
     return specs
@@ -976,6 +996,61 @@ def _variant_section_lines(summary: Dict) -> List[str]:
     return lines
 
 
+def _strategy_compare_lines(results: List[Dict]) -> List[str]:
+    """戦略別比較節: core2資産 + rebalance Sharpe最良候補について
+    buy_hold / rebalance / hybrid_b1/b2/b3 を横並び表示する（追記のみ）。
+
+    比較対象の第3候補は **rebalance 戦略の Sharpe** で選定する（結論節の
+    `best` は全戦略横断の最良を指すため流用しない＝計画の文言と一致させる）。
+    """
+    out: List[str] = []
+    out.append("## 2b. 戦略別比較（コア2資産＋最適第3 ETF）")
+    out.append("")
+    by_id = {r["case_id"]: r for r in results}
+    targets: List[Tuple[str, str]] = [("combo_core", "2資産コア(1554+1540)")]
+    rebal_best = max(
+        (
+            r
+            for r in results
+            if r["group"] == "combo"
+            and "core+" in r["case_id"]
+            and r["strategy"] == "rebalance"
+        ),
+        key=lambda r: r["sharpe"],
+        default=None,
+    )
+    if rebal_best is not None:
+        cand = rebal_best["case_id"].split("core+")[1].split("_")[0]
+        targets.append(
+            (f"combo_core+{cand}", f"コア+{cand}(rebalance Sharpe最良)")
+        )
+    out.append(
+        "| 構成 | 戦略 | CAGR | Sharpe | MDD | band発火回数 |"
+    )
+    out.append("|---|---|---|---|---|---|")
+    strat_keys = ["buy_hold", "rebalance"] + [
+        f"hybrid_b{n}" for n in range(1, len(HYBRID_BANDS) + 1)
+    ]
+    for prefix, label in targets:
+        for sk in strat_keys:
+            c = by_id.get(f"{prefix}_{sk}")
+            if c is None:
+                continue
+            brc = c.get("band_rebalance_count", 0)
+            if sk == "rebalance":
+                brc_txt = f"0（参考: 四半期 {c.get('rebalance_count', 0)}回）"
+            elif sk == "buy_hold":
+                brc_txt = "0"
+            else:
+                brc_txt = str(brc)
+            out.append(
+                f"| {label} | {sk} | {c['cagr']:.2%} | "
+                f"{c['sharpe']:.3f} | {c['mdd']:.2%} | {brc_txt} |"
+            )
+    out.append("")
+    return out
+
+
 def write_reports(
     screen: Dict,
     results: List[Dict],
@@ -1076,6 +1151,16 @@ def write_reports(
             f"{r['effective_period'][0]}〜{r['effective_period'][1]} |"
         )
     lines.append("")
+    lines.append(
+        "**戦略凡例**: `buy_hold`=初回配分のみで以後無調整 / "
+        "`rebalance`=四半期末にターゲット配分へ完全復帰 / "
+        "`hybrid_b{n}`=四半期末は完全復帰（rebalance同等）に加え、"
+        "期中いずれかの資産で `|現在ウェイト−ターゲット|` が band を超えた"
+        "営業日に部分リバランス（各乖離が `band×0.70` 以内に収まる位置まで"
+        "売買、完全復帰ではない）。band: b1=±1% / b2=±2% / b3=±3%。  "
+    )
+    lines.append("")
+    lines.extend(_strategy_compare_lines(results))
     lines.append("## 3. 最適第3候補の結論")
     lines.append("")
     if best:
@@ -1138,7 +1223,7 @@ SUBPERIOD_GRANULARITIES: List[Tuple[str, int]] = [
 # i.e. all 6) yields 24 (= full-10y: 22 + 2 fixed 4-asset core cases).
 SINGLE_CORE_COUNT = 2  # 1554 (=2559 proxy) + 1540, buy&hold only
 COMBO_FIXED_COUNT = 2  # combo_core + combo_core4
-STRATEGIES_PER_COMBO = 2  # buy_hold + rebalance
+STRATEGIES_PER_COMBO = 2 + len(HYBRID_BANDS)  # buy_hold + rebalance + hybrid x3
 
 
 def expected_case_count(usable_count: int) -> int:
@@ -1618,6 +1703,14 @@ def _subperiod_md_lines(
         f"{eff_period[1].isoformat()}。各窓は窓開始日に "
         f"{config.initial_capital:,.0f}円で再スタート（窓間で資産を"
         "持ち越さない＝各窓独立）。  "
+    )
+    lines.append(
+        "**戦略凡例**: `buy_hold`=無調整 / `rebalance`=四半期末に"
+        "ターゲットへ完全復帰 / `hybrid_b{n}`=四半期末は完全復帰に加え、"
+        "期中 `|現在ウェイト−ターゲット|` が band 超で部分リバランス"
+        "（`band×0.70` 以内まで売買）。band: b1=±1% / b2=±2% / b3=±3%。"
+        "頑健性サマリ（主指標）は従来どおり rebalance ベースで不変、"
+        "hybrid は各窓ケース表の生値で参照可。  "
     )
     lines.append("")
     lines.append("## 1. 窓定義（非重複・3粒度・計10窓）")

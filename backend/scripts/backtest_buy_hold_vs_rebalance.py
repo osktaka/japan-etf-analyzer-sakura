@@ -230,9 +230,11 @@ class CaseSpec:
     case_id: str
     group: str  # "A" or "B"
     allocation: str  # "equal" or "core_satellite"
-    strategy: str  # "buy_hold" or "rebalance"
+    strategy: str  # "buy_hold" or "rebalance" or "hybrid_b{n}"
     codes: List[str]
     target_weights: Dict[str, float]
+    band: Optional[float] = None  # hybrid: |w_i - t_i| threshold; None=disabled
+    restore_fraction: float = 0.70  # hybrid: partial-restore factor of band
 
 
 class PortfolioSimulator:
@@ -258,6 +260,7 @@ class PortfolioSimulator:
         self.equity_curve: List[Tuple[date, float]] = []
         self.events: List[Dict] = []
         self.rebalance_count: int = 0
+        self.band_rebalance_count: int = 0
         self.listing_event_count: int = 0
         # canonical sequence of rebalance/listing/initial events as (date, type)
         self._assert_failures: List[str] = []
@@ -289,12 +292,14 @@ class PortfolioSimulator:
             value += q * p
         return value
 
-    def _rebalance(self, today: date, event_type: str) -> None:
-        """Rebalance to target weights using all listed codes."""
-        listed = self._listed_codes(today)
-        if not listed:
-            return
-        weights = self._renormalize_weights(listed)
+    def _apply_target(
+        self, today: date, event_type: str, weights: Dict[str, float]
+    ) -> None:
+        """Liquidate-to-cash then allocate to `weights` (assumed sum~1.0).
+
+        Core of rebalance/partial-rebalance: preserves asserts, event log
+        and counter increments. `weights` must already be renormalized.
+        """
         # assert: target weights sum to 1.0 (renormalization correctness)
         target_sum = sum(weights.values())
         if abs(target_sum - 1.0) > self.config.rebalance_tolerance:
@@ -349,6 +354,8 @@ class PortfolioSimulator:
             self.rebalance_count += 1
         elif event_type == "listing":
             self.listing_event_count += 1
+        elif event_type == "band":
+            self.band_rebalance_count += 1
 
         self.events.append(
             {
@@ -360,6 +367,63 @@ class PortfolioSimulator:
                 "total_value": round(value_after, 0),
             }
         )
+
+    def _rebalance(self, today: date, event_type: str) -> None:
+        """Rebalance to target weights using all listed codes."""
+        listed = self._listed_codes(today)
+        if not listed:
+            return
+        weights = self._renormalize_weights(listed)
+        self._apply_target(today, event_type, weights)
+
+    def _partial_rebalance(
+        self, today: date, band: float, restore_fraction: float
+    ) -> None:
+        """Threshold-triggered partial rebalance.
+
+        Current weights use equity-only normalization (qty*price /
+        Σ(qty*price)) to remove residual-cash bias. If max(|d_i|) > band
+        for any listed asset (d_i = current - target), move each asset to
+        n_i = t_i + clip(d_i, -band*rf, +band*rf), renormalized over listed
+        codes, then apply via _apply_target with event_type "band".
+        """
+        listed = self._listed_codes(today)
+        if not listed:
+            return
+        targets = self._renormalize_weights(listed)
+        if not targets:
+            return
+        # equity-only current weights (exclude residual cash bias)
+        equity_val: Dict[str, float] = {}
+        total_equity = 0.0
+        for c in listed:
+            q = self.qty.get(c, 0)
+            if q == 0:
+                continue
+            p = self.prices.get(c, {}).get(today)
+            if p is None:
+                continue
+            v = q * p
+            equity_val[c] = v
+            total_equity += v
+        if total_equity <= 0:
+            return
+        cur: Dict[str, float] = {
+            c: equity_val.get(c, 0.0) / total_equity for c in listed
+        }
+        dev = {c: cur[c] - targets[c] for c in listed}
+        max_abs_dev = max(abs(d) for d in dev.values())
+        if max_abs_dev <= band:
+            return
+        lo, hi = -band * restore_fraction, band * restore_fraction
+        new_w = {
+            c: targets[c] + min(max(dev[c], lo), hi) for c in listed
+        }
+        s = sum(new_w.values())
+        if s <= 0:
+            return
+        new_w = {c: w / s for c, w in new_w.items()}
+        self._apply_target(today, "band", new_w)
 
     def _weight_snapshot(self, today: date, total: float) -> Dict[str, float]:
         if total <= 0:
@@ -424,6 +488,20 @@ class PortfolioSimulator:
                 if d != first_day:
                     self._rebalance(d, "rebalance")
 
+            # 2b. hybrid strategy: quarter-end => full rebalance,
+            #     otherwise threshold-triggered partial rebalance.
+            if (
+                self.spec.strategy.startswith("hybrid")
+                and current_listed
+                and d != first_day
+            ):
+                if d in self.rebalance_set:
+                    self._rebalance(d, "rebalance")
+                elif self.spec.band is not None:
+                    self._partial_rebalance(
+                        d, self.spec.band, self.spec.restore_fraction
+                    )
+
             # 3. record equity
             value = self._current_value(d)
             self.equity_curve.append((d, value))
@@ -446,6 +524,7 @@ class PortfolioSimulator:
             "equity_curve": self.equity_curve,
             "events": self.events,
             "rebalance_count": self.rebalance_count,
+            "band_rebalance_count": self.band_rebalance_count,
             "listing_event_count": self.listing_event_count,
             "assert_failures": list(self._assert_failures),
         }
