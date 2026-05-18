@@ -29,6 +29,7 @@
 | 戦略書を改訂したい | docs/12a_戦略書改訂手順.md | target_holdings に新銘柄を追加・置換する際のチェックリスト、動作確認手順、落とし穴 |
 | デモユーザーの取引分析をしたい | reports/demo/PROMPT.md | portfolio-analysis-v2スキルによる日次運用 |
 | ポートフォリオ分析v2をしたい | .claude/skills/portfolio-analysis-v2/SKILL.md | /pf-v2（ブレインストーミング方式） |
+| ポートフォリオ計画を対話確認・管理したい | .claude/skills/my-portfolio/SKILL.md | /my-portfolio（損益/配分/銘柄変更/メールプレビュー） |
 | 今日の東証見通し・振り返り | .claude/skills/market-outlook/SKILL.md | /market-outlook（AM:朝の見通し / PM:夕方の振り返り） |
 | 東証見通し・振り返り v2 | .claude/skills/market-outlook-v2/SKILL.md | /market-outlook-v2（データ自動取得+バリデーション） |
 | 分析レポートをノート記事にしたい | .claude/skills/publish-report/SKILL.md | /publish-reportスキルで記事化 |
