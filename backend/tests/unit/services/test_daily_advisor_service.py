@@ -29,23 +29,22 @@ from src.services.daily_advisor_service import (
 from src.services.strategy_loader import StrategyLoader
 
 VALID = """---
-revision: 2026-05-16
+revision: 2026-05-18
 owner: test
 benchmark: ^N225
 review_frequency: weekly_friday
 target_buckets:
   group_a: { label_ja: "A群（コア・ヘッジ）", weight_pct: 45.00 }
-  group_b: { label_ja: "B群（日本株テーマ）", weight_pct: 45.00 }
-  cash:    { label_ja: "現金",              weight_pct: 10.00 }
+  group_b: { label_ja: "B群（日本株テーマ）", weight_pct: 40.00 }
+  cash:    { label_ja: "現金",              weight_pct: 15.00 }
 target_holdings:
-  - { code: "1547", name: "S&P500",         bucket: "group_a", weight_pct: 15.00 }
-  - { code: "1540", name: "純金",           bucket: "group_a", weight_pct: 15.00 }
+  - { code: "1655", name: "S&P500米国株",   bucket: "group_a", weight_pct: 15.00 }
+  - { code: "314A", name: "ゴールド",       bucket: "group_a", weight_pct: 15.00 }
   - { code: "1629", name: "商社",           bucket: "group_a", weight_pct: 15.00 }
-  - { code: "1306", name: "TOPIX",          bucket: "group_b", weight_pct:  9.00 }
-  - { code: "1615", name: "銀行",           bucket: "group_b", weight_pct:  9.00 }
-  - { code: "2646", name: "メタル",         bucket: "group_b", weight_pct:  9.00 }
-  - { code: "1618", name: "エネルギー資源", bucket: "group_b", weight_pct:  9.00 }
-  - { code: "200A", name: "半導体",         bucket: "group_b", weight_pct:  9.00 }
+  - { code: "1615", name: "銀行",           bucket: "group_b", weight_pct: 10.00 }
+  - { code: "2646", name: "メタル",         bucket: "group_b", weight_pct: 10.00 }
+  - { code: "1618", name: "エネルギー資源", bucket: "group_b", weight_pct: 10.00 }
+  - { code: "200A", name: "半導体",         bucket: "group_b", weight_pct: 10.00 }
 mechanical_rules:
   min_holding_months: 6
   loss_cut_pct: -20.0
@@ -245,15 +244,15 @@ class TestMinHoldingPeriod:
 
 class TestAllocationDrift:
     def test_compute_drift(self, strategy):
-        # group_a target=0.45, group_b target=0.45, cash target=0.10
+        # group_a target=0.45, group_b target=0.40, cash target=0.15
         actual = {"group_a": 0.30, "group_b": 0.45, "cash": 0.25, "other": 0.0}
         drifts = compute_allocation_drift(
             strategy=strategy, actual_buckets=actual
         )
         d_map = {d.bucket: d for d in drifts}
         assert d_map["group_a"].drift_pp == -15.0
-        assert d_map["group_b"].drift_pp == 0.0
-        assert d_map["cash"].drift_pp == 15.0
+        assert d_map["group_b"].drift_pp == 5.0
+        assert d_map["cash"].drift_pp == 10.0
         # other は actual=0 のため drift エントリは生成されない
         assert "other" not in d_map
 
@@ -364,24 +363,24 @@ class TestFingerprint:
 
 class TestClassifyBuckets:
     def test_basic_classification(self, strategy):
-        # group_a 採用銘柄: 1547/1540/1629, group_b 採用銘柄: 1306/1615/2646/1618
+        # group_a 採用銘柄: 1655/314A/1629, group_b 採用銘柄: 1615/2646/1618/200A
         holdings = [
-            {"etf_code": "1547", "current_value": 450_000.0},  # group_a
-            {"etf_code": "1306", "current_value": 450_000.0},  # group_b
+            {"etf_code": "1655", "current_value": 450_000.0},  # group_a
+            {"etf_code": "1615", "current_value": 400_000.0},  # group_b
         ]
         b = classify_buckets(
-            holdings=holdings, cash_balance=100_000.0, strategy=strategy
+            holdings=holdings, cash_balance=150_000.0, strategy=strategy
         )
         assert round(b["group_a"], 2) == 0.45
-        assert round(b["group_b"], 2) == 0.45
-        assert round(b["cash"], 2) == 0.10
+        assert round(b["group_b"], 2) == 0.40
+        assert round(b["cash"], 2) == 0.15
         assert b["other"] == 0.0
 
     def test_other_bucket_for_unlisted_codes(self, strategy):
         """採用外銘柄は other バケットに分類される."""
         holdings = [
-            {"etf_code": "1547", "current_value": 400_000.0},  # group_a
-            {"etf_code": "1306", "current_value": 400_000.0},  # group_b
+            {"etf_code": "1655", "current_value": 400_000.0},  # group_a
+            {"etf_code": "1615", "current_value": 400_000.0},  # group_b
             {"etf_code": "9999", "current_value": 100_000.0},  # 採用外 → other
         ]
         b = classify_buckets(

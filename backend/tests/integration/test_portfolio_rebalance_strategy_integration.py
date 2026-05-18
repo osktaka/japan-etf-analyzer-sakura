@@ -3,7 +3,7 @@
 
 Step 5 の完了条件:
 - docs/12_personal_strategy.md からの読み込みが成功
-- target_weights が8銘柄分すべて出力されている
+- target_weights が7銘柄分すべて出力されている
 - mechanical_rules.drift_warn_pp / drift_ok_pp が strategy 経由で正しく取得されている
 - 単純なモック portfolio で cash_deviation_pp が期待値どおり計算される
 """
@@ -52,13 +52,13 @@ class TestStrategyLoadedFromRealFile:
         assert abs(total - 100.0) < 0.01
 
     def test_target_holdings_count(self, real_strategy):
-        # 採用8銘柄（2026-05-16改訂で200AをB群に追加、B群5銘柄各9%）
-        assert len(real_strategy.target_holdings) == 8
+        # 採用7銘柄（2026-05-18改訂でA群を1655/314A/1629に整合、1306撤廃、B群4銘柄各10%）
+        assert len(real_strategy.target_holdings) == 7
 
     def test_target_holdings_codes(self, real_strategy):
         codes = {h.code for h in real_strategy.target_holdings}
-        # A群: 1547/1540/1629, B群: 1306/1615/2646/1618/200A
-        expected = {"1547", "1540", "1629", "1306", "1615", "2646", "1618", "200A"}
+        # A群: 1655/314A/1629, B群: 1615/2646/1618/200A
+        expected = {"1655", "314A", "1629", "1615", "2646", "1618", "200A"}
         assert codes == expected
 
     def test_mechanical_rules_drift_thresholds(self, real_strategy):
@@ -93,12 +93,12 @@ class TestRebalanceServiceWithRealStrategy:
         plan = service.calculate_rebalance_plan(
             user_id=1, as_of_date=date(2026, 5, 14)
         )
-        # 採用8銘柄の target_weights が strategy 値と完全一致
+        # 採用7銘柄の target_weights が strategy 値と完全一致
         expected = {h.code: h.weight_pct for h in real_strategy.target_holdings}
         assert plan.target_weights == expected
 
     def test_cash_deviation_pp_calculation(self, real_strategy):
-        """現金100%（保有ゼロ）→ cash_deviation_pp = +90.0pp（cash target=10%）."""
+        """現金100%（保有ゼロ）→ cash_deviation_pp = +85.0pp（cash target=15%）."""
         service = self._make_service(
             real_strategy,
             holdings=[],
@@ -111,8 +111,8 @@ class TestRebalanceServiceWithRealStrategy:
         plan = service.calculate_rebalance_plan(
             user_id=1, as_of_date=date(2026, 5, 14)
         )
-        # 現金 1,000,000 / 総資産 1,000,000 = 100% → target 10% → 乖離 +90pp
-        assert abs(plan.cash_deviation_pp - 90.0) < 0.01
+        # 現金 1,000,000 / 総資産 1,000,000 = 100% → target 15% → 乖離 +85pp
+        assert abs(plan.cash_deviation_pp - 85.0) < 0.01
 
     def test_strategy_drift_thresholds_propagate(self, real_strategy):
         """サービス内で参照される drift_ok_pp / drift_warn_pp が strategy 経由で取得できる."""

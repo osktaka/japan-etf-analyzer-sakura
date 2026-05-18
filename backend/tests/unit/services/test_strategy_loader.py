@@ -13,25 +13,24 @@ from src.services.strategy_loader import (
 
 
 VALID_FRONTMATTER = """---
-revision: 2026-05-16
+revision: 2026-05-18
 owner: test
 benchmark: ^N225
 review_frequency: weekly_friday
 
 target_buckets:
   group_a: { label_ja: "A群（コア・ヘッジ）", weight_pct: 45.00 }
-  group_b: { label_ja: "B群（日本株テーマ）", weight_pct: 45.00 }
-  cash:    { label_ja: "現金",              weight_pct: 10.00 }
+  group_b: { label_ja: "B群（日本株テーマ）", weight_pct: 40.00 }
+  cash:    { label_ja: "現金",              weight_pct: 15.00 }
 
 target_holdings:
-  - { code: "1547", name: "S&P500",         bucket: "group_a", weight_pct: 15.00 }
-  - { code: "1540", name: "純金",           bucket: "group_a", weight_pct: 15.00 }
+  - { code: "1655", name: "S&P500米国株",   bucket: "group_a", weight_pct: 15.00 }
+  - { code: "314A", name: "ゴールド",       bucket: "group_a", weight_pct: 15.00 }
   - { code: "1629", name: "商社",           bucket: "group_a", weight_pct: 15.00 }
-  - { code: "1306", name: "TOPIX",          bucket: "group_b", weight_pct:  9.00 }
-  - { code: "1615", name: "銀行",           bucket: "group_b", weight_pct:  9.00 }
-  - { code: "2646", name: "メタル",         bucket: "group_b", weight_pct:  9.00 }
-  - { code: "1618", name: "エネルギー資源", bucket: "group_b", weight_pct:  9.00 }
-  - { code: "200A", name: "半導体",         bucket: "group_b", weight_pct:  9.00 }
+  - { code: "1615", name: "銀行",           bucket: "group_b", weight_pct: 10.00 }
+  - { code: "2646", name: "メタル",         bucket: "group_b", weight_pct: 10.00 }
+  - { code: "1618", name: "エネルギー資源", bucket: "group_b", weight_pct: 10.00 }
+  - { code: "200A", name: "半導体",         bucket: "group_b", weight_pct: 10.00 }
 
 mechanical_rules:
   min_holding_months: 6
@@ -54,7 +53,7 @@ A群/B群モデルを採用する。
 class TestStrategyLoaderLoads:
     def test_loads_valid_frontmatter(self):
         s = StrategyLoader.loads(VALID_FRONTMATTER)
-        assert s.revision == date(2026, 5, 16)
+        assert s.revision == date(2026, 5, 18)
         assert s.owner == "test"
         assert s.benchmark == "^N225"
         assert s.review_frequency == "weekly_friday"
@@ -66,26 +65,26 @@ class TestStrategyLoaderLoads:
         assert s.target_buckets["group_a"] == BucketDef(
             code="group_a", label_ja="A群（コア・ヘッジ）", weight_pct=45.0
         )
-        assert s.target_buckets["group_b"].weight_pct == 45.0
-        assert s.target_buckets["cash"].weight_pct == 10.0
+        assert s.target_buckets["group_b"].weight_pct == 40.0
+        assert s.target_buckets["cash"].weight_pct == 15.0
 
     def test_target_holdings_parsed(self):
         s = StrategyLoader.loads(VALID_FRONTMATTER)
-        assert len(s.target_holdings) == 8
+        assert len(s.target_holdings) == 7
         h0 = s.target_holdings[0]
         assert h0 == TargetHolding(
-            code="1547", name="S&P500", bucket="group_a", weight_pct=15.0
+            code="1655", name="S&P500米国株", bucket="group_a", weight_pct=15.0
         )
         # bucket フィールドが正しく分類されている
         group_a = [h for h in s.target_holdings if h.bucket == "group_a"]
         group_b = [h for h in s.target_holdings if h.bucket == "group_b"]
         assert len(group_a) == 3
-        assert len(group_b) == 5
+        assert len(group_b) == 4
 
     def test_holdings_by_bucket(self):
         s = StrategyLoader.loads(VALID_FRONTMATTER)
         assert len(s.holdings_by_bucket("group_a")) == 3
-        assert len(s.holdings_by_bucket("group_b")) == 5
+        assert len(s.holdings_by_bucket("group_b")) == 4
         assert len(s.holdings_by_bucket("cash")) == 0
 
     def test_mechanical_rules_parsed(self):
@@ -122,15 +121,15 @@ class TestStrategyLoaderInvalid:
 
     def test_invalid_date_format(self):
         bad = VALID_FRONTMATTER.replace(
-            "revision: 2026-05-16", 'revision: "not-a-date"'
+            "revision: 2026-05-18", 'revision: "not-a-date"'
         )
         with pytest.raises(ValueError, match="Invalid date format"):
             StrategyLoader.loads(bad)
 
     def test_target_holdings_missing_field(self):
         bad = VALID_FRONTMATTER.replace(
-            '- { code: "1547", name: "S&P500",         bucket: "group_a", weight_pct: 15.00 }',
-            '- { code: "1547", bucket: "group_a", weight_pct: 15.00 }',
+            '- { code: "1655", name: "S&P500米国株",   bucket: "group_a", weight_pct: 15.00 }',
+            '- { code: "1655", bucket: "group_a", weight_pct: 15.00 }',
         )
         with pytest.raises(ValueError, match="target_holdings item missing"):
             StrategyLoader.loads(bad)
@@ -138,7 +137,7 @@ class TestStrategyLoaderInvalid:
     def test_target_buckets_sum_mismatch(self):
         """target_buckets の weight_pct 合計が100でなければエラー."""
         bad = VALID_FRONTMATTER.replace(
-            'cash:    { label_ja: "現金",              weight_pct: 10.00 }',
+            'cash:    { label_ja: "現金",              weight_pct: 15.00 }',
             'cash:    { label_ja: "現金",              weight_pct: 5.00 }',
         )
         with pytest.raises(ValueError, match="target_buckets weight_pct must sum to 100"):
@@ -157,8 +156,8 @@ class TestStrategyLoaderInvalid:
     def test_target_holdings_weight_sum_mismatch(self):
         """target_holdings の bucket 内 weight_pct 合計が target_buckets[bucket].weight_pct と一致しない."""
         bad = VALID_FRONTMATTER.replace(
-            '- { code: "1547", name: "S&P500",         bucket: "group_a", weight_pct: 15.00 }',
-            '- { code: "1547", name: "S&P500",         bucket: "group_a", weight_pct: 10.00 }',
+            '- { code: "1655", name: "S&P500米国株",   bucket: "group_a", weight_pct: 15.00 }',
+            '- { code: "1655", name: "S&P500米国株",   bucket: "group_a", weight_pct: 10.00 }',
         )
         with pytest.raises(
             ValueError,
@@ -202,8 +201,8 @@ class TestStrategyLoaderFile:
         s = StrategyLoader.load(strategy_path)
         assert s.benchmark == "^N225"
         assert set(s.target_buckets.keys()) == {"group_a", "group_b", "cash"}
-        # 採用銘柄は8銘柄
-        assert len(s.target_holdings) == 8
+        # 採用銘柄は7銘柄
+        assert len(s.target_holdings) == 7
 
     def test_load_missing_file_raises(self, tmp_path):
         with pytest.raises(FileNotFoundError):
