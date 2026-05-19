@@ -97,7 +97,7 @@ const mockETFItems = [
 
 const mockPerspectives = [
   { id: 'balance', name: 'バランス', description: 'バランスの取れたETF' },
-  { id: 'dividend', name: '高配当', description: '配当利回りが高いETF' },
+  { id: 'dividend', name: '高配当', description: '分配金利回りが高いETF' },
 ]
 
 const mockRecommendation = {
@@ -446,8 +446,8 @@ describe('TopPage', () => {
       })
     })
 
-    it('配当利回りフィルタで検索実行', async () => {
-      // FilterPanelには配当利回りの数値入力フィールドがないが、
+    it('分配金利回りフィルタで検索実行', async () => {
+      // FilterPanelには分配金利回りの数値入力フィールドがないが、
       // API経由でmin_dividend_yieldを渡すことは可能（URLパラメータから初期化）
       // テスト要件を満たすため、タグフィルタ（高配当）を代替として使用
       const mockHandleFilter = vi.fn()

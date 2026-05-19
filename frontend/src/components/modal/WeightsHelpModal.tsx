@@ -14,7 +14,7 @@ const HEADER_LABELS: Record<AxisKey, string> = {
 }
 
 const AXIS_DESCRIPTIONS: Record<AxisKey, string> = {
-  dividend: '配当利回りの高さ',
+  dividend: '分配金利回りの高さ',
   cost: '信託報酬の低さ',
   stability: '純資産総額の大きさ',
   scale: '売買代金・出来高の多さ',

@@ -26,7 +26,7 @@ describe('MetricTable', () => {
 
     expect(screen.getByText('市場価格')).toBeInTheDocument()
     expect(screen.getByText('基準価額')).toBeInTheDocument()
-    expect(screen.getByText('配当利回り')).toBeInTheDocument()
+    expect(screen.getByText('分配金利回り')).toBeInTheDocument()
     expect(screen.getByText('信託報酬')).toBeInTheDocument()
   })
 
@@ -46,7 +46,7 @@ describe('MetricTable', () => {
     expect(screen.getByText('上場日')).toBeInTheDocument()
   })
 
-  it('配当利回りがハイライトされる', () => {
+  it('分配金利回りがハイライトされる', () => {
     render(<MetricTable etf={mockETF} />)
 
     const dividendValue = screen.getByText('2.15%')

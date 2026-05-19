@@ -361,7 +361,7 @@ export function ETFTableView({
                   onClick={() => handleSort('dividend')}
                   className={`${styles.sortable} ${styles.numeric}`}
                 >
-                  配当利回り{renderSortIcon('dividend')}
+                  分配金利回り{renderSortIcon('dividend')}
                 </th>
               )}
               {(!commonColumnVisibility ||

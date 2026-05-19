@@ -39,7 +39,7 @@ export function MetricTable({
     { label: '市場価格', value: formatPrice(etf.market_price) },
     { label: '基準価額', value: formatPrice(etf.nav) },
     {
-      label: '配当利回り',
+      label: '分配金利回り',
       value: formatPercent(etf.dividend_yield),
       highlight: true,
     },

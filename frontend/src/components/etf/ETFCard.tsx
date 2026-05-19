@@ -129,7 +129,7 @@ export function ETFCard({
           <span className={styles.value}>{formatPrice(etf.market_price)}</span>
         </div>
         <div className={styles.metric}>
-          <span className={styles.label}>配当利回り</span>
+          <span className={styles.label}>分配金利回り</span>
           <span className={styles.value}>
             {formatPercent(etf.dividend_yield)}
           </span>

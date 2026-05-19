@@ -30,7 +30,7 @@ class RecommendService:
         {
             "id": "dividend",
             "name": "配当収入",
-            "description": "配当利回りが高く、定期的な配当収入を期待できる銘柄",
+            "description": "分配金利回りが高く、定期的な配当収入を期待できる銘柄",
         },
         {
             "id": "low-cost",

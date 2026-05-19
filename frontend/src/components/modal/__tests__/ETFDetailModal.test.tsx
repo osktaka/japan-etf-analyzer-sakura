@@ -127,7 +127,7 @@ describe('ETFDetailModal', () => {
 
   it('各指標が表示される', () => {
     render(<ETFDetailModal code="1306" onClose={vi.fn()} />)
-    expect(screen.getByText('配当利回り')).toBeInTheDocument()
+    expect(screen.getByText('分配金利回り')).toBeInTheDocument()
     expect(screen.getByText('信託報酬')).toBeInTheDocument()
     expect(screen.getByText('純資産総額')).toBeInTheDocument()
     expect(screen.getByText('売買代金')).toBeInTheDocument()

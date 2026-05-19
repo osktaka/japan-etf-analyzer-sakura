@@ -25,7 +25,7 @@ export function GuideRecommendPage() {
           <div className={styles.perspectiveCard} data-perspective="dividend">
             <h3 className={styles.perspectiveTitle}>配当収入</h3>
             <p className={styles.perspectiveText}>
-              配当利回り（年間配当金を株価で割った比率）が高く、定期的な配当収入を期待できる銘柄。配当金による定期収入を重視する投資家におすすめです。
+              分配金利回り（年間分配金を市場価格で割った比率）が高く、定期的な配当収入を期待できる銘柄。分配金による定期収入を重視する投資家におすすめです。
             </p>
             <div className={styles.perspectiveMetrics}>
               重視指標:
@@ -99,9 +99,9 @@ export function GuideRecommendPage() {
           <div className={styles.axisCard}>
             <h3 className={styles.axisTitle}>配当力</h3>
             <p className={styles.axisText}>
-              配当金による収益性を評価します。配当利回りが高いほどスコアが高くなります。
+              分配金による収益性を評価します。分配金利回りが高いほどスコアが高くなります。
             </p>
-            <div className={styles.axisMetric}>使用指標: 配当利回り</div>
+            <div className={styles.axisMetric}>使用指標: 分配金利回り</div>
           </div>
 
           <div className={styles.axisCard}>

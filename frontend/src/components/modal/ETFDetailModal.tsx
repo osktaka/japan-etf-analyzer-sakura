@@ -274,7 +274,7 @@ export function ETFDetailModal({
               <div className={styles.metricGroup}>
                 <h4 className={styles.groupTitle}>配当力</h4>
                 <div className={styles.metric}>
-                  <span className={styles.label}>配当利回り</span>
+                  <span className={styles.label}>分配金利回り</span>
                   <span className={styles.value}>
                     {formatPercent(data.dividend_yield)}
                   </span>

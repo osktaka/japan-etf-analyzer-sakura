@@ -15,7 +15,7 @@ vi.mock('../../../hooks', () => ({
 
 const mockPerspectives = [
   { id: 'popular', name: '人気', description: '人気のETF' },
-  { id: 'dividend', name: '高配当', description: '配当利回りが高いETF' },
+  { id: 'dividend', name: '高配当', description: '分配金利回りが高いETF' },
 ]
 
 const mockRecommendation = {

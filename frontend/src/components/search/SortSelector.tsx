@@ -10,7 +10,7 @@ interface SortOption {
 const SORT_OPTIONS: SortOption[] = [
   { value: 'code', label: '銘柄コード' },
   { value: 'name', label: '銘柄名' },
-  { value: 'dividend_yield', label: '配当利回り' },
+  { value: 'dividend_yield', label: '分配金利回り' },
   { value: 'expense_ratio', label: '信託報酬' },
   { value: 'total_assets', label: '純資産総額' },
   { value: 'score_balance', label: 'スコア（総合）' },

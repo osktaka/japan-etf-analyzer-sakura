@@ -92,7 +92,7 @@ export function CompareTable({
             ))}
           </tr>
           <tr>
-            <td>配当利回り</td>
+            <td>分配金利回り</td>
             {etfs.map((etf) => (
               <td
                 key={etf.code}

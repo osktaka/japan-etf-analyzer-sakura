@@ -88,7 +88,7 @@ describe('CompareTable', () => {
     expect(screen.getByText('￥30,100')).toBeInTheDocument()
   })
 
-  it('配当利回りが表示される', () => {
+  it('分配金利回りが表示される', () => {
     render(
       <CompareTable etfs={mockETFs} onRemove={vi.fn()} {...defaultProps} />
     )
@@ -134,7 +134,7 @@ describe('CompareTable', () => {
     expect(handleRemove).toHaveBeenCalledWith('1306')
   })
 
-  it('最良値がハイライトされる（配当利回り：高い方）', () => {
+  it('最良値がハイライトされる（分配金利回り：高い方）', () => {
     render(
       <CompareTable
         etfs={mockETFs}

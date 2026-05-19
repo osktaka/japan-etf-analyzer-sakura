@@ -24,7 +24,7 @@ interface CommonColumnDef {
 
 const COMMON_COLUMNS: CommonColumnDef[] = [
   { key: 'price', label: '株価' },
-  { key: 'dividendYield', label: '配当利回り' },
+  { key: 'dividendYield', label: '分配金利回り' },
   { key: 'expenseRatio', label: '信託報酬' },
 ]
 

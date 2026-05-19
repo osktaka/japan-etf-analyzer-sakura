@@ -45,7 +45,7 @@ describe('ETFCard', () => {
     expect(screen.getByText('TOPIX連動')).toBeInTheDocument()
   })
 
-  it('配当利回りが表示される', () => {
+  it('分配金利回りが表示される', () => {
     render(<ETFCard etf={mockETF} />)
     expect(screen.getByText('2.15%')).toBeInTheDocument()
   })

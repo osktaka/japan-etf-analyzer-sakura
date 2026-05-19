@@ -19,7 +19,7 @@ const AXIS_LABELS = {
 } as const
 
 const AXIS_DESCRIPTIONS = {
-  dividend_power: '配当利回りの高さ',
+  dividend_power: '分配金利回りの高さ',
   cost_efficiency: '信託報酬の低さ',
   scale_reliability: '純資産総額の大きさ',
   trading_quality: '売買代金・出来高の多さ',

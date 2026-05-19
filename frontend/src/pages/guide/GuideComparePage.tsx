@@ -69,7 +69,7 @@ export function GuideComparePage() {
             <div className={styles.listContent}>
               <div className={styles.listTitle}>基本指標</div>
               <div className={styles.listDescription}>
-                カテゴリ、市場価格、配当利回り（年間配当金を株価で割った比率）、信託報酬（ETFの運用管理コスト）、純資産総額（ファンドに集まっている資金の総額）、タグ。
+                カテゴリ、市場価格、分配金利回り（年間分配金を市場価格で割った比率）、信託報酬（ETFの運用管理コスト）、純資産総額（ファンドに集まっている資金の総額）、タグ。
               </div>
             </div>
           </li>
