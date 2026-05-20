@@ -162,44 +162,52 @@
    - 主な買付候補 top3（リスト）
    ===================================================================== #}
 
-{# 売買プラン概要 (Markdown) #}
+{# 売買プラン概要 (Markdown).
+   sell_top3 / buy_top3 は表示用フィルタ適用後（採用済み |drift_pp| < 2.0pp 除外）.
+   閾値を満たすアクションが0件の場合は「該当なし」を1行表示する.
+#}
 {%- macro trade_summary_md(sell_count, buy_count, sell_top3, buy_top3, next_rebalance_date, days_to_next_rebalance) -%}
 - 次回リバランス基準日: **{{ next_rebalance_date.strftime('%Y-%m-%d') }}**（あと **{{ days_to_next_rebalance }}日**）
 - 売買プラン件数: **売却 {{ sell_count }} 件 / 買付 {{ buy_count }} 件**
-{% if sell_top3 %}
 - 主な売却候補:
-{% for s in sell_top3 %}    - {{ s.etf_code }} {{ s.name }}（約{{ "{:,.0f}".format(s.amount) }}円）
-{% endfor %}
+{% if sell_top3 %}{% for s in sell_top3 %}    - {{ s.etf_code }} {{ s.name }}（約{{ "{:,.0f}".format(s.amount) }}円）
+{% endfor %}{% else %}    - 該当なし
 {% endif %}
-{% if buy_top3 %}
 - 主な買付候補:
-{% for s in buy_top3 %}    - {{ s.etf_code }} {{ s.name }}（約{{ "{:,.0f}".format(s.amount) }}円）
-{% endfor %}
+{% if buy_top3 %}{% for s in buy_top3 %}    - {{ s.etf_code }} {{ s.name }}（約{{ "{:,.0f}".format(s.amount) }}円）
+{% endfor %}{% else %}    - 該当なし
 {% endif %}
 {% if not sell_top3 and not buy_top3 and sell_count == 0 and buy_count == 0 %}
 - 売買アクションなし（次回基準日まで通常運用）。
 {% endif %}
 {%- endmacro -%}
 
-{# 売買プラン概要 (HTML) #}
+{# 売買プラン概要 (HTML).
+   sell_top3 / buy_top3 は表示用フィルタ適用後（採用済み |drift_pp| < 2.0pp 除外）.
+   閾値を満たすアクションが0件の場合は「該当なし」を1行表示する.
+#}
 {%- macro trade_summary_html(sell_count, buy_count, sell_top3, buy_top3, next_rebalance_date, days_to_next_rebalance) -%}
 <p style="margin:8px 0;">次回リバランス基準日: <strong>{{ next_rebalance_date.strftime('%Y-%m-%d') }}</strong>（あと <strong>{{ days_to_next_rebalance }}日</strong>）</p>
 <p style="margin:8px 0;">売買プラン件数: <strong>売却 {{ sell_count }} 件 / 買付 {{ buy_count }} 件</strong></p>
-{% if sell_top3 %}
 <p style="margin:8px 0 4px;font-weight:bold;font-size:14px;">主な売却候補</p>
+{% if sell_top3 %}
 <ul style="margin:0 0 8px;padding-left:20px;">
 {% for s in sell_top3 %}
 <li style="margin-bottom:4px;font-size:14px;"><strong>{{ s.etf_code }}</strong> {{ s.name }}（約{{ "{:,.0f}".format(s.amount) }}円）</li>
 {% endfor %}
 </ul>
+{% else %}
+<p style="margin:0 0 8px;color:#555;font-size:14px;">該当なし</p>
 {% endif %}
-{% if buy_top3 %}
 <p style="margin:8px 0 4px;font-weight:bold;font-size:14px;">主な買付候補</p>
+{% if buy_top3 %}
 <ul style="margin:0 0 8px;padding-left:20px;">
 {% for s in buy_top3 %}
 <li style="margin-bottom:4px;font-size:14px;"><strong>{{ s.etf_code }}</strong> {{ s.name }}（約{{ "{:,.0f}".format(s.amount) }}円）</li>
 {% endfor %}
 </ul>
+{% else %}
+<p style="margin:0 0 8px;color:#555;font-size:14px;">該当なし</p>
 {% endif %}
 {% if not sell_top3 and not buy_top3 and sell_count == 0 and buy_count == 0 %}
 <p style="margin:8px 0;color:#555;">売買アクションなし（次回基準日まで通常運用）。</p>

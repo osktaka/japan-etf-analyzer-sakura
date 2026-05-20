@@ -117,10 +117,17 @@ def _make_action(etf_code, amount):
     return a
 
 
-def _make_snapshot(etf_code, name):
+def _make_snapshot(etf_code, name, *, drift_pp: float = 5.0, is_adopted: bool = True):
+    """テスト用 HoldingSnapshot モック.
+
+    DISPLAY_THRESHOLD_PP=2.0 を超える drift_pp をデフォルトとし、
+    既存テストは表示フィルタを通過する前提で組まれている.
+    """
     s = MagicMock()
     s.etf_code = etf_code
     s.name = name
+    s.drift_pp = drift_pp
+    s.is_adopted = is_adopted
     return s
 
 
@@ -184,14 +191,21 @@ class TestPersistEveningSummary:
 
         共通化リファクタの回帰テスト. ロジックは
         ``src.services.daily_advisor_service.compute_top_n_actions`` に集約済み.
+
+        DISPLAY_THRESHOLD_PP=2.0 フィルタ導入後は、snapshot の drift_pp が
+        閾値以上のアクションのみが top3 に含まれる.
         """
-        from src.services.daily_advisor_service import compute_top_n_actions
+        from src.services.daily_advisor_service import (
+            compute_top_n_actions,
+            filter_actions_for_display,
+        )
 
         runner = _make_runner(tmp_path)
         sells = (
             _make_action("1306", 10000),
             _make_action("1615", 30000),
         )
+        # 両方とも drift_pp=5.0（デフォルト）でフィルタを通過
         snaps = (
             _make_snapshot("1306", "TOPIX"),
             _make_snapshot("1615", "銀行"),
@@ -206,9 +220,58 @@ class TestPersistEveningSummary:
 
         out_path = runner.reports_dir / "evening_summary_20260507.json"
         data = json.loads(out_path.read_text(encoding="utf-8"))
-        # compute_top_n_actions の直接出力と一致
-        expected = compute_top_n_actions(sells, snaps)
+        # フィルタ適用後の compute_top_n_actions と一致
+        filtered = filter_actions_for_display(sells, snaps, action_type="sell")
+        expected = compute_top_n_actions(filtered, snaps)
         assert data["sell_top3"] == expected
+
+    def test_filters_below_threshold_and_keeps_non_adopted(self, tmp_path):
+        """閾値未満の採用済み銘柄は JSON に残らず、採用外はスルーで残る.
+
+        sell_actions_count / buy_actions_count もフィルタ後の値で永続化される.
+        """
+        runner = _make_runner(tmp_path)
+        # 売却: 採用済み閾値未満 (除外) + 採用済み閾値以上 (残る) + 採用外 (スルーで残る)
+        sells = (
+            _make_action("A001", 1000),   # |drift|=1.9 → 除外
+            _make_action("A002", 50000),  # |drift|=5.0 → 残る
+            _make_action("X999", 500),    # 採用外 → 残る
+        )
+        # 買付: 採用済み閾値未満 (除外) + 採用済み閾値以上 (残る)
+        buys = (
+            _make_action("B001", 1000),   # |drift|=1.9 → 除外
+            _make_action("B002", 50000),  # |drift|=5.0 → 残る
+        )
+        snaps = (
+            _make_snapshot("A001", "Aほぼ均衡", drift_pp=1.9, is_adopted=True),
+            _make_snapshot("A002", "A超過", drift_pp=5.0, is_adopted=True),
+            _make_snapshot("X999", "採用外", drift_pp=0.5, is_adopted=False),
+            _make_snapshot("B001", "Bほぼ均衡", drift_pp=-1.9, is_adopted=True),
+            _make_snapshot("B002", "B不足", drift_pp=-5.0, is_adopted=True),
+        )
+        plan = _make_plan(
+            sell_actions=sells,
+            buy_actions=buys,
+            holdings_snapshots=snaps,
+        )
+
+        runner._persist_evening_summary(date(2026, 5, 7), plan)
+
+        out_path = runner.reports_dir / "evening_summary_20260507.json"
+        data = json.loads(out_path.read_text(encoding="utf-8"))
+
+        # count はフィルタ後の値（sell: 2 件 = A002 + X999、buy: 1 件 = B002）
+        assert data["sell_actions_count"] == 2
+        assert data["buy_actions_count"] == 1
+
+        sell_codes = [s["etf_code"] for s in data["sell_top3"]]
+        assert "A002" in sell_codes
+        assert "X999" in sell_codes  # 採用外はスルー
+        assert "A001" not in sell_codes  # 閾値未満は除外
+
+        buy_codes = [b["etf_code"] for b in data["buy_top3"]]
+        assert "B002" in buy_codes
+        assert "B001" not in buy_codes  # 閾値未満は除外
 
 
 # ==============================================================

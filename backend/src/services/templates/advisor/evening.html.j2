@@ -56,7 +56,7 @@
 {% endif %}
 
 <h2 style="font-size:18px;margin:24px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;">売買プラン概要</h2>
-{{ trade_summary_html(rebalance_plan.sell_actions|length, rebalance_plan.buy_actions|length, sell_top3, buy_top3, rebalance_plan.next_rebalance_date, rebalance_plan.days_to_next_rebalance) }}
+{{ trade_summary_html(sell_filtered_count, buy_filtered_count, sell_top3, buy_top3, rebalance_plan.next_rebalance_date, rebalance_plan.days_to_next_rebalance) }}
 
 {% if rebalance_plan.is_rebalance_day or rebalance_plan.days_to_next_rebalance <= rebalance_detail_threshold_days %}
 {% if rebalance_plan.is_rebalance_day %}

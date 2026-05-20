@@ -97,6 +97,10 @@ class NotificationRenderer:
             # 夕方メール: 売買プラン概要セクション（常時表示）の top3
             "sell_top3": ctx.sell_top3,
             "buy_top3": ctx.buy_top3,
+            # 夕方メール: 「売却 X 件 / 買付 Y 件」表示用（filter 適用後の総数、
+            # top3 と整合させるため）
+            "sell_filtered_count": ctx.sell_filtered_count,
+            "buy_filtered_count": ctx.buy_filtered_count,
             # 夕方メール: 詳細表ガード閾値（is_rebalance_day or
             # days_to_next_rebalance <= threshold で詳細表を表示）
             "rebalance_detail_threshold_days": ctx.rebalance_detail_threshold_days,

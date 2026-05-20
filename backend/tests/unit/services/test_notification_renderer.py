@@ -557,6 +557,7 @@ class TestEveningTemplateRebalancePlan:
             buy_top3=(
                 {"etf_code": "2559", "name": "オルカン", "amount": 15000},
             ),
+            buy_filtered_count=1,
             rebalance_detail_threshold_days=3,
         )
         md, html = renderer.render(ctx)
@@ -659,3 +660,107 @@ class TestEveningTemplateDetailGating:
         md, _ = renderer.render(ctx)
         assert "売買プラン概要" in md
         assert "本日のリバランス実行" in md
+
+
+# ============================================================
+# DISPLAY_THRESHOLD_PP=2.0 フィルタ導入に伴う「該当なし」表示の検証
+# ============================================================
+
+
+class TestEveningTradeSummaryNoCandidates:
+    """sell_top3 / buy_top3 が空のとき「該当なし」が表示される."""
+
+    def _plan_without_actions(self):
+        """RebalancePlan モック（sell_actions / buy_actions も空）."""
+        from src.services.portfolio_rebalance_service import RebalancePlan
+
+        return RebalancePlan(
+            target_weights={"2559": 15.0},
+            current_weights={"2559": 15.0, "CASH": 10.0},
+            deviations={"2559": 0.0},
+            sell_actions=(),
+            buy_actions=(),
+            total_asset=1_000_000.0,
+            target_cash=100_000.0,
+            target_cash_pct=10.0,
+            current_cash=100_000.0,
+            cash_deviation_pp=0.0,
+            days_to_next_rebalance=10,
+            next_rebalance_date=date(2026, 6, 30),
+            is_rebalance_day=False,
+            daily_pnl_pct=None,
+            holdings_snapshots=(),
+            warn_count=0,
+            critical_count=0,
+        )
+
+    def test_evening_renders_no_candidates_md(self, renderer):
+        """sell_top3 / buy_top3 が両方空 → MD 側に「該当なし」が 2 回出る."""
+        plan = self._plan_without_actions()
+        ctx = _evening_ctx(
+            rebalance_plan=plan,
+            sell_top3=(),
+            buy_top3=(),
+            rebalance_detail_threshold_days=3,
+        )
+        md, _ = renderer.render(ctx)
+        assert "売買プラン概要" in md
+        # 主な売却候補・主な買付候補それぞれの直下に「該当なし」
+        assert md.count("該当なし") >= 2
+
+    def test_evening_renders_no_candidates_html(self, renderer):
+        """sell_top3 / buy_top3 が両方空 → HTML 側にも「該当なし」が 2 回出る."""
+        plan = self._plan_without_actions()
+        ctx = _evening_ctx(
+            rebalance_plan=plan,
+            sell_top3=(),
+            buy_top3=(),
+            rebalance_detail_threshold_days=3,
+        )
+        _, html = renderer.render(ctx)
+        assert "売買プラン概要" in html
+        assert html.count("該当なし") >= 2
+
+    def test_evening_renders_no_candidates_for_sell_only(self, renderer):
+        """sell_top3 空 / buy_top3 ありの混在ケース."""
+        plan = self._plan_without_actions()
+        ctx = _evening_ctx(
+            rebalance_plan=plan,
+            sell_top3=(),
+            buy_top3=(
+                {"etf_code": "2559", "name": "オルカン", "amount": 50000},
+            ),
+            rebalance_detail_threshold_days=3,
+        )
+        md, _ = renderer.render(ctx)
+        # 売却側に「該当なし」が出て、買付側には 2559 が出る
+        assert "該当なし" in md
+        assert "2559" in md
+
+
+class TestMorningPreviousSummaryNoCandidates:
+    """morning の前夜サマリで sell_top3 / buy_top3 が空のとき「該当なし」が出る."""
+
+    def test_morning_renders_no_candidates_when_top3_empty(self, renderer):
+        """sell_actions_count / buy_actions_count > 0 だが top3 配列が空のケース.
+
+        フィルタが入った後の朝メールで実際に起こりうるシナリオではないが、
+        テンプレ側の分岐網羅として、top3 が空でも render が壊れないことを確認.
+        """
+        # 件数 > 0 で top3 を空にする（テンプレ分岐検証用の人工的なデータ）
+        summary = {
+            "date": "2026-05-06",
+            "is_rebalance_day": False,
+            "next_rebalance_date": "2026-06-30",
+            "days_to_next_rebalance": 54,
+            "sell_actions_count": 1,
+            "buy_actions_count": 1,
+            "sell_top3": [],
+            "buy_top3": [],
+        }
+        ctx = _morning_ctx(previous_evening_summary=summary)
+        md, html = renderer.render(ctx)
+        assert "前夜決定事項リマインダー" in md
+        # 売却候補・買付候補それぞれに「該当なし」が出る
+        assert md.count("該当なし") >= 2
+        assert html.count("該当なし") >= 2

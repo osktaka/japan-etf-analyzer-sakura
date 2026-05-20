@@ -35,7 +35,7 @@
 
 ## 売買プラン概要
 
-{{ trade_summary_md(rebalance_plan.sell_actions|length, rebalance_plan.buy_actions|length, sell_top3, buy_top3, rebalance_plan.next_rebalance_date, rebalance_plan.days_to_next_rebalance) }}
+{{ trade_summary_md(sell_filtered_count, buy_filtered_count, sell_top3, buy_top3, rebalance_plan.next_rebalance_date, rebalance_plan.days_to_next_rebalance) }}
 
 {% if rebalance_plan.is_rebalance_day or rebalance_plan.days_to_next_rebalance <= rebalance_detail_threshold_days %}
 {% if rebalance_plan.is_rebalance_day %}

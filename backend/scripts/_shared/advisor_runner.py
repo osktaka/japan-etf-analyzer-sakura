@@ -383,8 +383,20 @@ class AdvisorRunner:
         共通化（夕方メールの売買プラン概要セクションも同関数を利用）.
         """
         try:
-            from src.services.daily_advisor_service import compute_top_n_actions
+            from src.services.daily_advisor_service import (
+                compute_top_n_actions,
+                filter_actions_for_display,
+            )
 
+            # 表示用フィルタを適用（採用済み |drift_pp| < 2.0pp は除外、採用外 sell は通過）.
+            # 件数 (sell_actions_count / buy_actions_count) も top3 と整合させるため
+            # フィルタ後の値で永続化する（夕方メールの「件数」表示と一致させる）.
+            filtered_sells = filter_actions_for_display(
+                plan.sell_actions, plan.holdings_snapshots, action_type="sell",
+            )
+            filtered_buys = filter_actions_for_display(
+                plan.buy_actions, plan.holdings_snapshots, action_type="buy",
+            )
             summary_dict: Dict[str, Any] = {
                 "date": today.isoformat(),
                 "is_rebalance_day": bool(plan.is_rebalance_day),
@@ -393,13 +405,13 @@ class AdvisorRunner:
                     if plan.next_rebalance_date is not None else None
                 ),
                 "days_to_next_rebalance": int(plan.days_to_next_rebalance),
-                "sell_actions_count": len(plan.sell_actions),
-                "buy_actions_count": len(plan.buy_actions),
+                "sell_actions_count": len(filtered_sells),
+                "buy_actions_count": len(filtered_buys),
                 "sell_top3": compute_top_n_actions(
-                    plan.sell_actions, plan.holdings_snapshots
+                    filtered_sells, plan.holdings_snapshots
                 ),
                 "buy_top3": compute_top_n_actions(
-                    plan.buy_actions, plan.holdings_snapshots
+                    filtered_buys, plan.holdings_snapshots
                 ),
             }
             out_path = (

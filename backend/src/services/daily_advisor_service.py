@@ -26,10 +26,18 @@ logger = logging.getLogger(__name__)
 # 夕方サマリ／朝リマインダー／概要セクションで共通利用する上位件数
 TOP_N = 3
 
+# 売買候補 top3 / 件数の表示用フィルタ閾値（drift_pp の絶対値、pp 単位）.
+# 採用済み銘柄でこの閾値を下回るアクションは「端数調整レベル」とみなし、
+# 概要セクション・件数・前夜サマリ JSON から除外する.
+# 採用外保有（is_adopted=False）は閾値スルー（戦略違反のため常時表示）.
+# 詳細表（trade_actions_md/html）は閾値を適用せず全件表示する.
+DISPLAY_THRESHOLD_PP = 2.0
+
 # Re-export for backward compatibility
 __all__ = [
     "AllocationDrift",
     "BuyAction",
+    "DISPLAY_THRESHOLD_PP",
     "NotificationContext",
     "RuleTrigger",
     "SellAction",
@@ -45,9 +53,56 @@ __all__ = [
     "compute_top_n_actions",
     "context_to_payload",
     "evaluate_mechanical_rules",
+    "filter_actions_for_display",
     "is_weekly_review_day",
     "make_fingerprint",
 ]
+
+
+def filter_actions_for_display(
+    actions,
+    holdings_snapshots,
+    *,
+    action_type: str,
+    threshold_pp: float = DISPLAY_THRESHOLD_PP,
+) -> List[Any]:
+    """売買アクション一覧を「表示用」にフィルタリング.
+
+    端数調整レベル（``|drift_pp| < threshold_pp``）の採用済み銘柄は除外し、
+    ユーザーが「今、本当にやるべき売買」を識別しやすくする.
+
+    - ``action_type="sell"``: 採用外（``is_adopted=False``）は無条件通過.
+      採用済みは ``|drift_pp| >= threshold_pp`` のときのみ通過.
+    - ``action_type="buy"``: ``|drift_pp| >= threshold_pp`` のときのみ通過.
+    - ``holdings_snapshots`` に code が存在しないアクションは通過（保守的フォールバック）.
+
+    Args:
+        actions: ``RebalanceAction`` 互換のイテラブル（``etf_code`` 属性を持つ）.
+        holdings_snapshots: ``HoldingSnapshot`` 互換のイテラブル.
+            ``etf_code`` / ``is_adopted`` / ``drift_pp`` 属性を逆引きに使用.
+        action_type: ``"sell"`` または ``"buy"``.
+        threshold_pp: 表示用閾値（pp 単位、絶対値で比較）. デフォルトは
+            ``DISPLAY_THRESHOLD_PP`` (=2.0).
+
+    Returns:
+        フィルタ後のアクション一覧（元の順序を保持、型はそのまま）.
+    """
+    snap_by_code = {s.etf_code: s for s in (holdings_snapshots or ())}
+    result: List[Any] = []
+    for a in actions or ():
+        snap = snap_by_code.get(a.etf_code)
+        if snap is None:
+            # snapshot 欠落: 判定不能 → 保守的に通過
+            result.append(a)
+            continue
+        # 採用外 sell は閾値スルー（戦略違反のため常時表示）
+        if action_type == "sell" and not snap.is_adopted:
+            result.append(a)
+            continue
+        # 閾値判定（採用済み sell / buy 共通）
+        if abs(snap.drift_pp) >= threshold_pp:
+            result.append(a)
+    return result
 
 
 def compute_top_n_actions(actions, holdings_snapshots, n: int = TOP_N) -> List[Dict[str, Any]]:

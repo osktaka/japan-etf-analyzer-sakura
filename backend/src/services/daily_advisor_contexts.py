@@ -115,24 +115,41 @@ def build_evening_context(
             None の場合はリバランス情報なしで構築する.
     """
     # 循環import 回避: 関数内 import
-    from src.services.daily_advisor_service import compute_top_n_actions
+    from src.services.daily_advisor_service import (
+        compute_top_n_actions,
+        filter_actions_for_display,
+    )
 
     warn_pp = strategy.mechanical_rules.drift_warn_pp
     normalized = _normalize_drifts(drifts, warn_threshold_pp=warn_pp)
     if rebalance_plan is not None:
+        filtered_sells = filter_actions_for_display(
+            rebalance_plan.sell_actions,
+            rebalance_plan.holdings_snapshots,
+            action_type="sell",
+        )
+        filtered_buys = filter_actions_for_display(
+            rebalance_plan.buy_actions,
+            rebalance_plan.holdings_snapshots,
+            action_type="buy",
+        )
         sell_top3 = tuple(
             compute_top_n_actions(
-                rebalance_plan.sell_actions, rebalance_plan.holdings_snapshots
+                filtered_sells, rebalance_plan.holdings_snapshots
             )
         )
         buy_top3 = tuple(
             compute_top_n_actions(
-                rebalance_plan.buy_actions, rebalance_plan.holdings_snapshots
+                filtered_buys, rebalance_plan.holdings_snapshots
             )
         )
+        sell_filtered_count = len(filtered_sells)
+        buy_filtered_count = len(filtered_buys)
     else:
         sell_top3 = ()
         buy_top3 = ()
+        sell_filtered_count = 0
+        buy_filtered_count = 0
     return NotificationContext(
         kind="evening",
         today=today,
@@ -151,6 +168,8 @@ def build_evening_context(
         rebalance_plan=rebalance_plan,
         sell_top3=sell_top3,
         buy_top3=buy_top3,
+        sell_filtered_count=sell_filtered_count,
+        buy_filtered_count=buy_filtered_count,
         rebalance_detail_threshold_days=REBALANCE_DETAIL_THRESHOLD_DAYS,
     )
 

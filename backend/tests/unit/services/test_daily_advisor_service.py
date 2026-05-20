@@ -788,7 +788,12 @@ class TestEveningContextRebalanceSummary:
         assert ctx.buy_top3 == ()
 
     def test_context_populates_top3_from_plan(self, strategy):
-        """rebalance_plan を渡すと sell_top3 / buy_top3 が populate される."""
+        """rebalance_plan を渡すと sell_top3 / buy_top3 が populate される.
+
+        DISPLAY_THRESHOLD_PP=2.0 フィルタ導入後は、snapshot の drift_pp が
+        閾値以上であるアクションのみが top3 に残る. このテストでは
+        sell=+3.0pp / buy=-3.0pp で両方とも閾値を超えるよう設定.
+        """
         from src.services.portfolio_rebalance_service import (
             HoldingSnapshot,
             RebalanceAction,
@@ -799,13 +804,13 @@ class TestEveningContextRebalanceSummary:
             HoldingSnapshot(
                 etf_code="1306", name="TOPIX", quantity=1.0,
                 current_price=1000.0, current_value=1000.0, pnl_pct=0.0,
-                target_pct=9.0, actual_pct=9.0, drift_pp=0.0,
+                target_pct=9.0, actual_pct=12.0, drift_pp=3.0,
                 classification="OK", is_adopted=True,
             ),
             HoldingSnapshot(
                 etf_code="2559", name="オルカン", quantity=1.0,
                 current_price=15000.0, current_value=15000.0, pnl_pct=0.0,
-                target_pct=15.0, actual_pct=15.0, drift_pp=0.0,
+                target_pct=15.0, actual_pct=12.0, drift_pp=-3.0,
                 classification="OK", is_adopted=True,
             ),
         )
@@ -860,3 +865,162 @@ class TestEveningContextRebalanceSummary:
         assert len(ctx.buy_top3) == 1
         assert ctx.buy_top3[0]["etf_code"] == "2559"
         assert ctx.buy_top3[0]["amount"] == 45000
+
+    def test_context_filters_below_threshold_actions(self, strategy):
+        """DISPLAY_THRESHOLD_PP=2.0 未満の採用済み銘柄は top3 から除外される.
+
+        - 採用済み |drift_pp|=1.9pp の sell/buy は除外
+        - 採用済み |drift_pp|>=2.0pp は残る
+        - 採用外保有 (is_adopted=False) の sell は閾値スルー
+        """
+        from src.services.portfolio_rebalance_service import (
+            HoldingSnapshot,
+            RebalanceAction,
+            RebalancePlan,
+        )
+
+        snapshots = (
+            # 採用済み・閾値未満 sell（除外対象）
+            HoldingSnapshot(
+                etf_code="A001", name="Aほぼ均衡", quantity=1.0,
+                current_price=1000.0, current_value=1000.0, pnl_pct=0.0,
+                target_pct=10.0, actual_pct=11.9, drift_pp=1.9,
+                classification="OK", is_adopted=True,
+            ),
+            # 採用済み・閾値以上 sell（残る）
+            HoldingSnapshot(
+                etf_code="A002", name="A超過", quantity=1.0,
+                current_price=1000.0, current_value=1000.0, pnl_pct=0.0,
+                target_pct=10.0, actual_pct=15.0, drift_pp=5.0,
+                classification="WARN", is_adopted=True,
+            ),
+            # 採用外（戦略違反、閾値スルーで残る）
+            HoldingSnapshot(
+                etf_code="X999", name="採用外", quantity=1.0,
+                current_price=1000.0, current_value=1000.0, pnl_pct=0.0,
+                target_pct=0.0, actual_pct=0.5, drift_pp=0.5,
+                classification="CRITICAL", is_adopted=False,
+            ),
+            # 採用済み・閾値未満 buy（除外対象）
+            HoldingSnapshot(
+                etf_code="B001", name="Bほぼ均衡", quantity=1.0,
+                current_price=1000.0, current_value=1000.0, pnl_pct=0.0,
+                target_pct=10.0, actual_pct=8.1, drift_pp=-1.9,
+                classification="OK", is_adopted=True,
+            ),
+            # 採用済み・閾値以上 buy（残る）
+            HoldingSnapshot(
+                etf_code="B002", name="B不足", quantity=1.0,
+                current_price=1000.0, current_value=1000.0, pnl_pct=0.0,
+                target_pct=10.0, actual_pct=5.0, drift_pp=-5.0,
+                classification="WARN", is_adopted=True,
+            ),
+        )
+        sells = (
+            RebalanceAction(etf_code="A001", action_type="sell", quantity=1,
+                            amount=1000.0, reason="ほぼ均衡"),
+            RebalanceAction(etf_code="A002", action_type="sell", quantity=5,
+                            amount=50000.0, reason="超過"),
+            RebalanceAction(etf_code="X999", action_type="sell", quantity=1,
+                            amount=500.0, reason="採用外"),
+        )
+        buys = (
+            RebalanceAction(etf_code="B001", action_type="buy", quantity=1,
+                            amount=1000.0, reason="ほぼ均衡"),
+            RebalanceAction(etf_code="B002", action_type="buy", quantity=5,
+                            amount=50000.0, reason="不足"),
+        )
+        plan = RebalancePlan(
+            target_weights={}, current_weights={}, deviations={},
+            sell_actions=sells, buy_actions=buys,
+            total_asset=1_000_000.0,
+            target_cash=100_000.0, target_cash_pct=10.0,
+            current_cash=100_000.0, cash_deviation_pp=0.0,
+            days_to_next_rebalance=10,
+            next_rebalance_date=date(2026, 6, 30),
+            is_rebalance_day=False, daily_pnl_pct=None,
+            holdings_snapshots=snapshots, warn_count=0, critical_count=0,
+        )
+
+        ctx = build_evening_context(
+            strategy=strategy,
+            today=date(2026, 6, 20),
+            user_id="test",
+            summary=self._evening_summary(),
+            drifts=(),
+            triggers=(),
+            rebalance_plan=plan,
+        )
+
+        sell_codes = [s["etf_code"] for s in ctx.sell_top3]
+        # 採用済み閾値以上 + 採用外 のみ残る
+        assert "A002" in sell_codes
+        assert "X999" in sell_codes  # 採用外はスルー
+        assert "A001" not in sell_codes  # 閾値未満は除外
+
+        buy_codes = [b["etf_code"] for b in ctx.buy_top3]
+        assert "B002" in buy_codes
+        assert "B001" not in buy_codes  # 閾値未満は除外
+
+
+# ============================================================
+# filter_actions_for_display
+# ============================================================
+
+
+class _StubFilterSnapshot:
+    """is_adopted / drift_pp を持つ最小スナップショット."""
+    def __init__(self, etf_code: str, drift_pp: float, is_adopted: bool):
+        self.etf_code = etf_code
+        self.drift_pp = drift_pp
+        self.is_adopted = is_adopted
+
+
+class TestFilterActionsForDisplay:
+    def test_non_adopted_sell_passes_through(self):
+        """採用外 (is_adopted=False) の sell は閾値スルーで通過."""
+        from src.services.daily_advisor_service import filter_actions_for_display
+
+        actions = [_StubAction("X999", 500.0)]
+        snaps = [_StubFilterSnapshot("X999", drift_pp=0.5, is_adopted=False)]
+        result = filter_actions_for_display(actions, snaps, action_type="sell")
+        assert len(result) == 1
+        assert result[0].etf_code == "X999"
+
+    def test_adopted_just_under_threshold_excluded(self):
+        """採用済み |drift_pp|=1.9pp は閾値未満で除外."""
+        from src.services.daily_advisor_service import filter_actions_for_display
+
+        actions = [_StubAction("A001", 1000.0)]
+        snaps = [_StubFilterSnapshot("A001", drift_pp=1.9, is_adopted=True)]
+        # sell も buy も除外される
+        assert filter_actions_for_display(actions, snaps, action_type="sell") == []
+        assert filter_actions_for_display(actions, snaps, action_type="buy") == []
+
+    def test_adopted_at_threshold_boundary_passes(self):
+        """採用済み |drift_pp|=2.0pp ちょうど（境界）は通過."""
+        from src.services.daily_advisor_service import filter_actions_for_display
+
+        actions = [_StubAction("A002", 1000.0)]
+        # +2.0pp で sell, -2.0pp で buy のいずれも >= 閾値で通過
+        snaps_pos = [_StubFilterSnapshot("A002", drift_pp=2.0, is_adopted=True)]
+        snaps_neg = [_StubFilterSnapshot("A002", drift_pp=-2.0, is_adopted=True)]
+        assert len(
+            filter_actions_for_display(actions, snaps_pos, action_type="sell")
+        ) == 1
+        assert len(
+            filter_actions_for_display(actions, snaps_neg, action_type="buy")
+        ) == 1
+
+    def test_snapshot_missing_passes_through(self):
+        """snapshot に該当 code が無い場合は保守的に通過."""
+        from src.services.daily_advisor_service import filter_actions_for_display
+
+        actions = [_StubAction("ZZZZ", 500.0)]
+        # snapshot は空
+        result = filter_actions_for_display(actions, (), action_type="sell")
+        assert len(result) == 1
+        assert result[0].etf_code == "ZZZZ"
+        # buy 側でも同じ挙動
+        result_buy = filter_actions_for_display(actions, (), action_type="buy")
+        assert len(result_buy) == 1

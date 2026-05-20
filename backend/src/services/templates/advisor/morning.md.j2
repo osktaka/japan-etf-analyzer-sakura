@@ -46,15 +46,13 @@
 - 本日は四半期末リバランス基準日。詳細は前夜の夕方レポート参照。
 {% elif (previous_evening_summary.sell_actions_count or 0) > 0 or (previous_evening_summary.buy_actions_count or 0) > 0 %}
 - 夕方レポート策定の売買プラン: 売却 {{ previous_evening_summary.sell_actions_count }} 件 / 買付 {{ previous_evening_summary.buy_actions_count }} 件（詳細は夕方レポート参照）
-{% if previous_evening_summary.sell_top3 %}
 - 主な売却候補:
-{% for s in previous_evening_summary.sell_top3 %}    - {{ s.etf_code }} {{ s.name }}（約{{ "{:,.0f}".format(s.amount) }}円）
-{% endfor %}
+{% if previous_evening_summary.sell_top3 %}{% for s in previous_evening_summary.sell_top3 %}    - {{ s.etf_code }} {{ s.name }}（約{{ "{:,.0f}".format(s.amount) }}円）
+{% endfor %}{% else %}    - 該当なし
 {% endif %}
-{% if previous_evening_summary.buy_top3 %}
 - 主な買付候補:
-{% for s in previous_evening_summary.buy_top3 %}    - {{ s.etf_code }} {{ s.name }}（約{{ "{:,.0f}".format(s.amount) }}円）
-{% endfor %}
+{% if previous_evening_summary.buy_top3 %}{% for s in previous_evening_summary.buy_top3 %}    - {{ s.etf_code }} {{ s.name }}（約{{ "{:,.0f}".format(s.amount) }}円）
+{% endfor %}{% else %}    - 該当なし
 {% endif %}
 {% else %}
 - 前夜時点で売買アクションなし（通常運用）。

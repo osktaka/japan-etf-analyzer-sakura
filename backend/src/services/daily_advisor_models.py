@@ -109,10 +109,18 @@ class NotificationContext:
     previous_evening_summary: Optional[Dict[str, Any]] = None
 
     # 夕方メール用: 売買プラン概要セクション（常時表示）の top3 一覧.
-    # ``compute_top_n_actions(plan.sell_actions, plan.holdings_snapshots)`` の戻り値.
+    # ``filter_actions_for_display`` で表示用フィルタ（``DISPLAY_THRESHOLD_PP`` 未満
+    # の採用済み銘柄を除外）を適用後、``compute_top_n_actions`` で金額降順上位 3 件.
     # rebalance_plan が None のときは空タプル（テンプレ側でセクションごと skip）.
     sell_top3: Tuple[Dict[str, Any], ...] = ()
     buy_top3: Tuple[Dict[str, Any], ...] = ()
+
+    # 夕方メール用: 売買プラン概要セクションの「件数」表示用.
+    # ``filter_actions_for_display`` 適用後のアクション件数（top3 と同じソース）.
+    # テンプレ側の「売却 X 件 / 買付 Y 件」表示と top3 / 件数を一致させるために使用.
+    # rebalance_plan が None のときは 0.
+    sell_filtered_count: int = 0
+    buy_filtered_count: int = 0
 
     # 夕方メール用: 詳細表（trade_actions_md/html）を表示する閾値（日数）.
     # ``rebalance_plan.is_rebalance_day`` または
