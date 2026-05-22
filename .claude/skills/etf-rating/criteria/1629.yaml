@@ -1,0 +1,440 @@
+code: "1629"
+name: "NEXT FUNDS TOPIX-17 商社・卸売"
+version: "2026-05-22_v1"
+horizon: "中期（3〜12ヶ月）"
+sector: "商社・卸売"
+benchmark_index: "TOPIX-17 商社・卸売"
+top_holdings:
+  - "三菱商事 約23.5%"
+  - "三井物産 約18.8%"
+  - "伊藤忠商事 約17.0%"
+  - "丸紅 約10.2%"
+  - "住友商事 約8.9%"
+notes: |
+  5大商社で約78%を占める高集中ETF。利益構造はLNG・原油権益・銅・鉄鉱石が主軸で、コモディティ複合バスケット感応度が極めて高い。
+  USD/JPY円安と中国マクロも主要ドライバー。2020/8 Buffett参入以降、新NISA高配当株マネーのアンカー銘柄化。
+  2026-04-01 に 500:1 分割実施済（is_chart_applied 確認済 / 価格は ChartService API 経由必須）。
+  最大DD は 2024-07-17 → 2024-08-05 の -31.05%（円キャリー巻き戻し）。バリュエーション PBR 2.0倍超で「先取り疲れ」傾向。
+
+top5_drivers: ["A-1", "A-2", "A-5", "A-6", "A-3"]
+top5_risk_drivers: ["B-1", "B-2", "B-8", "B-9", "B-3"]
+
+# ============================================================
+# 上昇条件（A-1〜A-10）
+# ============================================================
+upside_conditions:
+  - id: "A-1"
+    description: "コモディティ複合（原油・LNG・銅・鉄鉱石・石炭）"
+    type: "leading"
+    thresholds:
+      brent_oil_usd:
+        strong_bullish: ">=100"
+        bullish: ">=85"
+        neutral: "70-85"
+        bearish: "<70"
+      jkm_lng_usd:
+        strong_bullish: ">=15"
+        bullish: ">=12"
+        neutral: "8-12"
+        bearish: "<8"
+      copper_usd_lb:
+        strong_bullish: ">=5.0"
+        bullish: ">=4.0"
+        neutral: "3.5-4.0"
+        bearish: "<3.5"
+      iron_ore_usd_t:
+        strong_bullish: ">=120"
+        bullish: ">=100"
+        neutral: "90-100"
+        bearish: "<90"
+    data_sources:
+      - "WebSearch:Brent原油 価格 直近水準"
+      - "WebSearch:WTI原油 価格"
+      - "WebSearch:JKM LNG 価格"
+      - "WebSearch:銅 LME 価格"
+      - "WebSearch:鉄鉱石 Platts 62 価格"
+      - "WebSearch:Newcastle 石炭 価格"
+    past_cases:
+      - "2010-11 資源ブーム"
+      - "2021-22 スーパーサイクル"
+      - "2022/8 JKM $52超（ウクライナショック）"
+
+  - id: "A-2"
+    description: "USD/JPY円安（円換算ベース利益拡大）"
+    type: "leading"
+    thresholds:
+      usd_jpy:
+        strong_bullish: ">=155"
+        bullish: ">=145"
+        neutral: "135-145"
+        bearish: "<135"
+    data_sources:
+      - "WebSearch:ドル円 為替 直近"
+      - "WebSearch:日銀 政策金利"
+      - "WebSearch:FRB 利下げ 予想"
+    past_cases:
+      - "2012-15 アベノミクス（80→125円）"
+      - "2022-24 円安進行（115→160円）"
+
+  - id: "A-3"
+    description: "中国マクロ（PMI拡大・不動産下げ止まり・財政出動）"
+    type: "leading"
+    thresholds:
+      caixin_manufacturing_pmi:
+        strong_bullish: ">=52"
+        bullish: ">=50.5"
+        neutral: "49.5-50.5"
+        bearish: "<49.5"
+    data_sources:
+      - "WebSearch:中国 製造業 PMI 直近"
+      - "WebSearch:中国 不動産 70都市 価格"
+      - "WebSearch:米中 貿易 関税 動向"
+    past_cases:
+      - "2010-11 中国景気拡張"
+      - "2017-18 中国回復局面"
+      - "2024 米中$300億関税削減枠組み"
+
+  - id: "A-4"
+    description: "米国マクロ（景気拡張継続）"
+    type: "lagging"
+    thresholds:
+      ism_manufacturing:
+        strong_bullish: ">=55"
+        bullish: ">=50"
+        neutral: "47-50"
+        bearish: "<47"
+    data_sources:
+      - "WebSearch:ISM製造業 PMI 米国"
+      - "WebSearch:米国 雇用統計 NFP 直近"
+      - "WebSearch:FRB FF金利 据え置き 利下げ"
+    past_cases:
+      - "2017-19 拡張期"
+      - "2023-24 ソフトランディング"
+
+  - id: "A-5"
+    description: "Buffett/Berkshire 5大商社買い増し継続"
+    type: "lagging"
+    thresholds:
+      avg_stake_pct:
+        strong_bullish: ">=10"
+        bullish: ">=8"
+        neutral: "6-8"
+        bearish: "<6"
+    data_sources:
+      - "WebSearch:Buffett 5大商社 持株比率 直近"
+      - "WebSearch:Berkshire Hathaway 13F"
+      - "WebSearch:Greg Abel 日本商社 方針"
+    past_cases:
+      - "2020/8 初回5%"
+      - "2023/4 追加買い増し"
+      - "2025/3 約10%到達"
+      - "2026/5 5社全て10%超達成"
+
+  - id: "A-6"
+    description: "自社株買い・累進配当・PBR1倍是正"
+    type: "leading"
+    thresholds:
+      total_payout_ratio:
+        strong_bullish: ">=60"
+        bullish: ">=50"
+        neutral: "40-50"
+        bearish: "<40"
+    data_sources:
+      - "WebSearch:三菱商事 自社株買い"
+      - "WebSearch:伊藤忠 総還元性向"
+      - "WebSearch:5大商社 累進配当 増配"
+    past_cases:
+      - "2023 各社累進配当宣言"
+      - "2024 三菱1兆円自社株買い枠"
+      - "2026 5社合計6,400億円超の新規枠"
+
+  - id: "A-7"
+    description: "決算サプライズ・通期上方修正"
+    type: "mixed"
+    thresholds:
+      consensus_revision_3m:
+        strong_bullish: ">=+10"
+        bullish: ">=+5"
+        neutral: "-2〜+5"
+        bearish: "<-2"
+    data_sources:
+      - "WebSearch:三菱商事 決算 通期予想"
+      - "WebSearch:三井物産 決算"
+      - "WebSearch:伊藤忠 決算 上方修正"
+      - "WebSearch:5大商社 FY2027 ガイダンス"
+    past_cases:
+      - "2022/5 6社揃って最高益＋上方修正"
+      - "2024/5 通期予想引き上げ連鎖"
+
+  - id: "A-8"
+    description: "地政学：エネルギー供給制約（中東・ロシア・LNG権益）"
+    type: "leading"
+    thresholds:
+      brent_premium_vs_prewar_pct:
+        strong_bullish: ">=30"
+        bullish: ">=15"
+        neutral: "0-15"
+        bearish: "<0"
+    data_sources:
+      - "WebSearch:ホルムズ海峡 封鎖"
+      - "WebSearch:イラン 制裁 米国"
+      - "WebSearch:TTF オランダ 天然ガス"
+      - "WebSearch:LNG カタール スポット"
+    past_cases:
+      - "2022/2 ウクライナ侵攻"
+      - "2022/8 JKM $52超"
+      - "2024 ホルムズ封鎖長期化"
+
+  - id: "A-9"
+    description: "新NISA・国内バリュー回帰資金流入"
+    type: "leading"
+    thresholds:
+      monthly_fund_inflow_trillion:
+        strong_bullish: ">=2.0"
+        bullish: ">=1.5"
+        neutral: "1.0-1.5"
+        bearish: "<1.0"
+    data_sources:
+      - "WebSearch:新NISA 投信 流入 月次"
+      - "WebSearch:公募株式投信 純資金流入"
+      - "WebSearch:日本株 高配当 個人投資家"
+    past_cases:
+      - "2024 新NISA初年度ブーム"
+      - "2026/1 公募株式投信2.1兆円流入（18年ぶり過去最高）"
+
+  - id: "A-10"
+    description: "円キャリー巻き戻し終了・円安再開"
+    type: "leading"
+    thresholds:
+      vix_level:
+        strong_bullish: "<15"
+        bullish: "15-20"
+        neutral: "20-25"
+        bearish: ">=25"
+    data_sources:
+      - "WebSearch:円キャリートレード 投機筋"
+      - "WebSearch:CFTC 円ポジション"
+      - "WebSearch:VIX 直近水準"
+    past_cases:
+      - "2024/8 急落後の急回復"
+      - "2024秋 再円安進行"
+
+# ============================================================
+# 下落条件（B-1〜B-10）
+# ============================================================
+downside_conditions:
+  - id: "B-1"
+    description: "資源同時暴落（銅・鉄鉱石・原油・LNG）"
+    type: "leading"
+    thresholds:
+      brent_oil_usd:
+        strong_bearish: "<60"
+        bearish: "<75"
+        neutral: "75-90"
+        bullish: ">=90"
+      copper_usd_lb:
+        strong_bearish: "<3.0"
+        bearish: "<3.5"
+        neutral: "3.5-4.0"
+        bullish: ">=4.0"
+    data_sources:
+      - "WebSearch:Brent原油 価格 直近"
+      - "WebSearch:銅 LME"
+      - "WebSearch:鉄鉱石 価格"
+      - "WebSearch:OPEC+ 増産 減産"
+    past_cases:
+      - "2008/9-09/3 リーマン暴落"
+      - "2014-16 シェール革命・原油暴落"
+      - "2020/3 コロナショック"
+
+  - id: "B-2"
+    description: "円高進行（10円超）"
+    type: "leading"
+    thresholds:
+      usd_jpy:
+        strong_bearish: "<140"
+        bearish: "<148"
+        neutral: "148-155"
+        bullish: ">=155"
+    data_sources:
+      - "WebSearch:ドル円 為替"
+      - "WebSearch:日銀 利上げ 6月 7月"
+      - "WebSearch:FRB 議長 Warsh"
+      - "WebSearch:財務省 為替介入"
+    past_cases:
+      - "2008秋 円高110→80円"
+      - "2016 円高120→100円"
+      - "2024/8/5 急騰160→141円"
+
+  - id: "B-3"
+    description: "中国減速悪化（PMI50割れ・不動産危機再燃）"
+    type: "lagging"
+    thresholds:
+      caixin_manufacturing_pmi:
+        strong_bearish: "<48"
+        bearish: "<49.5"
+        neutral: "49.5-50.5"
+        bullish: ">=50.5"
+    data_sources:
+      - "WebSearch:中国 製造業 PMI"
+      - "WebSearch:中国 不動産 危機"
+      - "WebSearch:中国 鉱工業生産"
+    past_cases:
+      - "2015-16 中国減速ショック"
+      - "2024-25 中国不動産危機"
+
+  - id: "B-4"
+    description: "米リセッション・信用拡大"
+    type: "lagging"
+    thresholds:
+      ism_manufacturing:
+        strong_bearish: "<45"
+        bearish: "<47"
+        neutral: "47-50"
+        bullish: ">=50"
+      hy_spread_bp:
+        strong_bearish: ">=600"
+        bearish: ">=500"
+        neutral: "350-500"
+        bullish: "<350"
+    data_sources:
+      - "WebSearch:ISM 製造業 米国"
+      - "WebSearch:HY スプレッド 米国 信用"
+      - "WebSearch:米国 雇用統計"
+    past_cases:
+      - "2008-09 金融危機"
+      - "2020/3 コロナリセッション"
+
+  - id: "B-5"
+    description: "大型減損計上（資源権益・上流事業）"
+    type: "leading"
+    thresholds:
+      sector_impairment_announce_count_6m:
+        strong_bearish: ">=3"
+        bearish: ">=1"
+        neutral: "0"
+        bullish: "0"
+    data_sources:
+      - "WebSearch:商社 減損 シェール"
+      - "WebSearch:三菱商事 三井物産 上流 減損"
+      - "WebSearch:LNG プロジェクト 減損"
+    past_cases:
+      - "2014 住商シェール減損"
+      - "2015 丸紅Gavilon減損"
+      - "2016 三菱チリ銅減損"
+
+  - id: "B-6"
+    description: "ピークアウト・減益ガイダンス連鎖"
+    type: "lagging"
+    thresholds:
+      consensus_revision_3m:
+        strong_bearish: "<=-10"
+        bearish: "<=-5"
+        neutral: "-5〜0"
+        bullish: ">0"
+    data_sources:
+      - "WebSearch:商社 通期予想 減益"
+      - "WebSearch:5大商社 FY2027 ガイダンス"
+    past_cases:
+      - "2015-16 資源安局面"
+      - "2024-25 FY2026/3 減益ガイダンス"
+
+  - id: "B-7"
+    description: "Buffett売却報道"
+    type: "lagging"
+    thresholds:
+      avg_stake_change_pp:
+        strong_bearish: "<=-1.0"
+        bearish: "<=-0.3"
+        neutral: "-0.3〜+0.3"
+        bullish: ">+0.3"
+    data_sources:
+      - "WebSearch:Buffett 商社株 売却"
+      - "WebSearch:Berkshire 13F 変動"
+      - "WebSearch:Greg Abel 日本投資 縮小"
+    past_cases:
+      - "過去事例なし（未検証イベント）"
+
+  - id: "B-8"
+    description: "バリュエーション過熱（PBR2倍超・モメンタム鈍化）"
+    type: "leading"
+    thresholds:
+      mitsubishi_pbr:
+        strong_bearish: ">=2.5"
+        bearish: ">=2.0"
+        neutral: "1.5-2.0"
+        bullish: "<1.5"
+      mitsubishi_per:
+        strong_bearish: ">=20"
+        bearish: ">=15"
+        neutral: "10-15"
+        bullish: "<10"
+    data_sources:
+      - "WebSearch:三菱商事 PER PBR"
+      - "WebSearch:三井物産 バリュエーション"
+      - "WebSearch:商社株 過熱"
+    past_cases:
+      - "2023/5 Buffett買い増し後の調整"
+      - "2024/7 過去最高更新後の-31%急落"
+
+  - id: "B-9"
+    description: "円キャリー巻き戻し急進（USD/JPY急落・VIX急騰）"
+    type: "leading"
+    thresholds:
+      usd_jpy_drop_1m_pct:
+        strong_bearish: ">=8"
+        bearish: ">=5"
+        neutral: "2-5"
+        bullish: "<2"
+      vix_level:
+        strong_bearish: ">=30"
+        bearish: ">=25"
+        neutral: "20-25"
+        bullish: "<20"
+    data_sources:
+      - "WebSearch:円キャリー 巻き戻し"
+      - "WebSearch:VIX 急騰"
+      - "WebSearch:CFTC 円ショート"
+    past_cases:
+      - "2024/8/5 -31%MDD（円キャリー巻き戻し）"
+
+  - id: "B-10"
+    description: "規制・税制・地政学的事業リスク"
+    type: "lagging"
+    thresholds:
+      sanction_or_tax_event_count_3m:
+        strong_bearish: ">=2"
+        bearish: ">=1"
+        neutral: "0"
+        bullish: "0"
+    data_sources:
+      - "WebSearch:対露 制裁 商社"
+      - "WebSearch:資源 税制 ロイヤルティ"
+      - "WebSearch:地政学 商社 事業見直し"
+    past_cases:
+      - "2022 対露事業見直し"
+      - "2023 サハリン2継続判断"
+
+# ============================================================
+# シナリオ
+# ============================================================
+scenarios:
+  base:
+    name: "基本シナリオ（維持）"
+    description: "ホルムズ封鎖長期化＋日銀緩慢な利上げ＋FY2027上方修正連鎖。原油$100超・USD/JPY 150円台後半維持・中国PMI 50超キープ。"
+    expected_return_pct: "+10〜+20"
+  upside:
+    name: "上振れシナリオ（コモディティ追加スパイク）"
+    description: "ホルムズ封鎖長期化＋OPEC+追加減産＋寒波でBrent$130超、JKM$25超。三菱・三井のFY2027ガイダンスを大幅上振れる上方修正連鎖。"
+    expected_return_pct: "+25〜+40"
+  downside:
+    name: "下振れシナリオ（中東停戦＋日銀タカ派加速）"
+    description: "イラン和平成立で原油Brent$80割れ→JKM急落。日銀利上げ加速＋FRB利下げで円キャリー巻き戻し再燃、USD/JPY 145円割れ。EPSコンセンサス下方修正連鎖。"
+    expected_return_pct: "-20〜-30"
+
+# ============================================================
+# 改訂履歴
+# ============================================================
+revision_history:
+  - date: "2026-05-22"
+    note: "初版。reports/research/1629_evaluation_20260522.md を完全移植。"

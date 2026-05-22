@@ -1,0 +1,414 @@
+code: "1655"
+name: "iシェアーズ S&P 500 米国株 ETF"
+version: "2026-05-22_v1"
+horizon: "中期（3〜12ヶ月）"
+sector: "外国株式（米国・大型株）"
+benchmark_index: "S&P 500（円換算・分配なし指数）"
+top_holdings:
+  - "Apple"
+  - "Microsoft"
+  - "NVIDIA"
+  - "Amazon"
+  - "Alphabet (A/C)"
+  - "Meta"
+  - "Berkshire Hathaway"
+  - "Tesla / Broadcom（時期による）"
+notes: |
+  S&P 500 連動の円建てETF。為替ヘッジなしのため、USD/JPYの円安・円高がそのまま円換算リターンに乗る（為替感応度が極めて高い）。
+  業種構成は情報技術約30%・金融約13%・ヘルスケア約12%が主軸。AI/半導体テーマと FRB 政策金利の影響を強く受ける。
+  2022/2 過去最高更新時 PER 25倍超、その後の 2022 リセッション懸念で -25% 急落。
+  2022-02 に10:1分割実施済（is_chart_applied 確認推奨。本ETFのチャート系列に注意）。
+  最大DD は 2022/1 → 2022/10 の -25% 程度（円建てでは円安効果で緩和）。
+
+top5_drivers: ["A-1", "A-2", "A-3", "A-4", "A-5"]
+top5_risk_drivers: ["B-1", "B-2", "B-3", "B-4", "B-9"]
+
+upside_conditions:
+  - id: "A-1"
+    description: "米国景気拡張継続（ISM拡大・雇用堅調）"
+    type: "leading"
+    thresholds:
+      ism_manufacturing:
+        strong_bullish: ">=55"
+        bullish: ">=50"
+        neutral: "47-50"
+        bearish: "<47"
+      nfp_3m_avg_k:
+        strong_bullish: ">=200"
+        bullish: ">=150"
+        neutral: "100-150"
+        bearish: "<100"
+    data_sources:
+      - "WebSearch:ISM製造業 PMI 米国 直近"
+      - "WebSearch:米国 雇用統計 NFP 直近"
+      - "WebSearch:米国 小売売上高"
+    past_cases:
+      - "2017-19 トランプ減税後の拡張"
+      - "2023-24 ソフトランディング達成"
+
+  - id: "A-2"
+    description: "FRB利下げサイクル開始・金融緩和"
+    type: "leading"
+    thresholds:
+      fed_funds_rate:
+        strong_bullish: "<=3.5"
+        bullish: "<=4.0"
+        neutral: "4.0-4.5"
+        bearish: ">4.5"
+    data_sources:
+      - "WebSearch:FRB FF金利 直近 利下げ"
+      - "WebSearch:FOMC ドットプロット"
+      - "WebSearch:米国 コアPCE インフレ"
+    past_cases:
+      - "2019 中盤利下げ"
+      - "2020/3 緊急ゼロ金利"
+      - "2024/9 0.5%利下げ開始"
+
+  - id: "A-3"
+    description: "USD/JPY円安進行（円換算リターン押し上げ）"
+    type: "leading"
+    thresholds:
+      usd_jpy:
+        strong_bullish: ">=155"
+        bullish: ">=145"
+        neutral: "135-145"
+        bearish: "<135"
+    data_sources:
+      - "WebSearch:ドル円 為替 直近"
+      - "WebSearch:日銀 政策金利"
+      - "WebSearch:財務省 為替介入"
+    past_cases:
+      - "2022-24 円安進行（115→160円）"
+      - "2024秋 再円安進行"
+
+  - id: "A-4"
+    description: "AI/半導体テーマ拡大（NVIDIA決算・大手CapEx）"
+    type: "leading"
+    thresholds:
+      nvidia_yoy_revenue_pct:
+        strong_bullish: ">=50"
+        bullish: ">=20"
+        neutral: "0-20"
+        bearish: "<0"
+    data_sources:
+      - "WebSearch:NVIDIA 決算 売上 直近"
+      - "WebSearch:Microsoft Meta CapEx ガイダンス"
+      - "WebSearch:データセンター 投資 米国"
+    past_cases:
+      - "2023/5 NVIDIAガイダンスショック（AI元年）"
+      - "2024 ハイパースケーラーCapEx拡大"
+
+  - id: "A-5"
+    description: "企業決算上方修正・自社株買い拡大"
+    type: "mixed"
+    thresholds:
+      sp500_eps_revision_3m:
+        strong_bullish: ">=+5"
+        bullish: ">=+2"
+        neutral: "0〜+2"
+        bearish: "<0"
+      buyback_yoy_pct:
+        strong_bullish: ">=20"
+        bullish: ">=10"
+        neutral: "0-10"
+        bearish: "<0"
+    data_sources:
+      - "WebSearch:S&P500 EPS コンセンサス 上方修正"
+      - "WebSearch:S&P500 自社株買い 規模"
+      - "WebSearch:FactSet earnings revision"
+    past_cases:
+      - "2021 EPS上方修正連鎖"
+      - "2023後半 上方修正で株価高値更新"
+
+  - id: "A-6"
+    description: "リスクオン環境（VIX低位・クレジット良好）"
+    type: "leading"
+    thresholds:
+      vix_level:
+        strong_bullish: "<15"
+        bullish: "15-18"
+        neutral: "18-22"
+        bearish: ">=22"
+      hy_spread_bp:
+        strong_bullish: "<300"
+        bullish: "<400"
+        neutral: "400-500"
+        bearish: ">=500"
+    data_sources:
+      - "WebSearch:VIX 直近水準"
+      - "WebSearch:HY スプレッド 米国"
+    past_cases:
+      - "2017 低ボラ・低スプレッド環境"
+      - "2024 リスクオン継続"
+
+  - id: "A-7"
+    description: "大統領選後の政策確実性・規制緩和"
+    type: "leading"
+    thresholds:
+      policy_uncertainty_index:
+        strong_bullish: "<80"
+        bullish: "<120"
+        neutral: "120-200"
+        bearish: ">=200"
+    data_sources:
+      - "WebSearch:米国 大統領 政策 株式市場"
+      - "WebSearch:Trump Biden 政権 規制緩和"
+      - "WebSearch:Economic Policy Uncertainty Index"
+    past_cases:
+      - "2016/11-17 トランプラリー"
+      - "2020/11 ワクチン＋政権交代ラリー"
+
+  - id: "A-8"
+    description: "米中和解・通商緊張緩和"
+    type: "lagging"
+    thresholds:
+      tariff_change_announcement:
+        strong_bullish: "削減 or 撤廃"
+        bullish: "据え置き"
+        neutral: "限定的上げ"
+        bearish: "全面的上げ"
+    data_sources:
+      - "WebSearch:米中 関税 削減 動向"
+      - "WebSearch:米中 通商 合意"
+      - "WebSearch:Taiwan 半導体 規制"
+    past_cases:
+      - "2020/1 米中第一段階合意"
+      - "2024 米中$300億関税削減枠組み"
+
+  - id: "A-9"
+    description: "株式リスクプレミアム拡大（米国債利回り低下）"
+    type: "leading"
+    thresholds:
+      us10y_yield_pct:
+        strong_bullish: "<3.5"
+        bullish: "<4.0"
+        neutral: "4.0-4.5"
+        bearish: ">=4.5"
+    data_sources:
+      - "WebSearch:米10年債利回り 直近"
+      - "WebSearch:US Treasury 10Y"
+      - "WebSearch:Equity Risk Premium"
+    past_cases:
+      - "2019-21 低金利環境でPER拡大"
+      - "2023後半 利下げ期待でPER再拡大"
+
+  - id: "A-10"
+    description: "米国マネーフロー流入（ETF・年金）"
+    type: "lagging"
+    thresholds:
+      sp500_etf_inflow_monthly_b:
+        strong_bullish: ">=30"
+        bullish: ">=15"
+        neutral: "0-15"
+        bearish: "<0"
+    data_sources:
+      - "WebSearch:SPY VOO ETF 資金流入"
+      - "WebSearch:米国 年金 株式 配分"
+      - "WebSearch:401k 株式 比率"
+    past_cases:
+      - "2024 米国株ETFへの過去最大流入"
+
+downside_conditions:
+  - id: "B-1"
+    description: "米リセッション本格化（ISM45割れ・失業率急騰）"
+    type: "leading"
+    thresholds:
+      ism_manufacturing:
+        strong_bearish: "<45"
+        bearish: "<47"
+        neutral: "47-50"
+        bullish: ">=50"
+      unemployment_rate_change_6m_pp:
+        strong_bearish: ">=0.5"
+        bearish: ">=0.3"
+        neutral: "0-0.3"
+        bullish: "<0"
+    data_sources:
+      - "WebSearch:ISM 製造業 米国"
+      - "WebSearch:米国 失業率 Sahm Rule"
+      - "WebSearch:Yield Curve 逆転"
+    past_cases:
+      - "2008-09 金融危機"
+      - "2020/3 コロナリセッション"
+      - "2001 ITバブル崩壊"
+
+  - id: "B-2"
+    description: "FRB追加利上げ・タカ派化"
+    type: "leading"
+    thresholds:
+      fed_funds_rate:
+        strong_bearish: ">=5.5"
+        bearish: ">=5.0"
+        neutral: "4.5-5.0"
+        bullish: "<4.5"
+      core_pce_yoy_pct:
+        strong_bearish: ">=4.0"
+        bearish: ">=3.5"
+        neutral: "2.5-3.5"
+        bullish: "<2.5"
+    data_sources:
+      - "WebSearch:FRB FF金利 利上げ"
+      - "WebSearch:米国 コアPCE インフレ"
+      - "WebSearch:FOMC タカ派"
+    past_cases:
+      - "2022 アグレッシブ利上げ→-25%急落"
+
+  - id: "B-3"
+    description: "USD/JPY円高進行（円換算リターン圧迫）"
+    type: "leading"
+    thresholds:
+      usd_jpy:
+        strong_bearish: "<140"
+        bearish: "<148"
+        neutral: "148-155"
+        bullish: ">=155"
+    data_sources:
+      - "WebSearch:ドル円 為替"
+      - "WebSearch:日銀 利上げ"
+      - "WebSearch:FRB 利下げ 加速"
+    past_cases:
+      - "2008秋 110→80円"
+      - "2024/8/5 160→141円"
+
+  - id: "B-4"
+    description: "AIバブル崩壊（NVIDIA決算ピークアウト・CapEx鈍化）"
+    type: "leading"
+    thresholds:
+      nvidia_yoy_revenue_pct:
+        strong_bearish: "<=10"
+        bearish: "<=20"
+        neutral: "20-40"
+        bullish: ">40"
+      hyperscaler_capex_yoy_pct:
+        strong_bearish: "<0"
+        bearish: "<5"
+        neutral: "5-15"
+        bullish: ">=15"
+    data_sources:
+      - "WebSearch:NVIDIA 決算 ガイダンス"
+      - "WebSearch:Microsoft Meta CapEx 減速"
+      - "WebSearch:AI バブル"
+    past_cases:
+      - "2000 ドットコムバブル崩壊"
+      - "2022 メタバース失速"
+
+  - id: "B-5"
+    description: "S&P500 EPSピークアウト・決算下方修正連鎖"
+    type: "lagging"
+    thresholds:
+      sp500_eps_revision_3m:
+        strong_bearish: "<=-5"
+        bearish: "<=-2"
+        neutral: "-2〜0"
+        bullish: ">0"
+    data_sources:
+      - "WebSearch:S&P500 EPS 下方修正"
+      - "WebSearch:FactSet earnings revision negative"
+    past_cases:
+      - "2008-09 EPS-30%下方修正"
+      - "2022下半期 EPSピークアウト"
+
+  - id: "B-6"
+    description: "信用スプレッド拡大（HY 500bp超）"
+    type: "leading"
+    thresholds:
+      hy_spread_bp:
+        strong_bearish: ">=700"
+        bearish: ">=500"
+        neutral: "350-500"
+        bullish: "<350"
+    data_sources:
+      - "WebSearch:HY スプレッド OAS"
+      - "WebSearch:CDX HY 直近"
+    past_cases:
+      - "2008/10 HY 1900bp"
+      - "2020/3 HY 1100bp"
+
+  - id: "B-7"
+    description: "地政学ショック（戦争・テロ・選挙混乱）"
+    type: "leading"
+    thresholds:
+      vix_spike_to:
+        strong_bearish: ">=35"
+        bearish: ">=28"
+        neutral: "22-28"
+        bullish: "<22"
+    data_sources:
+      - "WebSearch:中東 戦争 拡大"
+      - "WebSearch:台湾 有事"
+      - "WebSearch:VIX 急騰"
+    past_cases:
+      - "2022/2 ウクライナ侵攻"
+      - "2001/9 同時多発テロ"
+
+  - id: "B-8"
+    description: "米中緊張再燃（追加関税・半導体規制）"
+    type: "leading"
+    thresholds:
+      tariff_change_announcement:
+        strong_bearish: "全面的上げ"
+        bearish: "限定的上げ"
+        neutral: "据え置き"
+        bullish: "削減"
+    data_sources:
+      - "WebSearch:米中 関税 拡大"
+      - "WebSearch:半導体 中国 規制 強化"
+      - "WebSearch:Taiwan Strait"
+    past_cases:
+      - "2018-19 米中貿易戦争"
+      - "2022/10 半導体輸出規制"
+
+  - id: "B-9"
+    description: "バリュエーション過熱（PER25超・ERP圧縮）"
+    type: "leading"
+    thresholds:
+      sp500_forward_per:
+        strong_bearish: ">=25"
+        bearish: ">=22"
+        neutral: "18-22"
+        bullish: "<18"
+      equity_risk_premium_bp:
+        strong_bearish: "<=100"
+        bearish: "<=200"
+        neutral: "200-400"
+        bullish: ">400"
+    data_sources:
+      - "WebSearch:S&P500 PER 直近"
+      - "WebSearch:Shiller CAPE 米国"
+      - "WebSearch:Equity Risk Premium"
+    past_cases:
+      - "1999-00 ドットコムバブル（PER30超）"
+      - "2021末 PER22→2022 -25%調整"
+
+  - id: "B-10"
+    description: "ETF特有のトラッキングエラー・為替コスト増"
+    type: "lagging"
+    thresholds:
+      tracking_error_yoy_pp:
+        strong_bearish: ">=1.0"
+        bearish: ">=0.5"
+        neutral: "0.2-0.5"
+        bullish: "<0.2"
+    data_sources:
+      - "WebSearch:1655 iシェアーズ 信託報酬"
+      - "WebSearch:S&P500 連動 国内ETF 比較"
+    past_cases:
+      - "2024 為替ヘッジコスト増加局面"
+
+scenarios:
+  base:
+    name: "基本シナリオ（ソフトランディング継続）"
+    description: "FRB緩慢な利下げ＋EPS堅調＋USD/JPY 150円台維持。AI投資鈍化なくPER 20倍前後で安定推移。"
+    expected_return_pct: "+8〜+18"
+  upside:
+    name: "上振れシナリオ（AIブーム加速＋利下げ＋円安）"
+    description: "FRB予想以上の利下げ＋NVIDIA上方修正連鎖＋USD/JPY 160円台復帰。バリュエーション拡大で年間+25%以上。"
+    expected_return_pct: "+25〜+40"
+  downside:
+    name: "下振れシナリオ（リセッション＋AIバブル崩壊＋円高）"
+    description: "ISM45割れ＋NVIDIA決算ピークアウト＋USD/JPY 140円割れ。三重苦で-25〜-35%急落。"
+    expected_return_pct: "-25〜-35"
+
+revision_history:
+  - date: "2026-05-22"
+    note: "初版。S&P500連動・円換算ETFとして為替を最重要ドライバーに位置付け。"

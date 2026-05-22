@@ -1,0 +1,397 @@
+code: "200A"
+name: "NEXT FUNDS 日経半導体株指数連動型上場投信"
+version: "2026-05-22_v1"
+horizon: "中期（3〜12ヶ月）"
+sector: "国内半導体（製造装置・材料・デバイス）"
+benchmark_index: "日経半導体株指数（東証上場の半導体関連30銘柄を等ウェイトに近い構成）"
+top_holdings:
+  - "東京エレクトロン（前工程装置）"
+  - "アドバンテスト（テスタ）"
+  - "ディスコ（後工程装置）"
+  - "信越化学工業 / SUMCO（シリコンウェハ）"
+  - "ルネサスエレクトロニクス / ローム（デバイス）"
+  - "レーザーテック（マスク検査）"
+notes: |
+  日本の半導体関連30銘柄に投資する円建てETF。
+  時価総額構成は東京エレクトロン・アドバンテスト・信越化学・SUMCOなどの製造装置・材料メーカーが中核。
+  ドライバーは (1) NVIDIA決算/AI需要、(2) TSMC/Samsung設備投資、(3) HBM/DRAM需給、(4) USD/JPY、(5) 米中半導体規制。
+  製造装置メーカーは2-3四半期先行で動く。NVIDIA決算が短期センチメントを支配。
+  2022 半導体サイクル底打ち→2023-24 AIブームで+200%級の上昇後、2024/7 急落、その後再上昇。
+  最大DD 2022/1→2022/10 約-45%、2024/7-8 約-30%。バリュエーション PER 30倍超の過熱局面あり。
+  デフォルトで分割なし。出来高は活発。
+
+top5_drivers: ["A-1", "A-2", "A-3", "A-4", "A-9"]
+top5_risk_drivers: ["B-1", "B-2", "B-3", "B-5", "B-9"]
+
+upside_conditions:
+  - id: "A-1"
+    description: "AI需要拡大（NVIDIA決算・ハイパースケーラーCapEx）"
+    type: "leading"
+    thresholds:
+      nvidia_yoy_revenue_pct:
+        strong_bullish: ">=50"
+        bullish: ">=25"
+        neutral: "0-25"
+        bearish: "<0"
+      hyperscaler_capex_yoy_pct:
+        strong_bullish: ">=30"
+        bullish: ">=15"
+        neutral: "5-15"
+        bearish: "<5"
+    data_sources:
+      - "WebSearch:NVIDIA 決算 売上 ガイダンス"
+      - "WebSearch:Microsoft Google Meta CapEx"
+      - "WebSearch:AI データセンター 投資"
+    past_cases:
+      - "2023/5 NVIDIA AI元年（+24%/単日）"
+      - "2024 ハイパースケーラーCapEx 1700億ドル"
+
+  - id: "A-2"
+    description: "HBM/DRAM需給タイト化・価格上昇"
+    type: "leading"
+    thresholds:
+      dram_contract_price_yoy_pct:
+        strong_bullish: ">=+30"
+        bullish: ">=+15"
+        neutral: "0〜+15"
+        bearish: "<0"
+      hbm_capacity_utilization_pct:
+        strong_bullish: ">=95"
+        bullish: ">=90"
+        neutral: "85-90"
+        bearish: "<85"
+    data_sources:
+      - "WebSearch:DRAM 価格 直近"
+      - "WebSearch:HBM 需給 SK Micron Samsung"
+      - "WebSearch:TrendForce メモリ価格"
+    past_cases:
+      - "2017-18 DRAMスーパーサイクル"
+      - "2024 HBM需給逼迫でAI半導体急騰"
+
+  - id: "A-3"
+    description: "半導体設備投資拡大（WFE市場）"
+    type: "leading"
+    thresholds:
+      global_wfe_yoy_pct:
+        strong_bullish: ">=+15"
+        bullish: ">=+5"
+        neutral: "-5〜+5"
+        bearish: "<-5"
+    data_sources:
+      - "WebSearch:WFE 半導体製造装置 市場"
+      - "WebSearch:SEMI WFE forecast"
+      - "WebSearch:東京エレクトロン 受注"
+    past_cases:
+      - "2017-18 WFE市場急拡大"
+      - "2024 AI向け装置投資加速"
+
+  - id: "A-4"
+    description: "TSMC設備投資ガイダンス上方修正"
+    type: "leading"
+    thresholds:
+      tsmc_capex_yoy_pct:
+        strong_bullish: ">=+20"
+        bullish: ">=+10"
+        neutral: "0〜+10"
+        bearish: "<0"
+    data_sources:
+      - "WebSearch:TSMC 設備投資 ガイダンス"
+      - "WebSearch:Samsung 半導体 CapEx"
+      - "WebSearch:Intel ファウンドリ 投資"
+    past_cases:
+      - "2024/1 TSMC設備投資ガイダンス上振れ"
+      - "2025 TSMC熊本第2/Arizona増強"
+
+  - id: "A-5"
+    description: "米中半導体規制緩和・台湾安定"
+    type: "leading"
+    thresholds:
+      export_restriction_announce_count_6m:
+        strong_bullish: "削減 or 撤廃"
+        bullish: "据え置き"
+        neutral: "1件追加"
+        bearish: ">=2件追加"
+    data_sources:
+      - "WebSearch:米中 半導体 規制 緩和"
+      - "WebSearch:Taiwan 海峡 安全保障"
+      - "WebSearch:EUV ASML 中国 規制"
+    past_cases:
+      - "2024 米中$300億関税削減枠組み"
+
+  - id: "A-6"
+    description: "中国スマホ需要回復（Apple/Huawei出荷増）"
+    type: "lagging"
+    thresholds:
+      global_smartphone_shipment_yoy_pct:
+        strong_bullish: ">=+10"
+        bullish: ">=+3"
+        neutral: "0〜+3"
+        bearish: "<0"
+    data_sources:
+      - "WebSearch:スマホ 出荷 IDC Counterpoint"
+      - "WebSearch:中国 スマホ 需要 回復"
+      - "WebSearch:Apple iPhone 中国 販売"
+    past_cases:
+      - "2024 中国スマホ回復で半導体追い風"
+
+  - id: "A-7"
+    description: "在庫サイクル底打ち（顧客在庫適正化）"
+    type: "leading"
+    thresholds:
+      semiconductor_inventory_days_change_yoy:
+        strong_bullish: "<=-20"
+        bullish: "<=-10"
+        neutral: "-10〜0"
+        bearish: ">0"
+    data_sources:
+      - "WebSearch:半導体 在庫 サイクル"
+      - "WebSearch:メモリ 在庫調整 完了"
+    past_cases:
+      - "2023後半 メモリ在庫調整完了"
+      - "2024 ロジック在庫適正化"
+
+  - id: "A-8"
+    description: "データセンター・AI投資（CHIPS法・IRA）"
+    type: "lagging"
+    thresholds:
+      us_chips_subsidy_disbursed_b:
+        strong_bullish: ">=30"
+        bullish: ">=15"
+        neutral: "5-15"
+        bearish: "<5"
+    data_sources:
+      - "WebSearch:CHIPS法 補助金 米国"
+      - "WebSearch:Intel TSMC 米国 工場"
+      - "WebSearch:データセンター 投資 米国"
+    past_cases:
+      - "2024 CHIPS補助金本格交付開始"
+
+  - id: "A-9"
+    description: "USD/JPY円安進行（輸出企業利益拡大）"
+    type: "leading"
+    thresholds:
+      usd_jpy:
+        strong_bullish: ">=155"
+        bullish: ">=145"
+        neutral: "135-145"
+        bearish: "<135"
+    data_sources:
+      - "WebSearch:ドル円 為替"
+      - "WebSearch:日銀 政策金利"
+    past_cases:
+      - "2022-24 円安進行で東京エレクトロン好業績"
+
+  - id: "A-10"
+    description: "国家戦略支援（Rapidus・経産省半導体補助金）"
+    type: "leading"
+    thresholds:
+      japan_semiconductor_subsidy_yoy_yen_b:
+        strong_bullish: ">=1000"
+        bullish: ">=500"
+        neutral: "200-500"
+        bearish: "<200"
+    data_sources:
+      - "WebSearch:Rapidus 補助金 経産省"
+      - "WebSearch:TSMC 熊本 第2工場"
+      - "WebSearch:半導体 国家戦略 日本"
+    past_cases:
+      - "2024 Rapidus 1兆円補助金"
+      - "2024 TSMC熊本第2工場決定"
+
+downside_conditions:
+  - id: "B-1"
+    description: "AIバブル崩壊・NVIDIA決算ピークアウト"
+    type: "leading"
+    thresholds:
+      nvidia_yoy_revenue_pct:
+        strong_bearish: "<=10"
+        bearish: "<=20"
+        neutral: "20-40"
+        bullish: ">40"
+      hyperscaler_capex_yoy_pct:
+        strong_bearish: "<0"
+        bearish: "<5"
+        neutral: "5-15"
+        bullish: ">=15"
+    data_sources:
+      - "WebSearch:NVIDIA 決算 ピーク"
+      - "WebSearch:Microsoft Meta CapEx 鈍化"
+      - "WebSearch:AI バブル 懐疑論"
+    past_cases:
+      - "2000 ドットコムバブル崩壊"
+      - "2022 メタバース失速"
+
+  - id: "B-2"
+    description: "スマホ需要減退・コンシューマ向け鈍化"
+    type: "lagging"
+    thresholds:
+      global_smartphone_shipment_yoy_pct:
+        strong_bearish: "<=-8"
+        bearish: "<=-3"
+        neutral: "-3〜0"
+        bullish: ">0"
+    data_sources:
+      - "WebSearch:スマホ 出荷 減速"
+      - "WebSearch:Apple iPhone 出荷"
+      - "WebSearch:中国 スマホ 需要 鈍化"
+    past_cases:
+      - "2022-23 スマホ出荷-15%"
+      - "2018 中国スマホ需要急減"
+
+  - id: "B-3"
+    description: "在庫調整長期化（メモリ・ロジック）"
+    type: "lagging"
+    thresholds:
+      semiconductor_inventory_days_change_yoy:
+        strong_bearish: ">=+20"
+        bearish: ">=+10"
+        neutral: "0〜+10"
+        bullish: "<0"
+    data_sources:
+      - "WebSearch:半導体 在庫 過剰"
+      - "WebSearch:メモリ 在庫調整"
+    past_cases:
+      - "2018-19 メモリ在庫長期調整"
+      - "2022-23 半導体在庫過剰"
+
+  - id: "B-4"
+    description: "米中規制強化（EUV/装置の中国向け輸出規制拡大）"
+    type: "leading"
+    thresholds:
+      export_restriction_announce_count_6m:
+        strong_bearish: ">=3件追加"
+        bearish: ">=2件追加"
+        neutral: "1件追加"
+        bullish: "0"
+    data_sources:
+      - "WebSearch:米国 半導体 中国 輸出規制"
+      - "WebSearch:EUV ASML 中国 制裁"
+      - "WebSearch:東京エレクトロン 中国 売上"
+    past_cases:
+      - "2022/10 米国先端半導体規制"
+      - "2023 オランダ・日本同調"
+
+  - id: "B-5"
+    description: "USD/JPY円高進行（輸出企業利益圧迫）"
+    type: "leading"
+    thresholds:
+      usd_jpy:
+        strong_bearish: "<140"
+        bearish: "<148"
+        neutral: "148-155"
+        bullish: ">=155"
+    data_sources:
+      - "WebSearch:ドル円 為替"
+      - "WebSearch:日銀 利上げ"
+    past_cases:
+      - "2024/8/5 160→141円で東エレ-25%"
+
+  - id: "B-6"
+    description: "TSMC設備投資鈍化・受注ガイダンス引き下げ"
+    type: "lagging"
+    thresholds:
+      tsmc_capex_yoy_pct:
+        strong_bearish: "<=-10"
+        bearish: "<=-5"
+        neutral: "-5〜+5"
+        bullish: ">+5"
+    data_sources:
+      - "WebSearch:TSMC 設備投資 削減"
+      - "WebSearch:Samsung 設備投資 鈍化"
+      - "WebSearch:WFE 市場 鈍化"
+    past_cases:
+      - "2019 半導体設備投資鈍化"
+      - "2023前半 メモリCapEx大幅削減"
+
+  - id: "B-7"
+    description: "中国EUV/先端装置規制強化（東京エレクトロン中国売上減）"
+    type: "leading"
+    thresholds:
+      tel_china_revenue_share_pct_change:
+        strong_bearish: "<=-15"
+        bearish: "<=-8"
+        neutral: "-8〜0"
+        bullish: ">0"
+    data_sources:
+      - "WebSearch:東京エレクトロン 中国 売上"
+      - "WebSearch:中国 半導体 国産化"
+      - "WebSearch:SMIC 半導体 中国"
+    past_cases:
+      - "2024 中国売上比率調整局面"
+
+  - id: "B-8"
+    description: "リセッション・FRBタカ派化"
+    type: "lagging"
+    thresholds:
+      ism_manufacturing:
+        strong_bearish: "<45"
+        bearish: "<47"
+        neutral: "47-50"
+        bullish: ">=50"
+      fed_funds_rate:
+        strong_bearish: ">=5.5"
+        bearish: ">=5.0"
+        neutral: "4.5-5.0"
+        bullish: "<4.5"
+    data_sources:
+      - "WebSearch:ISM 製造業 米国"
+      - "WebSearch:FRB FF金利"
+    past_cases:
+      - "2022 利上げ＋半導体在庫過剰で-45%"
+
+  - id: "B-9"
+    description: "バリュエーション過熱（PER30超・モメンタム鈍化）"
+    type: "leading"
+    thresholds:
+      tel_per:
+        strong_bearish: ">=35"
+        bearish: ">=28"
+        neutral: "20-28"
+        bullish: "<20"
+      advantest_per:
+        strong_bearish: ">=40"
+        bearish: ">=30"
+        neutral: "20-30"
+        bullish: "<20"
+    data_sources:
+      - "WebSearch:東京エレクトロン PER PBR"
+      - "WebSearch:アドバンテスト バリュエーション"
+      - "WebSearch:半導体株 過熱"
+    past_cases:
+      - "2024/7 PER33→-30%急落"
+      - "2021/12 PER過熱後の-45%"
+
+  - id: "B-10"
+    description: "半導体サイクル下降局面入り（WSTS減速予想）"
+    type: "lagging"
+    thresholds:
+      wsts_global_semi_yoy_pct:
+        strong_bearish: "<=-10"
+        bearish: "<=-3"
+        neutral: "-3〜+5"
+        bullish: ">+5"
+    data_sources:
+      - "WebSearch:WSTS 半導体 市場 予測"
+      - "WebSearch:SIA 半導体 売上"
+      - "WebSearch:Semi cycle downturn"
+    past_cases:
+      - "2019 半導体市場-12%"
+      - "2023 半導体市場-8%"
+
+scenarios:
+  base:
+    name: "基本シナリオ（AI需要継続＋USD/JPY 150円台）"
+    description: "NVIDIA売上前年比+25%・TSMC設備投資+10%・HBM需給タイト・USD/JPY 150円台・米中規制据え置き。"
+    expected_return_pct: "+10〜+20"
+  upside:
+    name: "上振れシナリオ（AI第二波＋米中規制緩和＋円安継続）"
+    description: "ハイパースケーラーCapEx+30%、HBM・先端装置需給逼迫、米中規制緩和、USD/JPY 160円。装置・材料総じて+30%級。"
+    expected_return_pct: "+25〜+45"
+  downside:
+    name: "下振れシナリオ（AIバブル崩壊＋米中規制強化＋円高）"
+    description: "NVIDIA決算ピークアウト＋米中先端装置規制強化＋USD/JPY 140円割れ。三重苦で-30〜-40%急落。"
+    expected_return_pct: "-30〜-40"
+
+revision_history:
+  - date: "2026-05-22"
+    note: "初版。日経半導体株指数連動。AI需要・HBM・設備投資・米中規制・USD/JPYを5大ドライバーに設定。"

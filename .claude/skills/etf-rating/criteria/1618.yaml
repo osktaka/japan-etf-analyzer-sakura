@@ -1,0 +1,380 @@
+code: "1618"
+name: "NEXT FUNDS エネルギー資源(TOPIX-17)上場投信"
+version: "2026-05-22_v1"
+horizon: "中期（3〜12ヶ月）"
+sector: "エネルギー資源（石油・ガス・石炭）"
+benchmark_index: "TOPIX-17 エネルギー資源"
+top_holdings:
+  - "INPEX"
+  - "ENEOSホールディングス"
+  - "出光興産"
+  - "コスモエネルギーホールディングス"
+  - "石油資源開発"
+notes: |
+  日本のエネルギー資源セクター（石油元売り＋上流権益＋ガス）に集中投資するETF。
+  時価総額構成は INPEX（上流権益・LNG）と ENEOS（精製・元売り）の2社で半分超を占める。
+  ドライバーは (1) 原油価格（Brent/Dubai）、(2) LNG価格、(3) OPEC+減産動向、(4) 中東地政学、(5) USD/JPY。
+  精製マージン（クラックスプレッド）の動向が ENEOS・出光・コスモの利益に直結。
+  2014-16 シェール革命局面で -50%、2020/3 コロナで -45%、2022 ウクライナ侵攻で +60% など、コモディティ価格に強く連動。
+  デフォルトで分割なし。1629（商社）と原油・LNG感応度で重複するが、1618 は元売り・上流に純粋特化。
+
+top5_drivers: ["A-1", "A-2", "A-3", "A-4", "A-5"]
+top5_risk_drivers: ["B-1", "B-2", "B-3", "B-4", "B-8"]
+
+upside_conditions:
+  - id: "A-1"
+    description: "原油価格上昇（Brent/Dubai/WTI）"
+    type: "leading"
+    thresholds:
+      brent_oil_usd:
+        strong_bullish: ">=100"
+        bullish: ">=85"
+        neutral: "70-85"
+        bearish: "<70"
+      dubai_oil_usd:
+        strong_bullish: ">=95"
+        bullish: ">=80"
+        neutral: "65-80"
+        bearish: "<65"
+    data_sources:
+      - "WebSearch:Brent原油 価格 直近"
+      - "WebSearch:Dubai 原油 価格"
+      - "WebSearch:WTI 原油 価格"
+    past_cases:
+      - "2008/7 Brent $147最高値"
+      - "2022/3 Brent $130（ウクライナ）"
+      - "2024 ホルムズ封鎖長期化"
+
+  - id: "A-2"
+    description: "LNG/天然ガス価格上昇（JKM・TTF）"
+    type: "leading"
+    thresholds:
+      jkm_lng_usd:
+        strong_bullish: ">=15"
+        bullish: ">=12"
+        neutral: "8-12"
+        bearish: "<8"
+      ttf_eu_gas_usd:
+        strong_bullish: ">=18"
+        bullish: ">=14"
+        neutral: "10-14"
+        bearish: "<10"
+    data_sources:
+      - "WebSearch:JKM LNG スポット 価格"
+      - "WebSearch:TTF オランダ 天然ガス"
+      - "WebSearch:LNG 需給 アジア"
+    past_cases:
+      - "2022/8 JKM $52超（ウクライナ）"
+      - "2021/12 アジア寒波"
+
+  - id: "A-3"
+    description: "OPEC+減産・生産規律維持"
+    type: "leading"
+    thresholds:
+      opec_compliance_pct:
+        strong_bullish: ">=110"
+        bullish: ">=100"
+        neutral: "90-100"
+        bearish: "<90"
+    data_sources:
+      - "WebSearch:OPEC 減産 自主減産"
+      - "WebSearch:サウジ ロシア OPEC+"
+      - "WebSearch:OPEC compliance rate"
+    past_cases:
+      - "2020/4 大型協調減産で原油底打ち"
+      - "2023-24 サウジ自主減産延長"
+
+  - id: "A-4"
+    description: "地政学リスク（中東・ホルムズ・ロシア）"
+    type: "leading"
+    thresholds:
+      geopolitical_risk_index:
+        strong_bullish: ">=200"
+        bullish: ">=120"
+        neutral: "80-120"
+        bearish: "<80"
+    data_sources:
+      - "WebSearch:中東 戦争 イラン イスラエル"
+      - "WebSearch:ホルムズ海峡 封鎖"
+      - "WebSearch:ウクライナ ロシア エネルギー"
+    past_cases:
+      - "1990/8 湾岸危機"
+      - "2022/2 ウクライナ侵攻"
+      - "2024 ホルムズ封鎖長期化"
+
+  - id: "A-5"
+    description: "USD/JPY円安進行（円建て換算利益拡大）"
+    type: "leading"
+    thresholds:
+      usd_jpy:
+        strong_bullish: ">=155"
+        bullish: ">=145"
+        neutral: "135-145"
+        bearish: "<135"
+    data_sources:
+      - "WebSearch:ドル円 為替"
+      - "WebSearch:日銀 政策金利"
+    past_cases:
+      - "2022-24 円安進行で元売り好業績"
+
+  - id: "A-6"
+    description: "国内エネルギー需要安定（電力・産業向け）"
+    type: "lagging"
+    thresholds:
+      japan_oil_demand_yoy_pct:
+        strong_bullish: ">=+3"
+        bullish: ">=0"
+        neutral: "-3〜0"
+        bearish: "<-3"
+    data_sources:
+      - "WebSearch:日本 石油 需要"
+      - "WebSearch:資源エネルギー庁 石油統計"
+      - "WebSearch:LNG 火力発電 比率"
+    past_cases:
+      - "2011-15 原発停止でLNG需要急増"
+
+  - id: "A-7"
+    description: "石油元売り精製マージン拡大（クラックスプレッド）"
+    type: "leading"
+    thresholds:
+      crack_spread_singapore_usd:
+        strong_bullish: ">=15"
+        bullish: ">=10"
+        neutral: "5-10"
+        bearish: "<5"
+    data_sources:
+      - "WebSearch:シンガポール クラックスプレッド"
+      - "WebSearch:精製マージン 直近"
+      - "WebSearch:ENEOS 精製"
+    past_cases:
+      - "2022 ロシア制裁で精製マージン急拡大"
+
+  - id: "A-8"
+    description: "上流権益評価益・LNGプロジェクト稼働"
+    type: "lagging"
+    thresholds:
+      inpex_upstream_profit_yoy_pct:
+        strong_bullish: ">=+20"
+        bullish: ">=+10"
+        neutral: "0〜+10"
+        bearish: "<0"
+    data_sources:
+      - "WebSearch:INPEX 決算 上流"
+      - "WebSearch:LNG プロジェクト 稼働"
+      - "WebSearch:イクシス LNG"
+    past_cases:
+      - "2018 イクシスLNG生産開始"
+      - "2022 LNG高値で上流利益最大化"
+
+  - id: "A-9"
+    description: "ガス自由化フェーズ完了・小売シェア確立"
+    type: "lagging"
+    thresholds:
+      gas_retail_share_change_yoy_pp:
+        strong_bullish: ">=+2"
+        bullish: ">=+1"
+        neutral: "0〜+1"
+        bearish: "<0"
+    data_sources:
+      - "WebSearch:ガス 小売 自由化"
+      - "WebSearch:エネルギー 小売 シェア"
+    past_cases:
+      - "2017 ガス小売全面自由化"
+
+  - id: "A-10"
+    description: "政府の戦略備蓄拡大・エネルギー安保政策"
+    type: "lagging"
+    thresholds:
+      strategic_reserve_release_announce_count_6m:
+        strong_bullish: "0（=備蓄積み増し局面）"
+        bullish: "0"
+        neutral: "1"
+        bearish: ">=2（=放出局面）"
+    data_sources:
+      - "WebSearch:日本 戦略石油備蓄"
+      - "WebSearch:エネルギー基本計画"
+      - "WebSearch:GX 投資 政府"
+    past_cases:
+      - "2022 SPR放出局面（米国主導）"
+
+downside_conditions:
+  - id: "B-1"
+    description: "原油暴落（需給崩壊）"
+    type: "leading"
+    thresholds:
+      brent_oil_usd:
+        strong_bearish: "<55"
+        bearish: "<70"
+        neutral: "70-85"
+        bullish: ">=85"
+    data_sources:
+      - "WebSearch:Brent原油 価格"
+      - "WebSearch:OPEC 増産 シェアウォー"
+      - "WebSearch:原油 在庫 EIA"
+    past_cases:
+      - "2014-16 シェール革命で -75%"
+      - "2020/4 WTIマイナス価格"
+      - "2008/12 Brent $34"
+
+  - id: "B-2"
+    description: "LNG需要減・余剰局面（暖冬・需要減退）"
+    type: "leading"
+    thresholds:
+      jkm_lng_usd:
+        strong_bearish: "<7"
+        bearish: "<9"
+        neutral: "9-12"
+        bullish: ">=12"
+    data_sources:
+      - "WebSearch:JKM LNG 価格 下落"
+      - "WebSearch:アジア 暖冬 ガス需要"
+      - "WebSearch:LNG 余剰 過剰供給"
+    past_cases:
+      - "2020 コロナで LNG $2割れ"
+      - "2023 暖冬でJKM急落"
+
+  - id: "B-3"
+    description: "OPEC増産・シェア争奪戦"
+    type: "leading"
+    thresholds:
+      opec_compliance_pct:
+        strong_bearish: "<85"
+        bearish: "<95"
+        neutral: "95-105"
+        bullish: ">=105"
+    data_sources:
+      - "WebSearch:OPEC 増産 自主減産 解消"
+      - "WebSearch:サウジ ロシア シェア争奪"
+    past_cases:
+      - "2014/11 サウジ増産でシェールつぶし"
+      - "2020/3 サウジ・ロシア価格戦争"
+
+  - id: "B-4"
+    description: "中東停戦・地政学プレミアム剥落"
+    type: "lagging"
+    thresholds:
+      geopolitical_risk_index:
+        strong_bearish: "<60"
+        bearish: "<80"
+        neutral: "80-120"
+        bullish: ">=120"
+    data_sources:
+      - "WebSearch:中東 停戦 イラン 和平"
+      - "WebSearch:ホルムズ 安全保障"
+      - "WebSearch:Geopolitical Risk Index"
+    past_cases:
+      - "1991 湾岸戦争終結で原油急落"
+      - "2003 イラク戦争開戦後の急落"
+
+  - id: "B-5"
+    description: "USD/JPY円高進行（円建て利益圧迫）"
+    type: "leading"
+    thresholds:
+      usd_jpy:
+        strong_bearish: "<140"
+        bearish: "<148"
+        neutral: "148-155"
+        bullish: ">=155"
+    data_sources:
+      - "WebSearch:ドル円 為替"
+      - "WebSearch:日銀 利上げ"
+    past_cases:
+      - "2024/8/5 160→141円"
+
+  - id: "B-6"
+    description: "EV普及加速・石油需要構造的減退"
+    type: "leading"
+    thresholds:
+      global_ev_sales_share_pct:
+        strong_bearish: ">=25"
+        bearish: ">=18"
+        neutral: "12-18"
+        bullish: "<12"
+    data_sources:
+      - "WebSearch:EV 販売 シェア 世界"
+      - "WebSearch:Tesla BYD 販売台数"
+      - "WebSearch:Peak oil demand IEA"
+    past_cases:
+      - "2024 IEA Peak Oil Demand by 2030 予測"
+
+  - id: "B-7"
+    description: "再エネシフト・GX加速"
+    type: "leading"
+    thresholds:
+      japan_renewable_share_pct:
+        strong_bearish: ">=30"
+        bearish: ">=25"
+        neutral: "20-25"
+        bullish: "<20"
+    data_sources:
+      - "WebSearch:日本 再エネ 比率"
+      - "WebSearch:GX 投資 脱炭素"
+      - "WebSearch:洋上風力 入札"
+    past_cases:
+      - "2024 GX移行債発行・脱炭素加速"
+
+  - id: "B-8"
+    description: "元売り規制強化・補助金縮小"
+    type: "lagging"
+    thresholds:
+      gasoline_subsidy_yen_per_l:
+        strong_bearish: "<=0"
+        bearish: "<=5"
+        neutral: "5-15"
+        bullish: ">15"
+    data_sources:
+      - "WebSearch:ガソリン 補助金 縮小"
+      - "WebSearch:燃料油価格 激変緩和"
+      - "WebSearch:石油元売り 規制"
+    past_cases:
+      - "2024 補助金段階的縮小"
+
+  - id: "B-9"
+    description: "上流権益減損（プロジェクト失敗・資源価格下落）"
+    type: "lagging"
+    thresholds:
+      sector_impairment_announce_count_6m:
+        strong_bearish: ">=2"
+        bearish: ">=1"
+        neutral: "0"
+        bullish: "0"
+    data_sources:
+      - "WebSearch:INPEX 減損"
+      - "WebSearch:LNG プロジェクト コスト超過"
+      - "WebSearch:上流権益 減損"
+    past_cases:
+      - "2015-16 上流権益減損連鎖"
+      - "2020 コロナで石油資源大手減損"
+
+  - id: "B-10"
+    description: "バリュエーション過熱（PBR1倍超後の調整）"
+    type: "leading"
+    thresholds:
+      inpex_pbr:
+        strong_bearish: ">=1.5"
+        bearish: ">=1.2"
+        neutral: "0.8-1.2"
+        bullish: "<0.8"
+    data_sources:
+      - "WebSearch:INPEX PBR PER"
+      - "WebSearch:ENEOS バリュエーション"
+    past_cases:
+      - "2022 INPEX PBR1.5超→2023調整"
+
+scenarios:
+  base:
+    name: "基本シナリオ（原油$90台維持・LNG高水準）"
+    description: "Brent $90-100・JKM $13前後・OPEC+減産延長・中東緊張継続・USD/JPY 150円台。"
+    expected_return_pct: "+8〜+18"
+  upside:
+    name: "上振れシナリオ（中東戦争拡大＋OPEC追加減産＋寒波）"
+    description: "ホルムズ封鎖長期化＋OPEC追加減産＋アジア寒波。Brent $130超、JKM $25超で元売り精製マージン急拡大。"
+    expected_return_pct: "+25〜+45"
+  downside:
+    name: "下振れシナリオ（中東停戦＋OPEC増産＋EV加速＋円高）"
+    description: "イラン和平＋OPEC増産＋EV販売加速＋USD/JPY 140円割れ。原油$60割れで-25〜-35%急落。"
+    expected_return_pct: "-25〜-35"
+
+revision_history:
+  - date: "2026-05-22"
+    note: "初版。日本のエネルギー資源セクター。原油・LNG・OPEC・地政学・為替を5大ドライバーに設定。"

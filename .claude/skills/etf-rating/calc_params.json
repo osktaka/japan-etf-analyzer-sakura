@@ -1,0 +1,75 @@
+{
+  "_description": "etf-rating スキル共通閾値・重み。変更時は SKILL.md の根拠説明も更新すること",
+  "version": "2026-05-22_v1",
+  "scoring": {
+    "neutral": 50,
+    "max_score": 100,
+    "strong_bullish_threshold": 70,
+    "warning_threshold": 70,
+    "_strong_bullish_description": "条件スコア70点以上で『強い追い風』（上昇条件）",
+    "_warning_threshold_description": "下落条件スコア70点以上で『重大リスク』として要注意マーク"
+  },
+  "weights": {
+    "top5_multiplier": 2.0,
+    "default": 1.0,
+    "_description": "criteria/{code}.yaml の top5_drivers / top5_risk_drivers に列挙された条件IDは ×2、それ以外は ×1。1629評価レポート（reports/research/1629_evaluation_20260522.md）の採点ルールを踏襲"
+  },
+  "net_score": {
+    "formula": "upside_weighted + (100 - downside_weighted)",
+    "neutral": 100,
+    "max": 200,
+    "_description": "ネット中期スコア = 上昇マッチ + (100 - 下落リスク)。中立=100、上限=200"
+  },
+  "drift_alert": {
+    "score_change_pp_threshold": 5,
+    "score_change_pp_strong_threshold": 15,
+    "criteria_version_age_yellow_days": 90,
+    "criteria_version_age_red_days": 180,
+    "_score_change_pp_threshold_description": "前日比±5ppでサマリ『ハイライト』対象",
+    "_score_change_pp_strong_threshold_description": "前日比±15pp超でレポート本文に変動理由の明記を必須化（LLM採点ブレ抑制）",
+    "_version_age_description": "criteria YAML の version 日付経過。90日で黄色警告、180日で赤色警告"
+  },
+  "web_search": {
+    "phase0_shared_search_budget": 15,
+    "phase1_per_etf_search_budget": 3,
+    "total_budget_target": 30,
+    "_description": "Phase 0 共通スナップショットで15回、Phase 1 各銘柄追加3回まで。8銘柄なら最大 15 + 8*3 = 39回だが、Phase 0 を参照すれば各銘柄1〜2回で済む想定で総計30回以内を目標"
+  },
+  "scenarios": ["base", "upside", "downside"],
+  "scenarios_optional": ["upside_extreme", "downside_extreme"],
+  "scenario_definitions": {
+    "base": "現状条件が続く維持シナリオ。3〜12ヶ月の中期前提",
+    "upside": "追い風条件が複数強化される上振れシナリオ",
+    "downside": "リスク条件が複数顕在化する下振れシナリオ",
+    "upside_extreme": "極端な上振れ（要 Top5 ドライバー2つ以上の同時加速）",
+    "downside_extreme": "極端な下振れ（要 Top5 リスク2つ以上の同時顕在化）"
+  },
+  "conditions_count": {
+    "upside": 10,
+    "downside": 10,
+    "_description": "上昇条件・下落条件は各10項目固定。criteria YAML 内で A-1〜A-10 / B-1〜B-10 のIDで採番"
+  },
+  "horizon": {
+    "default_months_min": 3,
+    "default_months_max": 12,
+    "_description": "デフォルトの評価時間軸は中期（3〜12ヶ月）。criteria YAML 内 horizon フィールドで個別上書き可"
+  },
+  "timeout_sec": {
+    "phase0": 360,
+    "phase1_per_etf": 600,
+    "phase2": 300,
+    "phase3": 180,
+    "total": 3600,
+    "_total_description": "全Phase合算の最大実行時間（秒）。scripts/cron-etf-rating-daily.sh の `timeout 3600` と必ず一致させること（SSOT統一）"
+  },
+  "concurrency": {
+    "phase1_max_parallel": 4,
+    "_description": "Phase 1 単一銘柄評価の最大並列数。Claude CLI Task の同時実行制限と WebSearch レート実測値で調整"
+  },
+  "mail": {
+    "subject_max_chars": 40,
+    "html_size_warn_kb": 90,
+    "html_size_error_kb": 100,
+    "_description": "Gmail クリップ回避のため HTML 100KB 未満。件名40字以内（モバイル省略防止）"
+  }
+}

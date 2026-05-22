@@ -1,0 +1,386 @@
+code: "2646"
+name: "グローバルX メタルビジネス-日本株式 ETF"
+version: "2026-05-22_v1"
+horizon: "中期（3〜12ヶ月）"
+sector: "国内金属（非鉄・鉄鋼・銅・ニッケル・電池材料）"
+benchmark_index: "FactSet Japan Metals Index（日本のメタル関連企業に投資）"
+top_holdings:
+  - "住友金属鉱山（銅・ニッケル）"
+  - "日本製鉄"
+  - "JFEホールディングス"
+  - "三井金属鉱業"
+  - "DOWAホールディングス"
+  - "東邦亜鉛 / 三菱マテリアル / 古河機械金属 等"
+notes: |
+  日本の非鉄金属＋鉄鋼＋電池材料メーカーに投資する円建てETF。
+  ドライバーは (1) 銅価格（住友金属鉱山）、(2) ニッケル価格（電池材料）、(3) 鉄鋼価格（日鉄・JFE）、(4) 中国景気（需要面）、(5) USD/JPY。
+  EV・再エネ需要（銅・ニッケル）と中国景気（鉄鋼）が二大成長ドライバー。
+  2015-16 中国減速で-40%、2020/3 -45%、2021 EV/再エネブームで+80%、2022以降中国不動産危機で軟調。
+  銅価格と中国製造業PMIに強連動。日本の鉄鋼は中国輸出鋼材の市況にも左右される。
+  デフォルトで分割なし。出来高はやや薄めなので売買時のスプレッド注意。
+
+top5_drivers: ["A-1", "A-2", "A-3", "A-4", "A-5"]
+top5_risk_drivers: ["B-1", "B-2", "B-3", "B-4", "B-9"]
+
+upside_conditions:
+  - id: "A-1"
+    description: "銅価格上昇（LME銅・住友金属鉱山ドライバー）"
+    type: "leading"
+    thresholds:
+      copper_usd_lb:
+        strong_bullish: ">=5.0"
+        bullish: ">=4.5"
+        neutral: "4.0-4.5"
+        bearish: "<4.0"
+      copper_lme_usd_t:
+        strong_bullish: ">=11000"
+        bullish: ">=10000"
+        neutral: "9000-10000"
+        bearish: "<9000"
+    data_sources:
+      - "WebSearch:銅 LME 価格 直近"
+      - "WebSearch:Copper LME warehouse stocks"
+      - "WebSearch:住友金属鉱山 決算"
+    past_cases:
+      - "2011/2 銅 $10000ピーク"
+      - "2024/5 銅 $11000突破"
+
+  - id: "A-2"
+    description: "ニッケル/亜鉛/コバルト上昇（電池材料・特殊鋼）"
+    type: "leading"
+    thresholds:
+      nickel_lme_usd_t:
+        strong_bullish: ">=22000"
+        bullish: ">=18000"
+        neutral: "15000-18000"
+        bearish: "<15000"
+      zinc_lme_usd_t:
+        strong_bullish: ">=3500"
+        bullish: ">=3000"
+        neutral: "2500-3000"
+        bearish: "<2500"
+    data_sources:
+      - "WebSearch:ニッケル LME 価格"
+      - "WebSearch:亜鉛 LME 価格"
+      - "WebSearch:コバルト 価格"
+    past_cases:
+      - "2022/3 ニッケル LME $100000スパイク"
+      - "2021 EV需要でニッケル急騰"
+
+  - id: "A-3"
+    description: "中国景気回復・PMI拡大（鉄鋼・銅需要源）"
+    type: "leading"
+    thresholds:
+      caixin_manufacturing_pmi:
+        strong_bullish: ">=52"
+        bullish: ">=50.5"
+        neutral: "49.5-50.5"
+        bearish: "<49.5"
+      china_steel_production_yoy_pct:
+        strong_bullish: ">=+5"
+        bullish: ">=0"
+        neutral: "-3〜0"
+        bearish: "<-3"
+    data_sources:
+      - "WebSearch:中国 製造業 PMI"
+      - "WebSearch:中国 粗鋼 生産"
+      - "WebSearch:中国 銅 消費"
+    past_cases:
+      - "2010-11 中国景気拡張で非鉄ブーム"
+      - "2017-18 中国回復局面"
+
+  - id: "A-4"
+    description: "EV/再エネ需要拡大（銅・ニッケル長期需要）"
+    type: "leading"
+    thresholds:
+      global_ev_sales_share_pct:
+        strong_bullish: ">=25"
+        bullish: ">=18"
+        neutral: "12-18"
+        bearish: "<12"
+      copper_renewable_demand_yoy_pct:
+        strong_bullish: ">=+15"
+        bullish: ">=+8"
+        neutral: "0〜+8"
+        bearish: "<0"
+    data_sources:
+      - "WebSearch:EV 販売 シェア 世界"
+      - "WebSearch:再エネ 投資 銅 需要"
+      - "WebSearch:Tesla BYD 販売"
+    past_cases:
+      - "2021 EV/再エネブームで非鉄+80%"
+
+  - id: "A-5"
+    description: "USD/JPY円安進行（円建て利益拡大）"
+    type: "leading"
+    thresholds:
+      usd_jpy:
+        strong_bullish: ">=155"
+        bullish: ">=145"
+        neutral: "135-145"
+        bearish: "<135"
+    data_sources:
+      - "WebSearch:ドル円 為替"
+      - "WebSearch:日銀 政策金利"
+    past_cases:
+      - "2022-24 円安進行で非鉄好業績"
+
+  - id: "A-6"
+    description: "鉱山供給制約（鉱石グレード低下・スト・新規鉱山遅延）"
+    type: "lagging"
+    thresholds:
+      copper_mine_disruption_yoy_pct:
+        strong_bullish: ">=+3"
+        bullish: ">=+1"
+        neutral: "0〜+1"
+        bearish: "<0"
+    data_sources:
+      - "WebSearch:銅 鉱山 ストライキ"
+      - "WebSearch:Codelco Escondida 生産"
+      - "WebSearch:銅 グレード 低下"
+    past_cases:
+      - "2017 Escondida大型スト"
+      - "2024 パナマ Cobre Panama操業停止"
+
+  - id: "A-7"
+    description: "米ドル安進行（DXY低下で非鉄全般プラス）"
+    type: "leading"
+    thresholds:
+      dxy_level:
+        strong_bullish: "<=95"
+        bullish: "<=100"
+        neutral: "100-105"
+        bearish: ">105"
+    data_sources:
+      - "WebSearch:ドルインデックス DXY"
+      - "WebSearch:US Dollar Index"
+    past_cases:
+      - "2020 DXY 89→非鉄全面高"
+      - "2024 DXY軟化で非鉄上昇"
+
+  - id: "A-8"
+    description: "在庫サイクル底打ち（LME在庫減少・コンタンゴ縮小）"
+    type: "leading"
+    thresholds:
+      copper_lme_stock_change_3m_pct:
+        strong_bullish: "<=-20"
+        bullish: "<=-10"
+        neutral: "-10〜0"
+        bearish: ">0"
+    data_sources:
+      - "WebSearch:LME 銅 在庫"
+      - "WebSearch:ニッケル 在庫 LME"
+      - "WebSearch:銅 バックワーデーション コンタンゴ"
+    past_cases:
+      - "2021 LME銅在庫急減で価格急騰"
+
+  - id: "A-9"
+    description: "米国インフラ投資・補助金（IRA・CHIPS）"
+    type: "lagging"
+    thresholds:
+      us_infrastructure_outlay_yoy_pct:
+        strong_bullish: ">=+15"
+        bullish: ">=+8"
+        neutral: "0〜+8"
+        bearish: "<0"
+    data_sources:
+      - "WebSearch:米国 IRA インフラ 投資"
+      - "WebSearch:バイデン Trump インフラ"
+      - "WebSearch:銅 米国 需要"
+    past_cases:
+      - "2021 米国インフラ法案で銅期待買い"
+
+  - id: "A-10"
+    description: "脱炭素規制・カーボンプライシング（銅需要を構造的に押し上げ）"
+    type: "leading"
+    thresholds:
+      eu_carbon_price_eur:
+        strong_bullish: ">=100"
+        bullish: ">=80"
+        neutral: "60-80"
+        bearish: "<60"
+    data_sources:
+      - "WebSearch:EU ETS カーボンプライス"
+      - "WebSearch:CBAM 炭素国境調整"
+      - "WebSearch:脱炭素 銅 需要"
+    past_cases:
+      - "2022 EU ETS €100突破"
+
+downside_conditions:
+  - id: "B-1"
+    description: "銅価格下落（中国需要減・在庫急増）"
+    type: "leading"
+    thresholds:
+      copper_usd_lb:
+        strong_bearish: "<3.5"
+        bearish: "<4.0"
+        neutral: "4.0-4.5"
+        bullish: ">=4.5"
+    data_sources:
+      - "WebSearch:銅 LME 価格 下落"
+      - "WebSearch:銅 在庫 急増"
+    past_cases:
+      - "2008/12 銅 -65%（リーマン）"
+      - "2015 銅 $1.95（中国減速）"
+
+  - id: "B-2"
+    description: "中国不動産危機再燃（鉄鋼・銅需要崩壊）"
+    type: "leading"
+    thresholds:
+      china_home_price_yoy_pct:
+        strong_bearish: "<=-8"
+        bearish: "<=-5"
+        neutral: "-5〜0"
+        bullish: ">0"
+      china_steel_production_yoy_pct:
+        strong_bearish: "<=-8"
+        bearish: "<=-3"
+        neutral: "-3〜0"
+        bullish: ">0"
+    data_sources:
+      - "WebSearch:中国 不動産 70都市 価格"
+      - "WebSearch:中国 粗鋼 生産"
+      - "WebSearch:恒大 碧桂園 デフォルト"
+    past_cases:
+      - "2015-16 中国減速で-40%"
+      - "2024 中国不動産危機継続"
+
+  - id: "B-3"
+    description: "EV需要鈍化・補助金縮小"
+    type: "leading"
+    thresholds:
+      global_ev_sales_share_pct:
+        strong_bearish: "<=10"
+        bearish: "<=15"
+        neutral: "15-20"
+        bullish: ">20"
+    data_sources:
+      - "WebSearch:EV 販売 鈍化 補助金"
+      - "WebSearch:Tesla 値下げ 販売減速"
+      - "WebSearch:BYD 中国 EV 需要"
+    past_cases:
+      - "2024 EV成長鈍化で電池材料軟化"
+
+  - id: "B-4"
+    description: "リセッション（世界同時景気後退）"
+    type: "lagging"
+    thresholds:
+      global_pmi_manufacturing:
+        strong_bearish: "<45"
+        bearish: "<48"
+        neutral: "48-50"
+        bullish: ">=50"
+    data_sources:
+      - "WebSearch:世界 製造業 PMI"
+      - "WebSearch:OECD 景気先行指数"
+    past_cases:
+      - "2008-09 世界同時不況"
+      - "2020/3 コロナリセッション"
+
+  - id: "B-5"
+    description: "ドル高進行（DXY上昇）"
+    type: "leading"
+    thresholds:
+      dxy_level:
+        strong_bearish: ">=110"
+        bearish: ">=105"
+        neutral: "100-105"
+        bullish: "<100"
+    data_sources:
+      - "WebSearch:ドルインデックス DXY"
+    past_cases:
+      - "2014-15 DXY急騰で非鉄-30%"
+
+  - id: "B-6"
+    description: "鉱山スト解決・供給回復"
+    type: "lagging"
+    thresholds:
+      copper_mine_supply_yoy_pct:
+        strong_bearish: ">=+5"
+        bearish: ">=+3"
+        neutral: "0〜+3"
+        bullish: "<0"
+    data_sources:
+      - "WebSearch:銅 鉱山 操業再開"
+      - "WebSearch:Codelco 増産"
+    past_cases:
+      - "2017 Escondida妥結後の銅軟化"
+
+  - id: "B-7"
+    description: "中央銀行タカ派化（FRB追加利上げ）"
+    type: "leading"
+    thresholds:
+      fed_funds_rate:
+        strong_bearish: ">=5.5"
+        bearish: ">=5.0"
+        neutral: "4.5-5.0"
+        bullish: "<4.5"
+    data_sources:
+      - "WebSearch:FRB FF金利 利上げ"
+      - "WebSearch:FRB タカ派"
+    past_cases:
+      - "2022 アグレッシブ利上げで非鉄軟化"
+
+  - id: "B-8"
+    description: "在庫過剰（LME在庫急増・コンタンゴ拡大）"
+    type: "leading"
+    thresholds:
+      copper_lme_stock_change_3m_pct:
+        strong_bearish: ">=+30"
+        bearish: ">=+15"
+        neutral: "0〜+15"
+        bullish: "<0"
+    data_sources:
+      - "WebSearch:LME 銅 在庫 急増"
+      - "WebSearch:銅 コンタンゴ"
+    past_cases:
+      - "2015 LME銅在庫倍増で価格急落"
+
+  - id: "B-9"
+    description: "USD/JPY円高進行"
+    type: "leading"
+    thresholds:
+      usd_jpy:
+        strong_bearish: "<140"
+        bearish: "<148"
+        neutral: "148-155"
+        bullish: ">=155"
+    data_sources:
+      - "WebSearch:ドル円 為替"
+      - "WebSearch:日銀 利上げ"
+    past_cases:
+      - "2024/8/5 160→141円"
+
+  - id: "B-10"
+    description: "バリュエーション過熱・大型ファンド売り"
+    type: "leading"
+    thresholds:
+      sumitomo_metal_pbr:
+        strong_bearish: ">=2.0"
+        bearish: ">=1.5"
+        neutral: "1.0-1.5"
+        bullish: "<1.0"
+    data_sources:
+      - "WebSearch:住友金属鉱山 PBR"
+      - "WebSearch:日本製鉄 PBR"
+      - "WebSearch:非鉄株 過熱"
+    past_cases:
+      - "2021 非鉄PBRピーク後の調整"
+
+scenarios:
+  base:
+    name: "基本シナリオ（銅$4.5前後・中国PMI50超維持）"
+    description: "銅 $4.5/lb・ニッケル $18000・中国製造業PMI 50超・USD/JPY 150円台・EVシェア20%。"
+    expected_return_pct: "+8〜+18"
+  upside:
+    name: "上振れシナリオ（銅スーパーサイクル＋中国景気加速）"
+    description: "銅 $5.5超＋中国財政出動＋EV/再エネ加速＋鉱山供給制約。非鉄全般+30%級。"
+    expected_return_pct: "+25〜+40"
+  downside:
+    name: "下振れシナリオ（中国不動産危機悪化＋EV鈍化＋ドル高）"
+    description: "中国不動産深刻化＋EV補助金縮小＋FRBタカ派＋DXY 110突破。非鉄-25〜-35%急落。"
+    expected_return_pct: "-25〜-35"
+
+revision_history:
+  - date: "2026-05-22"
+    note: "初版。グローバルX メタルビジネス-日本株式 ETF として、日本非鉄＋鉄鋼＋電池材料企業の観点で設計。"

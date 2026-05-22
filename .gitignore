@@ -82,6 +82,9 @@ backend/scripts/output/
 .tmp/
 backend/data/
 
+# ETF Rating 採点履歴（docs/13 SSOT、git 管理外）
+data/etf-rating/
+
 # X投稿履歴
 .claude/x-posts-history.md
 

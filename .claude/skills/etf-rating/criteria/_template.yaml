@@ -1,0 +1,113 @@
+# ============================================================
+# etf-rating criteria YAML テンプレート
+# ============================================================
+# このファイルは観点ストック新規作成時のテンプレート。
+# 各 ETF 用ファイル（例: 1629.yaml）はこの構造を踏襲すること。
+#
+# 必須フィールド:
+#   code, name, version, horizon, top5_drivers, top5_risk_drivers,
+#   upside_conditions (A-1〜A-10 10項目固定),
+#   downside_conditions (B-1〜B-10 10項目固定),
+#   scenarios (base / upside / downside 3本必須),
+#   revision_history
+#
+# 採点ルール（calc_params.json と一致させること）:
+#   - 0〜100点 (50 = 中立, 100 = 完全マッチ)
+#   - top5_drivers / top5_risk_drivers の ID は重み×2
+#   - ネット中期スコア = 上昇加重 + (100 - 下落加重)、中立=100, max=200
+#
+# type フィールドの値:
+#   leading: 先取り（今後3〜12ヶ月でこれから効く）
+#   lagging: 後追い（既に株価に織り込み済み）
+#   mixed:   先取り＋後追い混在
+# ============================================================
+
+code: "XXXX"
+name: "銘柄名（NEXT FUNDS XXX ／日興AM など連動指数の名称も含めて）"
+version: "YYYY-MM-DD_v1"
+horizon: "中期（3〜12ヶ月）"
+sector: "セクター分類（例: 商社・卸売、ゴールド、銀行、半導体）"
+benchmark_index: "連動指数名（例: TOPIX-17 商社・卸売、S&P500、LBMA金スポット価格）"
+top_holdings:
+  - "上位構成銘柄1（保有比率%）"
+  - "上位構成銘柄2"
+notes: |
+  銘柄特性の簡潔な説明。
+  - どんなセクターを表現するETFか
+  - 利益構造の特徴（資源価格依存度、為替感応度、金利感応度など）
+  - 取引高・スプレッド・分配金などETF固有の注意点
+  - 過去の急落事例・最大ドローダウン
+  - 株式分割の有無（is_chart_applied フラグ状況にも触れる）
+
+# 重み×2を適用するTop5ドライバー（上昇）
+top5_drivers: ["A-1", "A-2", "A-3", "A-5", "A-6"]
+
+# 重み×2を適用するTop5リスクドライバー（下落）
+top5_risk_drivers: ["B-1", "B-2", "B-8", "B-9"]
+
+# ============================================================
+# 上昇条件（10項目固定 A-1〜A-10）
+# ============================================================
+upside_conditions:
+  - id: "A-1"
+    description: "条件の簡潔な説明（25字程度推奨）"
+    type: "leading"
+    thresholds:
+      indicator_name:
+        strong_bullish: ">=90"
+        bullish: ">=70"
+        neutral: "60-70"
+        bearish: "<60"
+    data_sources:
+      - "WebSearch:検索キーワード1"
+      - "WebSearch:検索キーワード2"
+    past_cases:
+      - "YYYY-MM イベント名"
+      - "YYYY-MM 別のイベント名"
+
+  # A-2 〜 A-10 同様に9項目追加
+
+# ============================================================
+# 下落条件（10項目固定 B-1〜B-10）
+# ============================================================
+# 採点: 高得点=リスク大、低得点=リスク低（上昇条件と逆）
+downside_conditions:
+  - id: "B-1"
+    description: "リスク条件の簡潔な説明"
+    type: "leading"
+    thresholds:
+      indicator_name:
+        strong_bearish: ">=90"   # 高スコア=リスク大
+        bearish: ">=70"
+        neutral: "40-60"
+        bullish: "<30"
+    data_sources:
+      - "WebSearch:キーワード"
+    past_cases:
+      - "YYYY-MM 急落事例"
+
+  # B-2 〜 B-10 同様に9項目追加
+
+# ============================================================
+# シナリオ（base/upside/downside 3本必須）
+# ============================================================
+scenarios:
+  base:
+    name: "基本シナリオ（維持）"
+    description: "現状条件が続く維持シナリオ。3〜12ヶ月の中期前提"
+    expected_return_pct: "+10〜+20"
+  upside:
+    name: "上振れシナリオ"
+    description: "追い風条件が複数強化される上振れシナリオ"
+    expected_return_pct: "+25〜+40"
+  downside:
+    name: "下振れシナリオ"
+    description: "リスク条件が複数顕在化する下振れシナリオ"
+    expected_return_pct: "-20〜-30"
+
+# ============================================================
+# 改訂履歴
+# ============================================================
+revision_history:
+  - date: "YYYY-MM-DD"
+    note: "初版"

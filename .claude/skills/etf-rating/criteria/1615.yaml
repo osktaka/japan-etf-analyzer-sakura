@@ -1,0 +1,380 @@
+code: "1615"
+name: "NEXT FUNDS 東証銀行業株価指数連動型上場投信"
+version: "2026-05-22_v1"
+horizon: "中期（3〜12ヶ月）"
+sector: "国内金融（銀行）"
+benchmark_index: "東証銀行業株価指数（東証銀行業セクター時価総額加重）"
+top_holdings:
+  - "三菱UFJフィナンシャル・グループ"
+  - "三井住友フィナンシャルグループ"
+  - "みずほフィナンシャルグループ"
+  - "りそなホールディングス"
+  - "千葉銀行 / 静岡銀行 / ふくおかFG 等地銀大手"
+notes: |
+  3メガバンクで時価総額構成の約60%超を占める。次いで大手地銀が続く構造。
+  主要ドライバーは (1) 日銀政策金利・YCC柔軟化、(2) 国債利回り、(3) 貸出利ザヤ、(4) PBR1倍是正・自社株買い、(5) 信用コスト。
+  2022-23 PBR0.5倍水準から1倍是正の流れで急上昇、2024/8 急落（円キャリー巻き戻し・地銀VaR）後に再上昇。
+  地銀は不動産融資・国債含み損リスクで信用コスト動向が鍵。米地銀破綻のような信用イベントが発生すると連想売り。
+  デフォルトで分割なし。最大DD 2024-07-17→2024-08-05 約-27%。
+
+top5_drivers: ["A-1", "A-2", "A-3", "A-4", "A-6"]
+top5_risk_drivers: ["B-1", "B-2", "B-3", "B-4", "B-8"]
+
+upside_conditions:
+  - id: "A-1"
+    description: "日銀利上げサイクル（イールドカーブ急峻化）"
+    type: "leading"
+    thresholds:
+      boj_policy_rate_pct:
+        strong_bullish: ">=1.00"
+        bullish: ">=0.75"
+        neutral: "0.50-0.75"
+        bearish: "<0.50"
+    data_sources:
+      - "WebSearch:日銀 政策金利 利上げ"
+      - "WebSearch:植田総裁 発言"
+      - "WebSearch:日銀 6月 7月 9月 会合"
+    past_cases:
+      - "2024/3 マイナス金利解除"
+      - "2024/7 0.25%利上げ"
+      - "2024 銀行株急上昇局面"
+
+  - id: "A-2"
+    description: "国債利回り上昇（10年・30年 中長期ゾーン）"
+    type: "leading"
+    thresholds:
+      jgb_10y_yield_pct:
+        strong_bullish: ">=1.5"
+        bullish: ">=1.2"
+        neutral: "0.9-1.2"
+        bearish: "<0.9"
+    data_sources:
+      - "WebSearch:日本 10年債 利回り"
+      - "WebSearch:JGB 30年 利回り"
+      - "WebSearch:イールドカーブ 急峻化"
+    past_cases:
+      - "2024春 1%突破で銀行株加速"
+      - "2024年末 1.1%台定着"
+
+  - id: "A-3"
+    description: "貸出利ザヤ拡大（NIM改善・預貸金利スプレッド）"
+    type: "lagging"
+    thresholds:
+      mufg_nim_change_yoy_bp:
+        strong_bullish: ">=15"
+        bullish: ">=5"
+        neutral: "0-5"
+        bearish: "<0"
+    data_sources:
+      - "WebSearch:三菱UFJ NIM 利ザヤ"
+      - "WebSearch:三井住友 預貸金利スプレッド"
+      - "WebSearch:メガバンク 決算 資金利益"
+    past_cases:
+      - "2024 マイナス金利解除でNIM改善"
+
+  - id: "A-4"
+    description: "PBR1倍是正・ROE目標引き上げ"
+    type: "leading"
+    thresholds:
+      mufg_pbr:
+        strong_bullish: ">=1.2"
+        bullish: ">=1.0"
+        neutral: "0.8-1.0"
+        bearish: "<0.8"
+      sector_avg_roe_pct:
+        strong_bullish: ">=10"
+        bullish: ">=8"
+        neutral: "6-8"
+        bearish: "<6"
+    data_sources:
+      - "WebSearch:三菱UFJ PBR ROE"
+      - "WebSearch:東証 PBR1倍 是正 銀行"
+      - "WebSearch:メガバンク 中計 ROE"
+    past_cases:
+      - "2023 東証PBR1倍是正要請"
+      - "2024 メガバンクPBR 0.8→1.0倍"
+
+  - id: "A-5"
+    description: "金融緩和終了・量的引き締め（QT）開始"
+    type: "leading"
+    thresholds:
+      boj_balance_sheet_change_yoy_pct:
+        strong_bullish: "<=-5"
+        bullish: "<=-2"
+        neutral: "-2〜0"
+        bearish: ">0"
+    data_sources:
+      - "WebSearch:日銀 国債買入 減額"
+      - "WebSearch:日銀 バランスシート"
+      - "WebSearch:量的引き締め QT 日本"
+    past_cases:
+      - "2024/7 国債買入減額発表"
+      - "2024秋 月6兆円→月3兆円ペース"
+
+  - id: "A-6"
+    description: "自社株買い拡大・累進配当・株主還元強化"
+    type: "leading"
+    thresholds:
+      sector_buyback_total_yoy_pct:
+        strong_bullish: ">=30"
+        bullish: ">=15"
+        neutral: "0-15"
+        bearish: "<0"
+    data_sources:
+      - "WebSearch:三菱UFJ 自社株買い"
+      - "WebSearch:三井住友 還元方針"
+      - "WebSearch:みずほ 累進配当"
+    past_cases:
+      - "2023 メガバンク累進配当宣言"
+      - "2024 自社株買い大型化"
+
+  - id: "A-7"
+    description: "インフレ定着・名目GDP拡大"
+    type: "lagging"
+    thresholds:
+      japan_core_cpi_yoy_pct:
+        strong_bullish: ">=2.5"
+        bullish: ">=2.0"
+        neutral: "1.5-2.0"
+        bearish: "<1.5"
+    data_sources:
+      - "WebSearch:日本 コアCPI 直近"
+      - "WebSearch:日本 春闘 賃上げ 直近"
+      - "WebSearch:日本 名目GDP"
+    past_cases:
+      - "2024 春闘5%超賃上げ"
+      - "2024 コアCPI 2%超定着"
+
+  - id: "A-8"
+    description: "政策保有株圧縮加速・売却益計上"
+    type: "leading"
+    thresholds:
+      cross_holdings_reduction_yoy_pct:
+        strong_bullish: ">=15"
+        bullish: ">=8"
+        neutral: "3-8"
+        bearish: "<3"
+    data_sources:
+      - "WebSearch:メガバンク 政策保有株 削減"
+      - "WebSearch:三菱UFJ 持ち合い株 売却"
+      - "WebSearch:コーポレートガバナンス・コード 改訂"
+    past_cases:
+      - "2023-24 政策保有株削減加速"
+
+  - id: "A-9"
+    description: "銀行間M&A・統合・地銀再編"
+    type: "leading"
+    thresholds:
+      regional_bank_ma_announce_count_6m:
+        strong_bullish: ">=3"
+        bullish: ">=1"
+        neutral: "0"
+        bearish: "0"
+    data_sources:
+      - "WebSearch:地銀 統合 再編 直近"
+      - "WebSearch:銀行 M&A 案件"
+      - "WebSearch:金融庁 地銀 再編 方針"
+    past_cases:
+      - "2020-22 SBI地銀連合"
+      - "2022 青森・みちのく統合"
+
+  - id: "A-10"
+    description: "預金獲得競争緩和・運用利回り改善"
+    type: "lagging"
+    thresholds:
+      deposit_cost_yoy_bp_change:
+        strong_bullish: "<=5"
+        bullish: "<=10"
+        neutral: "10-20"
+        bearish: ">20"
+    data_sources:
+      - "WebSearch:銀行 預金金利 競争"
+      - "WebSearch:ネット銀行 預金 流入"
+      - "WebSearch:メガバンク 普通預金 金利"
+    past_cases:
+      - "2024 普通預金金利0.001→0.1%"
+
+downside_conditions:
+  - id: "B-1"
+    description: "日銀利下げ転換・YCC再導入"
+    type: "leading"
+    thresholds:
+      boj_policy_rate_pct:
+        strong_bearish: "<=0.25"
+        bearish: "<=0.50"
+        neutral: "0.50-0.75"
+        bullish: ">0.75"
+    data_sources:
+      - "WebSearch:日銀 利下げ 利上げ停止"
+      - "WebSearch:植田総裁 ハト派"
+      - "WebSearch:日本 景気後退 日銀"
+    past_cases:
+      - "2016/1 マイナス金利導入で銀行株急落"
+      - "2008-09 利下げ局面で銀行株半値"
+
+  - id: "B-2"
+    description: "国債利回り低下（10年0.5%割れ）"
+    type: "leading"
+    thresholds:
+      jgb_10y_yield_pct:
+        strong_bearish: "<=0.5"
+        bearish: "<=0.8"
+        neutral: "0.8-1.0"
+        bullish: ">1.0"
+    data_sources:
+      - "WebSearch:日本 10年債 利回り"
+      - "WebSearch:JGB 30年 利回り 低下"
+    past_cases:
+      - "2019 10年マイナス利回り"
+      - "2020/3 0%付近への急低下"
+
+  - id: "B-3"
+    description: "信用コスト悪化（地銀破綻・大型貸倒れ）"
+    type: "leading"
+    thresholds:
+      credit_cost_yoy_pct:
+        strong_bearish: ">=50"
+        bearish: ">=20"
+        neutral: "-5〜+20"
+        bullish: "<=-5"
+    data_sources:
+      - "WebSearch:地銀 破綻 経営懸念"
+      - "WebSearch:メガバンク 信用コスト 引当金"
+      - "WebSearch:不動産融資 不良債権"
+    past_cases:
+      - "2023/3 SVB・シグネチャー破綻連想売り"
+      - "2003 りそな問題"
+
+  - id: "B-4"
+    description: "リセッション・景気後退入り"
+    type: "lagging"
+    thresholds:
+      japan_real_gdp_qoq_annualized_pct:
+        strong_bearish: "<=-2.0"
+        bearish: "<=-0.5"
+        neutral: "-0.5〜+1.5"
+        bullish: ">=+1.5"
+    data_sources:
+      - "WebSearch:日本 GDP 直近 速報"
+      - "WebSearch:景気動向指数 一致 先行"
+      - "WebSearch:日銀 短観 直近"
+    past_cases:
+      - "2008-09 リーマンショック"
+      - "2020/3-6 コロナリセッション"
+
+  - id: "B-5"
+    description: "為替介入によるVaRショック・国債含み損拡大"
+    type: "leading"
+    thresholds:
+      jgb_10y_yield_jump_1m_bp:
+        strong_bearish: ">=40"
+        bearish: ">=20"
+        neutral: "0-20"
+        bullish: "<0"
+    data_sources:
+      - "WebSearch:財務省 為替介入"
+      - "WebSearch:VaR ショック 国債"
+      - "WebSearch:銀行 国債 含み損"
+    past_cases:
+      - "2003/6 VaRショック"
+      - "2024/4-5 介入＋国債利回り急騰"
+
+  - id: "B-6"
+    description: "不動産価格下落（地銀融資懸念）"
+    type: "leading"
+    thresholds:
+      reit_index_yoy_pct:
+        strong_bearish: "<=-15"
+        bearish: "<=-10"
+        neutral: "-10〜0"
+        bullish: ">0"
+    data_sources:
+      - "WebSearch:J-REIT 指数 直近"
+      - "WebSearch:オフィス 空室率 都心"
+      - "WebSearch:商業不動産 価格"
+    past_cases:
+      - "2008-09 不動産・REIT暴落"
+      - "2023 米国オフィス価格下落"
+
+  - id: "B-7"
+    description: "FATF/規制強化・コンプライアンスコスト増"
+    type: "lagging"
+    thresholds:
+      regulatory_fine_announce_count_6m:
+        strong_bearish: ">=2"
+        bearish: ">=1"
+        neutral: "0"
+        bullish: "0"
+    data_sources:
+      - "WebSearch:銀行 FATF マネロン 規制"
+      - "WebSearch:金融庁 業務改善命令"
+      - "WebSearch:銀行 制裁金"
+    past_cases:
+      - "2014 メガバンク米財務省制裁"
+      - "2021 みずほシステム障害"
+
+  - id: "B-8"
+    description: "バリュエーション過熱（PBR1倍超・モメンタム鈍化）"
+    type: "leading"
+    thresholds:
+      mufg_pbr:
+        strong_bearish: ">=1.5"
+        bearish: ">=1.2"
+        neutral: "0.9-1.2"
+        bullish: "<0.9"
+    data_sources:
+      - "WebSearch:三菱UFJ PBR PER"
+      - "WebSearch:メガバンク 過熱"
+      - "WebSearch:銀行株 ピーク"
+    past_cases:
+      - "2024/7 PBR1.2超で-27%急落"
+      - "2006 PBR1.5超で長期下落入り"
+
+  - id: "B-9"
+    description: "預金流出（ネット銀行・テック銀行台頭）"
+    type: "leading"
+    thresholds:
+      megabank_deposit_yoy_pct:
+        strong_bearish: "<=-5"
+        bearish: "<=-1"
+        neutral: "-1〜+3"
+        bullish: ">+3"
+    data_sources:
+      - "WebSearch:ネット銀行 預金 流入"
+      - "WebSearch:楽天銀行 SBI銀行 預金"
+      - "WebSearch:メガバンク 預金残高 推移"
+    past_cases:
+      - "2023/3 SVB預金流出（米国・連想売り）"
+
+  - id: "B-10"
+    description: "M&A競争激化（プレミアム高騰・買収減損）"
+    type: "lagging"
+    thresholds:
+      cross_border_ma_premium_avg_pct:
+        strong_bearish: ">=50"
+        bearish: ">=30"
+        neutral: "15-30"
+        bullish: "<15"
+    data_sources:
+      - "WebSearch:メガバンク 海外M&A 減損"
+      - "WebSearch:三菱UFJ Union Bank 米国"
+    past_cases:
+      - "2017 三菱UFJ Union Bank減損"
+
+scenarios:
+  base:
+    name: "基本シナリオ（日銀緩慢な利上げ＋PBR1倍維持）"
+    description: "日銀政策金利0.75%・10年JGB 1.2%・NIM改善継続・PBR1.0倍前後維持。"
+    expected_return_pct: "+8〜+18"
+  upside:
+    name: "上振れシナリオ（日銀利上げ加速＋ROE目標引き上げ＋政策保有株売却益）"
+    description: "日銀1%利上げ＋10年JGB 1.5%超＋メガバンクROE目標10%＋政策保有株売却益計上。PBR1.2倍へ。"
+    expected_return_pct: "+25〜+40"
+  downside:
+    name: "下振れシナリオ（日銀利下げ＋信用コスト悪化＋為替VaRショック）"
+    description: "景気後退で日銀利下げ＋地銀信用イベント＋VaRショック。-20〜-30%急落で2024/8型再来。"
+    expected_return_pct: "-20〜-30"
+
+revision_history:
+  - date: "2026-05-22"
+    note: "初版。東証銀行業指数連動として日銀政策金利・国債利回り・NIM・PBR是正・信用コストを5大ドライバーに設定。"

@@ -44,6 +44,7 @@ declare -ra JOB_PROFILES=(
   "daily_advisor_evening|dev"
   "daily_advisor_weekly|dev"
   "mechanical_rule_watcher|dev"
+  "etf_rating_daily|dev"
 )
 PROFILE="${CRON_BATCH_PROFILE:-dev}"
 if [[ "$PROFILE" != "dev" && "$PROFILE" != "prod" ]]; then
@@ -175,6 +176,7 @@ log_name_for() {
     daily_advisor_evening)   echo "advisor_evening" ;;
     daily_advisor_weekly)    echo "advisor_weekly" ;;
     mechanical_rule_watcher) echo "advisor_watcher" ;;
+    etf_rating_daily)        echo "etf_rating" ;;
     *)                       echo "$1" ;;
   esac
 }
@@ -330,6 +332,7 @@ declare -ra CATCHUP_JOBS=(
   "daily_advisor_weekly|18:00|22:00|fri|dev"
   "update_theme_etfs|03:00|23:59|sun|dev"
   "rotate_logs|05:00|23:59|daily|both"
+  "etf_rating_daily|18:15|22:00|weekday|dev"
 )
 
 # HH:MM を分単位の整数に変換
@@ -434,6 +437,12 @@ catch_up_sweep() {
       case "$name" in
         update_etf_data)         run_batch update_etf_data --smart --rate-limit 3.0 ;;
         sync_from_minkabu)       run_batch sync_from_minkabu --rate-limit 1.5 ;;
+        etf_rating_daily)
+          if [[ "$DRY_RUN" == true ]]; then
+            echo "[dry-run] RUN etf_rating_daily (via bash scripts/cron-etf-rating-daily.sh)"
+          else
+            bash scripts/cron-etf-rating-daily.sh &
+          fi ;;
         *)                       run_batch "$name" ;;
       esac
     fi
@@ -465,6 +474,12 @@ if [[ -n "$ONLY_NAME" ]]; then
     daily_advisor_evening)    run_batch daily_advisor_evening ;;
     daily_advisor_weekly)     run_batch daily_advisor_weekly ;;
     mechanical_rule_watcher)  run_batch mechanical_rule_watcher ;;
+    etf_rating_daily)
+      if [[ "$DRY_RUN" == true ]]; then
+        echo "[dry-run] RUN etf_rating_daily (via bash scripts/cron-etf-rating-daily.sh)"
+      else
+        bash scripts/cron-etf-rating-daily.sh
+      fi ;;
     *)
       echo "Unknown --only target: $ONLY_NAME" >&2
       exit 1 ;;
@@ -526,6 +541,19 @@ fi
 # 9) daily_advisor_evening: 30 17 * * 1-5  平日（祝日スキップ）  [dev限定]
 if at_time "17:30" && is_weekday && ! is_holiday; then
   run_batch daily_advisor_evening
+fi
+
+# 9.5) etf_rating_daily: 月〜木 18:00 / 金 18:15（祝日スキップ）  [dev限定]
+#      金曜は daily_advisor_weekly (18:00) と並列を避けるため 18:15 起動
+#      Claude CLI で /etf-rating all --send-mail を起動（bash 直接呼び出し）
+if is_weekday && ! is_holiday && is_enabled_for_profile etf_rating_daily; then
+  if { [[ "$DOW" != "5" ]] && at_time "18:00"; } || { [[ "$DOW" == "5" ]] && at_time "18:15"; }; then
+    if [[ "$DRY_RUN" == true ]]; then
+      echo "[dry-run] RUN etf_rating_daily (via bash scripts/cron-etf-rating-daily.sh)"
+    else
+      bash scripts/cron-etf-rating-daily.sh &
+    fi
+  fi
 fi
 
 # 10) daily_advisor_weekly: 0 18 * * 5  金曜（祝日でも実行 ※週末入りの整理目的）  [dev限定]

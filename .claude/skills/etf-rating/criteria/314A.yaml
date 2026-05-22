@@ -1,0 +1,369 @@
+code: "314A"
+name: "iシェアーズ ゴールド ETF"
+version: "2026-05-22_v1"
+horizon: "中期（3〜12ヶ月）"
+sector: "コモディティ（貴金属・金）"
+benchmark_index: "LBMA金スポット価格（円建て・為替ヘッジなし）"
+top_holdings:
+  - "現物金地金（LBMA Good Delivery Bars）"
+notes: |
+  円建てゴールドETF。価格決定の主要因は (1) 米実質金利、(2) ドル指数、(3) 中央銀行金買い、(4) 地政学リスク、(5) ETF/投信資金フロー。
+  為替ヘッジなしのため、USD/JPY 円安が円建てゴールド価格を押し上げる構造（ドル建て金価格 × USD/JPY の2軸）。
+  株式・債券との相関が低くポートフォリオの分散効果が高い一方、利息・配当がないため実質金利上昇局面では強い逆風。
+  2022 FRB急速利上げ局面で-20%下落、2024 中央銀行金買い継続で過去最高更新。
+  デフォルトで is_chart_applied = None（分割なし）。
+
+top5_drivers: ["A-1", "A-2", "A-3", "A-4", "A-5"]
+top5_risk_drivers: ["B-1", "B-2", "B-3", "B-4", "B-9"]
+
+upside_conditions:
+  - id: "A-1"
+    description: "米実質金利低下（10年TIPS利回り低下）"
+    type: "leading"
+    thresholds:
+      us10y_tips_yield_pct:
+        strong_bullish: "<=0.5"
+        bullish: "<=1.5"
+        neutral: "1.5-2.0"
+        bearish: ">2.0"
+    data_sources:
+      - "WebSearch:米10年 TIPS 実質金利"
+      - "WebSearch:Real yield US 10Y"
+      - "WebSearch:Breakeven inflation rate"
+    past_cases:
+      - "2020 実質金利-1%下抜けで金最高値"
+      - "2024 実質金利低下で過去最高更新"
+
+  - id: "A-2"
+    description: "FRB利下げサイクル開始・タカ派から転換"
+    type: "leading"
+    thresholds:
+      fed_funds_rate:
+        strong_bullish: "<=3.5"
+        bullish: "<=4.0"
+        neutral: "4.0-4.5"
+        bearish: ">4.5"
+    data_sources:
+      - "WebSearch:FRB FF金利 直近 利下げ"
+      - "WebSearch:FOMC ドットプロット 直近"
+      - "WebSearch:FRB 議長 ハト派 タカ派"
+    past_cases:
+      - "2019 中盤利下げで金+18%"
+      - "2024/9 0.5%利下げで金最高値更新"
+
+  - id: "A-3"
+    description: "中央銀行金買い（中国・トルコ・インド等）"
+    type: "lagging"
+    thresholds:
+      central_bank_purchase_yoy_t:
+        strong_bullish: ">=1000"
+        bullish: ">=800"
+        neutral: "500-800"
+        bearish: "<500"
+    data_sources:
+      - "WebSearch:中央銀行 金 購入 World Gold Council"
+      - "WebSearch:中国人民銀行 金 保有"
+      - "WebSearch:トルコ中銀 金準備"
+    past_cases:
+      - "2022 過去最大1136tの中央銀行買い"
+      - "2023-24 連続1000t超ペース"
+
+  - id: "A-4"
+    description: "地政学リスク（中東・ウクライナ・台湾）"
+    type: "leading"
+    thresholds:
+      geopolitical_risk_index:
+        strong_bullish: ">=200"
+        bullish: ">=120"
+        neutral: "80-120"
+        bearish: "<80"
+    data_sources:
+      - "WebSearch:中東 戦争 イラン イスラエル"
+      - "WebSearch:ウクライナ ロシア 和平"
+      - "WebSearch:台湾 有事 リスク"
+      - "WebSearch:Geopolitical Risk Index"
+    past_cases:
+      - "2022/2 ウクライナ侵攻"
+      - "2024 ハマスイスラエル戦争"
+
+  - id: "A-5"
+    description: "ドル安進行（DXY低下）"
+    type: "leading"
+    thresholds:
+      dxy_level:
+        strong_bullish: "<=95"
+        bullish: "<=100"
+        neutral: "100-105"
+        bearish: ">105"
+    data_sources:
+      - "WebSearch:ドルインデックス DXY 直近"
+      - "WebSearch:US Dollar Index"
+      - "WebSearch:EUR/USD GBP/USD 動向"
+    past_cases:
+      - "2020 DXY 89→金$2070"
+      - "2024 DXY軟化で金最高値"
+
+  - id: "A-6"
+    description: "インフレ再加速・スタグフレーション懸念"
+    type: "leading"
+    thresholds:
+      us_cpi_yoy_pct:
+        strong_bullish: ">=4.0"
+        bullish: ">=3.0"
+        neutral: "2.0-3.0"
+        bearish: "<2.0"
+    data_sources:
+      - "WebSearch:米国 CPI コアCPI 直近"
+      - "WebSearch:Breakeven inflation rate"
+      - "WebSearch:スタグフレーション 懸念"
+    past_cases:
+      - "1970年代 インフレ局面で金最強"
+      - "2022 インフレ9%局面でも実質金利急騰で逆風（条件付き）"
+
+  - id: "A-7"
+    description: "ETF/投信流入・投機筋ロング積み増し"
+    type: "lagging"
+    thresholds:
+      gold_etf_holdings_change_3m_t:
+        strong_bullish: ">=100"
+        bullish: ">=50"
+        neutral: "0-50"
+        bearish: "<0"
+    data_sources:
+      - "WebSearch:GLD ETF 金 保有量"
+      - "WebSearch:World Gold Council ETF holdings"
+      - "WebSearch:CFTC 金 投機筋 ポジション"
+    past_cases:
+      - "2020 ETF流入で金最高値"
+      - "2024 投信流入再開"
+
+  - id: "A-8"
+    description: "中国/インド実需（宝飾品・投資需要）"
+    type: "lagging"
+    thresholds:
+      china_india_demand_yoy_pct:
+        strong_bullish: ">=15"
+        bullish: ">=5"
+        neutral: "-5〜+5"
+        bearish: "<-5"
+    data_sources:
+      - "WebSearch:中国 金 宝飾品 需要"
+      - "WebSearch:インド 結婚需要 金"
+      - "WebSearch:World Gold Council demand trends"
+    past_cases:
+      - "2024 中国個人投資需要急増"
+      - "2023 インド宝飾品需要回復"
+
+  - id: "A-9"
+    description: "脱ドル化トレンド（ロシア凍結資産懸念）"
+    type: "leading"
+    thresholds:
+      brics_gold_reserve_share_pct:
+        strong_bullish: ">=25"
+        bullish: ">=20"
+        neutral: "15-20"
+        bearish: "<15"
+    data_sources:
+      - "WebSearch:脱ドル化 BRICS 金"
+      - "WebSearch:ロシア 凍結資産 制裁"
+      - "WebSearch:中央銀行 ドル準備 比率"
+    past_cases:
+      - "2022 ロシア外貨準備凍結→新興国脱ドル化"
+      - "2023-24 BRICS拡大・準備通貨議論"
+
+  - id: "A-10"
+    description: "USD/JPY円安進行（円建てゴールド押し上げ）"
+    type: "leading"
+    thresholds:
+      usd_jpy:
+        strong_bullish: ">=155"
+        bullish: ">=145"
+        neutral: "135-145"
+        bearish: "<135"
+    data_sources:
+      - "WebSearch:ドル円 為替"
+      - "WebSearch:日銀 政策金利"
+    past_cases:
+      - "2022-24 円安と金高のダブル押し上げ"
+
+downside_conditions:
+  - id: "B-1"
+    description: "米実質金利上昇（TIPS利回り急騰）"
+    type: "leading"
+    thresholds:
+      us10y_tips_yield_pct:
+        strong_bearish: ">=2.5"
+        bearish: ">=2.0"
+        neutral: "1.5-2.0"
+        bullish: "<1.5"
+    data_sources:
+      - "WebSearch:米10年 TIPS 実質金利"
+      - "WebSearch:Real yield US 10Y"
+    past_cases:
+      - "2022 TIPS 1.7%急騰→金-20%"
+      - "2013 テーパータントラム時のTIPS急騰"
+
+  - id: "B-2"
+    description: "FRBタカ派化・追加利上げ"
+    type: "leading"
+    thresholds:
+      fed_funds_rate:
+        strong_bearish: ">=5.5"
+        bearish: ">=5.0"
+        neutral: "4.5-5.0"
+        bullish: "<4.5"
+    data_sources:
+      - "WebSearch:FRB FF金利 利上げ"
+      - "WebSearch:米国 コアPCE インフレ"
+    past_cases:
+      - "2022 アグレッシブ利上げで金-20%"
+      - "1980 Volcker利上げで金-65%"
+
+  - id: "B-3"
+    description: "ドル高進行（DXY上昇）"
+    type: "leading"
+    thresholds:
+      dxy_level:
+        strong_bearish: ">=110"
+        bearish: ">=105"
+        neutral: "100-105"
+        bullish: "<100"
+    data_sources:
+      - "WebSearch:ドルインデックス DXY"
+      - "WebSearch:US Dollar Index"
+    past_cases:
+      - "2022 DXY 114突破で金軟化"
+      - "2014-15 DXY急騰で金-30%"
+
+  - id: "B-4"
+    description: "中央銀行金売却・買い増しペース鈍化"
+    type: "lagging"
+    thresholds:
+      central_bank_purchase_yoy_t:
+        strong_bearish: "<300"
+        bearish: "<500"
+        neutral: "500-800"
+        bullish: ">=800"
+    data_sources:
+      - "WebSearch:中央銀行 金 売却"
+      - "WebSearch:World Gold Council central bank"
+    past_cases:
+      - "1999-2007 各国中銀金売却局面"
+      - "2013 キプロス・ベネズエラ金売却"
+
+  - id: "B-5"
+    description: "地政学リスク後退（平和回帰・停戦）"
+    type: "lagging"
+    thresholds:
+      geopolitical_risk_index:
+        strong_bearish: "<60"
+        bearish: "<80"
+        neutral: "80-120"
+        bullish: ">=120"
+    data_sources:
+      - "WebSearch:中東 停戦 イラン 和平"
+      - "WebSearch:ウクライナ 停戦 合意"
+      - "WebSearch:Geopolitical Risk Index"
+    past_cases:
+      - "2003 イラク戦争開戦後の地政学プレミアム剥落"
+      - "1991 湾岸戦争終結後の金軟化"
+
+  - id: "B-6"
+    description: "宝飾品/実需減退（価格高で需要崩壊）"
+    type: "lagging"
+    thresholds:
+      china_india_demand_yoy_pct:
+        strong_bearish: "<=-15"
+        bearish: "<=-5"
+        neutral: "-5〜+5"
+        bullish: ">+5"
+    data_sources:
+      - "WebSearch:インド 金 需要 価格高"
+      - "WebSearch:中国 結婚 金 需要"
+      - "WebSearch:World Gold Council jewellery"
+    past_cases:
+      - "2013 インド輸入関税引き上げ"
+      - "2022 中国コロナロックダウンで実需減"
+
+  - id: "B-7"
+    description: "ETF流出（投機筋ロング解消）"
+    type: "lagging"
+    thresholds:
+      gold_etf_holdings_change_3m_t:
+        strong_bearish: "<=-100"
+        bearish: "<=-50"
+        neutral: "-50〜0"
+        bullish: ">0"
+    data_sources:
+      - "WebSearch:GLD ETF 流出"
+      - "WebSearch:CFTC 金 ロング解消"
+    past_cases:
+      - "2013 GLD 800t→700t急減で金-30%"
+      - "2022 ETF連続流出"
+
+  - id: "B-8"
+    description: "暗号資産シフト（ビットコインへの代替需要流出）"
+    type: "leading"
+    thresholds:
+      bitcoin_yoy_pct:
+        strong_bearish: ">=100"
+        bearish: ">=50"
+        neutral: "0-50"
+        bullish: "<0"
+    data_sources:
+      - "WebSearch:Bitcoin BTC 価格 直近"
+      - "WebSearch:暗号資産 デジタルゴールド"
+      - "WebSearch:Bitcoin ETF flow"
+    past_cases:
+      - "2020-21 BTC急騰で金不振"
+      - "2024 BTC現物ETF承認で資金シフト"
+
+  - id: "B-9"
+    description: "バリュエーション過熱（金価格急騰後の調整）"
+    type: "leading"
+    thresholds:
+      gold_yoy_pct:
+        strong_bearish: ">=40"
+        bearish: ">=25"
+        neutral: "10-25"
+        bullish: "<10"
+    data_sources:
+      - "WebSearch:金価格 LBMA 直近"
+      - "WebSearch:金 過去最高 調整"
+    past_cases:
+      - "2011/9 $1920高値→2015/12 $1051（-45%）"
+      - "2020/8 $2070→2022/10 $1620（-22%）"
+
+  - id: "B-10"
+    description: "USD/JPY円高進行（円建てゴールド圧迫）"
+    type: "leading"
+    thresholds:
+      usd_jpy:
+        strong_bearish: "<140"
+        bearish: "<148"
+        neutral: "148-155"
+        bullish: ">=155"
+    data_sources:
+      - "WebSearch:ドル円 為替"
+      - "WebSearch:日銀 利上げ"
+    past_cases:
+      - "2008秋 円高110→80円で円建て金停滞"
+      - "2024/8/5 160→141円で円建て金急落"
+
+scenarios:
+  base:
+    name: "基本シナリオ（実質金利安定・中銀買い継続）"
+    description: "TIPS利回り1.8-2.0%・FRB緩慢利下げ・中央銀行金買い800-1000t継続・USD/JPY 150円台。"
+    expected_return_pct: "+8〜+15"
+  upside:
+    name: "上振れシナリオ（利下げ加速＋地政学拡大＋脱ドル化加速）"
+    description: "FRB予想以上利下げ＋中東戦争拡大＋BRICS拡大＋中央銀行買い加速。実質金利1%割れで金最高値更新ペース。"
+    expected_return_pct: "+20〜+35"
+  downside:
+    name: "下振れシナリオ（実質金利急騰＋ドル高＋地政学緩和）"
+    description: "FRBタカ派再化＋TIPS利回り2.5%超＋中東停戦＋USD/JPY 140円割れ。三重苦で金は-20〜-25%急落。"
+    expected_return_pct: "-15〜-25"
+
+revision_history:
+  - date: "2026-05-22"
+    note: "初版。米実質金利・FRB・中央銀行買い・地政学・ドル指数を5大ドライバーに設定。"

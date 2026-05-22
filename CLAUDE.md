@@ -27,6 +27,8 @@
 | さくらサーバー構築ガイド | docs/11_さくらレンタルサーバー構築ガイド.md | CGI+Flask汎用ノウハウ（他プロジェクト再利用可） |
 | 個人投資戦略を確認したい | docs/12_personal_strategy.md | A群/B群目標配分、機械ルール、改訂履歴（SSOT） |
 | 戦略書を改訂したい | docs/12a_戦略書改訂手順.md | target_holdings に新銘柄を追加・置換する際のチェックリスト、動作確認手順、落とし穴 |
+| 銘柄評価の設計を確認したい | docs/13_銘柄評価設計.md | 上昇10×下落10、Top5重み×2、ネット中期スコア、criteria YAML スキーマ、観点追加手順、採点履歴 jsonl 仕様 |
+| 銘柄を中期マッチ度で評価したい | .claude/skills/etf-rating/SKILL.md | `/etf-rating <code>` で単一銘柄評価、`/etf-rating all --send-mail` で全銘柄＋メール配信 |
 | デモユーザーの取引分析をしたい | reports/demo/PROMPT.md | portfolio-analysis-v2スキルによる日次運用 |
 | ポートフォリオ分析v2をしたい | .claude/skills/portfolio-analysis-v2/SKILL.md | /pf-v2（ブレインストーミング方式） |
 | ポートフォリオ計画を対話確認・管理したい | .claude/skills/my-portfolio/SKILL.md | /my-portfolio（損益/配分/銘柄変更/メールプレビュー） |
@@ -122,8 +124,8 @@ frontend/
 
 | 値 | 用途 |
 |---|---|
-| `dev`（デフォルト） | 開発環境。全ジョブ実行（advisor 3本＋theme_etfs＋watcher を含む） |
-| `prod` | 本番環境想定。dev限定5ジョブを除外 |
+| `dev`（デフォルト） | 開発環境。全ジョブ実行（advisor 3本＋theme_etfs＋watcher＋etf_rating の dev限定6ジョブを含む） |
+| `prod` | 本番環境想定。dev限定6ジョブを除外 |
 
 不正値（dev/prod以外）は `exit 2` で起動拒否される。`.env` の `CRON_BATCH_PROFILE` で設定。
 
@@ -141,6 +143,7 @@ frontend/
 | 07:00 | 平日（祝日スキップ） | `daily_advisor_morning`（寄り付き前: overnight市況＋前夜決定事項リマインダー） | **dev** | `advisor_morning.log` |
 | 17:30 | 平日（祝日スキップ） | `daily_advisor_evening`（終値ベース完全状態: 銘柄別配分＋採用外＋売買プラン。前夜サマリJSON永続化） | **dev** | `advisor_evening.log` |
 | 18:00 | 金（祝日でも実行） | `daily_advisor_weekly` | **dev** | `advisor_weekly.log` |
+| 月-木 18:00 / 金 18:15 | 平日（祝日スキップ） | `etf_rating_daily`（target_holdings + watchlist 全銘柄を上昇10×下落10で採点、1通フル詳細メール配信＝件名で強い追い風/警戒件数を速報、本文は冒頭サマリ＋全銘柄スコア表＋市場環境＋銘柄別4部構成「ひとこと／Top5／リスク／3シナリオ」＋20項目スコアは `<details>` 折りたたみ。金曜のみ 18:15 にずらすのは weekly 18:00 との並列回避） | **dev** | `etf_rating.log` |
 | `*/5 9-15` | 平日（祝日スキップ） | `mechanical_rule_watcher` | **dev** | `advisor_watcher.log` |
 
 月曜06:00は `run_chain` による fail-stop 連結（同期実行）。途中で失敗した場合、後続バッチはスキップされる（本番crontabの `&&` 連結と同等の挙動）。
@@ -179,7 +182,7 @@ bash scripts/cron-batch.sh --help
 
 - **`set -e` を使わない**: 1ジョブの失敗が他ジョブを止めないようにする。
 - **ログはコンテナ内シェル経由で書き込む**: 既存ログがコンテナroot所有のため、ホスト側から `>>` でappendするとPermission deniedになる。`docker compose exec -T backend bash -c "... >> /app/logs/<NAME>.log"` で統一。
-- **現状開発環境のみ運用**: Docker非依存版（venv直接実行ラッパー）の実装後に本番デプロイ予定。本番デプロイ時は `.env` で `CRON_BATCH_PROFILE=prod` を設定すれば、開発専用ジョブ5本（advisor 3本＝morning/evening/weekly ＋theme_etfs＋mechanical_rule_watcher）が自動的に除外される。
+- **現状開発環境のみ運用**: Docker非依存版（venv直接実行ラッパー）の実装後に本番デプロイ予定。本番デプロイ時は `.env` で `CRON_BATCH_PROFILE=prod` を設定すれば、開発専用ジョブ6本（advisor 3本＝morning/evening/weekly ＋theme_etfs＋mechanical_rule_watcher＋etf_rating_daily）が自動的に除外される。
 
 ### 当日キャッチアップ機構
 
@@ -200,6 +203,7 @@ bash scripts/cron-batch.sh --help
 | `sync_from_minkabu` | 16:00 | 22:00 | 平日（祝日スキップ） | both |
 | `daily_advisor_morning` | 07:00 | 09:00 | 平日（祝日スキップ） | dev |
 | `daily_advisor_evening` | 17:30 | 22:00 | 平日（祝日スキップ） | dev |
+| `etf_rating_daily` | 18:15 | 22:00 | 平日（祝日スキップ） | dev | catch-up sched は曜日全体の最遅時刻 18:15（金曜の通常起動 18:15 との二重発火防止）|
 | `daily_advisor_weekly` | 18:00 | 22:00 | 金（祝日でも実行） | dev |
 | `update_theme_etfs` | 03:00 | 23:59 | 日 | dev |
 | `rotate_logs` | 05:00 | 23:59 | 毎日 | both |

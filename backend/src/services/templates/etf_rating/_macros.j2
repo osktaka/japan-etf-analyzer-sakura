@@ -1,0 +1,44 @@
+{# ETF Rating メール用マクロ集. 判定ラベル基準は calc_params.json と一致. #}
+
+{# 判定ラベルを (絵文字, 日本語ラベル, HTMLバッジ背景, 文字色) のタプルで返す.
+   閾値: >=70 強い追い風 / >=60 追い風 / >=40 中立寄り / >=30 警戒 / <30 重大警戒
+#}
+{%- macro verdict_parts(score) -%}
+{%- if score is none -%}|N/A|#eef0f3|#666
+{%- elif score >= 70 -%}🟢|強い追い風|#e8f5ec|#1b7f3a
+{%- elif score >= 60 -%}🟢|追い風|#f0f7e8|#3a7d1b
+{%- elif score >= 40 -%}🟡|中立寄り|#fff8e1|#8a6a00
+{%- elif score >= 30 -%}🔴|警戒|#fef0e6|#a85400
+{%- else -%}🔴|重大警戒|#fdecec|#c0392b
+{%- endif -%}
+{%- endmacro -%}
+
+{# プレーン用: 判定ラベル（"強い追い風" のみ） #}
+{%- macro verdict_label(score) -%}
+{%- set parts = verdict_parts(score).split('|') -%}{{ parts[1] }}
+{%- endmacro -%}
+
+{# プレーン用: 絵文字付きラベル #}
+{%- macro verdict_emoji_label(score) -%}
+{%- set parts = verdict_parts(score).split('|') -%}{{ parts[0] }} {{ parts[1] }}
+{%- endmacro -%}
+
+{# HTMLバッジ（背景+文字色+丸角） score: 数値 or None. #}
+{%- macro verdict_badge_html(score) -%}
+{%- set parts = verdict_parts(score).split('|') -%}
+<span style="display:inline-block;background:{{ parts[2] }};color:{{ parts[3] }};padding:2px 8px;border-radius:3px;font-weight:bold;font-size:13px;">{{ parts[1] }}</span>
+{%- endmacro -%}
+
+{# 差分プレフィックス（+/-記号付き） None は "初回" を返す（前日比履歴なし）. #}
+{%- macro signed_delta(value) -%}
+{%- if value is none -%}初回{%- else -%}{{ '%+.1f'|format(value) }}pt{%- endif -%}
+{%- endmacro -%}
+
+{# 観点versionの鮮度色（HTML）90日未満=緑, 180日未満=黄, それ以上=赤 #}
+{%- macro version_freshness_color(age_days) -%}
+{%- if age_days is none -%}#666
+{%- elif age_days < 90 -%}#1b7f3a
+{%- elif age_days < 180 -%}#c79100
+{%- else -%}#c0392b
+{%- endif -%}
+{%- endmacro -%}
