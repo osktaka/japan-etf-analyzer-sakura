@@ -54,7 +54,7 @@
         <td style="padding:6px;border:1px solid #ddd;text-align:right;">{{ '%.1f'|format(r.upside_weighted|default(0)) }}</td>
         <td style="padding:6px;border:1px solid #ddd;text-align:right;">{{ '%.1f'|format(r.downside_weighted|default(0)) }}</td>
         <td style="padding:6px;border:1px solid #ddd;text-align:right;font-size:12px;">{{ m.signed_delta(r.delta_net) }}</td>
-        <td style="padding:6px;border:1px solid #ddd;">{{ m.verdict_badge_html(r.net_score) }}</td>
+        <td style="padding:6px;border:1px solid #ddd;">{{ m.verdict_badge_html(r.net_score) | safe }}</td>
       </tr>
       {% endfor %}
     </tbody>
@@ -84,7 +84,7 @@
   <div style="margin:12px 0;border:1px solid #ddd;border-radius:4px;padding:12px;">
     <div style="margin:0 0 8px;font-size:14px;border-bottom:1px solid #eee;padding-bottom:6px;">
       <strong style="font-size:15px;">#{{ loop.index }} {{ r.code }} {{ r.name|default('') }}</strong><br>
-      総合 <strong>{{ '%.1f'|format(r.net_score) }}点</strong>／前日比 {{ m.signed_delta(r.delta_net) }}／判定 {{ m.verdict_badge_html(r.net_score) }}
+      総合 <strong>{{ '%.1f'|format(r.net_score) }}点</strong>／前日比 {{ m.signed_delta(r.delta_net) }}／判定 {{ m.verdict_badge_html(r.net_score) | safe }}
     </div>
 
     <p style="margin:8px 0 4px;font-weight:bold;font-size:13px;color:#555;">■ ひとこと</p>
