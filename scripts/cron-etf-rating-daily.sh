@@ -5,7 +5,9 @@
 # 月〜木 18:00 / 金 18:15（祝日スキップ）に cron-batch.sh から呼び出される。
 # 金曜のみ 18:15 にずらすのは daily_advisor_weekly (18:00) との並列を避けるため。
 # Claude CLI で `/etf-rating all --send-mail` を起動し、スキル内部の Bash で
-# `backend/scripts/etf_rating_send_mail.py` を実行してメール送信する。
+# `scripts/etf_rating_send_mail.py`（コンテナ内では ./backend/scripts→/app/scripts に
+# マウント。payload は /app/reports/etf-rating/_payloads/ 配下の絶対パスで渡す）を
+# 実行してメール送信する。
 #
 # 実送信は `ETF_RATING_MAIL_ENABLED=1` 設定下でのみ実行（既定は dry-run）。
 #

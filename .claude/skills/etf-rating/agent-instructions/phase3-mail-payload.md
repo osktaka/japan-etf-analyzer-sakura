@@ -6,9 +6,16 @@ Phase 2 サマリ + 全銘柄 Phase 1 レポートを統合し、Jinja2 テン�
 （`backend/src/services/templates/etf_rating/` 配下）でレンダリング
 するための **JSON ペイロード**を1つ生成する。
 
-本フェーズはペイロード生成までで終了し、メイン側で `email_payload.json`
-のパスをユーザーに提示する。実送信は `--send-mail` 指定時のみ
-`backend/scripts/etf_rating_send_mail.py` 経由で別途実行される。
+本フェーズはペイロード生成までで終了し、メイン側で payload パスをユーザーに提示する。
+実送信は `--send-mail` 指定時のみ送信スクリプト経由で別途実行される（SKILL.md Step 5）。
+スクリプトの実ファイルはホスト上では `backend/scripts/etf_rating_send_mail.py` だが、
+コンテナ内では `/app/scripts/etf_rating_send_mail.py`（`./backend/scripts→/app/scripts`
+マウント）として呼び出す。
+
+**出力先（重要）**: payload は `.tmp/` ではなく、マウント済みの
+`reports/etf-rating/_payloads/{YYYYMMDD}_email_payload.json` に出力する。
+`.tmp/` は backend コンテナにマウントされていないため、送信スクリプトがコンテナ内で
+payload を見つけられず `payload not found` になる。
 
 ## 入力パラメータ
 
@@ -190,7 +197,8 @@ Plain Text 版は同じ4部構成を `===` 区切りで実装し、`<details>` �
 
 ### 5. ペイロード生成
 
-`{WORK_DIR}/email_payload.json` を Write:
+`reports/etf-rating/_payloads/{YYYYMMDD}_email_payload.json` を Write
+（`mkdir -p reports/etf-rating/_payloads` で親ディレクトリを作成してから）:
 
 #### Payload 正規キー一覧（v3）
 
@@ -306,7 +314,7 @@ Plain Text 版は同じ4部構成を `===` 区切りで実装し、`<details>` �
 
 | ファイル | 内容 |
 |----------|------|
-| `{WORK_DIR}/email_payload.json` | メール送信用ペイロード |
+| `reports/etf-rating/_payloads/{YYYYMMDD}_email_payload.json` | メール送信用ペイロード（マウント済み。送信時はコンテナ内 `/app/...` 絶対パスで渡す） |
 
 ## メインへの戻り値
 

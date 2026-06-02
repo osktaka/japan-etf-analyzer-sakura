@@ -77,7 +77,7 @@ mkdir -p "${WORK_DIR}"
 | 採点履歴 | `data/etf-rating/history/{code}.jsonl`（1日1行追記） |
 | レポート出力 | `reports/etf-rating/{code}/{YYYYMMDD}_{code}_rating.md` |
 | 集計サマリ | `reports/etf-rating/_daily_summary/{YYYYMMDD}.md` |
-| メールペイロード | `{WORK_DIR}/email_payload.json` |
+| メールペイロード | `reports/etf-rating/_payloads/{YYYYMMDD}_email_payload.json`（マウント済みディレクトリ。`.tmp/` には置かない） |
 
 ## 実行フロー
 
@@ -135,22 +135,37 @@ mkdir -p "${WORK_DIR}"
 ### Step 4: Phase 3 メールペイロード生成（`--send-mail` 時のみ）
 
 サブエージェント1つ起動。Phase 2 サマリ + 全銘柄レポートを Jinja2 テンプレで
-レンダリングするためのJSONペイロードを生成。実送信は Phase D で実装する
-`backend/scripts/etf_rating_send_mail.py` が担当（Phase A 時点ではペイロード
-生成までで停止）。
+レンダリングするためのJSONペイロードを生成。
 
 - 指示: `{skill_dir}/agent-instructions/phase3-mail-payload.md`
 - 入力: `WORK_DIR`, 全銘柄レポート + サマリ
-- 出力: `{WORK_DIR}/email_payload.json`
+- 出力: `reports/etf-rating/_payloads/{YYYYMMDD}_email_payload.json`
+  （マウント済みディレクトリ。`.tmp/` は backend コンテナにマウントされていないため使わない）
 - 戻り値: 「メールペイロード生成完了（{N}銘柄, {NN}KB）」の1行
 
-Phase A 完了時点ではメイン側で `etf_rating_send_mail.py` を呼ばない（未実装）。
-ユーザーに「ペイロードを生成。送信は Phase D で実装予定」と提示して終了。
+### Step 5: メール送信（`--send-mail` 時のみ）
 
-### Step 5: 完了通知
+メイン側の Bash で送信スクリプトを呼び出す。payload は reports 配下（マウント済み）に
+あるため、コンテナ内の **絶対パス `/app/reports/etf-rating/_payloads/{YYYYMMDD}_email_payload.json`**
+を渡す。`.tmp/` 相対パスを渡すとコンテナ内で payload not found になるため厳禁。
+
+```bash
+DATE_YMD=$(date +%Y%m%d)
+# コンテナ内では ./backend/scripts → /app/scripts にマウントされる（working_dir=/app）。
+# スクリプトパスは backend/ プレフィックスを付けず scripts/ で参照すること。
+docker compose exec -T backend python3 scripts/etf_rating_send_mail.py \
+  --payload "/app/reports/etf-rating/_payloads/${DATE_YMD}_email_payload.json"
+```
+
+- 実送信は `ETF_RATING_MAIL_ENABLED=1`（環境変数）設定下でのみ実行。未設定/`0` は強制 dry-run。
+- `--dry-run` を付ければパス解決・本文組み立てのみ確認し送信しない（非破壊確認用）。
+- 送信結果は `batch_logs`（name=`etf_rating_send_mail`）に記録される。
+
+### Step 6: 完了通知
 
 - 集計サマリのパスをユーザーに提示
-- メール送信モードの場合は `email_payload.json` パスも提示
+- メール送信モードの場合は payload パス（`reports/etf-rating/_payloads/{YYYYMMDD}_email_payload.json`）
+  と送信結果も提示
 
 ## tune サブコマンド
 
@@ -185,14 +200,15 @@ Phase A 完了時点ではメイン側で `etf_rating_send_mail.py` を呼ばな
 ├── 00_market_snapshot.md             # Phase 0 出力
 ├── 10_rating_{code}.md               # Phase 1 出力（銘柄ごと）
 ├── 20_daily_summary.md               # Phase 2 出力
-├── email_payload.json                # Phase 3 出力（--send-mail 時のみ）
 └── decisions.log                     # 自動実行時のデフォルト選択ログ
 
 reports/etf-rating/
 ├── {code}/
 │   └── {YYYYMMDD}_{code}_rating.md   # 銘柄別レポート（公開先）
-└── _daily_summary/
-    └── {YYYYMMDD}.md                 # 集計サマリ
+├── _daily_summary/
+│   └── {YYYYMMDD}.md                 # 集計サマリ
+└── _payloads/
+    └── {YYYYMMDD}_email_payload.json # Phase 3 出力（--send-mail 時のみ、マウント済み）
 
 data/etf-rating/history/
 └── {code}.jsonl                      # 採点履歴（1日1行）
