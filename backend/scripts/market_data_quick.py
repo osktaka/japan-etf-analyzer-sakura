@@ -194,6 +194,79 @@ def calc_volume_ratio(volumes, period=5):
     return round(volumes[-1] / avg, 2)
 
 
+# 東証の「全日出来高」に対する時刻別の累積出来高割合（経験則ベースの近似・要再較正）
+# キー: JST分(0:00からの分) / 値: その時刻までの累積出来高が全日に占める割合
+# 09:00寄り〜11:30前場引け / 12:30後場寄り〜15:30引け（2024-11-05以降の延長後場）
+# 将来 yfinance の interval="5m" 実データで再較正できる。
+VOLUME_PROGRESS_CURVE = {
+    540: 0.06,   # 09:00 寄り(寄り付き auction)
+    570: 0.18,   # 09:30
+    600: 0.27,   # 10:00
+    630: 0.34,   # 10:30
+    660: 0.40,   # 11:00
+    690: 0.46,   # 11:30 前場引け
+    750: 0.49,   # 12:30 後場寄り
+    780: 0.55,   # 13:00
+    810: 0.61,   # 13:30
+    840: 0.67,   # 14:00
+    870: 0.74,   # 14:30
+    900: 0.82,   # 15:00
+    930: 1.00,   # 15:30 引け(closing auction)
+}
+
+
+LUNCH_START = 11 * 60 + 30  # 11:30 前場引け
+LUNCH_END = 12 * 60 + 30    # 12:30 後場寄り
+
+
+def expected_volume_progress(hour, minute):
+    """指定JST時刻における全日出来高に対する期待累積割合を返す。
+
+    場前(09:00未満)・引け後(15:30以降)は1.0を返し補正を無効化する
+    （当日バー未生成で前営業日の全日値が入るため＝後方互換）。
+    昼休み(11:30-12:30)は取引停止で出来高が増えないため前場引け値で据え置く。
+    カーブ点間は線形補間する。
+    """
+    minutes = hour * 60 + minute
+    # 昼休みは線形補間せず前場引け(0.46)でフラットにする（12:00投稿の誤判定対策）
+    if LUNCH_START <= minutes < LUNCH_END:
+        return VOLUME_PROGRESS_CURVE[LUNCH_START]
+    points = sorted(VOLUME_PROGRESS_CURVE.items())
+    if minutes <= points[0][0]:
+        return 1.0
+    if minutes >= points[-1][0]:
+        return 1.0
+    for i in range(1, len(points)):
+        x1, y1 = points[i - 1]
+        x2, y2 = points[i]
+        if minutes <= x2:
+            return y1 + (y2 - y1) * (minutes - x1) / (x2 - x1)
+    return 1.0
+
+
+def adjust_volume_ratio(raw_ratio, expected_progress):
+    """生の出来高比を時間帯期待進捗で補正し、判定ラベル付きで返す。"""
+    if expected_progress is None or expected_progress <= 0:
+        corrected = raw_ratio
+    else:
+        corrected = round(raw_ratio / expected_progress, 2)
+    if corrected >= 1.3:
+        label = "急増"
+    elif corrected >= 1.1:
+        label = "やや多め"
+    elif corrected >= 0.8:
+        label = "ほぼ平常"
+    elif corrected >= 0.6:
+        label = "やや薄商い"
+    else:
+        label = "薄商い"
+    return {
+        "adjusted": corrected,
+        "expected_progress": round(expected_progress, 2),
+        "judgment": label,
+    }
+
+
 def calc_ema_series(closes, period):
     """EMA（指数移動平均）系列を算出"""
     if len(closes) < period:
@@ -328,11 +401,37 @@ def calc_volume_analysis(closes, volumes, period=5):
     }
 
 
-def build_technical(name, closes, volumes, highs=None, lows=None):
+def _attach_volume_adjustment(tech, raw_ratio, as_of):
+    """生volume_ratioに時間帯補正値（adjusted/expected_progress/judgment）を付与する。
+
+    as_of は (hour, minute) タプルまたは None（NoneならJST現在時刻を使用）。
+    volume_analysis dict があれば adjusted/judgment も追記する。
+    """
+    if raw_ratio is None:
+        return
+    if as_of is None:
+        now = datetime.now(JST)
+        hour, minute = now.hour, now.minute
+    else:
+        hour, minute = as_of
+    progress = expected_volume_progress(hour, minute)
+    adj = adjust_volume_ratio(raw_ratio, progress)
+    tech["volume_ratio_adjusted"] = adj["adjusted"]
+    tech["volume_expected_progress"] = adj["expected_progress"]
+    tech["volume_judgment"] = adj["judgment"]
+    tech["volume_as_of"] = f"{hour:02d}:{minute:02d}"
+    va = tech.get("volume_analysis")
+    if isinstance(va, dict):
+        va["adjusted"] = adj["adjusted"]
+        va["judgment"] = adj["judgment"]
+
+
+def build_technical(name, closes, volumes, highs=None, lows=None, as_of=None):
     """ティッカー名に応じたテクニカル指標dictを構築する。
 
     対象外のティッカーはNoneを返す。
     エラー時は空dictを返す。
+    as_of: (hour, minute) タプルまたは None。出来高比の時間帯補正カーブ参照に使う。
     """
     is_target = (
         name in TECHNICAL_RSI_TARGETS
@@ -391,12 +490,16 @@ def build_technical(name, closes, volumes, highs=None, lows=None):
                 tech["bollinger_position"] = bb
             vr = calc_volume_ratio(volumes, 5)
             if vr is not None:
-                tech["volume_ratio"] = vr
+                tech["volume_ratio"] = vr  # 生値のまま据え置き（後方互換）
 
             # 出来高分析（volume_ratioの強化版）
             va = calc_volume_analysis(closes, volumes)
             if va is not None:
                 tech["volume_analysis"] = va
+
+            # 時間帯による期待進捗カーブ補正（場中の薄商い誤判定対策）
+            if vr is not None:
+                _attach_volume_adjustment(tech, vr, as_of)
 
             # 週足RSI（マルチタイムフレーム分析）
             if len(closes) >= 75:  # 最低75日（15週分）必要
@@ -433,14 +536,22 @@ def build_technical(name, closes, volumes, highs=None, lows=None):
         return {}
 
 
-def fetch_market_data(include_pm=False, include_pre_us=False):
+def fetch_market_data(
+    include_pm=False, include_pre_us=False, as_of_hour=None, as_of_minute=None
+):
     """ティッカーのデータを取得してJSON形式で返す。
 
     Args:
         include_pm: TrueならPM用東証指標も取得する
         include_pre_us: Trueなら米国プレマーケット用指標も取得する
+        as_of_hour/as_of_minute: 出来高比の時間帯補正カーブ参照に使うJST時刻
+            （検証用 --at 上書き）。None なら内部で datetime.now(JST) を使う。
     """
     start_time = datetime.now(JST)
+    if as_of_hour is None or as_of_minute is None:
+        as_of = None
+    else:
+        as_of = (as_of_hour, as_of_minute)
     tickers = dict(TICKERS)
     if include_pm:
         tickers.update(PM_TICKERS)
@@ -514,7 +625,7 @@ def fetch_market_data(include_pm=False, include_pre_us=False):
             volumes = [float(row["Volume"]) for _, row in hist.iterrows()]
             highs = [float(row["High"]) for _, row in hist.iterrows()]
             lows = [float(row["Low"]) for _, row in hist.iterrows()]
-            tech = build_technical(name, closes, volumes, highs, lows)
+            tech = build_technical(name, closes, volumes, highs, lows, as_of=as_of)
             if tech is not None:
                 entry["technical"] = tech
 
@@ -552,6 +663,9 @@ def fetch_market_data(include_pm=False, include_pre_us=False):
                 if fallback_va is not None:
                     nk_tech["volume_analysis"] = fallback_va
                     nk_tech["volume_analysis_source"] = "1306.T"
+            # フォールバック後の生volume_ratioに時間帯補正を付与
+            if nk_tech.get("volume_ratio") is not None:
+                _attach_volume_adjustment(nk_tech, nk_tech["volume_ratio"], as_of)
         except Exception as e:
             errors.append(f"volume fallback (1306.T): {str(e)}")
 
@@ -737,10 +851,30 @@ def fetch_overnight_data():
     return result
 
 
+def _parse_at_arg(argv):
+    """--at HH:MM を簡易パースして (hour, minute) を返す。なければ (None, None)。"""
+    if "--at" not in argv:
+        return None, None
+    idx = argv.index("--at")
+    if idx + 1 >= len(argv):
+        return None, None
+    try:
+        hh, mm = argv[idx + 1].split(":")
+        return int(hh), int(mm)
+    except (ValueError, IndexError):
+        return None, None
+
+
 def main():
     include_pm = "--pm" in sys.argv
     include_pre_us = "--pre-us" in sys.argv
-    data = fetch_market_data(include_pm=include_pm, include_pre_us=include_pre_us)
+    as_of_hour, as_of_minute = _parse_at_arg(sys.argv)
+    data = fetch_market_data(
+        include_pm=include_pm,
+        include_pre_us=include_pre_us,
+        as_of_hour=as_of_hour,
+        as_of_minute=as_of_minute,
+    )
     json.dump(data, sys.stdout, ensure_ascii=False, indent=2)
     print()  # 末尾改行
 

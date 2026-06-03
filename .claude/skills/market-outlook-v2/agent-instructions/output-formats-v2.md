@@ -142,6 +142,9 @@ prediction:
 | 日経225 SMA25×75 | {spread} | GC/DC/なし | |
 | 日経225 週足RSI(14) | XX.X | 中期{判定} | |
 | 日経225 出来高分析 | X.Xx | {trend} | ダイバージェンス: {判定} |
+| 日経225 出来高(時間帯調整後) | {volume_ratio_adjusted}x | {volume_judgment} | as_of {volume_as_of} / 進捗{volume_expected_progress} |
+
+※ 場中の薄商い/活発の判定は生 `volume_ratio` ではなく時間帯補正後の `volume_ratio_adjusted`・`volume_judgment` を用いる（前場は全日平均の約半分が平常で生値だと誤判定になる）。場前・引け後・PM終値ベースは進捗1.0で生値≒補正値。
 
 テクニカルシグナル集計: 強気 {X}/{total} / 弱気 {Y}/{total} / 中立 {Z}/{total}
 
@@ -365,7 +368,7 @@ accuracy:
 | 25日MA乖離率 | +X.X% | | 25日MA: XX,XXX |
 | 75日MA乖離率 | +X.X% | | 75日MA: XX,XXX |
 | ボリンジャーバンド | +X.Xσ | | |
-| 出来高(5日平均比) | X.Xx | | |
+| 出来高(5日平均比) | X.Xx(生) / {volume_ratio_adjusted}x(時間帯調整後) | {volume_judgment} | as_of {volume_as_of} / 進捗{volume_expected_progress} |
 | MACD(12,26,9) | {値} | GC/DC/中立 | シグナル: {値} |
 | 一目均衡表 | 雲{上/中/下} | | 雲上端/下端 |
 | SMA25×75 | {spread} | GC/DC/なし | |
