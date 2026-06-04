@@ -49,7 +49,7 @@ class TestMarkNotified:
         ev = repo.create_event(
             fingerprint="fp-mark",
             occurred_on=date(2026, 4, 29),
-            rule_kind="take_profit_1",
+            rule_kind="loss_cut",
             user_id="test",
             etf_code="2559",
             severity="info",

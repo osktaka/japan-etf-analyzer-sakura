@@ -16,8 +16,6 @@ TEMPLATE_DIR = Path(__file__).resolve().parent / "templates" / "advisor"
 # rule_kind -> 推奨アクション文字列
 _RECOMMENDED_ACTION = {
     "loss_cut": "売却検討。継続保有なら戦略書の例外メモを更新してください。",
-    "take_profit_1": "段階的売却（第1段）を検討してください。",
-    "take_profit_2": "段階的売却（第2段）を検討してください。",
     "n225_drawdown": "静観 or 戦略書の急落時方針を確認してください。",
     "allocation_drift": "配分是正の買付/売却タイミングを検討してください。",
 }
@@ -574,8 +572,6 @@ class NotificationRenderer:
         # 既知ルールで簡潔表記
         rule_label = {
             "loss_cut": "損切到達",
-            "take_profit_1": "利確第1段",
-            "take_profit_2": "利確第2段",
             "n225_drawdown": "N225急落",
             "allocation_drift": "配分逸脱",
         }.get(t.rule_kind, t.rule_kind)

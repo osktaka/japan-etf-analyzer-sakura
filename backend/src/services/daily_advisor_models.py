@@ -50,7 +50,7 @@ class AllocationDrift:
 class RuleTrigger:
     """機械ルール発動."""
 
-    rule_kind: str  # "loss_cut" | "take_profit_1" | ... | "allocation_drift"
+    rule_kind: str  # "loss_cut" | "n225_drawdown" | "allocation_drift"
     code: Optional[str]
     severity: str  # "info" | "warn" | "critical"
     message: str

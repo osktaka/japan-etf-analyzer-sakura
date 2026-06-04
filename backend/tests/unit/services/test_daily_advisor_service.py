@@ -12,7 +12,6 @@ from src.services.daily_advisor_service import (
     _check_loss_cut,
     _check_min_holding_period,
     _check_n225_drawdown,
-    _check_take_profit,
     build_alert_context,
     build_evening_context,
     build_morning_context,
@@ -48,7 +47,6 @@ target_holdings:
 mechanical_rules:
   min_holding_months: 6
   loss_cut_pct: -20.0
-  take_profit_pct: [50.0, 100.0]
   n225_drawdown_trigger_pct: -5.0
   n225_drawdown_basis: previous_close
   n225_dca_lookback_days: 10
@@ -146,47 +144,6 @@ class TestLossCut:
             today=date.today(), user_id="test",
         )
         assert r is None
-
-
-# ============================================================
-# Take profit boundary
-# ============================================================
-
-
-class TestTakeProfit:
-    def _holding(self, pnl_pct):
-        return {
-            "etf_code": "2559",
-            "unrealized_pnl_percent": pnl_pct,
-            "holding_days": 100,
-        }
-
-    def test_just_under_50_does_not_fire(self):
-        rs = _check_take_profit(
-            self._holding(49.99),
-            thresholds_pct=(50.0, 100.0),
-            today=date.today(), user_id="test",
-        )
-        assert len(rs) == 0
-
-    def test_exactly_50_fires_first_only(self):
-        rs = _check_take_profit(
-            self._holding(50.0),
-            thresholds_pct=(50.0, 100.0),
-            today=date.today(), user_id="test",
-        )
-        assert len(rs) == 1
-        assert rs[0].rule_kind == "take_profit_1"
-
-    def test_exactly_100_fires_both(self):
-        rs = _check_take_profit(
-            self._holding(100.0),
-            thresholds_pct=(50.0, 100.0),
-            today=date.today(), user_id="test",
-        )
-        assert len(rs) == 2
-        kinds = {r.rule_kind for r in rs}
-        assert kinds == {"take_profit_1", "take_profit_2"}
 
 
 # ============================================================
@@ -336,7 +293,7 @@ class TestFingerprint:
             code="1306", user_id="test",
         )
         b = make_fingerprint(
-            occurred_on=date(2026, 4, 29), rule_kind="take_profit_1",
+            occurred_on=date(2026, 4, 29), rule_kind="allocation_drift",
             code="1306", user_id="test",
         )
         assert a != b

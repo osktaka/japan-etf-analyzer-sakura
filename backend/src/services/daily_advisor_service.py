@@ -197,41 +197,6 @@ def _check_loss_cut(
     )
 
 
-def _check_take_profit(
-    holding: Dict[str, Any],
-    *,
-    thresholds_pct: Tuple[float, ...],
-    today: date,
-    user_id: str,
-) -> List[RuleTrigger]:
-    """利確ルール: 第1段(50%)/第2段(100%)を別ruleとして発火."""
-    triggers: List[RuleTrigger] = []
-    pnl_pct = holding.get("unrealized_pnl_percent")
-    code = holding.get("etf_code")
-    if pnl_pct is None or code is None:
-        return triggers
-    for idx, t in enumerate(thresholds_pct, start=1):
-        if pnl_pct >= t:
-            kind = f"take_profit_{idx}"
-            fp = make_fingerprint(
-                occurred_on=today, rule_kind=kind, code=code, user_id=user_id
-            )
-            triggers.append(
-                RuleTrigger(
-                    rule_kind=kind,
-                    code=code,
-                    severity="info",
-                    message=(
-                        f"{code}: 利確第{idx}段到達 ({pnl_pct:+.2f}% >= "
-                        f"{t:.1f}%)"
-                    ),
-                    fingerprint=fp,
-                    payload={"pnl_pct": pnl_pct, "threshold_pct": t},
-                )
-            )
-    return triggers
-
-
 def _check_n225_drawdown(
     n225_change_pct: Optional[float],
     *,
@@ -380,15 +345,6 @@ def evaluate_mechanical_rules(
         )
         if lc:
             triggers.append(lc)
-        # 利確
-        triggers.extend(
-            _check_take_profit(
-                h,
-                thresholds_pct=rules.take_profit_pct,
-                today=today,
-                user_id=user_id,
-            )
-        )
 
     # N225 drawdown
     nd = _check_n225_drawdown(

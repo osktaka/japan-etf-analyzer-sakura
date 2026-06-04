@@ -15,8 +15,6 @@
 {%- macro rule_kind_label(rule_kind) -%}
 {{ {
     'loss_cut': '損切りライン到達',
-    'take_profit_1': '利確ライン到達（第1段）',
-    'take_profit_2': '利確ライン到達（第2段）',
     'n225_drawdown': 'N225急落',
     'allocation_drift': '配分逸脱'
 }.get(rule_kind, rule_kind) }}

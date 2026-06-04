@@ -37,7 +37,6 @@ class MechanicalRules:
 
     min_holding_months: int
     loss_cut_pct: float
-    take_profit_pct: Tuple[float, ...]
     n225_drawdown_trigger_pct: float
     n225_drawdown_basis: str
     n225_dca_lookback_days: int
@@ -188,7 +187,6 @@ class StrategyLoader:
         required = (
             "min_holding_months",
             "loss_cut_pct",
-            "take_profit_pct",
             "n225_drawdown_trigger_pct",
             "n225_drawdown_basis",
             "n225_dca_lookback_days",
@@ -200,9 +198,6 @@ class StrategyLoader:
         missing = [k for k in required if k not in raw]
         if missing:
             raise ValueError(f"mechanical_rules missing keys: {missing}")
-        tp = raw["take_profit_pct"]
-        if not isinstance(tp, list) or not tp:
-            raise ValueError("mechanical_rules.take_profit_pct must be non-empty list")
         drift_ok = float(raw["drift_ok_pp"])
         drift_warn = float(raw["drift_warn_pp"])
         if not (drift_ok < drift_warn):
@@ -213,7 +208,6 @@ class StrategyLoader:
         return MechanicalRules(
             min_holding_months=int(raw["min_holding_months"]),
             loss_cut_pct=float(raw["loss_cut_pct"]),
-            take_profit_pct=tuple(float(x) for x in tp),
             n225_drawdown_trigger_pct=float(raw["n225_drawdown_trigger_pct"]),
             n225_drawdown_basis=str(raw["n225_drawdown_basis"]),
             n225_dca_lookback_days=int(raw["n225_dca_lookback_days"]),

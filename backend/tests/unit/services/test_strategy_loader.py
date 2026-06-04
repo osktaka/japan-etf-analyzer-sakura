@@ -35,7 +35,6 @@ target_holdings:
 mechanical_rules:
   min_holding_months: 6
   loss_cut_pct: -20.0
-  take_profit_pct: [50.0, 100.0]
   n225_drawdown_trigger_pct: -5.0
   n225_drawdown_basis: previous_close
   n225_dca_lookback_days: 10
@@ -92,7 +91,6 @@ class TestStrategyLoaderLoads:
         r = s.mechanical_rules
         assert r.min_holding_months == 6
         assert r.loss_cut_pct == -20.0
-        assert r.take_profit_pct == (50.0, 100.0)
         assert r.n225_drawdown_trigger_pct == -5.0
         assert r.n225_drawdown_basis == "previous_close"
         assert r.alpha_deviation_threshold_pp == 10.0
@@ -163,13 +161,6 @@ class TestStrategyLoaderInvalid:
             ValueError,
             match="target_holdings weight_pct sum for bucket 'group_a'",
         ):
-            StrategyLoader.loads(bad)
-
-    def test_take_profit_must_be_list(self):
-        bad = VALID_FRONTMATTER.replace(
-            "take_profit_pct: [50.0, 100.0]", "take_profit_pct: 50.0"
-        )
-        with pytest.raises(ValueError, match="must be non-empty list"):
             StrategyLoader.loads(bad)
 
     def test_mechanical_rules_missing(self):

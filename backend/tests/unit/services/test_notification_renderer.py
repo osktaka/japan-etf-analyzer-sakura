@@ -381,8 +381,6 @@ class TestRecommendedAction:
     def test_known_kinds(self, renderer):
         for kind, expect_substr in [
             ("loss_cut", "売却検討"),
-            ("take_profit_1", "段階的売却（第1段）"),
-            ("take_profit_2", "段階的売却（第2段）"),
             ("n225_drawdown", "戦略書の急落時方針"),
             ("allocation_drift", "配分是正"),
         ]:
