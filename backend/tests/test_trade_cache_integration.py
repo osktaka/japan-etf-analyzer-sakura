@@ -33,7 +33,16 @@ def setup_services():
     mock_trade_repo.update.return_value = None
     mock_trade_repo.delete.return_value = None
 
-    trade_service = TradeService(mock_trade_repo, mock_etf_repo)
+    # 残高・保有検証を通すための PortfolioService スタブ（十分な現金・保有）
+    mock_portfolio = Mock(spec=PortfolioService)
+    mock_portfolio.get_portfolio_summary.return_value = {"cash_balance": 10**9}
+    mock_portfolio.get_holdings.return_value = [
+        {"etf_code": "1234", "quantity": 10**6}
+    ]
+
+    trade_service = TradeService(
+        mock_trade_repo, mock_etf_repo, portfolio_service=mock_portfolio
+    )
 
     return trade_service, mock_trade_repo, mock_etf_repo
 

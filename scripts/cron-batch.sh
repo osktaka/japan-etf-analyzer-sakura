@@ -380,6 +380,21 @@ catchup_profile_ok() {
   [[ "$entry" == "both" || "$entry" == "$PROFILE" ]]
 }
 
+# has_succeeded_today.py の exit code を catch-up 判定へ変換する純粋関数。
+# docker 実体に依存しないため回帰テストから直接呼べる（scripts/tests/test_catchup_decision.sh）。
+#   rc=0 成功済み → 1 (対象外) / rc=1 未成功 → 0 (対象) / rc>=2 エラー → 1 (安全側で対象外)
+# 戻り: 0=catch-up対象, 1=対象外
+catchup_decision_from_rc() {
+  local name="$1" rc="$2"
+  if (( rc == 1 )); then
+    return 0
+  elif (( rc >= 2 )); then
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [catchup] has_succeeded_today.py error for ${name} (rc=${rc}), skip"
+    return 1
+  fi
+  return 1
+}
+
 # 「catch-up すべきか」判定
 # 引数: name sched until dow profile
 # 戻り: 0=catch-up対象, 1=対象外
@@ -410,16 +425,11 @@ should_catchup() {
     # dry-run 時は backend に問い合わせない前提（テスト容易性のため未成功扱い）
     return 0
   fi
-  if ! docker compose exec -T backend python3 scripts/has_succeeded_today.py "$name" >/dev/null 2>&1; then
-    local rc=$?
-    if (( rc == 1 )); then
-      return 0   # 未成功 → catch-up 対象
-    fi
-    # rc == 2 等のエラー時は安全側に倒して対象外
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [catchup] has_succeeded_today.py error for ${name} (rc=${rc}), skip"
-    return 1
-  fi
-  return 1   # rc==0 = 成功済み
+  # `if ! cmd; then rc=$?` は否定後の値(=0)を拾い本来の exit を握り潰すため、
+  # コマンドを直接走らせて $? を捕捉する（rc 0/1/2 を区別する必要がある）。
+  docker compose exec -T backend python3 scripts/has_succeeded_today.py "$name" >/dev/null 2>&1
+  local rc=$?
+  catchup_decision_from_rc "$name" "$rc"
 }
 
 # catch-up sweep: 全エントリを評価し、対象なら既存 run_batch 経由で発火
@@ -448,6 +458,12 @@ catch_up_sweep() {
     fi
   done
 }
+
+# source された場合（回帰テスト）はここまでの関数定義のみ読み込み、dispatch を実行しない。
+# ${BASH_SOURCE[0]} != ${0} なら source 経由。
+if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
+  return 0
+fi
 
 # --- 早期exit: backend が動いていなければ何もしない ---
 if [[ "$DRY_RUN" != true ]]; then

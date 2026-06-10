@@ -75,17 +75,24 @@ def patched_main(tmp_path, monkeypatch):
 
     post_mock = MagicMock(return_value=(True, "HTTP 201"))
 
+    # 既定は portfolio state 取得失敗扱い（{}）= pre-check スキップで従来挙動を維持。
+    # 個別テストで返り値を差し替えて検証ゲートをテストする。
+    state_mock = MagicMock(return_value={})
+
     monkeypatch.setattr(m, "create_app", lambda: fake_app)
     monkeypatch.setattr(m, "UserRepository", lambda: user_repo)
     monkeypatch.setattr(m, "TradeRepository", lambda: trade_repo)
     monkeypatch.setattr(m, "BatchLogRepository", lambda: batch_repo)
     monkeypatch.setattr(m, "post_trade", post_mock)
+    monkeypatch.setattr(m, "fetch_portfolio_state", state_mock)
+    monkeypatch.setattr(m, "fetch_reference_price", lambda *a, **k: None)
 
     return {
         "user_repo": user_repo,
         "trade_repo": trade_repo,
         "batch_repo": batch_repo,
         "post": post_mock,
+        "state": state_mock,
     }
 
 
@@ -118,6 +125,49 @@ class TestHelpers:
 
     def test_exit_code_all_failed(self):
         assert m._exit_code(0, 2, 0) == 1
+
+
+# ---- 検証ゲートのテスト -------------------------------------------------
+
+class TestValidateTrade:
+    def test_buy_within_cash_ok(self):
+        state = {"cash_balance": 100000, "holdings": {}}
+        assert m.validate_trade(_trade(quantity=10, price=2500), state, None) is None
+
+    def test_buy_exceeds_cash_rejected(self):
+        state = {"cash_balance": 10000, "holdings": {}}
+        reason = m.validate_trade(_trade(quantity=10, price=2500), state, None)
+        assert reason is not None and "現金不足" in reason
+
+    def test_sell_within_holdings_ok(self):
+        state = {"cash_balance": 0, "holdings": {"1306": 20}}
+        t = _trade(etf="1306", trade_type="sell", quantity=10, price=2500)
+        assert m.validate_trade(t, state, None) is None
+
+    def test_sell_exceeds_holdings_rejected(self):
+        state = {"cash_balance": 0, "holdings": {"1306": 5}}
+        t = _trade(etf="1306", trade_type="sell", quantity=10, price=2500)
+        reason = m.validate_trade(t, state, None)
+        assert reason is not None and "保有超過" in reason
+
+    def test_price_deviation_within_5pct_ok(self):
+        state = {"cash_balance": 10**9, "holdings": {}}
+        # 終値 2500 に対し +4%
+        t = _trade(quantity=1, price=2600)
+        assert m.validate_trade(t, state, reference_price=2500.0) is None
+
+    def test_price_deviation_over_5pct_rejected(self):
+        state = {"cash_balance": 10**9, "holdings": {}}
+        t = _trade(quantity=1, price=2700)  # +8%
+        reason = m.validate_trade(t, state, reference_price=2500.0)
+        assert reason is not None and "価格乖離" in reason
+
+    def test_split_basis_mismatch_caught_by_deviation(self):
+        """分割基準ズレ（例: 2:1 で価格が約2倍）は乖離チェックで弾かれる."""
+        state = {"cash_balance": 10**9, "holdings": {}}
+        t = _trade(quantity=1, price=5000)  # 終値2500の2倍
+        reason = m.validate_trade(t, state, reference_price=2500.0)
+        assert reason is not None and "価格乖離" in reason
 
 
 # ---- main() の振る舞いテスト -------------------------------------------
@@ -181,6 +231,25 @@ class TestMain:
         rc = _run_main(["execute_demo_trades.py", "--user", "demo", "--execute"])
         assert rc == 2
         assert patched_main["post"].call_count == 2
+
+    def test_gate_rejects_overdraw_buy_no_post(self, patched_main, tmp_path):
+        """現金不足の買いは POST されず、全違反なので exit code 1."""
+        _make_plan(tmp_path, "demo", [_trade(quantity=100, price=2500, plan_id="P1")])
+        patched_main["state"].return_value = {"cash_balance": 1000, "holdings": {}}
+        rc = _run_main(["execute_demo_trades.py", "--user", "demo", "--execute"])
+        assert rc == 1
+        patched_main["post"].assert_not_called()
+
+    def test_gate_partial_rejection_exit_2(self, patched_main, tmp_path):
+        """1件違反 + 1件成功 → exit code 2、成功分のみ POST."""
+        _make_plan(tmp_path, "demo", [
+            _trade(etf="1306", quantity=100, price=2500, plan_id="P1"),
+            _trade(etf="2516", quantity=1, price=2500, plan_id="P2"),
+        ])
+        patched_main["state"].return_value = {"cash_balance": 5000, "holdings": {}}
+        rc = _run_main(["execute_demo_trades.py", "--user", "demo", "--execute"])
+        assert rc == 2
+        assert patched_main["post"].call_count == 1
 
     def test_plan_id_null_uses_memo_prefix(self, patched_main, tmp_path):
         _make_plan(tmp_path, "demo", [_trade(plan_id=None, etf="1306", trade_type="buy")])

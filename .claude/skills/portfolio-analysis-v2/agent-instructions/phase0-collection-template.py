@@ -408,6 +408,20 @@ with app.app_context():
     with open(output_path, 'w', encoding='utf-8') as f:
         json.dump(output, f, ensure_ascii=False, indent=2, default=str)
 
+    # user_id 帰属検証: cron で demo/test が同時起動し WORK_DIR が衝突すると、
+    # 別ユーザーのデータで上書きされても qty×price の内部整合は成立するため既存検証では検知できない。
+    # 書き出した JSON を読み戻し、起動引数 USER_ID と一致しなければ停止する。
+    with open(output_path, 'r', encoding='utf-8') as f:
+        persisted = json.load(f)
+    persisted_user_id = persisted.get('user_id')
+    if persisted_user_id != USER_ID:
+        print(
+            f"user_id帰属検証エラー: 書込先 {output_path} の user_id='{persisted_user_id}' が "
+            f"起動引数 USER_ID='{USER_ID}' と不一致。別ユーザーのWORK_DIRへの混入・上書きの疑いがあるため停止します。"
+        )
+        sys.exit(1)
+    print(f"user_id帰属検証OK: {output_path} は USER_ID='{USER_ID}' 帰属")
+
     # 00_portfolio_reference.md の生成（レポートのセクション1・11.2で使用するmarkdownテーブル）
     holdings_data = holdings
     cash = summary.get('cash_balance', 0)

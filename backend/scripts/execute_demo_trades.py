@@ -42,6 +42,9 @@ BASE_URLS = {
 JST = timezone(timedelta(hours=9))
 MEMO_PREFIX = "[auto]"
 
+# 参考終値との許容乖離（PROMPT.md セクション10.5 の 5% ルール）
+PRICE_DEVIATION_LIMIT = 0.05
+
 logger = logging.getLogger("execute_demo_trades")
 
 
@@ -152,6 +155,99 @@ def post_trade(
     return False, f"HTTP {resp.status_code}: {resp.text[:200]}"
 
 
+def fetch_portfolio_state(base_url: str, timeout: int = 15) -> Dict[str, Any]:
+    """Fetch demo cash balance and split-adjusted holdings via demo GET APIs.
+
+    保有数量・現金は PortfolioService 経由の demo GET エンドポイント
+    （分割調整済み）から取得する。DB 生 trades は参照しない。
+
+    Returns
+    -------
+    dict
+        ``{"cash_balance": float, "holdings": {etf_code: quantity}}``。
+        取得失敗時は ``{}`` を返し、呼び出し側で検証スキップ判断に使う。
+    """
+    base = base_url.rstrip("/")
+    try:
+        pf = requests.get(base + "/api/v1/demo/portfolio", timeout=timeout)
+        hd = requests.get(
+            base + "/api/v1/demo/portfolio/holdings", timeout=timeout
+        )
+    except requests.RequestException as exc:
+        logger.warning(f"portfolio state fetch failed (skip pre-checks): {exc}")
+        return {}
+    if pf.status_code != 200 or hd.status_code != 200:
+        logger.warning(
+            f"portfolio state fetch HTTP error (skip pre-checks): "
+            f"portfolio={pf.status_code} holdings={hd.status_code}"
+        )
+        return {}
+    cash = (pf.json().get("data") or {}).get("cash_balance", 0)
+    holdings = {
+        h["etf_code"]: h.get("quantity", 0)
+        for h in (hd.json().get("data") or [])
+    }
+    return {"cash_balance": cash, "holdings": holdings}
+
+
+def fetch_reference_price(
+    base_url: str, etf_code: str, timeout: int = 15
+) -> Optional[float]:
+    """Fetch an ETF's latest close (market_price) via the ETF detail API.
+
+    market_price は分割中立の直近終値であり、価格乖離・分割整合チェックの
+    基準値として用いる。取得失敗時は None（当該チェックをスキップ）。
+    """
+    url = base_url.rstrip("/") + f"/api/v1/etfs/{etf_code}"
+    try:
+        resp = requests.get(url, timeout=timeout)
+    except requests.RequestException:
+        return None
+    if resp.status_code != 200:
+        return None
+    price = (resp.json().get("data") or {}).get("market_price")
+    return float(price) if price else None
+
+
+def validate_trade(
+    trade: Dict[str, Any],
+    state: Dict[str, Any],
+    reference_price: Optional[float],
+) -> Optional[str]:
+    """Pre-POST validation gate. Returns a reason string when the trade is invalid.
+
+    検証項目（いずれも API/サービス層由来のデータで判定）:
+    - 買い: 必要額が利用可能現金以内か
+    - 売り: 数量が分割調整後の保有数量以内か
+    - 価格乖離: price が直近終値の ±5% 以内か
+    - 分割整合: price が終値の概ね分割比（またはその逆数）ぶんズレていないか
+    """
+    trade_type = trade.get("trade_type")
+    etf_code = trade.get("etf_code")
+    quantity = trade.get("quantity") or 0
+    price = trade.get("price") or 0
+
+    if trade_type == "buy":
+        required = quantity * price
+        cash = state.get("cash_balance", 0)
+        if required > cash:
+            return f"現金不足: 必要額{required:,.0f}円 > 残高{cash:,.0f}円"
+    elif trade_type == "sell":
+        held = state.get("holdings", {}).get(etf_code, 0)
+        if quantity > held:
+            return f"保有超過売却: 売却{quantity} > 保有{held:g}"
+
+    if reference_price and price > 0:
+        deviation = abs(price - reference_price) / reference_price
+        if deviation > PRICE_DEVIATION_LIMIT:
+            return (
+                f"価格乖離{deviation * 100:.1f}%: plan価格{price:,.0f}円 "
+                f"vs 終値{reference_price:,.0f}円"
+            )
+
+    return None
+
+
 def _exit_code(succeeded: int, failed: int, skipped: int) -> int:
     """Determine exit code from aggregate results."""
     if failed == 0:
@@ -200,12 +296,15 @@ def _process_trades(
     base_url: str,
     effective_execute: bool,
     today_iso: str,
+    portfolio_state: Optional[Dict[str, Any]] = None,
 ) -> Tuple[int, int, int, List[Dict[str, Any]]]:
     """Iterate the plan and post each trade.
 
     Returns (succeeded, failed, skipped, results).
     ``results`` は notifier に渡せる形式の dict のリスト。
+    検証違反は POST せず failed として計上し、サーバ側 400 と exit code を揃える。
     """
+    state = portfolio_state or {}
     succeeded = failed = skipped = 0
     results: List[Dict[str, Any]] = []
     for idx, trade in enumerate(trades, 1):
@@ -222,6 +321,21 @@ def _process_trades(
                 )
             )
             continue
+        if state:
+            reference_price = fetch_reference_price(base_url, trade.get("etf_code"))
+            reason = validate_trade(trade, state, reference_price)
+            if reason:
+                logger.error(f"rejected (pre-check): {label} ({reason})")
+                failed += 1
+                results.append(
+                    _build_result(
+                        trade,
+                        {"memo": trade.get("memo") or ""},
+                        status="failed",
+                        error_message=f"pre-check: {reason}",
+                    )
+                )
+                continue
         payload = build_payload(trade, today_iso)
         if not effective_execute:
             logger.info(f"sending (dry-run): {label} payload={payload}")
@@ -310,8 +424,9 @@ def main() -> int:
         )
 
         base_url = BASE_URLS[args.env]
+        portfolio_state = fetch_portfolio_state(base_url)
         succeeded, failed, skipped, results = _process_trades(
-            trades, existing, base_url, effective_execute, today_iso
+            trades, existing, base_url, effective_execute, today_iso, portfolio_state
         )
 
         logger.info(

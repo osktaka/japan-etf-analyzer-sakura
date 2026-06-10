@@ -21,6 +21,17 @@ set -uo pipefail
 PROJECT_DIR="/home/t_osaka/_mydev/_test_kabu/japan-etf-analyzer-sakura"
 cd "$PROJECT_DIR"
 
+# 多重起動防止: cron-batch.sh は通常 dispatch と catch-up sweep の両経路で
+# `bash scripts/cron-etf-rating-daily.sh &` を run_batch を経由せず直接起動するため、
+# flock 保護がない。両経路を相互排他にして API/メール二重送信を防ぐ。
+# ロック名は他バッチ (run_batch の /tmp/cron-batch-<NAME>.lock) と同一規約。
+LOCKFILE="/tmp/cron-batch-etf_rating_daily.lock"
+exec 9>"$LOCKFILE"
+if ! flock -n 9; then
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] [etf_rating_daily] skip (locked)"
+  exit 0
+fi
+
 TIMESTAMP=$(date +%Y%m%d-%H%M)
 LOGFILE="$PROJECT_DIR/logs/etf_rating.log"
 

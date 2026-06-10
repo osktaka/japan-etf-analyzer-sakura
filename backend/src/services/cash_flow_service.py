@@ -97,6 +97,17 @@ class CashFlowService:
         if parsed_date > date.today():
             return None, "未来の日付は指定できません"
 
+        if flow_type == "withdrawal":
+            from src.services.portfolio_service import PortfolioService
+
+            summary = PortfolioService().get_portfolio_summary(user_id)
+            cash_balance = summary.get("cash_balance", 0)
+            if amount > cash_balance:
+                return None, (
+                    f"現金残高を超える出金です（出金 {amount:,.0f}円 / "
+                    f"残高 {cash_balance:,.0f}円）"
+                )
+
         # Create cash flow
         cash_flow = CashFlow(
             user_id=user_id,

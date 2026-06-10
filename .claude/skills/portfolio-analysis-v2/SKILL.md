@@ -20,10 +20,15 @@ v1の portfolio-analysis をブレインストーミング方式で再構築し�
 ### 作業ディレクトリ
 
 ```bash
+# USER_ID は Step 0 の AskUserQuestion で確定済みの値を使う（この時点で未確定なら先に確定させること）
 SESSION_ID=$(date +%Y%m%d_%H%M%S)_$(openssl rand -hex 2)
-WORK_DIR=".tmp/pf2_${SESSION_ID}"
+# 並走衝突対策: cron で demo/test の pf-v2 が毎平日18:00に同時起動するため、
+# USER_ID とプロセス固有値($$) を必ず含めて別ユーザーによる WORK_DIR 上書きを防ぐ
+WORK_DIR=".tmp/pf2_${USER_ID}_${SESSION_ID}_$$"
 mkdir -p "${WORK_DIR}"
 ```
+
+**重要**: `WORK_DIR` は `USER_ID` 確定後に作成する。Step 0 では AskUserQuestion で USER_ID を取得してから上記 bash を実行すること。
 
 ### データ受け渡しルール
 
@@ -38,6 +43,8 @@ mkdir -p "${WORK_DIR}"
 - `agent-instructions/` 配下のファイルは**メインエージェントが読み込まない**
 - メインはサブエージェントのプロンプトに**指示ファイルパスとパラメータ**を渡すだけ
 - サブエージェントが自分の指示ファイルを直接読み込んで実行する
+
+**タスク境界（必須）**: メイン→サブの委譲時は、タスク境界として **`USER_ID` と `WORK_DIR` を必ずプロンプトに明示して渡す**。両者は対象ユーザーに固有であり、並走する別ユーザーの分析と混線させないための識別子である（WORK_DIR 隔離の根拠は後述「WORK_DIR 隔離と書込先の user_id 帰属検証」を参照）。WORK_DIR は USER_ID 確定後に作成された、当該ユーザー専用のディレクトリを渡すこと。
 
 ### コンテキスト最適化（30分目標達成のための必須事項）
 
@@ -124,8 +131,8 @@ mkdir -p "${WORK_DIR}"
 
 ### Step 0: 初期化
 
-1. WORK_DIR を作成（上記 bash 参照）
-2. AskUserQuestion で対象ユーザーIDを聞く（デフォルト: demo）。例: 「分析対象のユーザーIDを入力してください（デフォルト: demo）」
+1. AskUserQuestion で対象ユーザーIDを聞く（デフォルト: demo）。例: 「分析対象のユーザーIDを入力してください（デフォルト: demo）」
+2. 確定した USER_ID を使って WORK_DIR を作成（上記 bash 参照。WORK_DIR は `USER_ID` と `$$` を含むため、USER_ID 確定後でなければ作成できない）
 3. timing.json を初期化:
 
 ```json
@@ -341,6 +348,18 @@ Phase 0とPhase 0aが揃い次第（Phase 0bを待たずに）Step 2を開始す
 各フェーズの start/end はサブエージェント起動時刻/完了時刻をメインエージェントが記録する。
 
 ## 重要注意事項
+
+### WORK_DIR 隔離と書込先の user_id 帰属検証
+
+cron で毎平日18:00に demo と test の pf-v2 が**必ず同時起動**する。WORK_DIR が `pf2_${SESSION_ID}`（date+ランダムhex）のみだと1秒差の並走で衝突し、別ユーザーのデータで成果物が上書きされる（2026-06-02 に demo dir が test の7銘柄1,740,461円で上書きされた実害あり）。分割の内部整合（qty×price）は成立するため、既存の分割検証では「正しい値だが別人のデータ」を検知できない。
+
+**隔離方針**:
+- WORK_DIR には `USER_ID` と プロセス固有値 `$$`（PID）を必ず含める（`pf2_${USER_ID}_${SESSION_ID}_$$`）。これにより同一秒・同一ユーザーであってもプロセスが異なれば衝突しない。
+- WORK_DIR は USER_ID 確定後（AskUserQuestion 後）に作成する。
+
+**生成物の帰属検証**:
+- Phase 0 テンプレートは `00_portfolio_data.json` を書き出した後、その JSON を読み戻して `user_id` フィールドが起動引数 `USER_ID` と一致するか検証する。不一致なら `sys.exit(1)` で停止する（別ユーザーのWORK_DIRへの混入・上書きを検知するため）。
+- メインエージェントは各ユーザーごとに固有の WORK_DIR を使い、複数ユーザーの分析で WORK_DIR を共有してはならない。
 
 ### 株式分割対策
 

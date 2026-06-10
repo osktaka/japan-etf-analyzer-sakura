@@ -1,10 +1,13 @@
 """Trade service for managing user's ETF transactions."""
 from datetime import date, datetime
-from typing import Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union
 
 from src.models import Trade
 from src.repositories.etf_repository import ETFRepository
 from src.repositories.trade_repository import TradeRepository
+
+if TYPE_CHECKING:
+    from src.services.portfolio_service import PortfolioService
 
 
 class TradeService:
@@ -14,10 +17,20 @@ class TradeService:
         self,
         trade_repository: Optional[TradeRepository] = None,
         etf_repository: Optional[ETFRepository] = None,
+        portfolio_service: Optional["PortfolioService"] = None,
     ):
         """Initialize trade service."""
         self.trade_repository = trade_repository or TradeRepository()
         self.etf_repository = etf_repository or ETFRepository()
+        self._portfolio_service = portfolio_service
+
+    def _get_portfolio_service(self) -> "PortfolioService":
+        """Lazily resolve PortfolioService (avoids import cycle at module load)."""
+        if self._portfolio_service is None:
+            from src.services.portfolio_service import PortfolioService
+
+            self._portfolio_service = PortfolioService()
+        return self._portfolio_service
 
     def _clear_portfolio_cache(self, user_id: int) -> None:
         """Clear portfolio-related cache after trade CUD operations."""
@@ -25,6 +38,39 @@ class TradeService:
         from src.services.portfolio_service import PortfolioService
 
         PortfolioService.clear_valuation_cache(user_id)
+
+    def _validate_balance(
+        self, user_id: int, etf_code: str, trade_type: str, quantity: int, price: float
+    ) -> Optional[str]:
+        """Reject trades that would overdraw cash or oversell holdings.
+
+        分割調整済みの保有数量・現金は必ず PortfolioService 経由で取得する。
+        trades.quantity を直接合算すると分割考慮漏れで誤判定するため禁止。
+        """
+        portfolio = self._get_portfolio_service()
+
+        if trade_type == "buy":
+            required = quantity * price
+            summary = portfolio.get_portfolio_summary(user_id)
+            cash_balance = summary.get("cash_balance", 0)
+            if required > cash_balance:
+                return (
+                    f"現金残高が不足しています（必要額 {required:,.0f}円 / "
+                    f"残高 {cash_balance:,.0f}円）"
+                )
+            return None
+
+        # sell: 分割調整後の保有数量と比較
+        holdings = portfolio.get_holdings(user_id)
+        held = next(
+            (h["quantity"] for h in holdings if h["etf_code"] == etf_code), 0
+        )
+        if quantity > held:
+            return (
+                f"保有数量を超える売却です（売却 {quantity} / "
+                f"保有 {held:g}）"
+            )
+        return None
 
     def get_user_trades(
         self,
@@ -129,6 +175,12 @@ class TradeService:
 
         if parsed_date > date.today():
             return None, "未来の日付は指定できません"
+
+        balance_error = self._validate_balance(
+            user_id, etf_code, trade_type, quantity, price
+        )
+        if balance_error:
+            return None, balance_error
 
         # Create trade
         trade = Trade(
