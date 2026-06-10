@@ -189,6 +189,19 @@ script_name_for() {
   esac
 }
 
+# catch-up 成功判定に使う batch_logs.batch_name 解決。
+# 大半のジョブは catch-up ジョブ名と batch_logs 記録名が一致するが、
+# etf_rating_daily だけは skill 経由で etf_rating_send_mail.py が
+# batch_name='etf_rating_send_mail' で記録するため変換が必要。
+# 不一致のまま has_succeeded_today へ渡すと当日成功を検知できず、
+# catch-up が until まで5分おきに再発火しメールを重複送信する。
+success_name_for() {
+  case "$1" in
+    etf_rating_daily) echo "etf_rating_send_mail" ;;
+    *)                echo "$1" ;;
+  esac
+}
+
 # バッチ実行: run_batch <NAME> <ARGS...>
 # - 既存schedulerコンテナと同じ実行方式 (cwd=/app, 同じpython環境)
 # - バッチ別 flock で多重起動防止
@@ -427,7 +440,7 @@ should_catchup() {
   fi
   # `if ! cmd; then rc=$?` は否定後の値(=0)を拾い本来の exit を握り潰すため、
   # コマンドを直接走らせて $? を捕捉する（rc 0/1/2 を区別する必要がある）。
-  docker compose exec -T backend python3 scripts/has_succeeded_today.py "$name" >/dev/null 2>&1
+  docker compose exec -T backend python3 scripts/has_succeeded_today.py "$(success_name_for "$name")" >/dev/null 2>&1
   local rc=$?
   catchup_decision_from_rc "$name" "$rc"
 }

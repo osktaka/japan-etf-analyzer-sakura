@@ -30,6 +30,8 @@ os.environ.setdefault("APP_DATA_DIR", str(PROJECT_ROOT / "data"))
 db_path = PROJECT_ROOT / "data" / "etf.db"
 os.environ.setdefault("DATABASE_URL", f"sqlite:///{db_path}")
 
+sys.path.insert(0, str(BACKEND_DIR))
+
 # Yahoo Finance API 429エラー対策: User-Agentを強制的に上書き
 import requests  # noqa: E402
 
@@ -47,7 +49,13 @@ requests.Session.prepare_request = custom_prepare_request
 
 import yfinance as yf  # noqa: E402
 
+from src.app import create_app  # noqa: E402
+from src.repositories import BatchLogRepository  # noqa: E402
+
 JST = timezone(timedelta(hours=9))
+
+# catch-up sweep が当日成功を検知できるよう、cron-batch.sh の CATCHUP_JOBS と一致させる
+BATCH_NAME = "update_theme_etfs"
 
 CANDIDATES_PATH = BACKEND_DIR / "config" / "theme_etfs.json"
 OUTPUT_PATH = BACKEND_DIR / "config" / "active_theme_etfs.json"
@@ -167,10 +175,12 @@ def select_active(scored_candidates):
     return selected
 
 
-def main():
-    dry_run = "--dry-run" in sys.argv
+def _run_selection(dry_run):
+    """候補取得→スコアリング→選定→JSON出力。
 
-    # 候補プール読み込み
+    有効銘柄数が MIN_ACTIVE 未満なら RuntimeError を送出する
+    （batch_log を failed 記録するため sys.exit ではなく例外で通知）。
+    """
     candidates = load_candidates()
     print(f"候補プール: {len(candidates)}銘柄", file=sys.stderr)
 
@@ -186,11 +196,9 @@ def main():
             scoring_data.append({**c, **data})
 
     if len(scoring_data) < MIN_ACTIVE:
-        print(
-            f"ERROR: 有効銘柄数 {len(scoring_data)} < 最低 {MIN_ACTIVE}",
-            file=sys.stderr,
-        )
-        sys.exit(1)
+        msg = f"有効銘柄数 {len(scoring_data)} < 最低 {MIN_ACTIVE}"
+        print(f"ERROR: {msg}", file=sys.stderr)
+        raise RuntimeError(msg)
 
     print(f"有効銘柄: {len(scoring_data)}/{len(candidates)}", file=sys.stderr)
 
@@ -246,6 +254,41 @@ def main():
         with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
             f.write(output_json + "\n")
         print(f"選定: {len(active)}銘柄 → {OUTPUT_PATH}", file=sys.stderr)
+
+
+def main():
+    dry_run = "--dry-run" in sys.argv
+
+    # dry-run は base_batch.py 同様 batch_log を残さない
+    if dry_run:
+        _run_selection(dry_run=True)
+        return
+
+    # catch-up の当日成功検知のため、batch_log を記録する
+    with create_app().app_context():
+        repo = BatchLogRepository()
+        log = repo.create(
+            batch_name=BATCH_NAME,
+            status="running",
+            started_at=datetime.utcnow(),
+            total_count=0,
+        )
+        try:
+            _run_selection(dry_run=False)
+            repo.update(
+                log.id,
+                status="success",
+                finished_at=datetime.utcnow(),
+                error_message=None,
+            )
+        except Exception as e:
+            repo.update(
+                log.id,
+                status="failed",
+                finished_at=datetime.utcnow(),
+                error_message=str(e),
+            )
+            raise
 
 
 if __name__ == "__main__":

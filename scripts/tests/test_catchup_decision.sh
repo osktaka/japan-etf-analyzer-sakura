@@ -39,6 +39,25 @@ assert_decision "rc=1 未成功は catch-up 対象(due)" 1 0
 assert_decision "rc=2 エラーは安全側 skip" 2 1
 assert_decision "rc=3 想定外も skip" 3 1
 
+# 成功判定に使う batch_logs.batch_name 解決。
+# 過去バグ: catch-up が etf_rating_daily を has_succeeded_today へそのまま渡すが、
+# 実体は batch_name='etf_rating_send_mail' で記録されるため当日成功を検知できず、
+# until まで5分おきに再発火しメールを重複送信していた。
+assert_success_name() {
+  local desc="$1" job="$2" expected="$3"
+  local actual
+  actual=$(success_name_for "$job")
+  if [[ "$actual" == "$expected" ]]; then
+    echo "PASS: ${desc} (${job} → ${actual})"
+  else
+    echo "FAIL: ${desc} (${job} → got '${actual}', want '${expected}')"
+    FAIL=1
+  fi
+}
+
+assert_success_name "etf_rating_daily は実記録名へ変換" etf_rating_daily etf_rating_send_mail
+assert_success_name "通常ジョブはジョブ名のまま" update_etf_data update_etf_data
+
 if (( FAIL == 0 )); then
   echo "ALL TESTS PASSED"
   exit 0
