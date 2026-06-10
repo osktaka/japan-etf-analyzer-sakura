@@ -21,10 +21,43 @@ import sys
 import json
 from pathlib import Path
 
-# プロジェクトルート特定（Docker内: /app）
-# Docker内実行時は /app がプロジェクトルート
-PROJECT_ROOT = Path("/app")
-BACKEND_DIR = PROJECT_ROOT / "backend"
+
+def _resolve_src_root():
+    """`from src...` を解決できるディレクトリを環境非依存で特定する。
+
+    Docker(backendコンテナ)では src が /app/src 直下、本番(さくら/venv直接実行)では
+    backend/src 直下にあり、両環境で配置が異なる。「直下に src パッケージが存在するか」
+    を実在チェックすることで、どちらの環境でも無補正で import を解決できるようにする。
+    候補は (1)APP_BASE_DIR (2)/app (3)テンプレ位置から遡ったプロジェクトルート/backend
+    の優先順で評価し、最初に src を持つものを採用する。
+    """
+    candidates = []
+    if os.environ.get("APP_BASE_DIR"):
+        base = Path(os.environ["APP_BASE_DIR"])
+        candidates += [base, base / "backend"]
+    candidates.append(Path("/app"))
+    # テンプレ位置から遡上（CLAUDE.md の SCRIPT_DIR→BACKEND_DIR→ROOT 方式）。
+    # python -c 実行では __file__ が未定義になり NameError で全停止するため、
+    # その場合は cwd 起点に切り替えて起動方法非依存で解決できるようにする。
+    try:
+        origin = Path(__file__).resolve()
+    except NameError:
+        origin = Path.cwd().resolve()
+    for parent in [origin, *origin.parents]:
+        candidates.append(parent / "backend")
+        candidates.append(parent)
+    for cand in candidates:
+        if (cand / "src" / "__init__.py").exists() or (cand / "src").is_dir():
+            return cand
+    raise RuntimeError(
+        "src パッケージを含むディレクトリを特定できませんでした。"
+        "APP_BASE_DIR を設定するか、backend/src を含む階層から実行してください。"
+    )
+
+
+SRC_ROOT = _resolve_src_root()
+# PROJECT_ROOT は data/etf.db の所在（src の親が backend なら更に親、そうでなければ SRC_ROOT 自身）
+PROJECT_ROOT = SRC_ROOT.parent if SRC_ROOT.name == "backend" else SRC_ROOT
 
 # 環境変数設定
 os.environ.setdefault("APP_BASE_DIR", str(PROJECT_ROOT))
@@ -32,7 +65,7 @@ os.environ.setdefault("APP_DATA_DIR", str(PROJECT_ROOT / "data"))
 db_path = PROJECT_ROOT / "data" / "etf.db"
 os.environ.setdefault("DATABASE_URL", f"sqlite:///{db_path}")
 
-sys.path.insert(0, str(BACKEND_DIR))
+sys.path.insert(0, str(SRC_ROOT))
 
 from src.app import create_app  # noqa: E402
 from src.models.user import User  # noqa: E402
@@ -40,6 +73,7 @@ from src.services.portfolio_service import PortfolioService  # noqa: E402
 from src.services.analysis_data_service import AnalysisDataService  # noqa: E402
 from src.services.compare_service import CompareService  # noqa: E402
 from src.services.recommend_service import RecommendService  # noqa: E402
+from src.repositories import ScoreCacheRepository  # noqa: E402
 
 # 作業ディレクトリ（引数から取得）
 if len(sys.argv) < 2:
@@ -139,17 +173,53 @@ with app.app_context():
             if name not in data_status:
                 record_status(name, error=e)
 
-    # 5. おすすめ
+    # 5. おすすめ（RecommendService.PERSPECTIVES の全6視点。各視点 limit=5）
+    # get_recommendations() の戻り値は {"perspective": {...}, "items": [...]} 形式。
+    # items が候補銘柄リストなので、件数判定・空判定は items を見る。
     recommendations = {}
-    for perspective in ['balance', 'dividend', 'low-cost']:
+    recommendation_perspectives = ['balance', 'dividend', 'low-cost', 'stability', 'volume', 'growth']
+    for perspective in recommendation_perspectives:
         try:
-            rec = recommend_service.get_recommendations(perspective=perspective)
+            rec = recommend_service.get_recommendations(perspective=perspective, limit=5)
             recommendations[perspective] = rec
-            record_status(f'recommendations_{perspective}', data=rec.get('recommendations', []) if isinstance(rec, dict) else rec)
+            items = rec.get('items', []) if isinstance(rec, dict) else rec
+            record_status(f'recommendations_{perspective}', data=items)
         except Exception as e:
             print(f"おすすめ取得エラー（{perspective}）: {e}（スキップ）")
             recommendations[perspective] = None
             record_status(f'recommendations_{perspective}', error=e)
+
+    # フォールバック: 全視点が empty/error の場合、score_cache の balance 上位5銘柄
+    # （保有銘柄を除外）を代替候補として供給する。Phase1 の入替会議・新規候補会議へ
+    # 候補が痩せないようにするための保険（doc「おすすめAPIデータ空時のフォールバック」準拠）。
+    recommendations_fallback = None
+    rec_statuses = [
+        data_status.get(f'recommendations_{p}', {}).get('status')
+        for p in recommendation_perspectives
+    ]
+    if all(s in ('empty', 'error') for s in rec_statuses):
+        try:
+            score_repo = ScoreCacheRepository()
+            held = set(etf_codes)
+            top = score_repo.get_scores_for_perspective('balance', limit=5 + len(held))
+            recommendations_fallback = [
+                {
+                    'etf_code': c.etf_code,
+                    'total_score': c.total_score_full if c.total_score_full is not None else c.total_score,
+                    'source': 'score_cache_balanced',
+                }
+                for c in top
+                if c.etf_code not in held
+            ][:5]
+            data_status['recommendations'] = {
+                'status': 'fallback',
+                'count': len(recommendations_fallback),
+                'fallback_note': '全視点データ空のため、スコアキャッシュから上位5銘柄を代替候補として抽出',
+            }
+            print(f"おすすめフォールバック: score_cache balance 上位{len(recommendations_fallback)}銘柄を採用")
+        except Exception as e:
+            print(f"おすすめフォールバック取得エラー: {e}（スキップ）")
+            data_status['recommendations'] = {'status': 'error', 'error': str(e)[:200]}
 
     # 6. 比較（保有銘柄同士、5銘柄ずつ分割して取得）
     compare_performance_list = []
@@ -358,7 +428,11 @@ with app.app_context():
         avg_cost = h.get('average_cost', 0)
         total_cost_h = h.get('total_cost', 0)
         calc_tc = round(avg_cost * qty, 2)
-        if abs(calc_tc - total_cost_h) > 1:
+        # average_cost は表示用に小数1桁丸めされており、avg_cost×qty は total_cost と
+        # 最大 0.05×qty 円ずれる（丸め誤差は数量に比例）。固定1円許容だと大口数量銘柄
+        # （例 1629）で正当な丸めズレを不整合と誤判定し誤停止するため、許容を数量比例にする。
+        tol = max(1.0, 0.05 * qty + 1.0)
+        if abs(calc_tc - total_cost_h) > tol:
             validation_errors.append(
                 f"取得原価不整合: {h['etf_code']} {avg_cost}円×{qty}口={calc_tc}円 ≠ {total_cost_h}円"
             )
@@ -400,6 +474,7 @@ with app.app_context():
         'dividend_yield_primary': dividend_yield_primary,
         'dividend_yield_warnings': dividend_yield_warnings if dividend_yield_warnings else None,
         'recommendations': recommendations,
+        'recommendations_fallback': recommendations_fallback,
         'compare_performance': compare_performance_list if compare_performance_list else None,
         'compare_scores': compare_scores_list if compare_scores_list else None,
     }

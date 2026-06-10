@@ -144,11 +144,13 @@ print(f"検証OK: 総資産{total_asset:,.0f}円（銘柄{total_current_value:,.
 
 **記録対象**: holdings, summary, valuation_history, performance_cache, score_cache, etf_data, tag_data, price_data, price_data_daily_30d, price_data_close_250d, dividend_data, recommendations_balance, recommendations_dividend, recommendations_low-cost, compare_performance, compare_scores
 
+**おすすめは全6視点を取得する**: `recommendations_*` は RecommendService.PERSPECTIVES の全6視点 `balance` / `dividend` / `low-cost` / `stability` / `volume` / `growth` を各 `limit=5` で取得する（`get_recommendations()` の戻り値は `{"perspective": {...}, "items": [...]}` 形式。候補銘柄は `items` キー）。
+
 **おすすめAPIデータ空時のフォールバック（必須）**:
-- `recommendations_*` の全視点が `"empty"` または `"error"` の場合、以下を実行する:
-  1. `score_cache` の `balanced` ビューで `total_score` 上位5銘柄を抽出（保有銘柄は除外）
+- `recommendations_*` の全6視点が `"empty"` または `"error"` の場合、以下を実行する:
+  1. `score_cache` の `balance` ビュー（`ScoreCacheRepository.get_scores_for_perspective('balance')`、`total_score_full` 降順）で上位5銘柄を抽出（保有銘柄は除外）
   2. 抽出結果を `recommendations_fallback` キーに格納する（形式: `[{"etf_code": "XXXX", "total_score": XX.X, "source": "score_cache_balanced"}, ...]`）
-  3. `_data_status.recommendations` に `"fallback_note": "全視点データ空のため、スコアキャッシュから上位5銘柄を代替候補として抽出"` を記録する
+  3. `_data_status.recommendations` に `{"status": "fallback", "fallback_note": "全視点データ空のため、スコアキャッシュから上位5銘柄を代替候補として抽出"}` を記録する
 - 一部の視点のみ空の場合はフォールバック不要（取得できた視点のデータを使用する）
 
 **ステータス値**:
