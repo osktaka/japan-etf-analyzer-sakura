@@ -42,14 +42,24 @@ log() {
 }
 
 # --- 祝日チェック（土日は cron-batch.sh 側で除外済み） ---
-if docker compose exec -T backend python3 -c "
-import jpholiday
+# docker compose exec は高コストのため当日結果を /tmp にキャッシュし cron-batch.sh と共有する。
+# sakura 側が当日先にキャッシュ済みなら追加 exec は 0 回。未生成時のみ 1 回問い合わせ atomic 書込。
+# トップレベル実装のため local は使えない。
+HOLIDAY_CACHE="/tmp/etf_jpholiday_$(TZ=Asia/Tokyo date +%Y%m%d).cache"
+if [[ -f "$HOLIDAY_CACHE" ]]; then
+  HOLIDAY_VAL="$(cat "$HOLIDAY_CACHE" 2>/dev/null)"
+else
+  HOLIDAY_VAL="$(docker compose exec -T backend python3 -c "
+import jpholiday, zoneinfo
 from datetime import datetime
-import zoneinfo, sys
 JST = zoneinfo.ZoneInfo('Asia/Tokyo')
-today = datetime.now(JST).date()
-sys.exit(0 if jpholiday.is_holiday(today) else 1)
-" 2>/dev/null; then
+print('1' if jpholiday.is_holiday(datetime.now(JST).date()) else '0')
+" 2>/dev/null | tr -d '[:space:]')"
+  if [[ "$HOLIDAY_VAL" == "0" || "$HOLIDAY_VAL" == "1" ]]; then
+    printf '%s' "$HOLIDAY_VAL" > "${HOLIDAY_CACHE}.tmp.$$" && mv -f "${HOLIDAY_CACHE}.tmp.$$" "$HOLIDAY_CACHE"
+  fi
+fi
+if [[ "$HOLIDAY_VAL" == "1" ]]; then
   log "Holiday detected ($(date +%Y-%m-%d)), skipping etf-rating."
   exit 0
 fi

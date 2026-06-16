@@ -143,20 +143,29 @@ is_weekday() {
   [[ "$DOW" -ge 1 && "$DOW" -le 5 ]]
 }
 
-# 日本の祝日判定（dry-run時はキャッシュ的に false 扱いで良いが、実弾時は判定）
-# 注: docker exec を発行するため、頻発する処理だが計画通り過剰最適化はしない
+# 祝日判定: docker compose exec は高コストのため当日結果を /tmp にキャッシュし
+# 1日1回だけ backend に問い合わせる(CPUスパイク対策)。cron-etf-rating-daily.sh と共有。
+# 同時実行での破損を避けるため一時ファイル+mv で atomic に書き込む。
 is_holiday() {
   if [[ "$DRY_RUN" == true ]]; then
     return 1
   fi
-  docker compose exec -T backend python3 -c "
-import jpholiday
+  local cache="/tmp/etf_jpholiday_$(TZ=Asia/Tokyo date +%Y%m%d).cache"
+  local val
+  if [[ -f "$cache" ]]; then
+    val="$(cat "$cache" 2>/dev/null)"
+  else
+    val="$(docker compose exec -T backend python3 -c "
+import jpholiday, zoneinfo
 from datetime import datetime
-import zoneinfo, sys
 JST = zoneinfo.ZoneInfo('Asia/Tokyo')
-today = datetime.now(JST).date()
-sys.exit(0 if jpholiday.is_holiday(today) else 1)
-" 2>/dev/null
+print('1' if jpholiday.is_holiday(datetime.now(JST).date()) else '0')
+" 2>/dev/null | tr -d '[:space:]')"
+    if [[ "$val" == "0" || "$val" == "1" ]]; then
+      printf '%s' "$val" > "${cache}.tmp.$$" && mv -f "${cache}.tmp.$$" "$cache"
+    fi
+  fi
+  [[ "$val" == "1" ]]
 }
 
 # 旧 backend/crontab のログ名マッピング（既存 logs/*.log を踏襲）
