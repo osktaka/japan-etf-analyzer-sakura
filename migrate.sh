@@ -10,6 +10,7 @@
 #   scripts/migrations/001_create_xxx.sql
 #   scripts/migrations/002_add_column_yyy.sql
 #   番号順に実行され、実行済みはスキップされる
+#   各マイグレーションは BEGIN/COMMIT でラップして実行される（複数文の途中失敗時にDBが中途半端な状態になるのを防ぐ）
 
 set -e  # エラー時は即座に終了
 
@@ -73,8 +74,9 @@ if [ -d "$MIGRATIONS_DIR" ] && [ "$(ls -A $MIGRATIONS_DIR/*.sql 2>/dev/null)" ];
         if [ "$applied" -eq 0 ]; then
             echo -e "  ${BLUE}実行中: ${migration_name}${NC}"
 
-            # SQLファイル実行
-            if sqlite3 "$DB_PATH" < "$migration_file" 2>&1; then
+            # SQLファイル実行（BEGIN/COMMITでラップし、複数文の途中失敗でDBが
+            # 中途半端な状態になるのを防ぐ。失敗時はsqlite3が非0を返しCOMMITされない）
+            if { echo "BEGIN;"; cat "$migration_file"; echo "COMMIT;"; } | sqlite3 "$DB_PATH" 2>&1; then
                 # 成功時は履歴に記録
                 sqlite3 "$DB_PATH" "INSERT INTO migrations_applied (migration_name) VALUES ('${migration_name}');"
                 echo -e "  ${GREEN}✓ 完了: ${migration_name}${NC}"

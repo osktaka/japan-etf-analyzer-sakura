@@ -7,6 +7,7 @@ from src.services.favorite_service import FavoriteService
 from src.services.portfolio_service import PortfolioService
 from src.services.trade_service import TradeService
 from src.utils import api_response, error_response
+from src.utils.decorators import api_key_required
 
 # Module-level cache for demo user PK
 _demo_user_pk = None
@@ -125,10 +126,14 @@ def create_demo_bp():
         return api_response(data=trades)
 
     @bp.route("/trades", methods=["POST"])
+    @api_key_required
     def create_trade():
         """Create a demo trade.
 
         POST /api/v1/demo/trades
+
+        execute_demo_trades.py（cron）専用。NOTES_API_KEYと同じAPIキーを
+        Authorization: Bearer ヘッダで要求する（api_key_required参照）。
         """
         user_pk = _get_demo_user_pk()
         if not user_pk:
@@ -173,10 +178,14 @@ def create_demo_bp():
         return api_response(data=cash_flows)
 
     @bp.route("/cash-flows", methods=["POST"])
+    @api_key_required
     def create_cash_flow():
         """Create a demo cash flow.
 
         POST /api/v1/demo/cash-flows
+
+        execute_demo_trades.py（cron）専用。NOTES_API_KEYと同じAPIキーを
+        Authorization: Bearer ヘッダで要求する（api_key_required参照）。
         """
         user_pk = _get_demo_user_pk()
         if not user_pk:

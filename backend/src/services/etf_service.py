@@ -241,9 +241,9 @@ class ETFService:
             result["trading_value"] = None
 
         # Return rates and regression rates from PerformanceCache
-        perf_data = (
-            PerformanceCache.query.filter(PerformanceCache.etf_code == code).all()
-        )
+        perf_data = PerformanceCache.query.filter(
+            PerformanceCache.etf_code == code
+        ).all()
         regression_rates = {}
         return_1y = None
         return_3y = None
@@ -392,18 +392,19 @@ class ETFService:
             Dict mapping ETF code to dict with score and axis_scores
         """
         result = {}
-        etfs = [self.repository.get_by_code(code) for code in codes]
-        etf_map = {etf.code: etf for etf in etfs if etf}
+        etf_map = self.repository.get_by_codes(codes)
 
         # Get all ETFs for percentile calculation
         all_etfs = self.repository.search(limit=None, offset=0)
 
-        # Pre-load return rates and average volumes
-        for etf in all_etfs:
-            return_rates = self.repository.get_return_rates(etf.code)
-            self.scoring_service._return_rates_cache[etf.code] = return_rates
-            avg_volume = self.repository.get_average_volume(etf.code, days=30)
-            self.scoring_service._avg_volumes_cache[etf.code] = avg_volume
+        # Pre-load return rates and average volumes (batch to avoid N+1)
+        all_etf_codes = [etf.code for etf in all_etfs]
+        self.scoring_service._return_rates_cache = (
+            self.repository.get_return_rates_batch(all_etf_codes)
+        )
+        self.scoring_service._avg_volumes_cache = (
+            self.repository.get_average_volumes_batch(all_etf_codes, days=30)
+        )
 
         # Collect percentile data
         self.scoring_service._collect_percentile_data(all_etfs)

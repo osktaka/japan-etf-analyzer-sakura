@@ -1,8 +1,12 @@
 """Market analysis API routes."""
+import logging
+
 from flask import Blueprint, request
 
 from src.services import MarketService
 from src.utils import api_response, error_response
+
+logger = logging.getLogger(__name__)
 
 
 def create_market_bp():
@@ -26,7 +30,8 @@ def create_market_bp():
 
         try:
             result = service.get_tag_momentum(category=category)
-        except Exception:
+        except Exception as e:
+            logger.exception(f"Failed to retrieve tag momentum data: {e}")
             return error_response("Failed to retrieve tag momentum data", 500)
 
         return api_response(data=result)

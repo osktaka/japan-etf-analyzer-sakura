@@ -3,13 +3,37 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Tuple
+from typing import List, Optional, Tuple
 
 from jinja2 import Environment, FileSystemLoader, StrictUndefined, select_autoescape
 
-from src.services.daily_advisor_service import NotificationContext, RuleTrigger
+from src.services.daily_advisor_service import (
+    AllocationDrift,
+    NotificationContext,
+    RuleTrigger,
+)
 
 logger = logging.getLogger(__name__)
+
+
+def _critical_trigger(ctx: NotificationContext) -> Optional[RuleTrigger]:
+    """triggers中の最初の critical severity トリガー（なければ None）."""
+    return next((t for t in ctx.triggers if t.severity == "critical"), None)
+
+
+def _warn_drifts(ctx: NotificationContext) -> List[AllocationDrift]:
+    """allocation_drifts のうち is_warn なもの一覧."""
+    return [d for d in ctx.allocation_drifts if d.is_warn]
+
+
+def _warn_other_triggers(ctx: NotificationContext) -> List[RuleTrigger]:
+    """warn severity かつ allocation_drift 以外の機械ルール発動一覧."""
+    return [
+        t
+        for t in ctx.triggers
+        if t.severity == "warn" and t.rule_kind != "allocation_drift"
+    ]
+
 
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates" / "advisor"
 
@@ -146,7 +170,7 @@ class NotificationRenderer:
                 return "要確認"
             return "情報"
 
-        has_critical = any(t.severity == "critical" for t in ctx.triggers)
+        has_critical = _critical_trigger(ctx) is not None
         has_warn = any(t.severity == "warn" for t in ctx.triggers)
 
         # morning: 統合された rebalance_plan を主軸に評価
@@ -154,8 +178,10 @@ class NotificationRenderer:
             plan = ctx.rebalance_plan
             if has_critical:
                 return "緊急"
-            if plan is not None and plan.is_rebalance_day and (
-                plan.sell_actions or plan.buy_actions
+            if (
+                plan is not None
+                and plan.is_rebalance_day
+                and (plan.sell_actions or plan.buy_actions)
             ):
                 return "要対応"
             if plan is not None and plan.critical_count > 0:
@@ -170,11 +196,7 @@ class NotificationRenderer:
             return "緊急"
         if has_warn:
             return "要確認"
-        if (
-            ctx.kind == "weekly"
-            and ctx.alpha_pp is not None
-            and ctx.alpha_pp <= -2.0
-        ):
+        if ctx.kind == "weekly" and ctx.alpha_pp is not None and ctx.alpha_pp <= -2.0:
             return "要確認"
         return "静観"
 
@@ -226,7 +248,7 @@ class NotificationRenderer:
             parts.append(f"α{ctx.alpha_pp:+.2f}pp")
 
         # 配分状態
-        warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
+        warn_drifts = _warn_drifts(ctx)
         if warn_drifts:
             parts.append(f"配分逸脱{len(warn_drifts)}件")
         else:
@@ -238,37 +260,26 @@ class NotificationRenderer:
     def _reason_line(cls, ctx: NotificationContext) -> str:
         """3行目（根拠）: critical/warn の発動理由を簡潔に. なければ空文字."""
         # critical 優先
-        critical = next(
-            (t for t in ctx.triggers if t.severity == "critical"), None
-        )
+        critical = _critical_trigger(ctx)
         if critical is not None:
             payload = critical.payload or {}
             change = payload.get("change_pct")
-            threshold = payload.get("threshold_pct")
             if critical.rule_kind == "n225_drawdown" and change is not None:
                 return (
-                    f"N225が{change:+.1f}%急落、"
-                    "戦略書5.3条のリスクオフ条項に該当。"
+                    f"N225が{change:+.1f}%急落、" "戦略書5.3条のリスクオフ条項に該当。"
                 )
-            return (
-                f"機械ルール{critical.rule_kind}が発動: {critical.message}。"
-            )
+            return f"機械ルール{critical.rule_kind}が発動: {critical.message}。"
 
         # 配分逸脱（warn）
-        warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
+        warn_drifts = _warn_drifts(ctx)
         if warn_drifts:
             worst = max(warn_drifts, key=lambda d: abs(d.drift_pp))
             warn_pp = worst.warn_threshold_pp
             over = abs(worst.drift_pp) - warn_pp
-            return (
-                f"警告閾値±{warn_pp:.1f}ppを{over:.1f}pp超過（{worst.bucket}）。"
-            )
+            return f"警告閾値±{warn_pp:.1f}ppを{over:.1f}pp超過（{worst.bucket}）。"
 
         # 他のwarn
-        warn_other = [
-            t for t in ctx.triggers
-            if t.severity == "warn" and t.rule_kind != "allocation_drift"
-        ]
+        warn_other = _warn_other_triggers(ctx)
         if warn_other:
             t = warn_other[0]
             return f"機械ルール{t.rule_kind}が警告レベルで発動: {t.message}。"
@@ -277,9 +288,7 @@ class NotificationRenderer:
 
     @classmethod
     def _summary_morning(cls, ctx: NotificationContext) -> str:
-        critical = next(
-            (t for t in ctx.triggers if t.severity == "critical"), None
-        )
+        critical = _critical_trigger(ctx)
         plan = ctx.rebalance_plan
 
         # 1行目: 結論
@@ -287,29 +296,23 @@ class NotificationRenderer:
             conclusion = (
                 f"緊急: 機械ルール{critical.rule_kind}が発動中。寄付前に対応判断を。"
             )
-        elif plan is not None and plan.is_rebalance_day and (
-            plan.sell_actions or plan.buy_actions
+        elif (
+            plan is not None
+            and plan.is_rebalance_day
+            and (plan.sell_actions or plan.buy_actions)
         ):
             n_rb_sell = len(plan.sell_actions)
             n_rb_buy = len(plan.buy_actions)
-            conclusion = (
-                f"本日は四半期末リバランス基準日。売却{n_rb_sell}件・買付{n_rb_buy}件を執行検討。"
-            )
+            conclusion = f"本日は四半期末リバランス基準日。売却{n_rb_sell}件・買付{n_rb_buy}件を執行検討。"
         else:
-            warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
-            warn_other_rules = [
-                t for t in ctx.triggers
-                if t.severity == "warn" and t.rule_kind != "allocation_drift"
-            ]
+            warn_drifts = _warn_drifts(ctx)
+            warn_other_rules = _warn_other_triggers(ctx)
             n_rb_critical = plan.critical_count if plan is not None else 0
             n_rb_warn = plan.warn_count if plan is not None else 0
             if warn_drifts or warn_other_rules:
-                n_warn = (
-                    len(warn_drifts) if warn_drifts else len(warn_other_rules)
-                )
+                n_warn = len(warn_drifts) if warn_drifts else len(warn_other_rules)
                 conclusion = (
-                    f"配分逸脱{n_warn}件継続中。"
-                    "発注はなし、週次メールで方針確認。"
+                    f"配分逸脱{n_warn}件継続中。" "発注はなし、週次メールで方針確認。"
                 )
             elif n_rb_critical > 0 or n_rb_warn > 0:
                 if plan is not None:
@@ -318,13 +321,9 @@ class NotificationRenderer:
                         f"配分逸脱 CRITICAL{n_rb_critical}件 / WARN{n_rb_warn}件、本日は監視のみ。"
                     )
                 else:
-                    conclusion = (
-                        f"配分逸脱 CRITICAL{n_rb_critical}件 / WARN{n_rb_warn}件、本日は監視のみ。"
-                    )
+                    conclusion = f"配分逸脱 CRITICAL{n_rb_critical}件 / WARN{n_rb_warn}件、本日は監視のみ。"
             elif plan is not None:
-                conclusion = (
-                    f"本日は通常運用日。次回リバランス（{plan.next_rebalance_date.strftime('%Y-%m-%d')}）まで{plan.days_to_next_rebalance}日。"
-                )
+                conclusion = f"本日は通常運用日。次回リバランス（{plan.next_rebalance_date.strftime('%Y-%m-%d')}）まで{plan.days_to_next_rebalance}日。"
             else:
                 conclusion = "今日は発注予定なし。市場は静観でOK。通常運用継続。"
 
@@ -334,22 +333,15 @@ class NotificationRenderer:
 
     @classmethod
     def _summary_evening(cls, ctx: NotificationContext) -> str:
-        critical = next(
-            (t for t in ctx.triggers if t.severity == "critical"), None
-        )
-        warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
-        warn_other_rules = [
-            t for t in ctx.triggers
-            if t.severity == "warn" and t.rule_kind != "allocation_drift"
-        ]
+        critical = _critical_trigger(ctx)
+        warn_drifts = _warn_drifts(ctx)
+        warn_other_rules = _warn_other_triggers(ctx)
         n_drift = len(warn_drifts)
         n_rule = len(warn_other_rules)
 
         # 1行目: 結論
         if critical is not None:
-            conclusion = (
-                f"緊急: 機械ルール{critical.rule_kind}が発動。即対応検討を。"
-            )
+            conclusion = f"緊急: 機械ルール{critical.rule_kind}が発動。即対応検討を。"
         else:
             if ctx.daily_change_pct is not None:
                 if n_drift or n_rule:
@@ -364,14 +356,11 @@ class NotificationRenderer:
                     )
                 else:
                     conclusion = (
-                        f"本日 {ctx.daily_change_pct:+.2f}%。"
-                        "配分・ルール異常なし。"
+                        f"本日 {ctx.daily_change_pct:+.2f}%。" "配分・ルール異常なし。"
                     )
             else:
                 suffix = "あり" if (n_drift or n_rule) else "なし"
-                conclusion = (
-                    f"終値ベースのレビュー。配分逸脱{n_drift}件{suffix}。"
-                )
+                conclusion = f"終値ベースのレビュー。配分逸脱{n_drift}件{suffix}。"
 
         context_line = cls._context_line(ctx)
         reason = cls._reason_line(ctx)
@@ -379,15 +368,13 @@ class NotificationRenderer:
 
     @classmethod
     def _summary_weekly(cls, ctx: NotificationContext) -> str:
-        warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
+        warn_drifts = _warn_drifts(ctx)
         n_warn = len(warn_drifts)
         suffix = "あり" if n_warn > 0 else "なし"
 
         # 1行目: 結論
         if ctx.alpha_pp is None:
-            conclusion = (
-                f"5営業日リターン算出不可。配分逸脱{n_warn}件{suffix}。"
-            )
+            conclusion = f"5営業日リターン算出不可。配分逸脱{n_warn}件{suffix}。"
         elif ctx.alpha_pp <= -2.0:
             conclusion = (
                 f"今週 α {ctx.alpha_pp:+.2f}pp（{ctx.benchmark}に負け）。"
@@ -475,7 +462,9 @@ class NotificationRenderer:
         if len(subject) > SUBJECT_MAX_LEN:
             logger.warning(
                 "subject exceeds %d chars (len=%d), truncating: %s",
-                SUBJECT_MAX_LEN, len(subject), subject,
+                SUBJECT_MAX_LEN,
+                len(subject),
+                subject,
             )
             subject = subject[: SUBJECT_MAX_LEN - 1] + "…"
         return subject
@@ -486,14 +475,14 @@ class NotificationRenderer:
         critical / リバランス実行日 / warn / 通常 の状態を末尾の補足タグで示す.
         """
         plan = ctx.rebalance_plan
-        critical = next(
-            (t for t in ctx.triggers if t.severity == "critical"), None
-        )
+        critical = _critical_trigger(ctx)
         if critical is not None:
             return f"【寄り付き前】Daily Advisor / {date_str} 緊急"
         # 四半期末リバランス基準日: アクションがあれば件名末尾に補足
-        if plan is not None and plan.is_rebalance_day and (
-            plan.sell_actions or plan.buy_actions
+        if (
+            plan is not None
+            and plan.is_rebalance_day
+            and (plan.sell_actions or plan.buy_actions)
         ):
             n_sell = len(plan.sell_actions)
             n_buy = len(plan.buy_actions)
@@ -501,19 +490,14 @@ class NotificationRenderer:
                 f"【寄り付き前】Daily Advisor / {date_str} "
                 f"リバランス売{n_sell}買{n_buy}"
             )
-        warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
-        warn_other = [
-            t for t in ctx.triggers
-            if t.severity == "warn" and t.rule_kind != "allocation_drift"
-        ]
+        warn_drifts = _warn_drifts(ctx)
+        warn_other = _warn_other_triggers(ctx)
         n_rb_critical = plan.critical_count if plan is not None else 0
         if warn_drifts or warn_other:
             n_warn = len(warn_drifts) or len(warn_other)
             return f"【寄り付き前】Daily Advisor / {date_str} 逸脱{n_warn}件"
         if n_rb_critical > 0:
-            return (
-                f"【寄り付き前】Daily Advisor / {date_str} 逸脱{n_rb_critical}件"
-            )
+            return f"【寄り付き前】Daily Advisor / {date_str} 逸脱{n_rb_critical}件"
         return f"【寄り付き前】Daily Advisor / {date_str}"
 
     def _subject_evening(self, ctx: NotificationContext, date_str: str) -> str:
@@ -523,14 +507,9 @@ class NotificationRenderer:
         else:
             change_str = "-"
 
-        warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
-        warn_other = [
-            t for t in ctx.triggers
-            if t.severity == "warn" and t.rule_kind != "allocation_drift"
-        ]
-        critical = next(
-            (t for t in ctx.triggers if t.severity == "critical"), None
-        )
+        warn_drifts = _warn_drifts(ctx)
+        warn_other = _warn_other_triggers(ctx)
+        critical = _critical_trigger(ctx)
         if critical is not None:
             return f"【終値ベース】Daily Advisor / {date_str} 緊急"
         if warn_drifts or warn_other:
@@ -548,7 +527,7 @@ class NotificationRenderer:
             alpha_str = f"α {ctx.alpha_pp:+.1f}pp"
 
         # 来週のアクション件数（sells/buys は週次にはないが、警告件数を併記）
-        warn_drifts = [d for d in ctx.allocation_drifts if d.is_warn]
+        warn_drifts = _warn_drifts(ctx)
         n_warn = len(warn_drifts)
         if ctx.alpha_pp is not None and ctx.alpha_pp <= -2.0:
             if n_warn > 0:

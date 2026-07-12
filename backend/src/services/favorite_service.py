@@ -50,8 +50,11 @@ class FavoriteService:
             codes, perspective, scoring_mode, user_id
         )
 
+        # Batch fetch ETF details to avoid N+1 query
+        etf_map = self.etf_repository.get_by_codes(codes)
+
         for favorite in favorites:
-            etf = self.etf_repository.get_by_code(favorite.etf_code)
+            etf = etf_map.get(favorite.etf_code)
             if etf:
                 etf_dict = etf.to_summary_dict()
 

@@ -194,12 +194,16 @@ export function AdminPage() {
     userDisplayName: string
   ) => {
     const confirmed = window.confirm(
-      `${userDisplayName} のパスワードをリセットしますか？\n新しいパスワードは「password123456789」になります。`
+      `${userDisplayName} のパスワードをリセットしますか？\nランダムな一時パスワードが発行され、画面に表示されます。`
     )
     if (!confirmed) return
 
     try {
-      await adminApi.resetPassword(userId)
+      const temporaryPassword = await adminApi.resetPassword(userId)
+      // 一時パスワードは再表示できないため、確実に控えてもらう
+      window.alert(
+        `${userDisplayName} の一時パスワード:\n\n${temporaryPassword}\n\n本人に安全に手渡してください（この画面を閉じると再表示できません）。`
+      )
       setToastMessage('パスワードをリセットしました')
       setTimeout(() => setToastMessage(null), 3000)
     } catch (err) {

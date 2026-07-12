@@ -1,4 +1,5 @@
 """Scoring service for ETF analysis and recommendations."""
+import bisect
 from typing import Dict, List, Optional
 
 from src.models import ETF
@@ -80,13 +81,17 @@ class ScoringService:
         if value is None:
             return None
 
-        # Filter out None values
-        sorted_vals = sorted([v for v in values if v is not None])
+        # Filter out None values. _collect_percentile_data already hands us
+        # pre-sorted, pre-filtered lists for the production call paths, so this
+        # is a cheap no-op pass (Timsort short-circuits on already-sorted input)
+        # rather than a full O(n log n) resort per call.
+        sorted_vals = sorted(v for v in values if v is not None)
         if not sorted_vals:
             return None
 
-        # Calculate rank (number of values <= target value)
-        rank = sum(1 for v in sorted_vals if v <= value)
+        # Calculate rank (number of values <= target value) via binary search
+        # instead of an O(n) linear scan.
+        rank = bisect.bisect_right(sorted_vals, value)
 
         # Convert to percentile (0-1)
         score = (rank - 1) / max(len(sorted_vals) - 1, 1)
@@ -395,47 +400,54 @@ class ScoringService:
     def _collect_percentile_data(self, etfs: List[ETF]) -> None:
         """Collect values from all ETFs for percentile calculation.
 
+        Values are stored pre-sorted so that repeated _percentile_score() calls
+        (once per ETF per axis) don't each pay for a fresh O(n log n) sort of the
+        same population; sorted() on already-sorted input is O(n) via Timsort.
+
         Args:
             etfs: List of ETF objects
         """
-        self._dividend_yields = [
+        self._dividend_yields = sorted(
             etf.dividend_yield for etf in etfs if etf.dividend_yield is not None
-        ]
-        self._expense_ratios = [
+        )
+        self._expense_ratios = sorted(
             etf.expense_ratio for etf in etfs if etf.expense_ratio is not None
-        ]
-        self._total_assets = [
+        )
+        self._total_assets = sorted(
             etf.total_assets for etf in etfs if etf.total_assets is not None
-        ]
+        )
 
         # Use cached data (already fetched in rank_etfs)
-        self._avg_volumes = [
+        self._avg_volumes = sorted(
             vol for vol in self._avg_volumes_cache.values() if vol is not None
-        ]
+        )
 
         # Collect trading value (price * volume)
-        self._trading_values = []
+        trading_values = []
         for etf in etfs:
             avg_volume = self._avg_volumes_cache.get(etf.code)
             if avg_volume is not None and etf.market_price is not None:
                 trading_value = float(etf.market_price) * avg_volume
-                self._trading_values.append(trading_value)
+                trading_values.append(trading_value)
+        self._trading_values = sorted(trading_values)
 
         # Collect deviation rates
-        self._deviation_rates = [
+        self._deviation_rates = sorted(
             abs(float(etf.deviation_rate))
             for etf in etfs
             if etf.deviation_rate is not None
-        ]
+        )
 
         # Use cached return rates (already fetched in rank_etfs)
-        self._return_1y = []
-        self._return_3y = []
+        return_1y = []
+        return_3y = []
         for etf_code, return_rates in self._return_rates_cache.items():
             if return_rates.get("1y") is not None:
-                self._return_1y.append(return_rates["1y"])
+                return_1y.append(return_rates["1y"])
             if return_rates.get("3y") is not None:
-                self._return_3y.append(return_rates["3y"])
+                return_3y.append(return_rates["3y"])
+        self._return_1y = sorted(return_1y)
+        self._return_3y = sorted(return_3y)
 
     def calculate_axis_scores(self, etf: ETF) -> Dict[str, Optional[float]]:
         """Calculate normalized axis scores (0-100) for an ETF.

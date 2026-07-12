@@ -199,6 +199,14 @@ class TestAuthServiceLogin:
             assert user is None
             assert "無効化" in error
 
+    def test_login_demo_user_rejected(self, auth_service, db_session, app):
+        """demoユーザーは通常ログイン経路から拒否される（存在有無に関わらず）."""
+        with app.test_request_context():
+            user, error = auth_service.login("demo", "anypassword")
+
+            assert user is None
+            assert "正しくありません" in error
+
 
 class TestAuthServiceChangePassword:
     """Test cases for AuthService change_password."""
@@ -219,7 +227,9 @@ class TestAuthServiceChangePassword:
             )
             return user
 
-    def test_change_password_success(self, auth_service, existing_user, db_session, app):
+    def test_change_password_success(
+        self, auth_service, existing_user, db_session, app
+    ):
         """Test successful password change."""
         with app.test_request_context():
             success, error = auth_service.change_password(
@@ -233,7 +243,9 @@ class TestAuthServiceChangePassword:
             # Verify old password no longer works
             assert not existing_user.check_password("password123")
 
-    def test_change_password_wrong_current(self, auth_service, existing_user, db_session, app):
+    def test_change_password_wrong_current(
+        self, auth_service, existing_user, db_session, app
+    ):
         """Test password change with wrong current password."""
         with app.test_request_context():
             success, error = auth_service.change_password(
@@ -243,7 +255,9 @@ class TestAuthServiceChangePassword:
             assert success is False
             assert "現在のパスワードが正しくありません" in error
 
-    def test_change_password_short_new(self, auth_service, existing_user, db_session, app):
+    def test_change_password_short_new(
+        self, auth_service, existing_user, db_session, app
+    ):
         """Test password change with new password too short."""
         with app.test_request_context():
             success, error = auth_service.change_password(

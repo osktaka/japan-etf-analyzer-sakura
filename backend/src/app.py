@@ -49,10 +49,17 @@ def create_app(config_name=None):
     app = Flask(__name__)
 
     # 設定読み込み
-    app.config.from_object(config.get(config_name, config["default"]))
+    config_class = config.get(config_name, config["default"])
+    app.config.from_object(config_class)
+    config_class.init_app(app)
 
-    # CORS設定（credentialsを許可）
-    CORS(app, supports_credentials=True)
+    # CORS設定（credentialsを許可、許可オリジンはCORS_ORIGINSで明示）
+    cors_origins = [
+        o.strip()
+        for o in os.environ.get("CORS_ORIGINS", "http://localhost:3902").split(",")
+        if o.strip()
+    ]
+    CORS(app, supports_credentials=True, origins=cors_origins)
 
     # データベース初期化
     db.init_app(app)

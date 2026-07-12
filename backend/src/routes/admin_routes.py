@@ -2,9 +2,10 @@
 from flask import Blueprint, request
 from flask_login import current_user, login_required
 
-from src.models import StockSplit, User, db
+from src.models import StockSplit, db
 from src.repositories.batch_log_repository import BatchLogRepository
 from src.repositories.stock_split_repository import StockSplitRepository
+from src.repositories.user_repository import UserRepository
 from src.utils import api_response, error_response
 from src.utils.decorators import admin_required
 
@@ -14,6 +15,7 @@ def create_admin_bp():
     bp = Blueprint("admin", __name__, url_prefix="/admin")
     batch_log_repo = BatchLogRepository()
     stock_split_repo = StockSplitRepository()
+    user_repo = UserRepository()
 
     @bp.route("/users", methods=["GET"])
     @login_required
@@ -26,7 +28,7 @@ def create_admin_bp():
         Returns:
             List of users with id, user_id, username, is_admin, last_login_at, created_at
         """
-        users = db.session.query(User).order_by(User.created_at.desc()).all()
+        users = user_repo.get_all_ordered_by_created_desc()
         return api_response(data=[user.to_dict() for user in users])
 
     @bp.route("/users/<int:user_id>", methods=["PATCH"])
@@ -57,12 +59,9 @@ def create_admin_bp():
         if user_id == current_user.id:
             return error_response("自分自身の管理者権限は変更できません", 400)
 
-        user = db.session.get(User, user_id)
+        user = user_repo.update_admin_status(user_id, bool(data["is_admin"]))
         if not user:
             return error_response("ユーザーが見つかりません", 404)
-
-        user.is_admin = bool(data["is_admin"])
-        db.session.commit()
 
         return api_response(
             data=user.to_dict(),
@@ -73,25 +72,26 @@ def create_admin_bp():
     @login_required
     @admin_required
     def reset_user_password(user_id: int):
-        """Reset user password to default.
+        """Reset user password to a newly generated temporary password.
 
         POST /api/v1/admin/users/<user_id>/reset-password
 
         Returns:
-            Success message
+            Success message and the generated temporary password
+            (data.temporary_password) for the admin to hand to the user
         """
         # 自分自身のパスワードはリセット不可
         if user_id == current_user.id:
             return error_response("自分自身のパスワードはリセットできません", 400)
 
-        user = db.session.get(User, user_id)
-        if not user:
+        temporary_password = user_repo.reset_password(user_id)
+        if temporary_password is None:
             return error_response("ユーザーが見つかりません", 404)
 
-        user.set_password("password123456789")
-        db.session.commit()
-
-        return api_response(message="パスワードをリセットしました")
+        return api_response(
+            data={"temporary_password": temporary_password},
+            message="パスワードをリセットしました",
+        )
 
     @bp.route("/batch-logs", methods=["GET"])
     @login_required

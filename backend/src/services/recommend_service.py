@@ -164,10 +164,14 @@ class RecommendService:
             perspective, limit=limit * 3, scoring_mode=scoring_mode
         )
 
-        # Get ETF details for cached scores
+        # Get ETF details for cached scores (batch fetch to avoid N+1 query)
+        etf_map = self.etf_repository.get_by_codes(
+            [cache.etf_code for cache in cached_scores]
+        )
+
         result = []
         for cache in cached_scores:
-            etf = self.etf_repository.get_by_code(cache.etf_code)
+            etf = etf_map.get(cache.etf_code)
             if not etf:
                 continue
 

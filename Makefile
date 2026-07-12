@@ -43,15 +43,10 @@ test: ## テストを実行
 # ===================
 # セットアップ
 # ===================
-setup-hooks: ## pre-commitフックをインストール
-	@if command -v uvx >/dev/null 2>&1; then \
-		uvx pre-commit install; \
-	elif command -v pipx >/dev/null 2>&1; then \
-		pipx run pre-commit install; \
-	else \
-		echo "Error: uvx or pipx is required"; \
-		exit 1; \
-	fi
+setup-hooks: ## pre-commitフック（静的解析+frontend自動ビルド統合）をインストール
+	@# 注意: `pre-commit install` は使わない。frontend自動ビルドを上書きで無効化するため。
+	@# 統合フック(scripts/pre-commit)が内部で `pre-commit run` を呼ぶ。
+	@./scripts/install-hooks.sh
 
 # ===================
 # クリーンアップ

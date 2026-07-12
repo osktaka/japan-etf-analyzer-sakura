@@ -246,6 +246,8 @@ git pull
 # .envファイルを編集（初回のみ）
 ```
 
+**重要（本番起動の前提）**: 本番（`ProductionConfig`）は `.env` に `SECRET_KEY` が未設定、または既定値 `dev-secret-key` のままだと**起動時に `RuntimeError` で拒否**する（セッション偽造対策）。初回デプロイ時は必ず `.env` に安全な `SECRET_KEY`（`python -c "import secrets; print(secrets.token_hex(32))"` 等で生成）を設定すること。同様に `CORS_ORIGINS`（本番フロントのオリジン、例 `https://kima3.net`）も設定する（未設定時の既定は開発用 `http://localhost:3902` のみ）。
+
 ### frontend/dist/ のGit管理ポリシー
 
 **重要**: frontend/dist/は.gitignoreで除外せず、Git管理に含める
@@ -258,7 +260,8 @@ git pull
 **運用ルール**:
 - frontend/src変更時: hookが自動ビルド・ステージング
 - dist/のみ変更時: コミット不要（hookで再生成される）
-- hookインストール: `./scripts/install-hooks.sh` を実行
+- hookインストール: `./scripts/install-hooks.sh`（または `make setup-hooks`）を実行
+- **統合フック**: `.git/hooks/pre-commit` は `scripts/pre-commit` に一本化され、静的解析（ruff/eslint/prettier を `pre-commit run` 経由）→ frontend自動ビルドの順に実行する。**`pre-commit install` は使わないこと**（フックを上書きして自動ビルドを無効化するため）。ruff --fix 等でファイルが修正された場合はフックが停止するので、再ステージして再コミットする。
 
 ### CGI環境の技術的注意点
 
@@ -430,11 +433,11 @@ python backend/scripts/seed_demo_data.py
 ```
 
 - スクリプトは冪等（既存データがあれば削除して再作成）
-- デモユーザーのパスワードはスクリプト内にハードコードされている（ログイン用途ではない）
+- デモユーザーのパスワードは `secrets.token_urlsafe` でランダム生成される（ログイン用途ではない）。加えて `AuthService.login` が `user_id=="demo"` を明示拒否するため、通常ログイン経路からは到達不能
 
 ### デモAPI
 
-- パス: `/api/v1/demo/*`（全て認証不要・GET only）
+- パス: `/api/v1/demo/*`（GET公開＋書込(POST)はAPIキー必須）
 - 実装: `backend/src/routes/demo_routes.py`
 - デモユーザーが存在しない場合は空データを返す（エラーにならない）
 

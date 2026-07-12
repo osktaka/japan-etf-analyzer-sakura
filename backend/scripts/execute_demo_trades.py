@@ -73,7 +73,9 @@ def setup_logging() -> None:
     log_dir = PROJECT_ROOT / "logs"
     log_dir.mkdir(exist_ok=True)
     log_file = log_dir / "execute_demo_trades.log"
-    fmt = logging.Formatter("[%(asctime)s] [%(levelname)s] %(message)s", "%Y-%m-%d %H:%M:%S")
+    fmt = logging.Formatter(
+        "[%(asctime)s] [%(levelname)s] %(message)s", "%Y-%m-%d %H:%M:%S"
+    )
     logger.setLevel(logging.INFO)
     logger.handlers.clear()
     fh = logging.FileHandler(log_file, encoding="utf-8")
@@ -141,13 +143,25 @@ def build_payload(trade: Dict[str, Any], today_iso: str) -> Dict[str, Any]:
     }
 
 
+def _api_key_headers() -> Dict[str, str]:
+    """Build Authorization header for demo write endpoints.
+
+    demo POST は api_key_required（NOTES_API_KEYと共用）で保護されているため、
+    未設定の場合はサーバ側で403になる（ここでは空ヘッダのまま送信して委ねる）。
+    """
+    api_key = os.environ.get("NOTES_API_KEY", "")
+    return {"Authorization": f"Bearer {api_key}"}
+
+
 def post_trade(
     base_url: str, payload: Dict[str, Any], timeout: int = 15
 ) -> Tuple[bool, str]:
     """POST a single trade. Returns (success, message)."""
     url = base_url.rstrip("/") + "/api/v1/demo/trades"
     try:
-        resp = requests.post(url, json=payload, timeout=timeout)
+        resp = requests.post(
+            url, json=payload, timeout=timeout, headers=_api_key_headers()
+        )
     except requests.RequestException as exc:
         return False, f"connection error: {exc}"
     if 200 <= resp.status_code < 300:
@@ -170,9 +184,7 @@ def fetch_portfolio_state(base_url: str, timeout: int = 15) -> Dict[str, Any]:
     base = base_url.rstrip("/")
     try:
         pf = requests.get(base + "/api/v1/demo/portfolio", timeout=timeout)
-        hd = requests.get(
-            base + "/api/v1/demo/portfolio/holdings", timeout=timeout
-        )
+        hd = requests.get(base + "/api/v1/demo/portfolio/holdings", timeout=timeout)
     except requests.RequestException as exc:
         logger.warning(f"portfolio state fetch failed (skip pre-checks): {exc}")
         return {}
@@ -184,8 +196,7 @@ def fetch_portfolio_state(base_url: str, timeout: int = 15) -> Dict[str, Any]:
         return {}
     cash = (pf.json().get("data") or {}).get("cash_balance", 0)
     holdings = {
-        h["etf_code"]: h.get("quantity", 0)
-        for h in (hd.json().get("data") or [])
+        h["etf_code"]: h.get("quantity", 0) for h in (hd.json().get("data") or [])
     }
     return {"cash_balance": cash, "holdings": holdings}
 
@@ -283,7 +294,7 @@ def _parse_http_status(msg: str) -> Optional[int]:
     if not msg.startswith("HTTP "):
         return None
     try:
-        rest = msg[len("HTTP "):]
+        rest = msg[len("HTTP ") :]
         head = rest.split(":", 1)[0].strip()
         return int(head)
     except (ValueError, IndexError):
@@ -377,9 +388,7 @@ def main() -> int:
     env_flag = os.environ.get("DEMO_TRADE_POST_ENABLED", "")
     effective_execute = bool(args.execute)
     if effective_execute and env_flag != "1":
-        logger.warning(
-            "DEMO_TRADE_POST_ENABLED != '1'; falling back to dry-run mode"
-        )
+        logger.warning("DEMO_TRADE_POST_ENABLED != '1'; falling back to dry-run mode")
         effective_execute = False
 
     today_jst = datetime.now(JST).date()
@@ -429,12 +438,12 @@ def main() -> int:
             trades, existing, base_url, effective_execute, today_iso, portfolio_state
         )
 
-        logger.info(
-            f"summary: succeeded={succeeded} failed={failed} skipped={skipped}"
-        )
+        logger.info(f"summary: succeeded={succeeded} failed={failed} skipped={skipped}")
 
-        status = "success" if failed == 0 else (
-            "success" if succeeded + skipped > 0 else "failed"
+        status = (
+            "success"
+            if failed == 0
+            else ("success" if succeeded + skipped > 0 else "failed")
         )
         err_msg = None if failed == 0 else f"{failed} POST(s) failed"
         batch_repo.update(
@@ -468,9 +477,7 @@ def main() -> int:
                     "(trigger condition / SMTP failed / disabled)"
                 )
         except Exception as exc:  # noqa: BLE001
-            logger.warning(
-                f"portfolio report notification error (continuing): {exc}"
-            )
+            logger.warning(f"portfolio report notification error (continuing): {exc}")
 
     return _exit_code(succeeded, failed, skipped)
 

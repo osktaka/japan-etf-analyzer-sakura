@@ -1,23 +1,31 @@
 #!/bin/bash
-# Pre-commit hook: Auto-build frontend when frontend/src changes
+# 統合 pre-commit フック（唯一の .git/hooks/pre-commit 実体）
+#
+# 過去に .pre-commit-config.yaml（ruff/eslint/prettier）と本スクリプト（frontend自動
+# ビルド）が同じフックスロットを奪い合い、後勝ちで一方が無効化される問題があった。
+# 本スクリプトに一本化し、静的解析（フレームワーク）→ frontend自動ビルド の順で両方を実行する。
+# インストールは ./scripts/install-hooks.sh（make setup-hooks からも呼ぶ）。
 
-# ステージングされたfrontend/src/以下のファイルを検出
+set -e
+
+# 1) 静的解析: ruff / ruff-format / eslint / typecheck / prettier を pre-commit で実行。
+#    ステージ済みファイルのみが対象（config の files: 指定に従う）。
+#    ruff --fix 等でファイルが修正された場合は非0で停止するので、再ステージして再コミットする。
+if command -v pre-commit >/dev/null 2>&1; then
+    pre-commit run --hook-stage pre-commit
+elif command -v uvx >/dev/null 2>&1; then
+    uvx pre-commit run --hook-stage pre-commit
+else
+    echo "警告: pre-commit 未検出のため静的解析をスキップ（uvx/pipx で導入推奨）"
+fi
+
+# 2) frontend/src 変更時は自動ビルドして dist をステージング（さくらは Node 非搭載のため
+#    ビルド済み成果物を git 管理する運用）。
 FRONTEND_SRC_CHANGED=$(git diff --cached --name-only --diff-filter=ACM | grep '^frontend/src/' || true)
-
 if [ -n "$FRONTEND_SRC_CHANGED" ]; then
     echo "Frontend source files changed. Building..."
-
     (cd frontend && npm run build)
-    BUILD_STATUS=$?
-
-    if [ $BUILD_STATUS -ne 0 ]; then
-        echo "Error: Frontend build failed. Commit aborted."
-        exit 1
-    fi
-
-    # ビルド成果物をステージング
     git add frontend/dist/
-
     echo "✓ Frontend built and staged"
 fi
 

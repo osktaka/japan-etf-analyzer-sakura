@@ -98,6 +98,10 @@ class AuthService:
         if not user_id or not password:
             return None, "ユーザーIDとパスワードは必須です"
 
+        # demoユーザーはMyPageプレビュー専用（GET APIのみ）。通常ログイン経路は封鎖する
+        if user_id == "demo":
+            return None, "ユーザーIDまたはパスワードが正しくありません"
+
         user = self.user_repository.get_by_user_id(user_id)
 
         if user is None:

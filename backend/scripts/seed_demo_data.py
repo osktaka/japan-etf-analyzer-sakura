@@ -1,5 +1,6 @@
 """Seed demo user data for unauthenticated preview."""
 import os
+import secrets
 import sys
 from datetime import date
 from pathlib import Path
@@ -22,7 +23,9 @@ from src.models import CashFlow, Favorite, Trade, User, db  # noqa: E402
 
 DEMO_USER_ID = "demo"
 DEMO_USERNAME = "demo"
-DEMO_PASSWORD = "D3m0$ecur3!Passw0rd#2026"
+# demoユーザーは通常ログイン経路が封鎖されている（auth_service.login参照）ため
+# パスワードはログイン用途ではなく、毎回ランダム生成して固定値をなくす
+DEMO_PASSWORD = secrets.token_urlsafe(32)
 
 # サンプル取引データ（実在のETF銘柄コード）
 DEMO_TRADES = [

@@ -147,12 +147,12 @@
 | GET | /demo/favorites | デモお気に入り一覧取得 | F-102 | 不要 |
 | GET | /demo/trades | デモ取引履歴取得 | F-103 | 不要 |
 | GET | /demo/cash-flows | デモ入出金一覧取得 | F-103 | 不要 |
-| POST | /demo/trades | デモ取引登録 | F-103 | 不要 |
-| POST | /demo/cash-flows | デモ入出金登録 | F-103 | 不要 |
+| POST | /demo/trades | デモ取引登録 | F-103 | APIキー |
+| POST | /demo/cash-flows | デモ入出金登録 | F-103 | APIキー |
 
 **備考:**
 - GET エンドポイントは認証不要（未ログインユーザー向けのプレビュー機能）
-- POST エンドポイントは認証不要（デモユーザー専用の自動取引用）
+- POST エンドポイントは APIキー必須（`api_key_required` デコレータ、`Authorization: Bearer <NOTES_API_KEY>`）。呼び出し元は `execute_demo_trades.py`（cron・サーバ間）のみで、匿名の書込を防止する
 - デモユーザー（user_id='demo'）のデータを対象とする
 - デモユーザーが存在しない場合は空データを返す（GETの場合）またはエラーを返す（POSTの場合）
 

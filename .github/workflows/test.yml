@@ -1,0 +1,50 @@
+name: Test
+
+# pre-commit フック（静的解析）はローカル運用のため、push/PR 時にテストを自動実行して
+# 「壊れたまま気づかずマージ」を防ぐ最小 CI。backend は in-memory SQLite で自己完結
+# （create_app("testing")）のため etf.db 不要。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          # 本番（さくら FreeBSD）と一致。numpy 1.19.5 等は cp39 manylinux wheel を利用。
+          python-version: '3.9'
+      - name: Install dependencies
+        working-directory: backend
+        env:
+          CRYPTOGRAPHY_DONT_BUILD_RUST: '1'
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+      - name: Run pytest
+        working-directory: backend
+        run: python -m pytest -q
+
+  frontend:
+    name: Frontend (vitest)
+    runs-on: ubuntu-latest
+    # 既存の未修正テスト（OverlayChart / useFavorites / useRecommendations / TopPage）が
+    # 赤のため、当面は非ブロッキング。これらを解消したら continue-on-error を外して
+    # ブロッキング化する。
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Run vitest
+        working-directory: frontend
+        run: npm run test:run

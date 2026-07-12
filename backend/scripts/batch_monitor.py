@@ -11,28 +11,30 @@ cronで5分間隔で実行することを想定（*/5 * * * *）。
 3. retry_count < 3 のジョブを自動リトライ
 """
 
+import os
 import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
 
-import sys
-from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
-from base_batch import SimpleBatchScript
+from base_batch import SimpleBatchScript  # noqa: E402
 
-from src.repositories import BatchLogRepository
-
-
-# プロジェクトルート
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+from src.external.email_client import EmailClient  # noqa: E402
+from src.repositories import BatchLogRepository  # noqa: E402
 
 
-# バッチ名とスクリプトパスのマッピング
+# アプリルート（scripts/ の親）。コンテナ実行では __file__=/app/scripts/batch_monitor.py
+# のため /app に解決される。旧実装は parent.parent.parent で / を指し、リトライ対象
+# スクリプトを常に見失っていた（本番ログに Script not found が残存）。
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+
+# バッチ名とスクリプトパスのマッピング（PROJECT_ROOT=/app 相対）
 BATCH_SCRIPTS = {
-    "update_etf_data": "backend/scripts/update_etf_data.py",
-    "update_scores": "backend/scripts/update_scores.py",
-    "sync_etf_from_jpx": "backend/scripts/sync_etf_from_jpx.py",
+    "update_etf_data": "scripts/update_etf_data.py",
+    "update_scores": "scripts/update_scores.py",
+    "sync_etf_from_jpx": "scripts/sync_etf_from_jpx.py",
 }
 
 
@@ -73,6 +75,48 @@ class BatchMonitorScript(SimpleBatchScript):
 
         return updated_count
 
+    def _notify_final_failure(self, job) -> None:
+        """リトライ上限に達した最終失敗ジョブを1回だけメール通知する.
+
+        BATCH_ALERT_ENABLED=1 のときのみ発報。冪等性は batch_log_id 単位の
+        マーカーファイル（logs/.batch_alert_<id>）で担保し、5-60分の再取得
+        ウィンドウ内で同一ジョブを繰り返し通知しないようにする。
+        SMTP 失敗・設定不備は EmailClient 内で握られ False が返るのみで、
+        batch_monitor 自体は止めない（他ジョブの監視を継続する）。
+        """
+        if os.environ.get("BATCH_ALERT_ENABLED", "0").lower() not in ("1", "true"):
+            return
+
+        marker = PROJECT_ROOT / "logs" / f".batch_alert_{job.id}"
+        if marker.exists():
+            return
+
+        subject = f"[batch-alert] {job.batch_name} が最終失敗しました (id={job.id})"
+        body = (
+            f"バッチ {job.batch_name} がリトライ上限({job.retry_count}回)に達し、"
+            f"最終失敗が確定しました。\n\n"
+            f"batch_log_id: {job.id}\n"
+            f"batch_name:   {job.batch_name}\n"
+            f"retry_count:  {job.retry_count}\n"
+            f"error:        {getattr(job, 'error_message', '') or '(なし)'}\n\n"
+            f"手動対応が必要です（--only {job.batch_name} での再実行等）。"
+        )
+        try:
+            sent = EmailClient().send(subject, body)
+            if sent:
+                marker.parent.mkdir(exist_ok=True)
+                marker.touch()
+                self.logger.info(f"Final-failure alert sent: batch_log_id={job.id}")
+            else:
+                self.logger.warning(
+                    f"Final-failure alert not sent (email config/SMTP): batch_log_id={job.id}"
+                )
+        except Exception as e:  # noqa: BLE001
+            # 通知失敗は監視本体を止めない
+            self.logger.warning(
+                f"Final-failure alert error: batch_log_id={job.id}, error={e}"
+            )
+
     def _retry_failed_jobs(self, repo: BatchLogRepository) -> int:
         """
         直近5-60分でfailedになったジョブをリトライする.
@@ -88,12 +132,13 @@ class BatchMonitorScript(SimpleBatchScript):
         retried_batch_names: set = set()
 
         for job in retryable_jobs:
-            # リトライ上限チェック
+            # リトライ上限チェック（＝最終失敗確定。1回だけ通知する）
             if job.retry_count >= 3:
                 self.logger.info(
                     f"Skip (retry limit exceeded): batch_log_id={job.id}, "
                     f"batch_name={job.batch_name}, retry_count={job.retry_count}"
                 )
+                self._notify_final_failure(job)
                 continue
 
             # 同一batch_nameで既にrunningがあればスキップ
@@ -147,8 +192,8 @@ class BatchMonitorScript(SimpleBatchScript):
                 if job.batch_name == "update_etf_data":
                     cmd.extend(["--smart", "--rate-limit", "3.0"])
 
-                # ログファイルパス
-                log_dir = PROJECT_ROOT / "backend" / "logs"
+                # ログファイルパス（PROJECT_ROOT=/app 直下の logs はホスト ./logs にマウント済み）
+                log_dir = PROJECT_ROOT / "logs"
                 log_dir.mkdir(exist_ok=True)
                 log_file = log_dir / f"{job.batch_name}_retry_{job.id}.log"
 
