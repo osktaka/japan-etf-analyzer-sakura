@@ -1,4 +1,5 @@
 /** ETF Table view component */
+import { useMemo } from 'react'
 import {
   BatchPerformanceData,
   BatchScoreData,
@@ -264,11 +265,16 @@ export function ETFTableView({
     return !scoreColumnVisibility || !visKey || scoreColumnVisibility[visKey]
   })
 
+  // code -> item のMapを一度だけ構築し、行×列ループ内のO(n)線形探索を回避
+  const itemsByCode = useMemo(() => {
+    return new Map(items.map((item) => [item.code, item]))
+  }, [items])
+
   // Get evaluation score value based on selected perspective
   const getEvaluationScore = (code: string): number | null | undefined => {
     // カスタムの場合はitemsから直接scoreを取得
     if (selectedPerspective === 'custom') {
-      const item = items.find((i) => i.code === code)
+      const item = itemsByCode.get(code)
       return item?.score
     }
     const scoreData = scores?.[code]
