@@ -100,8 +100,13 @@ describe('useFavorites', () => {
   })
 
   it('addFavoriteが成功する', async () => {
-    vi.mocked(favoritesApi.getAll).mockResolvedValue([])
-    vi.mocked(favoritesApi.getCodes).mockResolvedValue([])
+    // addFavorite後にfetchFavoritesが再実行されるため、2回目の呼び出しで追加後の状態を返す
+    vi.mocked(favoritesApi.getAll)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([mockFavorite])
+    vi.mocked(favoritesApi.getCodes)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce(['1306'])
     vi.mocked(favoritesApi.add).mockResolvedValue(mockFavorite)
 
     const { result } = renderHook(() => useFavorites())
@@ -142,8 +147,14 @@ describe('useFavorites', () => {
   })
 
   it('toggleFavoriteがお気に入り追加/削除を切り替える', async () => {
-    vi.mocked(favoritesApi.getAll).mockResolvedValue([])
-    vi.mocked(favoritesApi.getCodes).mockResolvedValue([])
+    // addFavorite後のfetchFavorites再実行(2回目呼び出し)で追加後の状態を返す
+    // removeFavoriteはfetchFavoritesを呼ばずローカルで状態更新するため3回目は不要
+    vi.mocked(favoritesApi.getAll)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([mockFavorite])
+    vi.mocked(favoritesApi.getCodes)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce(['1306'])
     vi.mocked(favoritesApi.add).mockResolvedValue(mockFavorite)
     vi.mocked(favoritesApi.remove).mockResolvedValue()
 

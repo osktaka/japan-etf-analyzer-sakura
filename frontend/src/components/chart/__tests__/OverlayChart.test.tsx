@@ -109,20 +109,26 @@ describe('OverlayChart', () => {
   })
 
   it('凡例が表示される', () => {
-    const datasets = [createDataset('1306', 'TOPIX ETF', mockChartData1)]
-
-    render(<OverlayChart datasets={datasets} />)
-
-    expect(screen.getByTestId('legend')).toBeInTheDocument()
-  })
-
-  it('デフォルトの高さが400pxである', () => {
+    // Rechartsの<Legend>ではなくチャート外のカスタムHTML凡例に置き換わっている(a0d204b)
     const datasets = [createDataset('1306', 'TOPIX ETF', mockChartData1)]
 
     const { container } = render(<OverlayChart datasets={datasets} />)
 
-    const chartContainer = container.firstChild as HTMLElement
-    expect(chartContainer).toHaveStyle({ height: '400px' })
+    const legendArea = container.querySelector('[class*="legendArea"]')
+    expect(legendArea).toBeInTheDocument()
+    expect(legendArea).toHaveTextContent('1306 TOPIX ETF')
+  })
+
+  it('デフォルトの高さが400pxである', () => {
+    // height styleはcontainer直下ではなくchartArea要素に付与される(a0d204b)
+    const datasets = [createDataset('1306', 'TOPIX ETF', mockChartData1)]
+
+    const { container } = render(<OverlayChart datasets={datasets} />)
+
+    const chartArea = container.querySelector(
+      '[class*="chartArea"]'
+    ) as HTMLElement
+    expect(chartArea).toHaveStyle({ height: '400px' })
   })
 
   it('カスタム高さが適用される', () => {
@@ -132,8 +138,10 @@ describe('OverlayChart', () => {
       <OverlayChart datasets={datasets} height={500} />
     )
 
-    const chartContainer = container.firstChild as HTMLElement
-    expect(chartContainer).toHaveStyle({ height: '500px' })
+    const chartArea = container.querySelector(
+      '[class*="chartArea"]'
+    ) as HTMLElement
+    expect(chartArea).toHaveStyle({ height: '500px' })
   })
 
   it('必要なチャート要素が含まれる', () => {

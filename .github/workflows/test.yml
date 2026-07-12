@@ -33,10 +33,6 @@ jobs:
   frontend:
     name: Frontend (vitest)
     runs-on: ubuntu-latest
-    # 既存の未修正テスト（OverlayChart / useFavorites / useRecommendations / TopPage）が
-    # 赤のため、当面は非ブロッキング。これらを解消したら continue-on-error を外して
-    # ブロッキング化する。
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

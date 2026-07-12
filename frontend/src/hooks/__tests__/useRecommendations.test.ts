@@ -40,7 +40,12 @@ describe('useRecommendations', () => {
       expect(result.current.isLoading).toBe(false)
     })
 
-    expect(api.getRecommendations).toHaveBeenCalledWith('popular', 5, 'full')
+    expect(api.getRecommendations).toHaveBeenCalledWith(
+      'popular',
+      5,
+      'full',
+      undefined
+    )
   })
 
   it('perspectiveを指定してデータを取得', async () => {
@@ -51,7 +56,12 @@ describe('useRecommendations', () => {
       expect(result.current.data).not.toBeNull()
     })
 
-    expect(api.getRecommendations).toHaveBeenCalledWith('dividend', 5, 'full')
+    expect(api.getRecommendations).toHaveBeenCalledWith(
+      'dividend',
+      5,
+      'full',
+      undefined
+    )
   })
 
   it('perspectiveが変わると再取得される', async () => {
@@ -69,7 +79,12 @@ describe('useRecommendations', () => {
     rerender({ perspective: 'dividend' })
 
     await waitFor(() => {
-      expect(api.getRecommendations).toHaveBeenCalledWith('dividend', 5, 'full')
+      expect(api.getRecommendations).toHaveBeenCalledWith(
+        'dividend',
+        5,
+        'full',
+        undefined
+      )
     })
   })
 

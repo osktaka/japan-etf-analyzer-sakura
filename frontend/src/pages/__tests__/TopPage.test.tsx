@@ -17,6 +17,9 @@ import type {
 Element.prototype.scrollIntoView = vi.fn()
 
 // Mock API module
+// searchETFs(オートコンプリートのデバウンス検索)と userSettingsApi.getSettings
+// (カスタム重み取得)は未モックだと実ネットワーク呼び出しになり、非同期エラーと
+// state更新が他テストのタイミングに干渉してフレーク化する。ここで確定させる。
 vi.mock('../../api', async () => {
   const actual = await vi.importActual('../../api')
   return {
@@ -26,6 +29,11 @@ vi.mock('../../api', async () => {
     getBatchPerformance: vi.fn(),
     getBatchScores: vi.fn(),
     getPerspectives: vi.fn(),
+    searchETFs: vi.fn(),
+    userSettingsApi: {
+      getSettings: vi.fn(),
+      saveCustomWeights: vi.fn(),
+    },
   }
 })
 
@@ -317,6 +325,10 @@ describe('TopPage', () => {
     vi.mocked(api.getBatchPerformance).mockResolvedValue({})
     vi.mocked(api.getBatchScores).mockResolvedValue({})
     vi.mocked(api.getPerspectives).mockResolvedValue(mockPerspectives)
+    vi.mocked(api.searchETFs).mockResolvedValue({ items: [], total: 0 })
+    vi.mocked(api.userSettingsApi.getSettings).mockResolvedValue({
+      custom_weights: null,
+    })
 
     // Setup hooks mocks
     vi.mocked(hooks.useETFSearch).mockReturnValue(mockHooksDefault.useETFSearch)
@@ -372,6 +384,19 @@ describe('TopPage', () => {
       // 検索入力フィールドに値を入力
       const searchInput = screen.getByPlaceholderText(/銘柄コード|名前/)
       fireEvent.change(searchInput, { target: { value: 'TOPIX' } })
+
+      // 入力値がコントロールドコンポーネントに反映されるのを待ってから送信する
+      // （SearchBar→ETFCodeAutocomplete間のprop伝播が非同期のため、負荷次第で
+      // 反映前にsubmitすると空文字で検索されるレースコンディションを防止。
+      // 要素を都度再取得し、CI等の高負荷時でもタイムアウトしないよう猶予を確保）
+      await waitFor(
+        () => {
+          expect(screen.getByPlaceholderText(/銘柄コード|名前/)).toHaveValue(
+            'TOPIX'
+          )
+        },
+        { timeout: 3000 }
+      )
 
       // 検索ボタンをクリック（フォームをsubmitする）
       const searchButton = screen.getByRole('button', { name: '検索' })
@@ -460,14 +485,17 @@ describe('TopPage', () => {
 
       await waitFor(() => {
         // 高配当タグボタンを探す（おすすめタブにも「高配当」があるためgetAllを使用）
+        // FilterPanelのタグボタンは「高配当(件数)」表記のため正規表現で前方一致
         const dividendButtons = screen.getAllByRole('button', {
-          name: '高配当',
+          name: /^高配当/,
         })
         expect(dividendButtons.length).toBeGreaterThan(0)
       })
 
       // FilterPanel内のタグボタン（2番目）をクリック
-      const dividendButtons = screen.getAllByRole('button', { name: '高配当' })
+      const dividendButtons = screen.getAllByRole('button', {
+        name: /^高配当/,
+      })
       // FilterPanel内のタグボタンは2番目（1番目はおすすめセクションのタブ）
       fireEvent.click(dividendButtons[dividendButtons.length - 1])
 
@@ -840,10 +868,16 @@ describe('TopPage', () => {
     })
 
     it('ソート変更とlocalStorage保存', async () => {
+      // カード表示にはソートUIが存在しない。ソートは表形式(ETFTableView)の
+      // 列ヘッダークリックで行われるため、viewMode: 'table' に切り替えて検証する
       const mockHandleSortChange = vi.fn()
       vi.mocked(hooks.useTopPageSearch).mockReturnValue({
         ...mockHooksDefault.useTopPageSearch,
         handleSortChange: mockHandleSortChange,
+      })
+      vi.mocked(hooks.useTopPageDisplayMode).mockReturnValue({
+        ...mockHooksDefault.useTopPageDisplayMode,
+        viewMode: 'table' as ViewMode,
       })
 
       renderTopPage()
@@ -852,9 +886,12 @@ describe('TopPage', () => {
         expect(screen.getAllByText('1306').length).toBeGreaterThan(0)
       })
 
-      // ソートセレクタを探して変更
-      const sortSelect = screen.getByRole('combobox')
-      fireEvent.change(sortSelect, { target: { value: 'dividend_yield' } })
+      // 分配金利回り列ヘッダーをクリックしてソート変更
+      // (おすすめセクションのカードにも同名ラベルがあるためcolumnheaderロールで一意に特定)
+      const dividendHeader = screen.getByRole('columnheader', {
+        name: '分配金利回り',
+      })
+      fireEvent.click(dividendHeader)
 
       await waitFor(() => {
         // handleSortChangeが呼ばれたことを確認
@@ -881,13 +918,17 @@ describe('TopPage', () => {
         currentSort: 'dividend_yield' as SortField,
         currentOrder: 'desc' as SortOrder,
       })
+      vi.mocked(hooks.useTopPageDisplayMode).mockReturnValue({
+        ...mockHooksDefault.useTopPageDisplayMode,
+        viewMode: 'table' as ViewMode,
+      })
 
       renderTopPage()
 
       await waitFor(() => {
-        // ソートセレクタに正しい値が設定されていることを確認
-        const sortSelect = screen.getByRole('combobox')
-        expect(sortSelect).toHaveValue('dividend_yield')
+        // 分配金利回り列ヘッダーに降順ソートアイコン(▼)が表示され、
+        // 復元されたソート状態がテーブルに反映されていることを確認
+        expect(screen.getByText('分配金利回り ▼')).toBeInTheDocument()
       })
     })
   })
