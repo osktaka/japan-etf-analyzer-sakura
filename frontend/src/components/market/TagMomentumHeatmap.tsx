@@ -174,9 +174,14 @@ interface CustomTooltipProps {
 
 /** ツールチップ内訳の表示順（勢い順） */
 const TOOLTIP_LABEL_ORDER = [
-  '上昇加速', '上昇維持', '上昇減速',
-  '失速', '反転上昇',
-  '下降減速', '下降維持', '下降加速',
+  '上昇加速',
+  '上昇維持',
+  '上昇減速',
+  '失速',
+  '反転上昇',
+  '下降減速',
+  '下降維持',
+  '下降加速',
 ]
 
 function CustomTooltip({ active, payload }: CustomTooltipProps) {
@@ -207,8 +212,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
         <div className={styles.tooltipDistribution}>
           <div className={styles.tooltipDistTitle}>内訳</div>
           {distributionEntries.map(([label, count]) => {
-            const momentumColor =
-              MOMENTUM_STYLES[label as MomentumLabel]?.color
+            const momentumColor = MOMENTUM_STYLES[label as MomentumLabel]?.color
             return (
               <div
                 key={label}

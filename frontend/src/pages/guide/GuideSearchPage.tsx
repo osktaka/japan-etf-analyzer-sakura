@@ -44,7 +44,8 @@ export function GuideSearchPage() {
               <div className={styles.listTitle}>タグ</div>
               <div className={styles.listDescription}>
                 業種、テーマ、経済情勢など6カテゴリ49タグで絞り込みます。
-                複数選択で幅広く検索。詳しくは<Link to={ROUTES.GUIDE_TAGS}>タグで探す</Link>をご覧ください。
+                複数選択で幅広く検索。詳しくは
+                <Link to={ROUTES.GUIDE_TAGS}>タグで探す</Link>をご覧ください。
               </div>
             </div>
           </li>

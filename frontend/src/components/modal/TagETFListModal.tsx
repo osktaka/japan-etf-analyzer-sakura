@@ -195,10 +195,7 @@ export function TagETFListModal({
                         onClick={() => setSelectedCode(etf.code)}
                       >
                         <td className={styles.momentumCol}>
-                          <MomentumBadge
-                            label={etf.momentum_label}
-                            size="sm"
-                          />
+                          <MomentumBadge label={etf.momentum_label} size="sm" />
                         </td>
                         {isAuthenticated && (
                           <td
@@ -219,8 +216,7 @@ export function TagETFListModal({
                           {etf.score != null ? (
                             <span
                               style={{
-                                color:
-                                  PERSPECTIVE_COLORS[selectedPerspective],
+                                color: PERSPECTIVE_COLORS[selectedPerspective],
                               }}
                             >
                               {etf.score.toFixed(1)}

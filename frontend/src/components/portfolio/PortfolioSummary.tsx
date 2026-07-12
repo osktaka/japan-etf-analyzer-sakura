@@ -26,9 +26,7 @@ export function PortfolioSummary({ summary }: PortfolioSummaryProps) {
     <div className={styles.container}>
       <div className={styles.card}>
         <span className={styles.label}>総資産額</span>
-        <span className={styles.value}>
-          {formatPrice(summary.total_asset)}
-        </span>
+        <span className={styles.value}>{formatPrice(summary.total_asset)}</span>
         {hasDailyChange && (
           <span className={`${styles.subValue} ${dailyClass}`}>
             <span className={styles.subLabel}>前日比:</span> {dailySign}

@@ -75,9 +75,7 @@ function CustomContent(props: CustomContentProps) {
   const color = getMomentumColor(momentumLabel ?? null)
   const textColor = getContrastColor(color)
   const ratio =
-    totalValue > 0
-      ? ((currentValue / totalValue) * 100).toFixed(1)
-      : '0.0'
+    totalValue > 0 ? ((currentValue / totalValue) * 100).toFixed(1) : '0.0'
 
   const codeFontSize = isMobile ? 12 : 16
   const ratioFontSize = isMobile ? 10 : 13
@@ -208,8 +206,8 @@ export function HoldingsTreeMap({
   cashBalance,
   onETFClick,
 }: HoldingsTreeMapProps) {
-  const [isMobile, setIsMobile] = useState(() =>
-    window.matchMedia('(max-width: 640px)').matches
+  const [isMobile, setIsMobile] = useState(
+    () => window.matchMedia('(max-width: 640px)').matches
   )
 
   useEffect(() => {
@@ -220,8 +218,7 @@ export function HoldingsTreeMap({
   }, [])
 
   const totalValue = useMemo(
-    () =>
-      holdings.reduce((sum, h) => sum + h.current_value, 0) + cashBalance,
+    () => holdings.reduce((sum, h) => sum + h.current_value, 0) + cashBalance,
     [holdings, cashBalance]
   )
 

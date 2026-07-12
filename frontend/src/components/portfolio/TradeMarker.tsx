@@ -8,7 +8,12 @@ interface MarkerShapeProps {
 }
 
 /** 買いマーカー: 上向き三角形（緑） */
-export function BuyMarkerShape({ cx = 0, cy = 0, payload, isMobile }: MarkerShapeProps) {
+export function BuyMarkerShape({
+  cx = 0,
+  cy = 0,
+  payload,
+  isMobile,
+}: MarkerShapeProps) {
   if (payload?.buyMarker === undefined) return <g />
   const size = isMobile ? 8 : 6
   const points = `${cx},${cy - size} ${cx - size},${cy + size} ${cx + size},${cy + size}`
@@ -25,7 +30,12 @@ export function BuyMarkerShape({ cx = 0, cy = 0, payload, isMobile }: MarkerShap
 }
 
 /** 売りマーカー: 下向き三角形（赤） */
-export function SellMarkerShape({ cx = 0, cy = 0, payload, isMobile }: MarkerShapeProps) {
+export function SellMarkerShape({
+  cx = 0,
+  cy = 0,
+  payload,
+  isMobile,
+}: MarkerShapeProps) {
   if (payload?.sellMarker === undefined) return <g />
   const size = isMobile ? 8 : 6
   // 同日に買い+売り両方ある場合、重複回避でオフセット

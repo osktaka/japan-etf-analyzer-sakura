@@ -126,7 +126,8 @@ export function GuideRecommendPage() {
               売買のしやすさを評価します。売買代金・出来高が大きく、乖離率が小さいほどスコアが高くなります。
             </p>
             <div className={styles.axisMetric}>
-              使用指標: 売買代金（50%）、平均出来高（30%）、乖離率（ETFの市場価格と基準価額のズレ）（20%）
+              使用指標:
+              売買代金（50%）、平均出来高（30%）、乖離率（ETFの市場価格と基準価額のズレ）（20%）
             </div>
           </div>
 
@@ -151,7 +152,8 @@ export function GuideRecommendPage() {
         <div className={styles.highlightBox}>
           <div className={styles.highlightTitle}>設定例</div>
           <div className={styles.highlightText}>
-            配当力: 40、コスト効率: 30、安定性: 20、取引規模: 10、リターン実績: 0
+            配当力: 40、コスト効率: 30、安定性: 20、取引規模: 10、リターン実績:
+            0
             のように設定すると、配当と低コストを重視したランキングが表示されます。
           </div>
         </div>
@@ -159,10 +161,16 @@ export function GuideRecommendPage() {
 
       <nav className={styles.guideNav}>
         <div className={styles.guideNavLinks}>
-          <Link to={ROUTES.GUIDE} className={styles.guideNavLink}>← 概要</Link>
-          <Link to={ROUTES.GUIDE_SEARCH} className={styles.guideNavLink}>銘柄を探す →</Link>
+          <Link to={ROUTES.GUIDE} className={styles.guideNavLink}>
+            ← 概要
+          </Link>
+          <Link to={ROUTES.GUIDE_SEARCH} className={styles.guideNavLink}>
+            銘柄を探す →
+          </Link>
         </div>
-        <Link to={ROUTES.HOME} className={styles.guideNavCta}>この機能を使ってみる →</Link>
+        <Link to={ROUTES.HOME} className={styles.guideNavCta}>
+          この機能を使ってみる →
+        </Link>
       </nav>
     </div>
   )

@@ -456,7 +456,10 @@ export function ETFTableView({
                 {(momentumVisible === undefined || momentumVisible) && (
                   <td className={styles.numeric}>
                     {etf.momentum_label ? (
-                      <MomentumBadge label={etf.momentum_label} code={etf.code} />
+                      <MomentumBadge
+                        label={etf.momentum_label}
+                        code={etf.code}
+                      />
                     ) : (
                       '-'
                     )}

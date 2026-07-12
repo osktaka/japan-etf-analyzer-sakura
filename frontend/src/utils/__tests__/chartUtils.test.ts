@@ -153,9 +153,30 @@ describe('calculateRegressionLine', () => {
 
   it('全価格が同一でも傾き0の回帰線を返す', () => {
     const flatData: ChartDataPoint[] = [
-      { date: '2025-01-01', open: 1000, high: 1000, low: 1000, close: 1000, volume: 0 },
-      { date: '2025-01-02', open: 1000, high: 1000, low: 1000, close: 1000, volume: 0 },
-      { date: '2025-01-03', open: 1000, high: 1000, low: 1000, close: 1000, volume: 0 },
+      {
+        date: '2025-01-01',
+        open: 1000,
+        high: 1000,
+        low: 1000,
+        close: 1000,
+        volume: 0,
+      },
+      {
+        date: '2025-01-02',
+        open: 1000,
+        high: 1000,
+        low: 1000,
+        close: 1000,
+        volume: 0,
+      },
+      {
+        date: '2025-01-03',
+        open: 1000,
+        high: 1000,
+        low: 1000,
+        close: 1000,
+        volume: 0,
+      },
     ]
     const result = calculateRegressionLine(flatData)
 
@@ -211,6 +232,8 @@ describe('calculateYAxisDomain', () => {
     expect(result?.[0]).toBeCloseTo(950, 6)
     expect(result?.[1]).toBeCloseTo(1050, 6)
     // pad = 50 > 0 を確認（domain 幅 = 100）
-    expect((result as [number, number])[1] - (result as [number, number])[0]).toBeCloseTo(100, 6)
+    expect(
+      (result as [number, number])[1] - (result as [number, number])[0]
+    ).toBeCloseTo(100, 6)
   })
 })

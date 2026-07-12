@@ -9,7 +9,11 @@ interface MomentumBadgeProps {
   code?: string
 }
 
-export function MomentumBadge({ label, size = 'sm', code }: MomentumBadgeProps) {
+export function MomentumBadge({
+  label,
+  size = 'sm',
+  code,
+}: MomentumBadgeProps) {
   const [showHistory, setShowHistory] = useState(false)
   const style = getStyleFromLabel(label)
   if (!style || !label) return null

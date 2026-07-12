@@ -36,8 +36,12 @@ export function SEOHead({
       <meta property="og:site_name" content={SITE_NAME} />
       {url && <meta property="og:url" content={url} />}
       {url && <link rel="canonical" href={url} />}
-      {publishedTime && <meta property="article:published_time" content={publishedTime} />}
-      {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+      {publishedTime && (
+        <meta property="article:published_time" content={publishedTime} />
+      )}
+      {modifiedTime && (
+        <meta property="article:modified_time" content={modifiedTime} />
+      )}
     </Helmet>
   )
 }

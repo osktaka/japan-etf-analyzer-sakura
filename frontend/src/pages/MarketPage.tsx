@@ -52,7 +52,7 @@ export function MarketPage() {
   }, [data])
 
   const handleTagClick = (tagId: number) => {
-    const tag = data?.tags.find(t => t.id === tagId)
+    const tag = data?.tags.find((t) => t.id === tagId)
     setSelectedTagId(tagId)
     setSelectedTagName(tag?.name ?? '')
   }
@@ -67,19 +67,14 @@ export function MarketPage() {
         <>
           <section className={styles.section}>
             <h3 className={styles.sectionTitle}>全体</h3>
-            <TagMomentumHeatmap
-              data={data.tags}
-              onTagClick={handleTagClick}
-            />
+            <TagMomentumHeatmap data={data.tags} onTagClick={handleTagClick} />
           </section>
           {TAG_GROUP_ORDER.map((key) => {
             const tags = groupedTags.get(key)
             if (!tags || tags.length === 0) return null
             return (
               <section key={key} className={styles.section}>
-                <h3 className={styles.sectionTitle}>
-                  {TAG_GROUP_LABELS[key]}
-                </h3>
+                <h3 className={styles.sectionTitle}>{TAG_GROUP_LABELS[key]}</h3>
                 <TagMomentumHeatmap
                   data={tags}
                   onTagClick={handleTagClick}

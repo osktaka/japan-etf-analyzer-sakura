@@ -116,11 +116,19 @@ export function OverlayChart({
 
   return (
     <div className={styles.container}>
-      <div className={styles.chartArea} style={{ height: isMobile ? 250 : height }}>
+      <div
+        className={styles.chartArea}
+        style={{ height: isMobile ? 250 : height }}
+      >
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={mergedData}
-            margin={{ top: 5, right: isMobile ? 10 : 20, left: isMobile ? 0 : 10, bottom: 5 }}
+            margin={{
+              top: 5,
+              right: isMobile ? 10 : 20,
+              left: isMobile ? 0 : 10,
+              bottom: 5,
+            }}
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis
@@ -146,7 +154,10 @@ export function OverlayChart({
                   let width = 0
                   for (const ch of ds.name) {
                     width += ch.charCodeAt(0) > 0x7f ? 2 : 1
-                    if (width > maxWidth) { truncatedName += '…'; break }
+                    if (width > maxWidth) {
+                      truncatedName += '…'
+                      break
+                    }
                     truncatedName += ch
                   }
                 }

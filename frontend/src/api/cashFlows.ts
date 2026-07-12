@@ -38,10 +38,7 @@ export const cashFlowsApi = {
     return response.data.data
   },
 
-  async update(
-    id: number,
-    data: UpdateCashFlowRequest
-  ): Promise<CashFlow> {
+  async update(id: number, data: UpdateCashFlowRequest): Promise<CashFlow> {
     const response = await apiClient.put<ApiResponse<CashFlow>>(
       `/cash-flows/${id}`,
       data

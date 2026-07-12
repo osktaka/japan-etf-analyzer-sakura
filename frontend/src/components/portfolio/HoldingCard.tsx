@@ -167,7 +167,9 @@ export function HoldingCard({
             <>
               <div className={styles.pnlItem}>
                 <span className={styles.label}>保有期間</span>
-                <span className={styles.value}>{holding.holding_period || '-'}</span>
+                <span className={styles.value}>
+                  {holding.holding_period || '-'}
+                </span>
               </div>
               <div className={styles.pnlItem}>
                 <span className={styles.label}>年率リターン</span>

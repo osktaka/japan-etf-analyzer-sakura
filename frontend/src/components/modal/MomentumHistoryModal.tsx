@@ -25,10 +25,14 @@ export function MomentumHistoryModal({
   const [priceData, setPriceData] = useState<ChartDataPoint[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [rateMode, setRateMode] = useState<RateMode>(
-    () => (localStorage.getItem('etf-momentum-history-rate-mode') as RateMode) || 'regression'
+    () =>
+      (localStorage.getItem('etf-momentum-history-rate-mode') as RateMode) ||
+      'regression'
   )
   const [viewMode, setViewMode] = useState<ViewMode>(
-    () => (localStorage.getItem('etf-momentum-history-view-mode') as ViewMode) || 'table'
+    () =>
+      (localStorage.getItem('etf-momentum-history-view-mode') as ViewMode) ||
+      'table'
   )
 
   useEffect(() => {
@@ -77,7 +81,13 @@ export function MomentumHistoryModal({
   }
 
   return (
-    <div className={styles.overlay} onClick={(e) => { e.stopPropagation(); onClose() }}>
+    <div
+      className={styles.overlay}
+      onClick={(e) => {
+        e.stopPropagation()
+        onClose()
+      }}
+    >
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <button className={styles.closeBtn} onClick={onClose}>
           &times;
@@ -123,80 +133,85 @@ export function MomentumHistoryModal({
         {!isLoading && data.length > 0 && (
           <>
             {viewMode === 'chart' && (
-              <MomentumHistoryChart data={data} rateMode={rateMode} priceData={priceData} trades={isAuthenticated ? trades : undefined} />
+              <MomentumHistoryChart
+                data={data}
+                rateMode={rateMode}
+                priceData={priceData}
+                trades={isAuthenticated ? trades : undefined}
+              />
             )}
 
             {viewMode === 'table' && (
-          <div className={styles.tableWrapper}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th className={styles.th}>日付</th>
-                  <th className={styles.th}>勢い</th>
-                  <th className={styles.th}>1M</th>
-                  <th className={styles.th}>3M</th>
-                  <th className={styles.th}>6M</th>
-                  <th className={styles.th}>1Y</th>
-                  <th className={styles.th}>3Y</th>
-                  <th className={styles.th}>5Y</th>
-                  <th className={styles.th}>10Y</th>
-                  <th className={styles.th}>20Y</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.map((item) => (
-                  <tr key={item.date}>
-                    <td className={styles.td}>
-                      {item.date.replace(/-/g, '/')}
-                    </td>
-                    <td className={styles.td}>
-                      <MomentumBadge label={item.momentum_label} />
-                    </td>
-                    <td
-                      className={`${styles.td} ${getRateClass(getRate(item, '1m'))}`}
-                    >
-                      {formatRate(getRate(item, '1m'), 12)}
-                    </td>
-                    <td
-                      className={`${styles.td} ${getRateClass(getRate(item, '3m'))}`}
-                    >
-                      {formatRate(getRate(item, '3m'), 4)}
-                    </td>
-                    <td
-                      className={`${styles.td} ${getRateClass(getRate(item, '6m'))}`}
-                    >
-                      {formatRate(getRate(item, '6m'), 2)}
-                    </td>
-                    <td
-                      className={`${styles.td} ${getRateClass(getRate(item, '1y'))}`}
-                    >
-                      {formatRate(getRate(item, '1y'), 1)}
-                    </td>
-                    <td
-                      className={`${styles.td} ${getRateClass(getRate(item, '3y'))}`}
-                    >
-                      {formatRate(getRate(item, '3y'), 1 / 3)}
-                    </td>
-                    <td
-                      className={`${styles.td} ${getRateClass(getRate(item, '5y'))}`}
-                    >
-                      {formatRate(getRate(item, '5y'), 1 / 5)}
-                    </td>
-                    <td
-                      className={`${styles.td} ${getRateClass(getRate(item, '10y'))}`}
-                    >
-                      {formatRate(getRate(item, '10y'), 1 / 10)}
-                    </td>
-                    <td
-                      className={`${styles.td} ${getRateClass(getRate(item, '20y'))}`}
-                    >
-                      {formatRate(getRate(item, '20y'), 1 / 20)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              <div className={styles.tableWrapper}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th className={styles.th}>日付</th>
+                      <th className={styles.th}>勢い</th>
+                      <th className={styles.th}>1M</th>
+                      <th className={styles.th}>3M</th>
+                      <th className={styles.th}>6M</th>
+                      <th className={styles.th}>1Y</th>
+                      <th className={styles.th}>3Y</th>
+                      <th className={styles.th}>5Y</th>
+                      <th className={styles.th}>10Y</th>
+                      <th className={styles.th}>20Y</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.map((item) => (
+                      <tr key={item.date}>
+                        <td className={styles.td}>
+                          {item.date.replace(/-/g, '/')}
+                        </td>
+                        <td className={styles.td}>
+                          <MomentumBadge label={item.momentum_label} />
+                        </td>
+                        <td
+                          className={`${styles.td} ${getRateClass(getRate(item, '1m'))}`}
+                        >
+                          {formatRate(getRate(item, '1m'), 12)}
+                        </td>
+                        <td
+                          className={`${styles.td} ${getRateClass(getRate(item, '3m'))}`}
+                        >
+                          {formatRate(getRate(item, '3m'), 4)}
+                        </td>
+                        <td
+                          className={`${styles.td} ${getRateClass(getRate(item, '6m'))}`}
+                        >
+                          {formatRate(getRate(item, '6m'), 2)}
+                        </td>
+                        <td
+                          className={`${styles.td} ${getRateClass(getRate(item, '1y'))}`}
+                        >
+                          {formatRate(getRate(item, '1y'), 1)}
+                        </td>
+                        <td
+                          className={`${styles.td} ${getRateClass(getRate(item, '3y'))}`}
+                        >
+                          {formatRate(getRate(item, '3y'), 1 / 3)}
+                        </td>
+                        <td
+                          className={`${styles.td} ${getRateClass(getRate(item, '5y'))}`}
+                        >
+                          {formatRate(getRate(item, '5y'), 1 / 5)}
+                        </td>
+                        <td
+                          className={`${styles.td} ${getRateClass(getRate(item, '10y'))}`}
+                        >
+                          {formatRate(getRate(item, '10y'), 1 / 10)}
+                        </td>
+                        <td
+                          className={`${styles.td} ${getRateClass(getRate(item, '20y'))}`}
+                        >
+                          {formatRate(getRate(item, '20y'), 1 / 20)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </>
         )}

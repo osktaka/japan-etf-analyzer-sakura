@@ -332,9 +332,7 @@ export function TradeHistoryModal({
                         <span
                           className={`${styles.cashFlowType} ${cashFlow.flow_type === 'deposit' ? styles.deposit : styles.withdrawal}`}
                         >
-                          {cashFlow.flow_type === 'deposit'
-                            ? '入金'
-                            : '出金'}
+                          {cashFlow.flow_type === 'deposit' ? '入金' : '出金'}
                         </span>
                       </div>
                     </td>

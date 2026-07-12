@@ -212,7 +212,10 @@ export function HoldingsChartGrid({
                 <div className={styles.cardHeader}>
                   <div className={styles.cardHeaderLeft}>
                     <span className={styles.etfCode}>{code}</span>
-                    <span className={styles.etfName} title={holding.etf?.name ?? ''}>
+                    <span
+                      className={styles.etfName}
+                      title={holding.etf?.name ?? ''}
+                    >
                       {holding.etf?.name ?? ''}
                     </span>
                   </div>

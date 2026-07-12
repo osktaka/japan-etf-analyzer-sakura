@@ -172,10 +172,8 @@ export function MomentumHistoryChart({
         | null
       return {
         date: item.date,
-        rate1m:
-          raw1m !== null ? Math.round(raw1m * 12 * 1000) / 1000 : null,
-        rate3m:
-          raw3m !== null ? Math.round(raw3m * 4 * 1000) / 1000 : null,
+        rate1m: raw1m !== null ? Math.round(raw1m * 12 * 1000) / 1000 : null,
+        rate3m: raw3m !== null ? Math.round(raw3m * 4 * 1000) / 1000 : null,
         momentumLabel: item.momentum_label,
         price: priceMap.get(item.date) ?? null,
       }
@@ -207,7 +205,9 @@ export function MomentumHistoryChart({
         let targetDate = tradeDate
         if (!chartDateSet.has(tradeDate)) {
           // Find next available date, or fall back to last
-          targetDate = rows.find((r) => r.date >= tradeDate)?.date ?? rows[rows.length - 1].date
+          targetDate =
+            rows.find((r) => r.date >= tradeDate)?.date ??
+            rows[rows.length - 1].date
         }
         const existing = snappedTradesByDate.get(targetDate)
         if (existing) {
@@ -246,8 +246,18 @@ export function MomentumHistoryChart({
       <ResponsiveContainer width="100%" height={isMobile ? 300 : 440}>
         <ComposedChart data={chartData}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" tickFormatter={tickFormatter} fontSize={11} interval={Math.max(Math.floor(chartData.length / 12) - 1, 0)} />
-          <YAxis yAxisId="left" tickFormatter={yTickFormatter} fontSize={11} width={52} />
+          <XAxis
+            dataKey="date"
+            tickFormatter={tickFormatter}
+            fontSize={11}
+            interval={Math.max(Math.floor(chartData.length / 12) - 1, 0)}
+          />
+          <YAxis
+            yAxisId="left"
+            tickFormatter={yTickFormatter}
+            fontSize={11}
+            width={52}
+          />
           <YAxis
             yAxisId="right"
             orientation="right"
@@ -255,10 +265,14 @@ export function MomentumHistoryChart({
             fontSize={11}
             width={52}
           />
-          <ReferenceLine yAxisId="left" y={0} stroke="#9ca3af" strokeDasharray="3 3" />
+          <ReferenceLine
+            yAxisId="left"
+            y={0}
+            stroke="#9ca3af"
+            strokeDasharray="3 3"
+          />
           {segments.map((seg, i) => {
-            const style =
-              MOMENTUM_STYLES[seg.label as MomentumLabel] ?? null
+            const style = MOMENTUM_STYLES[seg.label as MomentumLabel] ?? null
             if (!style) return null
             return (
               <ReferenceArea
@@ -321,7 +335,9 @@ export function MomentumHistoryChart({
               />
             </>
           )}
-          <Legend wrapperStyle={{ fontSize: isMobile ? '0.625rem' : '0.75rem' }} />
+          <Legend
+            wrapperStyle={{ fontSize: isMobile ? '0.625rem' : '0.75rem' }}
+          />
           <Tooltip content={<CustomTooltip />} />
         </ComposedChart>
       </ResponsiveContainer>

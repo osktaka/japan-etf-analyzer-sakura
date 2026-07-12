@@ -142,7 +142,11 @@ export function AnnualizedReturnCards({
               marginLeft: 'var(--spacing-sm)',
             }}
           >
-            <MomentumBadge label={resolvedMomentumLabel} size="md" code={code} />
+            <MomentumBadge
+              label={resolvedMomentumLabel}
+              size="md"
+              code={code}
+            />
           </span>
         )}
       </div>

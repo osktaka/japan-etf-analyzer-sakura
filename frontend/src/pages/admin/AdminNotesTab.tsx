@@ -112,7 +112,9 @@ export function AdminNotesTab() {
       await loadNotes()
       setView('list')
     } catch {
-      setError(editSlug ? '記事の更新に失敗しました' : '記事の作成に失敗しました')
+      setError(
+        editSlug ? '記事の更新に失敗しました' : '記事の作成に失敗しました'
+      )
     } finally {
       setSaving(false)
     }
@@ -332,10 +334,7 @@ function NoteForm({
         <div className={styles.formGroup}>
           <div className={styles.toolbar}>
             <label className={styles.formLabel}>本文（Markdown）</label>
-            <button
-              className={styles.previewToggle}
-              onClick={onTogglePreview}
-            >
+            <button className={styles.previewToggle} onClick={onTogglePreview}>
               {showPreview ? 'エディタ表示' : 'プレビュー表示'}
             </button>
           </div>
@@ -358,7 +357,13 @@ function NoteForm({
           <button
             className={styles.submitButton}
             onClick={onSubmit}
-            disabled={saving || !form.title || !form.slug || !form.summary || !form.content}
+            disabled={
+              saving ||
+              !form.title ||
+              !form.slug ||
+              !form.summary ||
+              !form.content
+            }
           >
             {saving ? '保存中...' : isEdit ? '更新' : '作成'}
           </button>

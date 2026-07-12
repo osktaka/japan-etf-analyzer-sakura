@@ -19,9 +19,7 @@ export function CashFlowForm({
   const [flowType, setFlowType] = useState<'deposit' | 'withdrawal'>(
     initialData?.flow_type || 'deposit'
   )
-  const [amount, setAmount] = useState(
-    initialData?.amount?.toString() || ''
-  )
+  const [amount, setAmount] = useState(initialData?.amount?.toString() || '')
   const [flowDate, setFlowDate] = useState(
     initialData?.flow_date || new Date().toISOString().split('T')[0]
   )

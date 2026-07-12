@@ -112,17 +112,24 @@ export function GuideMypagePage() {
         <p className={styles.text}>
           5つの評価軸（配当力、コスト効率、安定性、取引規模、リターン実績）の重みを
           自分好みにカスタマイズできます。マイページやトップページの「カスタムを編集」から設定画面を開き、
-          各指標の重要度を調整してください。
-          詳しくは<Link to={ROUTES.GUIDE_RECOMMEND}>「おすすめ銘柄」ガイド</Link>をご覧ください。
+          各指標の重要度を調整してください。 詳しくは
+          <Link to={ROUTES.GUIDE_RECOMMEND}>「おすすめ銘柄」ガイド</Link>
+          をご覧ください。
         </p>
       </section>
 
       <nav className={styles.guideNav}>
         <div className={styles.guideNavLinks}>
-          <Link to={ROUTES.GUIDE_COMPARE} className={styles.guideNavLink}>← 比較する</Link>
-          <Link to={ROUTES.GUIDE_FAQ} className={styles.guideNavLink}>よくある質問 →</Link>
+          <Link to={ROUTES.GUIDE_COMPARE} className={styles.guideNavLink}>
+            ← 比較する
+          </Link>
+          <Link to={ROUTES.GUIDE_FAQ} className={styles.guideNavLink}>
+            よくある質問 →
+          </Link>
         </div>
-        <Link to={ROUTES.MYPAGE} className={styles.guideNavCta}>この機能を使ってみる →</Link>
+        <Link to={ROUTES.MYPAGE} className={styles.guideNavCta}>
+          この機能を使ってみる →
+        </Link>
       </nav>
     </div>
   )

@@ -30,7 +30,10 @@ export function useTrades(
   const [error, setError] = useState<string | null>(null)
 
   const fetchTrades = useCallback(async () => {
-    if (!options?.apiBasePath && (!isAuthenticated || options?.enabled === false)) {
+    if (
+      !options?.apiBasePath &&
+      (!isAuthenticated || options?.enabled === false)
+    ) {
       setTrades([])
       return
     }

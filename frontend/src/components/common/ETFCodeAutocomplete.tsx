@@ -184,11 +184,7 @@ export function ETFCodeAutocomplete({
         aria-autocomplete="list"
       />
       {isOpen && (
-        <ul
-          id={listboxId}
-          className={styles.dropdown}
-          role="listbox"
-        >
+        <ul id={listboxId} className={styles.dropdown} role="listbox">
           {isLoading ? (
             <li className={styles.message}>検索中...</li>
           ) : results.length === 0 ? (
@@ -201,7 +197,9 @@ export function ETFCodeAutocomplete({
                 className={`${styles.dropdownItem}${index === highlightedIndex ? ` ${styles.highlighted}` : ''}`}
                 role="option"
                 aria-selected={index === highlightedIndex}
-                onClick={() => handleSelect(etf.code, etf.name, etf.market_price)}
+                onClick={() =>
+                  handleSelect(etf.code, etf.name, etf.market_price)
+                }
               >
                 <span className={styles.itemCode}>{etf.code}</span>
                 <span className={styles.itemName}>{etf.name}</span>

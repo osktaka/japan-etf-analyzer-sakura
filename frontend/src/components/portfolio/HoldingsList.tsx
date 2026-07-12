@@ -108,7 +108,9 @@ export function HoldingsList({
   })
   const [sortKey, setSortKey] = useState<SortKey>(() => {
     const stored = localStorage.getItem(SORT_KEY_STORAGE_KEY)
-    return stored && stored in SORT_LABELS ? (stored as SortKey) : 'current_value'
+    return stored && stored in SORT_LABELS
+      ? (stored as SortKey)
+      : 'current_value'
   })
   const [sortOrder, setSortOrder] = useState<SortOrder>(() => {
     const stored = localStorage.getItem(SORT_ORDER_STORAGE_KEY)
@@ -241,7 +243,10 @@ export function HoldingsList({
           bVal = b.holding_days ?? 0
           break
         case 'annualized_return': {
-          const annKey = pnlMode === 'total' ? 'annualized_return_total' : 'annualized_return'
+          const annKey =
+            pnlMode === 'total'
+              ? 'annualized_return_total'
+              : 'annualized_return'
           aVal = (a[annKey] as number) ?? -Infinity
           bVal = (b[annKey] as number) ?? -Infinity
           break
@@ -542,7 +547,10 @@ export function HoldingsList({
                             code={holding.etf_code}
                           />
                         </span>
-                        <span className={styles.name} title={holding.etf?.name || '-'}>
+                        <span
+                          className={styles.name}
+                          title={holding.etf?.name || '-'}
+                        >
                           {holding.etf?.name || '-'}
                         </span>
                       </div>
@@ -605,19 +613,23 @@ export function HoldingsList({
                       {holding.holding_period || '-'}
                     </td>
                     <td
-                      className={`${styles.right} ${
-                        (() => {
-                          const annVal = pnlMode === 'total' ? holding.annualized_return_total : holding.annualized_return
-                          return annVal !== null && annVal !== undefined
-                            ? annVal >= 0
-                              ? styles.positive
-                              : styles.negative
-                            : ''
-                        })()
-                      }`}
+                      className={`${styles.right} ${(() => {
+                        const annVal =
+                          pnlMode === 'total'
+                            ? holding.annualized_return_total
+                            : holding.annualized_return
+                        return annVal !== null && annVal !== undefined
+                          ? annVal >= 0
+                            ? styles.positive
+                            : styles.negative
+                          : ''
+                      })()}`}
                     >
                       {(() => {
-                        const annVal = pnlMode === 'total' ? holding.annualized_return_total : holding.annualized_return
+                        const annVal =
+                          pnlMode === 'total'
+                            ? holding.annualized_return_total
+                            : holding.annualized_return
                         return annVal !== null && annVal !== undefined
                           ? `${annVal >= 0 ? '+' : ''}${annVal.toFixed(2)}%`
                           : '-'

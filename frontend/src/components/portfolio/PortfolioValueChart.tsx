@@ -41,7 +41,9 @@ interface PortfolioValueChartProps {
   demoMode?: boolean
 }
 
-export function PortfolioValueChart({ demoMode }: PortfolioValueChartProps = {}) {
+export function PortfolioValueChart({
+  demoMode,
+}: PortfolioValueChartProps = {}) {
   const historyApiBasePath = demoMode
     ? '/demo/portfolio/valuation-history'
     : undefined
@@ -69,7 +71,10 @@ export function PortfolioValueChart({ demoMode }: PortfolioValueChartProps = {})
       if (i === 0) return { ...d, dailyChange: null, dailyChangePct: null }
       const prev = merged[i - 1]
       const change = d.value - prev.value
-      const pct = prev.value !== 0 ? Math.round((change / prev.value) * 10000) / 100 : null
+      const pct =
+        prev.value !== 0
+          ? Math.round((change / prev.value) * 10000) / 100
+          : null
       return { ...d, dailyChange: change, dailyChangePct: pct }
     })
   }, [data, trades])
@@ -135,7 +140,11 @@ export function PortfolioValueChart({ demoMode }: PortfolioValueChartProps = {})
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={mergedData}
-            margin={isMobile ? { top: 5, right: 10, left: 5, bottom: 5 } : { top: 5, right: 20, left: 10, bottom: 5 }}
+            margin={
+              isMobile
+                ? { top: 5, right: 10, left: 5, bottom: 5 }
+                : { top: 5, right: 20, left: 10, bottom: 5 }
+            }
           >
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis
@@ -163,39 +172,57 @@ export function PortfolioValueChart({ demoMode }: PortfolioValueChartProps = {})
                     <p className={styles.tooltipDate}>{label}</p>
                     <p
                       className={styles.tooltipRow}
-                      style={{ color: data.unrealized_pnl >= 0 ? '#10b981' : '#ef4444' }}
+                      style={{
+                        color: data.unrealized_pnl >= 0 ? '#10b981' : '#ef4444',
+                      }}
                     >
                       <span
                         className={styles.legendDot}
-                        style={{ background: data.unrealized_pnl >= 0 ? '#10b981' : '#ef4444' }}
+                        style={{
+                          background:
+                            data.unrealized_pnl >= 0 ? '#10b981' : '#ef4444',
+                        }}
                       />
-                      評価損益: {data.unrealized_pnl >= 0 ? '+' : ''}{formatPrice(data.unrealized_pnl)}
+                      評価損益: {data.unrealized_pnl >= 0 ? '+' : ''}
+                      {formatPrice(data.unrealized_pnl)}
                     </p>
                     <p className={styles.tooltipRow}>
-                      <span className={styles.legendDot} style={{ background: '#38bdf8' }} />
+                      <span
+                        className={styles.legendDot}
+                        style={{ background: '#38bdf8' }}
+                      />
                       取得原価: {formatPrice(data.total_cost)}
                     </p>
                     <p className={styles.tooltipRow}>
-                      <span className={styles.legendDot} style={{ background: '#a78bfa' }} />
+                      <span
+                        className={styles.legendDot}
+                        style={{ background: '#a78bfa' }}
+                      />
                       現金残高: {formatPrice(data.cash_balance)}
                     </p>
                     <hr className={styles.tooltipDivider} />
-                    <p className={styles.tooltipRow} style={{ fontWeight: 600 }}>
+                    <p
+                      className={styles.tooltipRow}
+                      style={{ fontWeight: 600 }}
+                    >
                       総資産: {formatPrice(data.value)}
                     </p>
-                    {data.dailyChange != null && data.dailyChangePct != null && (
-                      <p
-                        className={styles.tooltipRow}
-                        style={{
-                          color: data.dailyChange >= 0 ? '#10b981' : '#ef4444',
-                          fontSize: '0.75rem',
-                        }}
-                      >
-                        前日比: {data.dailyChange >= 0 ? '+' : ''}
-                        {formatPrice(data.dailyChange)} ({data.dailyChange >= 0 ? '+' : ''}
-                        {data.dailyChangePct.toFixed(2)}%)
-                      </p>
-                    )}
+                    {data.dailyChange != null &&
+                      data.dailyChangePct != null && (
+                        <p
+                          className={styles.tooltipRow}
+                          style={{
+                            color:
+                              data.dailyChange >= 0 ? '#10b981' : '#ef4444',
+                            fontSize: '0.75rem',
+                          }}
+                        >
+                          前日比: {data.dailyChange >= 0 ? '+' : ''}
+                          {formatPrice(data.dailyChange)} (
+                          {data.dailyChange >= 0 ? '+' : ''}
+                          {data.dailyChangePct.toFixed(2)}%)
+                        </p>
+                      )}
                   </div>
                 )
               }}

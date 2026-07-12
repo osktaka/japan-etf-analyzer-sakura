@@ -183,10 +183,16 @@ export function GuideMomentumPage() {
 
       <nav className={styles.guideNav}>
         <div className={styles.guideNavLinks}>
-          <Link to={ROUTES.GUIDE_SEARCH} className={styles.guideNavLink}>← 銘柄を探す</Link>
-          <Link to={ROUTES.GUIDE_TAGS} className={styles.guideNavLink}>タグで探す →</Link>
+          <Link to={ROUTES.GUIDE_SEARCH} className={styles.guideNavLink}>
+            ← 銘柄を探す
+          </Link>
+          <Link to={ROUTES.GUIDE_TAGS} className={styles.guideNavLink}>
+            タグで探す →
+          </Link>
         </div>
-        <Link to={ROUTES.HOME} className={styles.guideNavCta}>この機能を使ってみる →</Link>
+        <Link to={ROUTES.HOME} className={styles.guideNavCta}>
+          この機能を使ってみる →
+        </Link>
       </nav>
     </div>
   )

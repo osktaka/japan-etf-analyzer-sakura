@@ -347,7 +347,11 @@ export function ETFDetailModal({
                   onChange={setChartPeriods}
                 />
               </div>
-              <MultiPeriodChart code={data.code} periods={chartPeriods} trades={trades} />
+              <MultiPeriodChart
+                code={data.code}
+                periods={chartPeriods}
+                trades={trades}
+              />
             </div>
 
             <div className={styles.footer}>

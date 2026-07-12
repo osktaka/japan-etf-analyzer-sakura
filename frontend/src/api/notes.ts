@@ -27,20 +27,19 @@ export interface NoteInput {
 
 export const notesApi = {
   async getAll(): Promise<NoteListItem[]> {
-    const response =
-      await apiClient.get<ApiResponse<NoteListItem[]>>('/notes')
+    const response = await apiClient.get<ApiResponse<NoteListItem[]>>('/notes')
     return response.data.data
   },
 
   async getBySlug(slug: string): Promise<Note> {
-    const response =
-      await apiClient.get<ApiResponse<Note>>(`/notes/${slug}`)
+    const response = await apiClient.get<ApiResponse<Note>>(`/notes/${slug}`)
     return response.data.data
   },
 
   async getBySlugAdmin(slug: string): Promise<Note> {
-    const response =
-      await apiClient.get<ApiResponse<Note>>(`/admin/notes/${slug}`)
+    const response = await apiClient.get<ApiResponse<Note>>(
+      `/admin/notes/${slug}`
+    )
     return response.data.data
   },
 
@@ -51,14 +50,18 @@ export const notesApi = {
   },
 
   async create(data: NoteInput): Promise<Note> {
-    const response =
-      await apiClient.post<ApiResponse<Note>>('/admin/notes', data)
+    const response = await apiClient.post<ApiResponse<Note>>(
+      '/admin/notes',
+      data
+    )
     return response.data.data
   },
 
   async update(slug: string, data: NoteInput): Promise<Note> {
-    const response =
-      await apiClient.put<ApiResponse<Note>>(`/admin/notes/${slug}`, data)
+    const response = await apiClient.put<ApiResponse<Note>>(
+      `/admin/notes/${slug}`,
+      data
+    )
     return response.data.data
   },
 

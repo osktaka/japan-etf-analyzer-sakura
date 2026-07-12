@@ -85,7 +85,9 @@ export function GuideFaqPage() {
     setExpandedIndex((prev) => (prev === index ? null : index))
 
   const getGlobalIndex = (categoryIndex: number, itemIndex: number) =>
-    faqCategories.slice(0, categoryIndex).reduce((sum, c) => sum + c.items.length, 0) + itemIndex
+    faqCategories
+      .slice(0, categoryIndex)
+      .reduce((sum, c) => sum + c.items.length, 0) + itemIndex
 
   return (
     <div className={styles.page}>
@@ -99,7 +101,11 @@ export function GuideFaqPage() {
       <p className={styles.text}>
         Japan ETF
         Analyzerに関するよくある質問をまとめました。お探しの回答が見つからない場合は、
-        <a href="https://x.com/ETF_Analyzer" target="_blank" rel="noopener noreferrer">
+        <a
+          href="https://x.com/ETF_Analyzer"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
           X（旧Twitter）の @ETF_Analyzer
         </a>
         にお問い合わせください。
@@ -155,9 +161,13 @@ export function GuideFaqPage() {
 
       <nav className={styles.guideNav}>
         <div className={styles.guideNavLinks}>
-          <Link to={ROUTES.GUIDE_MYPAGE} className={styles.guideNavLink}>← マイページ活用</Link>
+          <Link to={ROUTES.GUIDE_MYPAGE} className={styles.guideNavLink}>
+            ← マイページ活用
+          </Link>
         </div>
-        <Link to={ROUTES.GUIDE} className={styles.guideNavCta}>ガイドトップに戻る →</Link>
+        <Link to={ROUTES.GUIDE} className={styles.guideNavCta}>
+          ガイドトップに戻る →
+        </Link>
       </nav>
     </div>
   )

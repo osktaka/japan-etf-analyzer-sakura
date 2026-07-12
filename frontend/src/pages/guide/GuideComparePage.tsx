@@ -95,10 +95,16 @@ export function GuideComparePage() {
 
       <nav className={styles.guideNav}>
         <div className={styles.guideNavLinks}>
-          <Link to={ROUTES.GUIDE_TAGS} className={styles.guideNavLink}>← タグで探す</Link>
-          <Link to={ROUTES.GUIDE_MYPAGE} className={styles.guideNavLink}>マイページ活用 →</Link>
+          <Link to={ROUTES.GUIDE_TAGS} className={styles.guideNavLink}>
+            ← タグで探す
+          </Link>
+          <Link to={ROUTES.GUIDE_MYPAGE} className={styles.guideNavLink}>
+            マイページ活用 →
+          </Link>
         </div>
-        <Link to={ROUTES.COMPARE} className={styles.guideNavCta}>この機能を使ってみる →</Link>
+        <Link to={ROUTES.COMPARE} className={styles.guideNavCta}>
+          この機能を使ってみる →
+        </Link>
       </nav>
     </div>
   )
