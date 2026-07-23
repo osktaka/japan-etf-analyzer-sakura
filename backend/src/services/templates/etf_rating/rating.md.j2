@@ -1,115 +1,62 @@
 {% import '_macros.j2' as m -%}
-{# プレーンテキスト版 ETF Rating メール本文.
+{# プレーンテキスト版 ETF Rating メール本文（短文フォーマット / 2026-07-23〜）.
    文体: です・ます調（尊敬語・謙譲語は使わない）.
-   構造: 冒頭サマリ → 全銘柄スコア一覧 → 市場環境 → 銘柄別ブロック（4部構成）.
+   構造: 今日の要点 → スコア一覧 → 動きがあった銘柄 → 注意ポイント → フッタ.
+   銘柄別4部構成ブロック（ひとこと/Top5/リスク/3シナリオ）は廃止。
+   詳細は reports/etf-rating/ 配下の銘柄別レポートに委譲する。
+
+   movers / cautions / movers_threshold_label は etf_rating_notifier._render() が
+   calc_params.json の mail.* 閾値で抽出して渡す（欠損キー耐性のため Jinja では導出しない）。
 
    受け付けるキーは正規キーのみ:
    - r.delta_net / r.upside_weighted / r.downside_weighted
-   - r.top_drivers_bullish_labels / r.top_drivers_bearish_labels
-   過去の互換キー（delta / upside_score / top_drivers 等）は 2026-05 削除済み。
+   - r.top_drivers_bearish_labels（注意ポイントの理由に使用）
 #}
 {%- set total = ratings|length -%}
 {%- set avg = (ratings|sum(attribute='net_score') / total)|round(1) if total > 0 else None -%}
 {# 件数は flags リスト（type=strong_tailwind / severe_risk 等）で集計し、件名と一致させる #}
 {%- set tailwind_count = flags|selectattr('type', 'in', ['strong_tailwind', 'strong_bullish'])|list|length if flags else 0 -%}
 {%- set warning_count = flags|selectattr('type', 'in', ['severe_risk', 'critical_risk', 'warning'])|list|length if flags else 0 -%}
-{{ today_iso[5:7]|int }}月{{ today_iso[8:10]|int }}日 終値ベース ETF Rating レポートです。
+{{ today_iso[5:7]|int }}月{{ today_iso[8:10]|int }}日 ETF Rating（終値ベース・{{ total }}銘柄）
 
-保有・監視対象の {{ total }}銘柄について、中期（3〜12ヶ月）視点で採点しました。
-各項目は 100点満点、50点が中立、70点以上で「強い追い風」、30点以下で「警戒」と判定しています。
-
-
-■ 今日のひとこと
-
+■ 今日の要点
 {% if summary_text -%}
-  {{ summary_text }}
+{{ summary_text }}
 {% else -%}
-  （総評コメントなし）
+（総評コメントなし）
 {% endif %}
 
-■ 全銘柄スコア一覧
-
-  銘柄        | 総合点 | 追い風 | 逆風 | 前日比 | 判定
-  {{ '-' * 58 }}
+■ スコア一覧（総合点／前日比）
 {% for r in ratings -%}
-  {{ '%-4s'|format(r.code) }} {{ '%-8s'|format(r.name|default('-')|truncate(8, true, '')) }} | {{ '%5.1f'|format(r.net_score) }} | {{ '%5.1f'|format(r.upside_weighted|default(0)) }} | {{ '%4.1f'|format(r.downside_weighted|default(0)) }} | {{ '%-6s'|format(m.signed_delta(r.delta_net)) }} | {{ m.verdict_label(r.net_score) }}
+{%- set parts = m.verdict_parts(r.net_score).split('|') -%}
+{{ parts[0] }} {{ '%5.1f'|format(r.net_score) }} ({{ m.signed_delta(r.delta_net) }})  {{ r.code }} {{ r.name|default('-') }}  [{{ parts[1] }}]
+{% endfor -%}
+平均 {{ avg }}点／強い追い風 {{ tailwind_count }}銘柄／警戒 {{ warning_count }}銘柄
+
+■ 動きがあった銘柄（前日比±{{ movers_threshold_label|default('3') }}pt以上）
+{% if movers -%}
+{% for r in movers -%}
+{{ '▲' if r.delta_net >= 0 else '▼' }} {{ r.code }} {{ r.name|default('-') }}（{{ m.signed_delta(r.delta_net) }}）: {{ (r.executive_note or r.notes or '')|truncate(90, true, '…') }}
+{% endfor -%}
+{% else -%}
+本日は大きなスコア変動はありません。
+{% endif %}
+
+{% if cautions -%}
+■ 注意ポイント
+{% for r in cautions -%}
+・{{ r.code }} {{ r.name|default('-') }}: {{ (r.top_drivers_bearish_labels|default([], true))|first|default('下落リスク ' + '%.1f'|format(r.downside_weighted|default(0, true))) }}
 {% endfor %}
 
-  平均 {{ avg }}点／強い追い風 {{ tailwind_count }}銘柄／警戒 {{ warning_count }}銘柄
-
-
-■ いまの市場環境（共通スナップショット）
-
-{% if market_snapshot and market_snapshot.summary_lines -%}
-{% for line in market_snapshot.summary_lines -%}
-  ・{{ line }}
-{% endfor -%}
-{% elif market_snapshot and market_snapshot.note -%}
-  ・市場局面：{{ market_snapshot.regime|default('-') }}
-  ・{{ market_snapshot.note }}
-{% else -%}
-  ・市場スナップショット情報なし
-{% endif %}
-
-{% for r in ratings %}
-{{ '=' * 50 }}
-#{{ loop.index }}  {{ r.code }}  {{ r.name|default('') }}
-    総合 {{ '%.1f'|format(r.net_score) }}点／前日比 {{ m.signed_delta(r.delta_net) }}／判定：{{ m.verdict_label(r.net_score) }}
-{{ '=' * 50 }}
-
-■ ひとこと
-{% if r.executive_note -%}
-  {{ r.executive_note }}
-{% elif r.notes -%}
-  {{ r.notes }}
-{% else -%}
-  （詳細コメントは下記レポートを参照してください）
-{% endif %}
-
-■ 追い風の主役（Top5）
-{% set drivers = r.top_drivers_bullish_labels|default([]) -%}
-{% if drivers -%}
-{% for d in drivers -%}
-  ・{{ d }}
-{% endfor -%}
-{% else -%}
-  （Top5データなし）
-{% endif %}
-
-■ 気をつけるべきリスク
-{% set risks = r.top_drivers_bearish_labels|default([]) -%}
-{% if risks -%}
-{% for d in risks -%}
-  ・{{ d }}
-{% endfor -%}
-{% else -%}
-  （リスク要因のデータなし）
-{% endif %}
-
-■ 3ヶ月の見通し
-{% if r.scenarios -%}
-{% for key, sc in r.scenarios.items() -%}
-{%- set label = {'base':'基本ケース','upside':'上振れケース','downside':'下振れケース'}.get(key, key) -%}
-  ・{{ '%-12s'|format(label) }}：{{ sc.description if sc is mapping and sc.description is defined else sc }}
-{% endfor -%}
-{% else -%}
-  ・3シナリオデータなし
-{% endif %}
-
-{% if r.report_path -%}
-→ 全20項目の詳細スコアは {{ r.report_path }} を参照してください
-{% endif %}
-
-{% endfor %}
+{% endif -%}
 {% if criteria_warnings -%}
-
 ■ 観点鮮度の警告
-
 {% for w in criteria_warnings -%}
-  ・{{ w.code }}: criteria_version={{ w.version }} ({{ w.age_days }}日経過, {{ w.mark|default('-') }})
+・{{ w.code }}: criteria_version={{ w.version }} ({{ w.age_days }}日経過, {{ w.mark|default('-') }})
 {% endfor %}
-{% endif %}
 
+{% endif -%}
 ---
-次回 tune 推奨日: {{ next_tune_date|default('-') }}
-送信時刻: {{ sent_at }}
+判定基準: 70〜🟢強い追い風／60〜🟢追い風／40〜🟡中立寄り／30〜🔴警戒／30未満🔴重大警戒
+銘柄別の詳細（Top5・リスク・3シナリオ・20項目スコア）: reports/etf-rating/{銘柄コード}/ のレポート参照
+次回 tune 推奨日: {{ next_tune_date|default('-') }}／送信時刻: {{ sent_at }}

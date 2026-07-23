@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 TEMPLATE_DIR = Path(__file__).resolve().parent / "templates" / "etf_rating"
 JST = timezone(timedelta(hours=9))
 
+
 # calc_params.json の探索パス候補（ホスト直接実行 / Docker / 環境変数）.
 # どこから実行されても見つかるよう複数候補を試す（fail-soft）.
 def _calc_params_candidates() -> List[Path]:
@@ -61,7 +62,8 @@ def _load_calc_params() -> Dict[str, Any]:
             last_err = exc
             continue
     logger.warning(
-        "calc_params load failed (using defaults): last_err=%s", last_err,
+        "calc_params load failed (using defaults): last_err=%s",
+        last_err,
     )
     return {}
 
@@ -75,6 +77,18 @@ SUBJECT_MAX_LEN = int(_MAIL_PARAMS.get("subject_max_chars", 40))
 # 2段階閾値（WARN: ログ警告のみ / ERROR: Gmail clip 現実的リスク警告強化）
 HTML_SIZE_WARN_BYTES = int(_MAIL_PARAMS.get("html_size_warn_kb", 90)) * 1024
 HTML_SIZE_ERROR_BYTES = int(_MAIL_PARAMS.get("html_size_error_kb", 100)) * 1024
+
+# 短文フォーマット（フォールバックテンプレート）用の抽出閾値。
+# Jinja 側で導出すると欠損キーで UndefinedError → メール不送信になるため、
+# 欠損耐性が必要な movers / cautions の抽出は Python 側で行う（SSOT: calc_params.mail）。
+MOVERS_DELTA_PP_THRESHOLD = float(_MAIL_PARAMS.get("movers_delta_pp_threshold", 3.0))
+MOVERS_MAX = int(_MAIL_PARAMS.get("movers_max", 5))
+CAUTIONS_MAX = int(_MAIL_PARAMS.get("cautions_max", 3))
+CAUTIONS_DOWNSIDE_THRESHOLD = float(
+    _MAIL_PARAMS.get("cautions_downside_threshold", 40.0)
+)
+# 判定「警戒」の上限境界（net_score 40 未満で警戒/重大警戒。_macros.j2 verdict_parts と一致）
+_WARNING_NET_SCORE_UPPER = 40.0
 
 # flags リスト内の type 値から「追い風」「警戒」件数を集計するためのキー集合。
 # Phase 1/2 で生成される type 値とテンプレ表記の対応:
@@ -147,7 +161,8 @@ def _count_flag_types(flags: Any) -> Tuple[int, int]:
 def _avg_net_score(ratings: List[Dict[str, Any]]) -> Optional[float]:
     """ratings の net_score 単純平均（小数1位）. データ無しなら None."""
     scores = [
-        r.get("net_score") for r in ratings
+        r.get("net_score")
+        for r in ratings
         if isinstance(r, dict) and isinstance(r.get("net_score"), (int, float))
     ]
     if not scores:
@@ -203,7 +218,11 @@ def _build_subject(payload: Dict[str, Any], today_jst: datetime) -> str:
 
     # 短縮ステップ2: 末尾の警戒部を落とす
     if warn_part and tail_part:
-        body2 = f"{count}銘柄 {avg_part}／{tail_part}" if avg_part else f"{count}銘柄／{tail_part}"
+        body2 = (
+            f"{count}銘柄 {avg_part}／{tail_part}"
+            if avg_part
+            else f"{count}銘柄／{tail_part}"
+        )
         short2 = f"[{md} ETF R] {body2}"
         if len(short2) <= SUBJECT_MAX_LEN:
             return short2
@@ -218,14 +237,18 @@ def _build_subject(payload: Dict[str, Any], today_jst: datetime) -> str:
     return _truncate_subject(subject)
 
 
-def _enrich_ratings(ratings: List[Dict[str, Any]], today_jst: datetime) -> List[Dict[str, Any]]:
+def _enrich_ratings(
+    ratings: List[Dict[str, Any]], today_jst: datetime
+) -> List[Dict[str, Any]]:
     """各 rating に criteria_age_days を付与（既に存在すれば尊重）."""
     enriched: List[Dict[str, Any]] = []
     today = today_jst.date()
     for r in ratings:
         copy = dict(r)
         if copy.get("criteria_age_days") is None:
-            updated = copy.get("criteria_updated_at") or copy.get("criteria_version_date")
+            updated = copy.get("criteria_updated_at") or copy.get(
+                "criteria_version_date"
+            )
             if updated:
                 try:
                     dt = datetime.fromisoformat(str(updated)).date()
@@ -236,6 +259,52 @@ def _enrich_ratings(ratings: List[Dict[str, Any]], today_jst: datetime) -> List[
                 copy["criteria_age_days"] = None
         enriched.append(copy)
     return enriched
+
+
+def _num(value: Any) -> Optional[float]:
+    """数値なら float、それ以外（None/文字列/欠損）は None."""
+    return float(value) if isinstance(value, (int, float)) else None
+
+
+def _select_movers(ratings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """「動きがあった銘柄」: 前日比の絶対値が閾値以上を変動幅の大きい順に最大N件.
+
+    下落側の大変動を切り捨てないよう、符号ではなく絶対値でソートする。
+    delta_net が None/非数値（初回）は対象外。
+    """
+    movers = [
+        r
+        for r in ratings
+        if isinstance(r, dict)
+        and _num(r.get("delta_net")) is not None
+        and abs(_num(r.get("delta_net"))) >= MOVERS_DELTA_PP_THRESHOLD
+    ]
+    movers.sort(key=lambda r: abs(_num(r.get("delta_net"))), reverse=True)
+    return movers[:MOVERS_MAX]
+
+
+def _select_cautions(ratings: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """「注意ポイント」: 警戒・重大警戒（net_score 40未満）または下落リスク高
+    （downside_weighted 40以上）の銘柄を、下落リスクの大きい順に最大N件.
+    """
+
+    def downside(r: Dict[str, Any]) -> float:
+        return _num(r.get("downside_weighted")) or 0.0
+
+    cautions = [
+        r
+        for r in ratings
+        if isinstance(r, dict)
+        and (
+            (
+                _num(r.get("net_score")) is not None
+                and _num(r.get("net_score")) < _WARNING_NET_SCORE_UPPER
+            )
+            or downside(r) >= CAUTIONS_DOWNSIDE_THRESHOLD
+        )
+    ]
+    cautions.sort(key=downside, reverse=True)
+    return cautions[:CAUTIONS_MAX]
 
 
 def _render(payload: Dict[str, Any], today_jst: datetime) -> Tuple[str, str, str]:
@@ -259,6 +328,10 @@ def _render(payload: Dict[str, Any], today_jst: datetime) -> Tuple[str, str, str
         "today_iso": today_jst.strftime("%Y-%m-%d"),
         "sent_at": today_jst.strftime("%H:%M JST"),
         "ratings": ratings,
+        "movers": _select_movers(ratings),
+        "cautions": _select_cautions(ratings),
+        # 見出し「前日比±Npt以上」用（3.0 → "3" 表記）
+        "movers_threshold_label": f"{MOVERS_DELTA_PP_THRESHOLD:g}",
         "flags": payload.get("flags") or [],
         "market_snapshot": payload.get("market_snapshot"),
         # history_sparklines: v2 で実装予定（履歴3日蓄積後）。
@@ -310,9 +383,7 @@ def notify_etf_rating(
     enabled = os.environ.get("ETF_RATING_MAIL_ENABLED", "0") == "1"
     effective_dry_run = dry_run or not enabled
     if not enabled and not dry_run:
-        logger.info(
-            "ETF_RATING_MAIL_ENABLED is not set to '1'; forcing dry-run mode."
-        )
+        logger.info("ETF_RATING_MAIL_ENABLED is not set to '1'; forcing dry-run mode.")
 
     if not payload_path.exists():
         logger.error("payload not found: %s", payload_path)
@@ -333,12 +404,14 @@ def notify_etf_rating(
     if html_bytes > HTML_SIZE_ERROR_BYTES:
         logger.error(
             "HTML body exceeds ERROR threshold %d bytes (got %d) — Gmail will likely clip.",
-            HTML_SIZE_ERROR_BYTES, html_bytes,
+            HTML_SIZE_ERROR_BYTES,
+            html_bytes,
         )
     elif html_bytes > HTML_SIZE_WARN_BYTES:
         logger.warning(
             "HTML body exceeds WARN threshold %d bytes (got %d) — approaching clip limit.",
-            HTML_SIZE_WARN_BYTES, html_bytes,
+            HTML_SIZE_WARN_BYTES,
+            html_bytes,
         )
 
     if effective_dry_run:
@@ -365,7 +438,9 @@ def _cli() -> int:
         return 0
     payload_path = Path(args[0])
     dry_run = "--dry-run" in args[1:]
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+    )
     ok = notify_etf_rating(payload_path, dry_run=dry_run)
     return 0 if ok or dry_run else 1
 

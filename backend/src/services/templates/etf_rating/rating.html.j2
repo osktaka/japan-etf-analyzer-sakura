@@ -1,9 +1,15 @@
 {% import '_macros.j2' as m -%}
-{# HTML版 ETF Rating メール本文.
+{# HTML版 ETF Rating メール本文（短文フォーマット / 2026-07-23〜）.
+   構造: 今日の要点 → スコア一覧 → 動きがあった銘柄 → 注意ポイント → フッタ.
+   銘柄別4部構成ブロック（ひとこと/Top5/リスク/3シナリオ）と20項目 <details> は廃止。
+   詳細は reports/etf-rating/ 配下の銘柄別レポートに委譲する。
+
+   movers / cautions / movers_threshold_label は etf_rating_notifier._render() が
+   calc_params.json の mail.* 閾値で抽出して渡す（欠損キー耐性のため Jinja では導出しない）。
+
    受け付けるキーは正規キーのみ:
    - r.delta_net / r.upside_weighted / r.downside_weighted
-   - r.top_drivers_bullish_labels / r.top_drivers_bearish_labels
-   過去の互換キー（delta / upside_score / top_drivers 等）は 2026-05 削除済み。
+   - r.top_drivers_bearish_labels（注意ポイントの理由に使用）
 #}
 {%- set total = ratings|length -%}
 {%- set avg = (ratings|sum(attribute='net_score') / total)|round(1) if total > 0 else None -%}
@@ -21,27 +27,20 @@
 <body style="margin:0;padding:0;background:#fff;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans','Yu Gothic',sans-serif;font-size:14px;line-height:1.7;color:#222;">
 <div style="max-width:600px;margin:0 auto;padding:16px;">
 
-<h1 style="font-size:18px;margin:0 0 12px;color:#222;">{{ today_iso[5:7]|int }}月{{ today_iso[8:10]|int }}日 終値ベース ETF Rating レポート</h1>
+<h1 style="font-size:17px;margin:0 0 12px;color:#222;">{{ today_iso[5:7]|int }}月{{ today_iso[8:10]|int }}日 ETF Rating（終値ベース・{{ total }}銘柄）</h1>
 
-<p style="margin:0 0 16px;font-size:14px;color:#333;">
-  保有・監視対象の <strong>{{ total }}銘柄</strong>について、中期（3〜12ヶ月）視点で採点しました。
-  各項目は 100点満点、50点が中立、70点以上で「強い追い風」、30点以下で「警戒」と判定しています。
-</p>
-
-<div style="margin:16px 0;padding:12px;background:#f7f9fc;border-left:4px solid #3a7d1b;">
-  <p style="margin:0 0 6px;font-weight:bold;font-size:15px;">■ 今日のひとこと</p>
+<div style="margin:12px 0;padding:12px;background:#f7f9fc;border-left:4px solid #3a7d1b;">
+  <p style="margin:0 0 6px;font-weight:bold;font-size:15px;">■ 今日の要点</p>
   <p style="margin:0;font-size:14px;color:#333;">{{ summary_text|default('（総評コメントなし）') }}</p>
 </div>
 
 <div style="margin:16px 0;">
-  <h2 style="font-size:15px;margin:0 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;">■ 全銘柄スコア一覧</h2>
+  <h2 style="font-size:15px;margin:0 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;">■ スコア一覧</h2>
   <table style="border-collapse:collapse;width:100%;font-size:13px;">
     <thead>
       <tr style="background:#eef2f7;">
         <th style="padding:6px;text-align:left;border:1px solid #ddd;">銘柄</th>
         <th style="padding:6px;text-align:right;border:1px solid #ddd;">総合</th>
-        <th style="padding:6px;text-align:right;border:1px solid #ddd;">追い風</th>
-        <th style="padding:6px;text-align:right;border:1px solid #ddd;">逆風</th>
         <th style="padding:6px;text-align:right;border:1px solid #ddd;">前日比</th>
         <th style="padding:6px;text-align:left;border:1px solid #ddd;">判定</th>
       </tr>
@@ -51,8 +50,6 @@
       <tr style="background:{{ '#fff' if loop.index is odd else '#fafbfc' }};">
         <td style="padding:6px;border:1px solid #ddd;"><strong>{{ r.code }}</strong> {{ r.name|default('-') }}</td>
         <td style="padding:6px;border:1px solid #ddd;text-align:right;"><strong>{{ '%.1f'|format(r.net_score) }}</strong></td>
-        <td style="padding:6px;border:1px solid #ddd;text-align:right;">{{ '%.1f'|format(r.upside_weighted|default(0)) }}</td>
-        <td style="padding:6px;border:1px solid #ddd;text-align:right;">{{ '%.1f'|format(r.downside_weighted|default(0)) }}</td>
         <td style="padding:6px;border:1px solid #ddd;text-align:right;font-size:12px;">{{ m.signed_delta(r.delta_net) }}</td>
         <td style="padding:6px;border:1px solid #ddd;">{{ m.verdict_badge_html(r.net_score) | safe }}</td>
       </tr>
@@ -63,85 +60,30 @@
 </div>
 
 <div style="margin:16px 0;">
-  <h2 style="font-size:15px;margin:0 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;">■ いまの市場環境（共通スナップショット）</h2>
-  {% if market_snapshot and market_snapshot.summary_lines %}
+  <h2 style="font-size:15px;margin:0 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;">■ 動きがあった銘柄（前日比±{{ movers_threshold_label|default('3') }}pt以上）</h2>
+  {% if movers %}
   <ul style="margin:0;padding-left:20px;font-size:13px;">
-    {% for line in market_snapshot.summary_lines %}
-    <li style="margin-bottom:4px;">{{ line }}</li>
+    {% for r in movers %}
+    <li style="margin-bottom:6px;">
+      <strong>{{ r.code }} {{ r.name|default('-') }}（{{ m.signed_delta(r.delta_net) }}）</strong>：{{ (r.executive_note or r.notes or '')|truncate(90, true, '…') }}
+    </li>
     {% endfor %}
   </ul>
-  {% elif market_snapshot and market_snapshot.note %}
-  <p style="margin:4px 0;font-size:13px;">市場局面：<strong>{{ market_snapshot.regime|default('-') }}</strong></p>
-  <p style="margin:4px 0;font-size:13px;color:#555;">{{ market_snapshot.note }}</p>
   {% else %}
-  <p style="margin:8px 0;color:#666;font-size:13px;">市場スナップショット情報なし</p>
+  <p style="margin:4px 0;font-size:13px;color:#555;">本日は大きなスコア変動はありません。</p>
   {% endif %}
 </div>
 
-<div style="margin:24px 0 16px;">
-  <h2 style="font-size:15px;margin:0 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;">■ 銘柄別の詳細</h2>
-  {% for r in ratings %}
-  <div style="margin:12px 0;border:1px solid #ddd;border-radius:4px;padding:12px;">
-    <div style="margin:0 0 8px;font-size:14px;border-bottom:1px solid #eee;padding-bottom:6px;">
-      <strong style="font-size:15px;">#{{ loop.index }} {{ r.code }} {{ r.name|default('') }}</strong><br>
-      総合 <strong>{{ '%.1f'|format(r.net_score) }}点</strong>／前日比 {{ m.signed_delta(r.delta_net) }}／判定 {{ m.verdict_badge_html(r.net_score) | safe }}
-    </div>
-
-    <p style="margin:8px 0 4px;font-weight:bold;font-size:13px;color:#555;">■ ひとこと</p>
-    <p style="margin:0 0 8px;font-size:13px;">
-      {%- if r.executive_note -%}{{ r.executive_note }}
-      {%- elif r.notes -%}{{ r.notes }}
-      {%- else -%}（詳細コメントは下記折りたたみ内のレポートを参照してください）
-      {%- endif -%}
-    </p>
-
-    {%- set drivers = r.top_drivers_bullish_labels|default([]) %}
-    {% if drivers %}
-    <p style="margin:8px 0 4px;font-weight:bold;font-size:13px;color:#555;">■ 追い風の主役（Top5）</p>
-    <ul style="margin:0 0 8px;padding-left:20px;font-size:13px;">
-      {% for d in drivers %}<li style="margin-bottom:2px;">{{ d }}</li>{% endfor %}
-    </ul>
-    {% endif %}
-
-    {%- set risks = r.top_drivers_bearish_labels|default([]) %}
-    {% if risks %}
-    <p style="margin:8px 0 4px;font-weight:bold;font-size:13px;color:#555;">■ 気をつけるべきリスク</p>
-    <ul style="margin:0 0 8px;padding-left:20px;font-size:13px;">
-      {% for d in risks %}<li style="margin-bottom:2px;">{{ d }}</li>{% endfor %}
-    </ul>
-    {% endif %}
-
-    {% if r.scenarios %}
-    <p style="margin:8px 0 4px;font-weight:bold;font-size:13px;color:#555;">■ 3ヶ月の見通し</p>
-    <ul style="margin:0 0 8px;padding-left:20px;font-size:13px;">
-      {% for key, sc in r.scenarios.items() %}
-      {%- set label = {'base':'基本ケース','upside':'上振れケース','downside':'下振れケース'}.get(key, key) -%}
-      <li style="margin-bottom:2px;"><strong>{{ label }}</strong>：{{ sc.description if sc is mapping and sc.description is defined else sc }}</li>
-      {% endfor %}
-    </ul>
-    {% endif %}
-
-    {% if r.detail_summary_lines or r.report_path %}
-    <details style="margin:8px 0 0;border-top:1px dashed #ddd;padding-top:6px;">
-      <summary style="cursor:pointer;font-size:12px;color:#3a7d1b;">詳細を見る（20項目スコアと採点根拠）</summary>
-      <div style="margin-top:6px;font-size:12px;color:#444;">
-        {% if r.detail_summary_lines %}
-        <ul style="margin:0;padding-left:18px;">
-          {% for ln in r.detail_summary_lines %}<li style="margin-bottom:2px;">{{ ln }}</li>{% endfor %}
-        </ul>
-        {% endif %}
-        {% if r.report_path %}
-        <p style="margin:6px 0 0;color:#666;">レポート: {{ r.report_path }}</p>
-        {% endif %}
-        <p style="margin:6px 0 0;color:#888;">
-          観点version: <span style="color:{{ m.version_freshness_color(r.criteria_age_days) }};">{{ r.criteria_version|default('-') }}{% if r.criteria_age_days is not none %}（{{ r.criteria_age_days }}日経過）{% endif %}</span>
-        </p>
-      </div>
-    </details>
-    {% endif %}
-  </div>
-  {% endfor %}
+{% if cautions %}
+<div style="margin:16px 0;padding:10px 12px;background:#fff8e1;border-left:4px solid #c79100;">
+  <p style="margin:0 0 6px;font-weight:bold;font-size:14px;">■ 注意ポイント</p>
+  <ul style="margin:0;padding-left:20px;font-size:13px;">
+    {% for r in cautions %}
+    <li style="margin-bottom:4px;"><strong>{{ r.code }} {{ r.name|default('-') }}</strong>: {{ (r.top_drivers_bearish_labels|default([], true))|first|default('下落リスク ' + '%.1f'|format(r.downside_weighted|default(0, true))) }}</li>
+    {% endfor %}
+  </ul>
 </div>
+{% endif %}
 
 {% if criteria_warnings %}
 <div style="margin:16px 0;">
@@ -156,8 +98,10 @@
 </div>
 {% endif %}
 
-<hr style="border:none;border-top:1px solid #ddd;margin:24px 0 12px;">
-<div style="color:#666;font-size:12px;">
+<hr style="border:none;border-top:1px solid #ddd;margin:20px 0 12px;">
+<div style="color:#666;font-size:12px;line-height:1.6;">
+  <p style="margin:0 0 4px;">判定基準: 70〜🟢強い追い風／60〜🟢追い風／40〜🟡中立寄り／30〜🔴警戒／30未満🔴重大警戒</p>
+  <p style="margin:0 0 4px;">銘柄別の詳細（Top5・リスク・3シナリオ・20項目スコア）は reports/etf-rating/{銘柄コード}/ のレポートを参照してください。</p>
   <p style="margin:0;">次回 tune 推奨日: {{ next_tune_date|default('-') }} ／ 送信時刻: {{ sent_at }}</p>
 </div>
 

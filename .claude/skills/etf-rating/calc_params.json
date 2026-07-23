@@ -70,6 +70,13 @@
     "subject_max_chars": 40,
     "html_size_warn_kb": 90,
     "html_size_error_kb": 100,
-    "_description": "Gmail クリップ回避のため HTML 100KB 未満。件名40字以内（モバイル省略防止）"
+    "plain_body_target_chars": 2000,
+    "key_points_max": 3,
+    "movers_delta_pp_threshold": 3.0,
+    "movers_max": 5,
+    "cautions_max": 3,
+    "cautions_downside_threshold": 40.0,
+    "_description": "Gmail クリップ回避のため HTML 100KB 未満。件名40字以内（モバイル省略防止）",
+    "_short_format_description": "2026-07-23 短文フォーマット化: 本文はプレーン2,000字目安。要点は最大3行、『動きがあった銘柄』は前日比±movers_delta_pp_threshold pp 以上（最大 movers_max 件）、注意ポイントは最大 cautions_max 行。銘柄別4部構成ブロックは廃止し詳細はレポートファイルへ委譲"
   }
 }

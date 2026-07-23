@@ -143,7 +143,7 @@ frontend/
 | 07:00 | 平日（祝日スキップ） | `daily_advisor_morning`（寄り付き前: overnight市況＋前夜決定事項リマインダー） | **dev** | `advisor_morning.log` |
 | 17:30 | 平日（祝日スキップ） | `daily_advisor_evening`（終値ベース完全状態: 銘柄別配分＋採用外＋売買プラン。前夜サマリJSON永続化） | **dev** | `advisor_evening.log` |
 | 18:00 | 金（祝日でも実行） | `daily_advisor_weekly` | **dev** | `advisor_weekly.log` |
-| 月-木 18:00 / 金 18:15 | 平日（祝日スキップ） | `etf_rating_daily`（target_holdings + watchlist 全銘柄を上昇10×下落10で採点、1通フル詳細メール配信＝件名で強い追い風/警戒件数を速報、本文は冒頭サマリ＋全銘柄スコア表＋市場環境＋銘柄別4部構成「ひとこと／Top5／リスク／3シナリオ」＋20項目スコアは `<details>` 折りたたみ。金曜のみ 18:15 にずらすのは weekly 18:00 との並列回避） | **dev** | `etf_rating.log` |
+| 月-木 18:00 / 金 18:15 | 平日（祝日スキップ） | `etf_rating_daily`（target_holdings + watchlist 全銘柄を上昇10×下落10で採点、1通の短文メール配信＝件名で強い追い風/警戒件数を速報、本文は「今日の要点3行＋スコア一覧＋動きがあった銘柄（前日比±3pt以上）＋注意ポイント」でプレーン2,000字以内。銘柄別フル詳細は reports/etf-rating/ のレポートに委譲。金曜のみ 18:15 にずらすのは weekly 18:00 との並列回避） | **dev** | `etf_rating.log` |
 | `*/5 9-15` | 平日（祝日スキップ） | `mechanical_rule_watcher` | **dev** | `advisor_watcher.log` |
 
 月曜06:00は `run_chain` による fail-stop 連結（同期実行）。途中で失敗した場合、後続バッチはスキップされる（本番crontabの `&&` 連結と同等の挙動）。

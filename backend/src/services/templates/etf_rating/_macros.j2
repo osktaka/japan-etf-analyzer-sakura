@@ -29,9 +29,9 @@
 <span style="display:inline-block;background:{{ parts[2] }};color:{{ parts[3] }};padding:2px 8px;border-radius:3px;font-weight:bold;font-size:13px;">{{ parts[1] }}</span>
 {%- endmacro -%}
 
-{# 差分プレフィックス（+/-記号付き） None は "初回" を返す（前日比履歴なし）. #}
+{# 差分プレフィックス（+/-記号付き） None/キー欠損は "初回" を返す（前日比履歴なし）. #}
 {%- macro signed_delta(value) -%}
-{%- if value is none -%}初回{%- else -%}{{ '%+.1f'|format(value) }}pt{%- endif -%}
+{%- if value is not defined or value is none -%}初回{%- else -%}{{ '%+.1f'|format(value) }}pt{%- endif -%}
 {%- endmacro -%}
 
 {# 観点versionの鮮度色（HTML）90日未満=緑, 180日未満=黄, それ以上=赤 #}
