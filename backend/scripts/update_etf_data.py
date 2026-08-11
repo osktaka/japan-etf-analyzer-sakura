@@ -51,6 +51,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from base_batch import BaseBatchScript  # noqa: E402
+from src.utils.market_calendar import (  # noqa: E402
+    get_next_market_day,
+    get_previous_market_day,
+    is_market_open_day,
+)
 
 logging.getLogger("yfinance").setLevel(logging.WARNING)
 
@@ -63,31 +68,17 @@ JST = timezone(timedelta(hours=9))  # Japan Standard Time
 MARKET_DATA_AVAILABLE_TIME = time(16, 0)  # 16:00 JST（yfinance遅延考慮）
 
 
-def is_market_open_day(date) -> bool:
-    """指定日が営業日（平日かつ非祝日）かどうか"""
-    import jpholiday
+def should_recalc_performance(
+    success_count: int, skip_performance: bool, dry_run: bool
+) -> bool:
+    """performance_cache を再計算すべきか.
 
-    if date.weekday() >= 5:  # 土日
+    価格データが1件も更新されなかった実行（祝日は全銘柄が事前スキップされる）では、
+    再計算しても同じ値が出るだけで466銘柄×8期間の読み出しが無駄になる。
+    """
+    if dry_run or skip_performance:
         return False
-    if jpholiday.is_holiday(date):  # 日本の祝日
-        return False
-    return True
-
-
-def get_previous_market_day(date):
-    """前営業日を取得"""
-    prev_day = date - timedelta(days=1)
-    while not is_market_open_day(prev_day):
-        prev_day -= timedelta(days=1)
-    return prev_day
-
-
-def get_next_market_day(date):
-    """次の営業日を取得"""
-    next_day = date + timedelta(days=1)
-    while not is_market_open_day(next_day):
-        next_day += timedelta(days=1)
-    return next_day
+    return success_count > 0
 
 
 def should_skip_fetch(latest_date, updated_at) -> Tuple[bool, str]:
@@ -753,7 +744,16 @@ class UpdateEtfDataScript(BaseBatchScript):
                 self._final_progress_update(last_item_code=etfs[-1]["code"])
 
             # パフォーマンスキャッシュの更新
-            if not self.args.dry_run and not self.args.skip_performance:
+            recalc = should_recalc_performance(
+                success_count, self.args.skip_performance, self.args.dry_run
+            )
+            if not recalc and not self.args.dry_run and not self.args.skip_performance:
+                self.logger.info("-" * 60)
+                self.logger.info(
+                    f"No price data updated ({skip_count} skipped) - "
+                    "skipping performance cache and momentum labels"
+                )
+            if recalc:
                 self.logger.info("-" * 60)
                 self.logger.info("Starting performance cache calculation...")
                 # 全ETFを対象に更新（再開時も常に全件更新）
@@ -765,8 +765,8 @@ class UpdateEtfDataScript(BaseBatchScript):
                     f"Performance cache: {perf_success} success, {perf_fail} failed"
                 )
 
-            # モメンタムラベルの更新（パフォーマンスキャッシュ依存、常に実行）
-            if not self.args.dry_run:
+            # モメンタムラベルの更新（パフォーマンスキャッシュ依存）
+            if not self.args.dry_run and success_count > 0:
                 self.logger.info("-" * 60)
                 codes = [etf["code"] for etf in all_etfs]
                 update_momentum_labels(codes, self.logger)

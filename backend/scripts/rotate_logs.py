@@ -22,7 +22,7 @@ from src.repositories.batch_log_repository import BatchLogRepository  # noqa: E4
 
 # Constants
 LOG_DIR = "./logs"
-SIZE_THRESHOLD_MB = 10
+SIZE_THRESHOLD_MB = 5  # 日次増分がこれを超えないと1日でローテーションされない
 MAX_GENERATIONS = 5
 RETENTION_DAYS = 90
 

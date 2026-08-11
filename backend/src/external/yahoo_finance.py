@@ -65,7 +65,8 @@ class YahooFinanceClient:
         # 1. DBキャッシュを確認（当日データがあればキャッシュ有効）
         cached = YahooFinanceClient._get_from_cache(code, days)
         if cached and YahooFinanceClient._is_cache_valid(cached):
-            logger.info(f"Using cached data for {code}")
+            # 1銘柄あたり8期間ぶん出るため INFO だとログが日次8MB規模に膨らむ
+            logger.debug(f"Using cached data for {code}")
             return cached
 
         # 2. キャッシュがない/古い場合はyfinanceから取得

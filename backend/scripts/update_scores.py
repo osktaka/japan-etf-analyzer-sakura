@@ -28,6 +28,7 @@ from src.repositories import (
     EtfMetricsHistoryRepository,
 )
 from src.services.scoring_service import ScoringService
+from src.utils.market_calendar import is_market_open_day
 from src.utils.momentum import get_momentum_label
 
 
@@ -59,10 +60,8 @@ class UpdateScoresBatch(BaseBatchScript):
     def execute(self) -> int:
         """メイン処理"""
         # 営業日チェック（祝日・土日はスキップ）
-        import jpholiday
-
         today = date.today()
-        if today.weekday() >= 5 or jpholiday.is_holiday(today):
+        if not is_market_open_day(today):
             self.logger.info(f"Non-market day ({today}), skipping score update")
             return 0
 

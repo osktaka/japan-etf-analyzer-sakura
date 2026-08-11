@@ -11,11 +11,13 @@ Options:
     --codes CODES       Comma-separated ETF codes (default: all DB ETFs)
     --limit N           Limit number of ETFs to process
     --rate-limit N      Rate limit in seconds between requests (default: 1.5)
+    --force             Run even on non-market days (holidays/weekends)
     --dry-run           Show what would be done without making changes
 """
 import re
 import sys
 import time
+from datetime import date
 from pathlib import Path
 from typing import Optional
 
@@ -24,6 +26,7 @@ from bs4 import BeautifulSoup
 
 sys.path.insert(0, str(Path(__file__).parent))
 from base_batch import BaseBatchScript  # noqa: E402
+from src.utils.market_calendar import is_market_open_day  # noqa: E402
 
 MINKABU_URL = "https://minkabu.jp/stock/{code}"
 USER_AGENT = (
@@ -278,9 +281,24 @@ class SyncFromMinkabuScript(BaseBatchScript):
             type=int,
             help="Limit number of ETFs to process",
         )
+        parser.add_argument(
+            "--force",
+            action="store_true",
+            help="Run even on non-market days (holidays/weekends)",
+        )
 
     def execute(self) -> int:
         """Main execution logic."""
+        # 非営業日は配当利回り・純資産額が動かないため、466件のスクレイプごと見送る。
+        # 本番crontabは曜日指定のみで祝日を判別できないため、ここで止める必要がある。
+        today = date.today()
+        if not self.args.force and not is_market_open_day(today):
+            self.logger.info(
+                f"Non-market day ({today}), skipping minkabu sync "
+                "(use --force to run anyway)"
+            )
+            return 0
+
         # Build target code list
         codes = self._resolve_target_codes()
         if not codes:
