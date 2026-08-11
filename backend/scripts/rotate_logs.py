@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent))
 from base_batch import BaseBatchScript  # noqa: E402
 from src.repositories.batch_log_repository import BatchLogRepository  # noqa: E402
@@ -187,7 +188,9 @@ class RotateLogsScript(BaseBatchScript):
                     )
 
             # Delete old files
-            self.logger.info(f"Checking for files older than {self.args.retention_days} days...")
+            self.logger.info(
+                f"Checking for files older than {self.args.retention_days} days..."
+            )
             actions = delete_old_files(
                 log_dir, self.args.retention_days, dry_run=self.args.dry_run
             )
@@ -200,10 +203,14 @@ class RotateLogsScript(BaseBatchScript):
 
             # Cleanup DB logs
             self.logger.info("Cleaning up database batch logs...")
-            db_action = cleanup_db_logs(self.args.retention_days, dry_run=self.args.dry_run)
+            db_action = cleanup_db_logs(
+                self.args.retention_days, dry_run=self.args.dry_run
+            )
             self.logger.info(f"  {db_action}")
 
-            self.logger.info(f"Log rotation completed. Total actions: {len(all_actions)}")
+            self.logger.info(
+                f"Log rotation completed. Total actions: {len(all_actions)}"
+            )
 
             # バッチログ終了（成功）
             self._finish_batch_log(success=True)

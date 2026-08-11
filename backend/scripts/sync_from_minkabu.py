@@ -33,9 +33,7 @@ USER_AGENT = (
 )
 
 
-def fetch_minkabu_data(
-    code: str, rate_limit: float = 1.5
-) -> dict:
+def fetch_minkabu_data(code: str, rate_limit: float = 1.5) -> dict:
     """Fetch dividend yield and total assets from Minkabu for a given ETF code.
 
     Args:
@@ -63,9 +61,7 @@ def fetch_minkabu_data(
     }
 
 
-def fetch_dividend_yield(
-    code: str, rate_limit: float = 1.5
-) -> Optional[float]:
+def fetch_dividend_yield(code: str, rate_limit: float = 1.5) -> Optional[float]:
     """Fetch dividend yield from Minkabu for a given ETF code.
 
     Backward-compatible wrapper around fetch_minkabu_data.
@@ -139,9 +135,7 @@ def _parse_total_assets(html: str) -> Optional[int]:
         if "純資産" in text:
             td = th.find_next_sibling("td")
             if td:
-                value = _extract_total_assets_value(
-                    td.get_text(strip=True)
-                )
+                value = _extract_total_assets_value(td.get_text(strip=True))
                 if value is not None:
                     return value
 
@@ -152,9 +146,7 @@ def _parse_total_assets(html: str) -> Optional[int]:
         if "純資産" in text:
             dd = dt.find_next_sibling("dd")
             if dd:
-                value = _extract_total_assets_value(
-                    dd.get_text(strip=True)
-                )
+                value = _extract_total_assets_value(dd.get_text(strip=True))
                 if value is not None:
                     return value
 
@@ -362,9 +354,7 @@ class SyncFromMinkabuScript(BaseBatchScript):
 
         return codes
 
-    def _process_single(
-        self, code: str, index: int, total: int
-    ) -> bool:
+    def _process_single(self, code: str, index: int, total: int) -> bool:
         """Process a single ETF code.
 
         Args:

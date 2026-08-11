@@ -1,0 +1,6 @@
+# backend/scripts/ は本番（さくら）でスクリプト単体実行するため、import 前に
+# sys.path を組み立てる必要がある（CLAUDE.md「スクリプト作成時の環境変数設定」）。
+# この構造上 E402 は避けられないので、該当ディレクトリのみ除外する。
+[lint.per-file-ignores]
+"scripts/*.py" = ["E402"]
+"tests/**/*.py" = ["E402"]

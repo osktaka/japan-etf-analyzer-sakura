@@ -34,18 +34,29 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import requests
 
 original_prepare_request = requests.Session.prepare_request
+
+
 def custom_prepare_request(self, request):
     # 常に新しいUser-Agentに置き換える（yfinanceの古いUser-Agentを上書き）
-    request.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    request.headers[
+        "User-Agent"
+    ] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     return original_prepare_request(self, request)
+
+
 requests.Session.prepare_request = custom_prepare_request
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent))
 from base_batch import BaseBatchScript  # noqa: E402
 
 logging.getLogger("yfinance").setLevel(logging.WARNING)
+
+# save_to_db / check_and_register_split は logger を引数で受け取らないため、
+# モジュールスコープの logger が必要（未定義だと警告出力時に NameError になる）
+logger = logging.getLogger(__name__)
 
 RATE_LIMIT_SECONDS = 1.0  # Yahoo Finance API rate limit対策
 JST = timezone(timedelta(hours=9))  # Japan Standard Time
@@ -93,7 +104,10 @@ def should_skip_fetch(latest_date, updated_at) -> Tuple[bool, str]:
         updated_at_jst = updated_at.replace(tzinfo=timezone.utc).astimezone(JST)
         if updated_at_jst.time() >= MARKET_DATA_AVAILABLE_TIME:
             next_market_day = get_next_market_day(today_jst)
-            return True, f"Today's data fetched after 16:00, next market day: {next_market_day}"
+            return (
+                True,
+                f"Today's data fetched after 16:00, next market day: {next_market_day}",
+            )
 
     # Case 2: 今日が非営業日で、直前営業日のデータを取得済み
     if not is_market_open_day(today_jst):
@@ -104,7 +118,9 @@ def should_skip_fetch(latest_date, updated_at) -> Tuple[bool, str]:
     return False, ""
 
 
-def get_etf_price_status(code: str) -> Tuple[bool, Optional[datetime], Optional[datetime]]:
+def get_etf_price_status(
+    code: str
+) -> Tuple[bool, Optional[datetime], Optional[datetime]]:
     """Check if ETF has existing price data and get the latest date and update time.
 
     Args:
@@ -116,7 +132,6 @@ def get_etf_price_status(code: str) -> Tuple[bool, Optional[datetime], Optional[
         - latest_date: The most recent date in price history, or None if no data
         - updated_at: The updated_at timestamp of the latest record, or None if no data
     """
-    from sqlalchemy import func
 
     from src.models import PriceHistory
 
@@ -205,15 +220,23 @@ def update_single_etf(
 
                 # Convert updated_at (UTC) to JST for comparison
                 if updated_at:
-                    updated_at_jst = updated_at.replace(tzinfo=timezone.utc).astimezone(JST)
+                    updated_at_jst = updated_at.replace(tzinfo=timezone.utc).astimezone(
+                        JST
+                    )
                     updated_time_jst = updated_at_jst.time()
                 else:
                     updated_time_jst = None
 
-                if latest_date == today_jst and updated_time_jst and updated_time_jst < cutoff_time:
+                if (
+                    latest_date == today_jst
+                    and updated_time_jst
+                    and updated_time_jst < cutoff_time
+                ):
                     # Today's data updated before 16:00 JST - re-fetch from latest date
                     start_date = latest_date
-                    logger.info(f"[SMART] {code}: Re-fetching today's data (updated at {updated_at_jst.strftime('%H:%M:%S')} JST)")
+                    logger.info(
+                        f"[SMART] {code}: Re-fetching today's data (updated at {updated_at_jst.strftime('%H:%M:%S')} JST)"
+                    )
                 else:
                     # Either not today, or already updated after 16:00 - fetch next day onwards
                     start_date = latest_date + timedelta(days=1)
@@ -250,9 +273,7 @@ def update_single_etf(
         market_price = round(float(df["Close"].iloc[-1]), 2) if not df.empty else None
         update_etf_info(code, None, None, market_price)
         mode_str = "[FULL]" if full else ("[INCR]" if smart else "")
-        logger.info(
-            f"Updated {code} {mode_str}: {len(df)} records"
-        )
+        logger.info(f"Updated {code} {mode_str}: {len(df)} records")
         return "success"
 
     except Exception as e:
@@ -290,9 +311,11 @@ def update_etf_info(
 
         # listing_dateがNULLの場合、PriceHistoryの最古日付で補完
         if etf.listing_date is None:
-            oldest = db.session.query(func.min(PriceHistory.date)).filter(
-                PriceHistory.etf_code == code
-            ).scalar()
+            oldest = (
+                db.session.query(func.min(PriceHistory.date))
+                .filter(PriceHistory.etf_code == code)
+                .scalar()
+            )
             if oldest is not None:
                 etf.listing_date = oldest
 
@@ -588,8 +611,8 @@ def update_momentum_labels(codes, logger):
     updated = 0
 
     for code in codes:
-        cache_1m = PerformanceCache.query.filter_by(etf_code=code, period='1m').first()
-        cache_3m = PerformanceCache.query.filter_by(etf_code=code, period='3m').first()
+        cache_1m = PerformanceCache.query.filter_by(etf_code=code, period="1m").first()
+        cache_3m = PerformanceCache.query.filter_by(etf_code=code, period="3m").first()
 
         rate_1m = cache_1m.regression_rate if cache_1m else None
         rate_3m = cache_3m.regression_rate if cache_3m else None
@@ -680,10 +703,12 @@ class UpdateEtfDataScript(BaseBatchScript):
         if parent_last_item_code:
             resume_index = next(
                 (i for i, e in enumerate(etfs) if e["code"] > parent_last_item_code),
-                len(etfs)
+                len(etfs),
             )
             etfs = etfs[resume_index:]
-            self.logger.info(f"Resuming from index {resume_index}, {len(etfs)} ETFs remaining")
+            self.logger.info(
+                f"Resuming from index {resume_index}, {len(etfs)} ETFs remaining"
+            )
 
         if self.args.limit:
             etfs = etfs[: self.args.limit]
@@ -698,10 +723,16 @@ class UpdateEtfDataScript(BaseBatchScript):
         try:
             for i, etf in enumerate(etfs, 1):
                 code = etf["code"]
-                self.logger.info(f"[{i}/{len(etfs)}] Processing {code} ({etf.get('name', '')})")
+                self.logger.info(
+                    f"[{i}/{len(etfs)}] Processing {code} ({etf.get('name', '')})"
+                )
 
                 result = update_single_etf(
-                    code, self.logger, dry_run=self.args.dry_run, full=self.args.full, smart=self.args.smart
+                    code,
+                    self.logger,
+                    dry_run=self.args.dry_run,
+                    full=self.args.full,
+                    smart=self.args.smart,
                 )
                 if result == "success":
                     success_count += 1
@@ -752,7 +783,9 @@ class UpdateEtfDataScript(BaseBatchScript):
             )
 
             self.logger.info("=" * 60)
-            self.logger.info(f"Update completed: {success_count} success, {skip_count} skipped, {fail_count} failed")
+            self.logger.info(
+                f"Update completed: {success_count} success, {skip_count} skipped, {fail_count} failed"
+            )
             self.logger.info("=" * 60)
 
             return 0 if fail_count == 0 else 1
