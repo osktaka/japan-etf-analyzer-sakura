@@ -174,7 +174,7 @@
 ## 出力ファイル
 
 - **ファイルパス**: `{WORK_DIR}/10_meeting_{MEETING_ID}.md`
-- **MEETING_ID**: 各会議指示書で定義（`risk_return` / `allocation` / `quality` / `4`）
+- **MEETING_ID**: 各会議指示書で定義（`1` / `2` / `3` / `4`）
 
 ## 出力構造
 

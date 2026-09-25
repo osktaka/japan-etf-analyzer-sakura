@@ -8,8 +8,8 @@
 
 ## 会議設定
 
-- **MEETING_ID**: `allocation`
-- **出力ファイル**: `{WORK_DIR}/10_meeting_allocation.md`
+- **MEETING_ID**: `2`
+- **出力ファイル**: `{WORK_DIR}/10_meeting_2.md`
 - **テーマ**: 「このポートフォリオは適切に分散されているか」
 
 ---

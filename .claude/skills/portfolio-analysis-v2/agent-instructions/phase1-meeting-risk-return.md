@@ -8,8 +8,8 @@
 
 ## 会議設定
 
-- **MEETING_ID**: `risk_return`
-- **出力ファイル**: `{WORK_DIR}/10_meeting_risk_return.md`
+- **MEETING_ID**: `1`
+- **出力ファイル**: `{WORK_DIR}/10_meeting_1.md`
 - **テーマ**: 「このポートフォリオのリスク・リターン効率は適切か」
 
 ---

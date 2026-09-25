@@ -56,7 +56,7 @@ mkdir -p "${WORK_DIR}"
 - **禁止**: Phase 1エージェントが `20_merge_meeting.md` を参照すること（存在しない段階のため当然だが明示）
 
 **Phase 2 エージェント向け読み込みルール**:
-- `10_meeting_risk_return.md`, `10_meeting_allocation.md`, `10_meeting_quality.md`, `10_meeting_4.md` を読む
+- `10_meeting_1.md`, `10_meeting_2.md`, `10_meeting_3.md`, `10_meeting_4.md` を読む
 - ただし**各ファイルの「## 議事録」セクション以降のみ**読む（会議トランスクリプト全文は不要）
 - `05_shared_calculations.md` の「計算メタデータ」セクションのみ参照（詳細計算は不要）
 

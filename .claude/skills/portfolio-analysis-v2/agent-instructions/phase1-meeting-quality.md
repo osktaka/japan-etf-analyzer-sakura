@@ -8,8 +8,8 @@
 
 ## 会議設定
 
-- **MEETING_ID**: `quality`
-- **出力ファイル**: `{WORK_DIR}/10_meeting_quality.md`
+- **MEETING_ID**: `3`
+- **出力ファイル**: `{WORK_DIR}/10_meeting_3.md`
 - **テーマ**: 「各保有銘柄は継続保有に値するか」
 
 ---
