@@ -91,6 +91,31 @@ def diff_rows(local: Dict[str, Any], remote: Dict[str, Any]) -> Dict[str, List]:
     return out
 
 
+def row_keys(payload: Dict[str, Any]) -> Dict[str, List]:
+    """Sorted row keys of an export, JSON-serializable (the "last synced" snapshot)."""
+    return {
+        name: sorted(list(_row_key(kind, r)) for r in payload[name])
+        for kind, name in (("trade", "trades"), ("cash", "cash_flows"))
+    }
+
+
+def locally_registered_rows(
+    diff: Dict[str, List], snapshot: Optional[Dict[str, List]]
+) -> List[Tuple]:
+    """local-only rows that were NOT in the last synced snapshot.
+
+    前回同期した行が local-only になるのは、本番で訂正・削除されたとき（置換でよい）。
+    スナップショットに無い local-only 行は、ローカルで登録された行なので消してはいけない。
+    スナップショットが無いときは判別できないため、すべてを該当として扱う（安全側）。
+    """
+    out: List[Tuple] = []
+    for name in ("trades", "cash_flows"):
+        have = Counter(tuple(k) for k in (snapshot or {}).get(name, []))
+        extra = Counter(tuple(k) for k in diff[f"{name}_only_local"]) - have
+        out.extend(extra.elements())
+    return out
+
+
 def classify_diff(diff: Dict[str, List]) -> Dict[str, Dict[str, Any]]:
     """Split a diff into created_at-only differences and real add/delete rows.
 

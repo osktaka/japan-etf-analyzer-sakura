@@ -7,6 +7,8 @@
 """
 
 import argparse
+import json
+from datetime import datetime
 import os
 import sqlite3
 import sys
@@ -30,6 +32,7 @@ sys.path.insert(0, str(BACKEND_DIR))
 import requests  # noqa: E402
 
 PROD_URL = "https://kima3.net/japan-etf-analyzer"
+BATCH_NAME = "sync_trades_from_prod"
 
 
 def parse_args() -> argparse.Namespace:
@@ -43,6 +46,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--execute", action="store_true", help="apply (default: dry-run)"
+    )
+    parser.add_argument(
+        "--auto",
+        action="store_true",
+        help="unattended mode for cron: implies --execute, refuses to delete"
+        " locally registered rows, records changes/failures in batch_logs",
     )
     parser.add_argument(
         "--allow-empty", action="store_true", help="allow replacing with empty data"
@@ -94,6 +103,47 @@ def backup_db(app, protect: Optional[Path] = None) -> Path:
     return backup_sqlite(src, src.parent / "backups", protect=protect)
 
 
+def snapshot_path(app, user: str) -> Path:
+    """Last-synced row keys. DB と同じ data/ に置く（backend/data/ は git 管理外）。"""
+    uri = app.config["SQLALCHEMY_DATABASE_URI"]
+    return Path(uri.replace("sqlite:///", "", 1)).parent / f"sync_state_{user}.json"
+
+
+def load_snapshot(path: Path) -> Optional[dict]:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def save_snapshot(path: Path, keys: dict) -> None:
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(keys), encoding="utf-8")
+    tmp.replace(path)
+
+
+def _kind(error: Optional[str]) -> str:
+    return (error or "").split(":")[0]
+
+
+def send_failure_alert(error: str) -> None:
+    """失敗の連続の初回だけ通知する。BATCH_ALERT_ENABLED=1 のときのみ（batch_monitor と同じ）。"""
+    if os.environ.get("BATCH_ALERT_ENABLED", "0").lower() not in ("1", "true"):
+        return
+    from src.external.email_client import EmailClient
+
+    try:
+        EmailClient().send(
+            f"[batch-alert] {BATCH_NAME} が失敗しました",
+            f"{BATCH_NAME} が失敗しました。復旧するまで毎時失敗しますが、通知は初回のみです。\n\n"
+            f"error: {error}\n\n"
+            "原因の確認: logs/trades_sync.log。local-only の場合は手動で "
+            "`python3 scripts/sync_trades_from_prod.py` の差分を確認し、`--execute` する。",
+        )
+    except Exception as exc:  # noqa: BLE001 - 通知失敗で同期の終了コードを変えない
+        print(f"alert failed: {exc!r}")
+
+
 def print_diff(local_summary: dict, source_summary: dict, classified: dict) -> None:
     print(f"{'':18}{'local':>16}{'source':>16}")
     for key, sv in source_summary.items():
@@ -122,6 +172,8 @@ def is_synced(diff: dict) -> bool:
 
 def main() -> int:
     args = parse_args()
+    if args.auto:
+        args.execute = True
     # 本番シェルで誤って実行すると自分自身を置換対象にしてしまう。.env を読まない
     # スクリプトでは環境変数のガードが働かないため、手順上の実行場所である
     # Docker コンテナ内であることを肯定的に確認する。
@@ -132,49 +184,94 @@ def main() -> int:
 
     from src.app import create_app
     from src.models import User
+    from src.models import BatchLog
+    from src.repositories.batch_log_repository import BatchLogRepository
     from src.services.user_data_sync_service import (
         SyncError,
         classify_diff,
         diff_rows,
         export_user_data,
+        locally_registered_rows,
         read_user_data_from_sqlite,
         replace_user_data,
+        row_keys,
         summarize,
         validate_payload,
     )
 
-    try:
-        if args.restore_from:
-            source = read_user_data_from_sqlite(Path(args.restore_from), args.user)
-        else:
-            source = fetch_remote(args.url, args.user)
-    except (RuntimeError, SyncError, OSError, sqlite3.Error) as exc:
-        print(f"source failed: {exc}")
-        return 1
-
+    started = datetime.utcnow()
     app = create_app()
+
+    def done(code: int, error: Optional[str] = None, changed: bool = False) -> int:
+        # 毎時実行で差分なしの回（1日24回）は行を作らない。残すのは変更・失敗の開始・復旧だけ。
+        # 失敗の連続中は行も通知も増やさない（直らない失敗が毎時24行・24通になるため）
+        if not args.auto:
+            return code
+        repo = BatchLogRepository()
+        last = (
+            BatchLog.query.filter_by(batch_name=BATCH_NAME)
+            .order_by(BatchLog.id.desc())
+            .first()
+        )
+        was_failed = bool(last and last.status == "failed")
+        # 同じ種類の失敗の連続だけを畳む。原因の種類が変われば新たに記録・通知する
+        same_kind = was_failed and _kind(last.error_message) == _kind(error)
+        if code != 0 and same_kind:
+            return code
+        if code == 0 and not (changed or was_failed):
+            return code
+        log = repo.create(BATCH_NAME, "running", started)
+        repo.update(
+            log.id,
+            status="success" if code == 0 else "failed",
+            finished_at=datetime.utcnow(),
+            error_message=error,
+        )
+        if code != 0:
+            send_failure_alert(error or "")
+        return code
+
     with app.app_context():
+        try:
+            if args.restore_from:
+                source = read_user_data_from_sqlite(Path(args.restore_from), args.user)
+            else:
+                source = fetch_remote(args.url, args.user)
+        except (RuntimeError, SyncError, OSError, sqlite3.Error) as exc:
+            print(f"source failed: {exc}")
+            return done(1, f"source failed: {exc}")
+
         user = User.query.filter_by(user_id=args.user).first()
         if not user:
             print(f"local user not found: {args.user}")
-            return 1
+            return done(1, f"local user not found: {args.user}")
         local = export_user_data(user.id)
         diff = diff_rows(local, source)
-        print_diff(
-            local["summary"],
-            summarize(source["trades"], source["cash_flows"]),
-            classify_diff(diff),
-        )
-
-        if is_synced(diff):
+        classified = classify_diff(diff)
+        source_summary = summarize(source["trades"], source["cash_flows"])
+        synced = is_synced(diff)
+        if not (synced and args.auto):  # 毎時のログを差分なしで埋めない
+            print_diff(local["summary"], source_summary, classified)
+        snap_file = snapshot_path(app, args.user)
+        snapshot = load_snapshot(snap_file)
+        if synced:
             print("already in sync")
-            return 0
+            if not args.restore_from and snapshot != row_keys(local):
+                save_snapshot(snap_file, row_keys(local))
+            return done(0)
+
+        # 無人実行でローカルで登録された行を黙って消さない。前回同期した行が local-only に
+        # なるのは本番での訂正・削除なので、置換してよい
+        if args.auto and locally_registered_rows(diff, snapshot):
+            msg = "locally registered rows exist; refusing unattended delete (run --execute manually)"
+            print(f"aborted: {msg}")
+            return done(1, msg)
         # バックアップ（約200MB）を取る前に、適用できないペイロードを弾く
         try:
             validate_payload(source, allow_empty=args.allow_empty)
         except SyncError as exc:
             print(f"aborted: {exc}")
-            return 1
+            return done(1, f"aborted: {exc}")
         if not args.execute:
             print("dry-run: no changes (use --execute to apply)")
             return 0
@@ -185,13 +282,17 @@ def main() -> int:
             replace_user_data(user.id, source, allow_empty=args.allow_empty)
         except Exception as exc:  # DB ロック等。置換はロールバック済み
             print(f"aborted (rolled back): {exc!r}")
-            return 1
+            return done(1, f"aborted (rolled back): {exc!r}")
         after = export_user_data(user.id)
         if not is_synced(diff_rows(after, source)):
             print("VERIFY FAILED: local rows differ from the source after replace")
-            return 1
+            return done(1, "verify failed after replace")
+        # スナップショットは「本番と一致した状態」だけ。バックアップから戻した行を入れると、
+        # 次の --auto が本番での削除と見なして消してしまう
+        if not args.restore_from:
+            save_snapshot(snap_file, row_keys(source))
         print("synced and verified")
-    return 0
+        return done(0, changed=True)
 
 
 if __name__ == "__main__":

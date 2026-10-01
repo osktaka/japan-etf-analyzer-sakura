@@ -27,7 +27,7 @@ cd "$PROJECT_DIR"
 
 # --- 環境プロファイル ---
 # CRON_BATCH_PROFILE=dev|prod (default: dev)
-#   dev : 開発環境（advisor 3本 + theme_etfs + watcher を含む全ジョブ）
+#   dev : 開発環境（下の JOB_PROFILES で dev と指定した全ジョブ）
 #   prod: 本番環境（さくら）想定。dev限定ジョブを除外
 # 不正値は exit 2 で起動拒否（誤設定での意図しない発火事故を防ぐ）
 declare -ra JOB_PROFILES=(
@@ -45,6 +45,7 @@ declare -ra JOB_PROFILES=(
   "daily_advisor_weekly|dev"
   "mechanical_rule_watcher|dev"
   "etf_rating_daily|dev"
+  "sync_trades_from_prod|dev"
 )
 PROFILE="${CRON_BATCH_PROFILE:-dev}"
 if [[ "$PROFILE" != "dev" && "$PROFILE" != "prod" ]]; then
@@ -186,6 +187,7 @@ log_name_for() {
     daily_advisor_weekly)    echo "advisor_weekly" ;;
     mechanical_rule_watcher) echo "advisor_watcher" ;;
     etf_rating_daily)        echo "etf_rating" ;;
+    sync_trades_from_prod)   echo "trades_sync" ;;
     *)                       echo "$1" ;;
   esac
 }
@@ -512,6 +514,7 @@ if [[ -n "$ONLY_NAME" ]]; then
     daily_advisor_evening)    run_batch daily_advisor_evening ;;
     daily_advisor_weekly)     run_batch daily_advisor_weekly ;;
     mechanical_rule_watcher)  run_batch mechanical_rule_watcher ;;
+    sync_trades_from_prod)    run_batch sync_trades_from_prod --auto ;;
     etf_rating_daily)
       if [[ "$DRY_RUN" == true ]]; then
         echo "[dry-run] RUN etf_rating_daily (via bash scripts/cron-etf-rating-daily.sh)"
@@ -579,6 +582,15 @@ fi
 # 9) daily_advisor_evening: 30 17 * * 1-5  平日（祝日スキップ）  [dev限定]
 if at_time "17:30" && is_weekday && ! is_holiday; then
   run_batch daily_advisor_evening
+fi
+
+# 9.2) sync_trades_from_prod: 毎時 :15（毎日・祝日含む）  [dev限定]
+#      本番で登録した test ユーザーの取引をローカルへ取り込む。差分があるときだけ DB を
+#      更新する（--auto）。:15 は evening 17:30 / morning 07:00 の前に最新化しつつ、
+#      update_scores（16-20時の :00/:10/:20…）と DB 書き込みが重ならない分にするため。
+#      catch-up 対象外（毎時の再実行が追走を兼ねる）。
+if [[ "$MIN" == "15" ]]; then
+  run_batch sync_trades_from_prod --auto
 fi
 
 # 9.5) etf_rating_daily: 月〜木 18:00 / 金 18:15（祝日スキップ）  [dev限定]

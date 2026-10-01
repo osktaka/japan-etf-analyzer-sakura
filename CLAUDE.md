@@ -124,8 +124,8 @@ frontend/
 
 | 値 | 用途 |
 |---|---|
-| `dev`（デフォルト） | 開発環境。全ジョブ実行（advisor 3本＋theme_etfs＋watcher＋etf_rating の dev限定6ジョブを含む） |
-| `prod` | 本番環境想定。dev限定6ジョブを除外 |
+| `dev`（デフォルト） | 開発環境。全ジョブ実行（`JOB_PROFILES`（`scripts/cron-batch.sh`）で `dev` と指定したジョブを含む） |
+| `prod` | 本番環境想定。`dev` 限定ジョブを除外 |
 
 不正値（dev/prod以外）は `exit 2` で起動拒否される。`.env` の `CRON_BATCH_PROFILE` で設定。
 
@@ -145,6 +145,7 @@ frontend/
 | 18:00 | 金（祝日でも実行） | `daily_advisor_weekly` | **dev** | `advisor_weekly.log` |
 | 月-木 18:00 / 金 18:15 | 平日（祝日スキップ） | `etf_rating_daily`（target_holdings + watchlist 全銘柄を上昇10×下落10で採点、1通の短文メール配信＝件名で強い追い風/警戒件数を速報、本文は「今日の要点3行＋スコア一覧＋動きがあった銘柄（前日比±3pt以上）＋注意ポイント」でプレーン2,000字以内。銘柄別フル詳細は reports/etf-rating/ のレポートに委譲。金曜のみ 18:15 にずらすのは weekly 18:00 との並列回避） | **dev** | `etf_rating.log` |
 | `*/5 9-15` | 平日（祝日スキップ） | `mechanical_rule_watcher` | **dev** | `advisor_watcher.log` |
+| 毎時 :15 | 毎日（祝日含む） | `sync_trades_from_prod --auto`（本番で登録した test ユーザーの取引・入出金をローカルへ取り込む。差分があるときだけ DB 更新。本番での訂正・削除は反映し、ローカルで登録した行は削除せず失敗扱い。`batch_logs`（name=`sync_trades_from_prod`）には変更・失敗の開始・復旧だけ記録し、失敗の開始時だけ `BATCH_ALERT_ENABLED=1` でメール通知。catch-up 対象外） | **dev** | `trades_sync.log` |
 
 月曜06:00は `run_chain` による fail-stop 連結（同期実行）。途中で失敗した場合、後続バッチはスキップされる（本番crontabの `&&` 連結と同等の挙動）。
 
@@ -182,7 +183,7 @@ bash scripts/cron-batch.sh --help
 
 - **`set -e` を使わない**: 1ジョブの失敗が他ジョブを止めないようにする。
 - **ログはコンテナ内シェル経由で書き込む**: 既存ログがコンテナroot所有のため、ホスト側から `>>` でappendするとPermission deniedになる。`docker compose exec -T backend bash -c "... >> /app/logs/<NAME>.log"` で統一。
-- **現状開発環境のみ運用**: Docker非依存版（venv直接実行ラッパー）の実装後に本番デプロイ予定。本番デプロイ時は `.env` で `CRON_BATCH_PROFILE=prod` を設定すれば、開発専用ジョブ6本（advisor 3本＝morning/evening/weekly ＋theme_etfs＋mechanical_rule_watcher＋etf_rating_daily）が自動的に除外される。
+- **現状開発環境のみ運用**: Docker非依存版（venv直接実行ラッパー）の実装後に本番デプロイ予定。本番デプロイ時は `.env` で `CRON_BATCH_PROFILE=prod` を設定すれば、`dev` 限定ジョブ（`JOB_PROFILES` 参照）が自動的に除外される。本番がこのジョブを実行すると自分自身を取得元にしてしまうため、同期ジョブは必ず `dev` 限定。
 
 ### 当日キャッチアップ機構
 
@@ -209,7 +210,7 @@ bash scripts/cron-batch.sh --help
 | `rotate_logs` | 05:00 | 23:59 | 毎日 | both |
 
 **対象外**:
-- 高頻度バッチ: `batch_monitor`（*/5）/ `update_scores`（*/10 16-20）/ `mechanical_rule_watcher`（*/5 9-15）— 短期サイクル内で自然リカバリされるため
+- 高頻度バッチ: `batch_monitor`（*/5）/ `update_scores`（*/10 16-20）/ `mechanical_rule_watcher`（*/5 9-15）/ `sync_trades_from_prod`（毎時 :15）— ネットワーク断・一時ロックは次の毎時で自然リカバリされるため（ローカル登録行による失敗は自動では直らず、メール通知と手動対応が要る）
 - 月曜マスタチェーン: `sync_etf_from_jpx` / `update_scores_master` / `sync_historical_splits` — `run_chain` による fail-stop 同期実行が前提。`update_scores_master` は実体 `update_scores.py` の `check_window=(16:30, 22:00)` により午前帯の発火がほぼ skip され、`sync_historical_splits` は `depends_on` を持たないため並列発火時の順序保証ができない。月曜障害時は手動で `--only` 連続実行または `run_chain` 再実行で対応する。
 
 **制限**:
@@ -445,10 +446,12 @@ python backend/scripts/seed_demo_data.py
 
 testユーザーの取引・入出金は**本番で登録し、ローカルへ取り込む**（ローカルへの二重登録は不要）。本番が正でローカルは写し。
 
+`cron-batch.sh` が毎時 :15 に `--auto` で自動実行する（「集約ジョブ一覧」）。`--auto` は前回同期した行の訂正・削除は反映するが、同期後にローカルで登録した行は削除せず失敗する（`logs/trades_sync.log` に `locally registered rows exist`、`batch_logs` に `failed`）。前回同期の状態は `data/sync_state_<user>.json`（`snapshot_path`、`backend/scripts/sync_trades_from_prod.py`）。手動実行は、即時反映したいとき、またはこの失敗を解消するとき（差分を見て `--execute`）に使う。
+
 ```bash
 # 差分確認（既定は dry-run。消える行・追加される行を一覧表示する）
 docker compose exec -T backend python3 scripts/sync_trades_from_prod.py
-# 適用（etf.db を WAL 込みで data/backups/ へバックアップ（直近5件保持。`backend/src/services/user_data_sync_service.py` の `backup_sqlite` の `keep=5`）してから置換し、行単位で本番と照合する）
+# 適用（cron の `--auto` と違い、ローカルだけの行も削除する。etf.db を WAL 込みで data/backups/ へバックアップ（直近5件保持。`backend/src/services/user_data_sync_service.py` の `backup_sqlite` の `keep=5`）してから置換し、行単位で本番と照合する）
 docker compose exec -T backend python3 scripts/sync_trades_from_prod.py --execute
 ```
 
@@ -460,7 +463,7 @@ docker compose exec -T backend python3 scripts/sync_trades_from_prod.py --execut
 - Docker コンテナ外（`/.dockerenv` が無い環境。本番シェルを含む）では実行を拒否する。`--url` は https のみ（localhost を除く）
 - 同期後も、起動中の backend は評価額履歴キャッシュ（`CACHE_TTL`、既定300秒、`backend/src/config/settings.py`）が切れるまで古い値を返す。すぐ確認するときは `docker compose restart backend`。ただし cron バッチは backend コンテナ内で動くため、実行中のバッチが無いことを確認してから行う（時間帯は「集約ジョブ一覧」「当日キャッチアップ機構」が正典）か、キャッシュ切れを待つ（`*/5` の直後に確認してすぐ止める）。確認コマンド（コンテナに `pgrep`/`ps` は無いため `/proc` を見る）: `docker compose exec -T backend bash -c 'for p in /proc/[0-9]*; do tr "\0" " " < $p/cmdline; echo; done | grep -E "scripts/[A-Za-z0-9_]+\.py|python3? -c"'`
 - **移行初回の `--execute` のバックアップは別名で残す**（二重登録時代のローカルにしか無い取引の唯一の記録。直近5件の保持で消えるため）: `docker compose exec -T backend cp data/backups/etf.db.backup_sync_<日時> data/backups/etf.db.pre_sync_first`
-- **バックアップからの復元（既定は対象ユーザー分のみ）**: `docker compose exec -T backend python3 scripts/sync_trades_from_prod.py --restore-from data/backups/<バックアップ名>`（dry-run で差分確認 → `--execute`）。取得元が本番ではなくバックアップになるだけで、検証・バックアップ・照合は同じ
+- **バックアップからの復元（既定は対象ユーザー分のみ）**: `docker compose exec -T backend python3 scripts/sync_trades_from_prod.py --restore-from data/backups/<バックアップ名>`（dry-run で差分確認 → `--execute`）。取得元が本番ではなくバックアップになるだけで、検証・バックアップ・照合は同じ。復元では前回同期のスナップショットを更新しないため、本番に無い復元行は次の `--auto` が「ローカル登録行」として拒否し（メール通知）、自動では消えない。解消は、戻した行を本番に登録するか、手動 `--execute` で捨てる
 - **DB 全体の差し替えは最終手段**: バックアップ時点以降の全テーブルが戻る。当日分を戻すと catch-up でメールが再送される。DB は WAL モードのため稼働中の `cp` 単独は無効（`データ復旧手順` の `cp` 単独は使わない）
   ```bash
   # 実行中のバッチが無いことを上の確認コマンドで見てから止める
