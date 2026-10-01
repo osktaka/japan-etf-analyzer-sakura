@@ -138,7 +138,9 @@ class TestStrategyLoaderInvalid:
             'cash:    { label_ja: "現金",              weight_pct: 15.00 }',
             'cash:    { label_ja: "現金",              weight_pct: 5.00 }',
         )
-        with pytest.raises(ValueError, match="target_buckets weight_pct must sum to 100"):
+        with pytest.raises(
+            ValueError, match="target_buckets weight_pct must sum to 100"
+        ):
             StrategyLoader.loads(bad)
 
     def test_target_holdings_bucket_invalid(self):

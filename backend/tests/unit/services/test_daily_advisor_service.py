@@ -93,8 +93,11 @@ class TestLossCut:
         """-19.99% は発火しない."""
         h = self._holding(-19.99)
         r = _check_loss_cut(
-            h, threshold_pct=-20.0, min_holding_months=6,
-            today=date(2026, 4, 29), user_id="test",
+            h,
+            threshold_pct=-20.0,
+            min_holding_months=6,
+            today=date(2026, 4, 29),
+            user_id="test",
         )
         assert r is None
 
@@ -102,8 +105,11 @@ class TestLossCut:
         """-20.0% で発火する (>= 境界)."""
         h = self._holding(-20.0)
         r = _check_loss_cut(
-            h, threshold_pct=-20.0, min_holding_months=6,
-            today=date(2026, 4, 29), user_id="test",
+            h,
+            threshold_pct=-20.0,
+            min_holding_months=6,
+            today=date(2026, 4, 29),
+            user_id="test",
         )
         assert r is not None
         assert r.rule_kind == "loss_cut"
@@ -113,8 +119,11 @@ class TestLossCut:
         """-20.01% で発火."""
         h = self._holding(-20.01)
         r = _check_loss_cut(
-            h, threshold_pct=-20.0, min_holding_months=6,
-            today=date(2026, 4, 29), user_id="test",
+            h,
+            threshold_pct=-20.0,
+            min_holding_months=6,
+            today=date(2026, 4, 29),
+            user_id="test",
         )
         assert r is not None
 
@@ -123,8 +132,11 @@ class TestLossCut:
         # 6 * 30 = 180 days; 5.99ヶ月 ≈ 179日
         h = self._holding(-25.0, days=179)
         r = _check_loss_cut(
-            h, threshold_pct=-20.0, min_holding_months=6,
-            today=date(2026, 4, 29), user_id="test",
+            h,
+            threshold_pct=-20.0,
+            min_holding_months=6,
+            today=date(2026, 4, 29),
+            user_id="test",
         )
         assert r is None
 
@@ -132,16 +144,22 @@ class TestLossCut:
         """6ヶ月ちょうど (180日) で許可される."""
         h = self._holding(-25.0, days=180)
         r = _check_loss_cut(
-            h, threshold_pct=-20.0, min_holding_months=6,
-            today=date(2026, 4, 29), user_id="test",
+            h,
+            threshold_pct=-20.0,
+            min_holding_months=6,
+            today=date(2026, 4, 29),
+            user_id="test",
         )
         assert r is not None
 
     def test_none_pnl_returns_none(self):
         h = {"etf_code": "1306", "unrealized_pnl_percent": None, "holding_days": 200}
         r = _check_loss_cut(
-            h, threshold_pct=-20.0, min_holding_months=6,
-            today=date.today(), user_id="test",
+            h,
+            threshold_pct=-20.0,
+            min_holding_months=6,
+            today=date.today(),
+            user_id="test",
         )
         assert r is None
 
@@ -203,9 +221,7 @@ class TestAllocationDrift:
     def test_compute_drift(self, strategy):
         # group_a target=0.45, group_b target=0.40, cash target=0.15
         actual = {"group_a": 0.30, "group_b": 0.45, "cash": 0.25, "other": 0.0}
-        drifts = compute_allocation_drift(
-            strategy=strategy, actual_buckets=actual
-        )
+        drifts = compute_allocation_drift(strategy=strategy, actual_buckets=actual)
         d_map = {d.bucket: d for d in drifts}
         assert d_map["group_a"].drift_pp == -15.0
         assert d_map["group_b"].drift_pp == 5.0
@@ -216,9 +232,7 @@ class TestAllocationDrift:
     def test_compute_drift_with_other(self, strategy):
         """採用外保有がある場合、other バケットが drift に出る."""
         actual = {"group_a": 0.40, "group_b": 0.40, "cash": 0.10, "other": 0.10}
-        drifts = compute_allocation_drift(
-            strategy=strategy, actual_buckets=actual
-        )
+        drifts = compute_allocation_drift(strategy=strategy, actual_buckets=actual)
         d_map = {d.bucket: d for d in drifts}
         assert "other" in d_map
         assert d_map["other"].target_pct == 0.0
@@ -227,17 +241,18 @@ class TestAllocationDrift:
 
     def test_compute_drift_warn_threshold_propagates(self, strategy):
         actual = {"group_a": 0.45, "group_b": 0.45, "cash": 0.10}
-        drifts = compute_allocation_drift(
-            strategy=strategy, actual_buckets=actual
-        )
+        drifts = compute_allocation_drift(strategy=strategy, actual_buckets=actual)
         for d in drifts:
             assert d.warn_threshold_pp == 5.0
 
     def test_check_drift_warn_above_threshold(self):
         drifts = (
             AllocationDrift(
-                bucket="group_a", target_pct=45.0, actual_pct=38.0,
-                drift_pp=-7.0, warn_threshold_pp=5.0,
+                bucket="group_a",
+                target_pct=45.0,
+                actual_pct=38.0,
+                drift_pp=-7.0,
+                warn_threshold_pp=5.0,
             ),
         )
         rs = _check_allocation_drift(
@@ -249,8 +264,11 @@ class TestAllocationDrift:
     def test_check_drift_under_threshold(self):
         drifts = (
             AllocationDrift(
-                bucket="group_a", target_pct=45.0, actual_pct=42.0,
-                drift_pp=-3.0, warn_threshold_pp=5.0,
+                bucket="group_a",
+                target_pct=45.0,
+                actual_pct=42.0,
+                drift_pp=-3.0,
+                warn_threshold_pp=5.0,
             ),
         )
         rs = _check_allocation_drift(
@@ -267,34 +285,46 @@ class TestAllocationDrift:
 class TestFingerprint:
     def test_same_inputs_same_fingerprint(self):
         a = make_fingerprint(
-            occurred_on=date(2026, 4, 29), rule_kind="loss_cut",
-            code="1306", user_id="test",
+            occurred_on=date(2026, 4, 29),
+            rule_kind="loss_cut",
+            code="1306",
+            user_id="test",
         )
         b = make_fingerprint(
-            occurred_on=date(2026, 4, 29), rule_kind="loss_cut",
-            code="1306", user_id="test",
+            occurred_on=date(2026, 4, 29),
+            rule_kind="loss_cut",
+            code="1306",
+            user_id="test",
         )
         assert a == b
 
     def test_different_date_different_fingerprint(self):
         a = make_fingerprint(
-            occurred_on=date(2026, 4, 29), rule_kind="loss_cut",
-            code="1306", user_id="test",
+            occurred_on=date(2026, 4, 29),
+            rule_kind="loss_cut",
+            code="1306",
+            user_id="test",
         )
         b = make_fingerprint(
-            occurred_on=date(2026, 4, 30), rule_kind="loss_cut",
-            code="1306", user_id="test",
+            occurred_on=date(2026, 4, 30),
+            rule_kind="loss_cut",
+            code="1306",
+            user_id="test",
         )
         assert a != b
 
     def test_different_rule_different_fingerprint(self):
         a = make_fingerprint(
-            occurred_on=date(2026, 4, 29), rule_kind="loss_cut",
-            code="1306", user_id="test",
+            occurred_on=date(2026, 4, 29),
+            rule_kind="loss_cut",
+            code="1306",
+            user_id="test",
         )
         b = make_fingerprint(
-            occurred_on=date(2026, 4, 29), rule_kind="allocation_drift",
-            code="1306", user_id="test",
+            occurred_on=date(2026, 4, 29),
+            rule_kind="allocation_drift",
+            code="1306",
+            user_id="test",
         )
         assert a != b
 
@@ -302,12 +332,18 @@ class TestFingerprint:
         """同日同銘柄同ルールで重複しない (発動2回 → fingerprint同一)."""
         h = {"etf_code": "1306", "unrealized_pnl_percent": -25.0, "holding_days": 200}
         r1 = _check_loss_cut(
-            h, threshold_pct=-20.0, min_holding_months=6,
-            today=date(2026, 4, 29), user_id="test",
+            h,
+            threshold_pct=-20.0,
+            min_holding_months=6,
+            today=date(2026, 4, 29),
+            user_id="test",
         )
         r2 = _check_loss_cut(
-            h, threshold_pct=-20.0, min_holding_months=6,
-            today=date(2026, 4, 29), user_id="test",
+            h,
+            threshold_pct=-20.0,
+            min_holding_months=6,
+            today=date(2026, 4, 29),
+            user_id="test",
         )
         assert r1 is not None and r2 is not None
         assert r1.fingerprint == r2.fingerprint
@@ -441,8 +477,12 @@ class TestReturnFromHistory:
 class TestEvaluateRules:
     def test_no_triggers(self, strategy):
         holdings = [
-            {"etf_code": "1547", "unrealized_pnl_percent": 5.0, "holding_days": 200,
-             "current_value": 650_000.0},
+            {
+                "etf_code": "1547",
+                "unrealized_pnl_percent": 5.0,
+                "holding_days": 200,
+                "current_value": 650_000.0,
+            },
         ]
         triggers = evaluate_mechanical_rules(
             strategy=strategy,
@@ -456,8 +496,12 @@ class TestEvaluateRules:
 
     def test_loss_cut_and_n225_drawdown(self, strategy):
         holdings = [
-            {"etf_code": "1547", "unrealized_pnl_percent": -25.0, "holding_days": 200,
-             "current_value": 500_000.0},
+            {
+                "etf_code": "1547",
+                "unrealized_pnl_percent": -25.0,
+                "holding_days": 200,
+                "current_value": 500_000.0,
+            },
         ]
         triggers = evaluate_mechanical_rules(
             strategy=strategy,
@@ -504,8 +548,11 @@ class TestContextBuilders:
     def test_evening_context(self, strategy):
         drifts = (
             AllocationDrift(
-                bucket="group_a", target_pct=45.0, actual_pct=43.0,
-                drift_pp=-2.0, warn_threshold_pp=5.0,
+                bucket="group_a",
+                target_pct=45.0,
+                actual_pct=43.0,
+                drift_pp=-2.0,
+                warn_threshold_pp=5.0,
             ),
         )
         ctx = build_evening_context(
@@ -513,8 +560,10 @@ class TestContextBuilders:
             today=date(2026, 4, 29),
             user_id="test",
             summary={
-                "total_asset": 1_000_000.0, "total_value": 900_000.0,
-                "cash_balance": 100_000.0, "holdings_count": 6,
+                "total_asset": 1_000_000.0,
+                "total_value": 900_000.0,
+                "cash_balance": 100_000.0,
+                "holdings_count": 6,
                 "daily_change_total_asset_percent": -0.3,
             },
             drifts=drifts,
@@ -535,8 +584,12 @@ class TestContextBuilders:
             strategy=strategy,
             today=date(2026, 5, 1),
             user_id="test",
-            summary={"total_asset": 1_000_000.0, "total_value": 900_000.0,
-                     "cash_balance": 100_000.0, "holdings_count": 6},
+            summary={
+                "total_asset": 1_000_000.0,
+                "total_value": 900_000.0,
+                "cash_balance": 100_000.0,
+                "holdings_count": 6,
+            },
             drifts=(),
             triggers=(),
             portfolio_return_pct=2.0,
@@ -549,8 +602,11 @@ class TestContextBuilders:
 
         triggers = (
             RuleTrigger(
-                rule_kind="n225_drawdown", code=None, severity="warn",
-                message="N225 -6%", fingerprint="abc",
+                rule_kind="n225_drawdown",
+                code=None,
+                severity="warn",
+                message="N225 -6%",
+                fingerprint="abc",
             ),
         )
         ctx = build_alert_context(
@@ -575,8 +631,10 @@ class TestContextBuilders:
             today=date(2026, 4, 29),
             user_id="test",
             summary={
-                "total_asset": 1_000_000.0, "total_value": 900_000.0,
-                "cash_balance": 100_000.0, "holdings_count": 6,
+                "total_asset": 1_000_000.0,
+                "total_value": 900_000.0,
+                "cash_balance": 100_000.0,
+                "holdings_count": 6,
                 "daily_change_total_asset_percent": -0.3,
             },
             drifts=(),
@@ -759,28 +817,48 @@ class TestEveningContextRebalanceSummary:
 
         snapshots = (
             HoldingSnapshot(
-                etf_code="1306", name="TOPIX", quantity=1.0,
-                current_price=1000.0, current_value=1000.0, pnl_pct=0.0,
-                target_pct=9.0, actual_pct=12.0, drift_pp=3.0,
-                classification="OK", is_adopted=True,
+                etf_code="1306",
+                name="TOPIX",
+                quantity=1.0,
+                current_price=1000.0,
+                current_value=1000.0,
+                pnl_pct=0.0,
+                target_pct=9.0,
+                actual_pct=12.0,
+                drift_pp=3.0,
+                classification="OK",
+                is_adopted=True,
             ),
             HoldingSnapshot(
-                etf_code="2559", name="オルカン", quantity=1.0,
-                current_price=15000.0, current_value=15000.0, pnl_pct=0.0,
-                target_pct=15.0, actual_pct=12.0, drift_pp=-3.0,
-                classification="OK", is_adopted=True,
+                etf_code="2559",
+                name="オルカン",
+                quantity=1.0,
+                current_price=15000.0,
+                current_value=15000.0,
+                pnl_pct=0.0,
+                target_pct=15.0,
+                actual_pct=12.0,
+                drift_pp=-3.0,
+                classification="OK",
+                is_adopted=True,
             ),
         )
         sells = (
             RebalanceAction(
-                etf_code="1306", action_type="sell", quantity=10,
-                amount=30000.0, reason="目標超過",
+                etf_code="1306",
+                action_type="sell",
+                quantity=10,
+                amount=30000.0,
+                reason="目標超過",
             ),
         )
         buys = (
             RebalanceAction(
-                etf_code="2559", action_type="buy", quantity=3,
-                amount=45000.0, reason="不足",
+                etf_code="2559",
+                action_type="buy",
+                quantity=3,
+                amount=45000.0,
+                reason="不足",
             ),
         )
         plan = RebalancePlan(
@@ -839,64 +917,132 @@ class TestEveningContextRebalanceSummary:
         snapshots = (
             # 採用済み・閾値未満 sell（除外対象）
             HoldingSnapshot(
-                etf_code="A001", name="Aほぼ均衡", quantity=1.0,
-                current_price=1000.0, current_value=1000.0, pnl_pct=0.0,
-                target_pct=10.0, actual_pct=11.9, drift_pp=1.9,
-                classification="OK", is_adopted=True,
+                etf_code="A001",
+                name="Aほぼ均衡",
+                quantity=1.0,
+                current_price=1000.0,
+                current_value=1000.0,
+                pnl_pct=0.0,
+                target_pct=10.0,
+                actual_pct=11.9,
+                drift_pp=1.9,
+                classification="OK",
+                is_adopted=True,
             ),
             # 採用済み・閾値以上 sell（残る）
             HoldingSnapshot(
-                etf_code="A002", name="A超過", quantity=1.0,
-                current_price=1000.0, current_value=1000.0, pnl_pct=0.0,
-                target_pct=10.0, actual_pct=15.0, drift_pp=5.0,
-                classification="WARN", is_adopted=True,
+                etf_code="A002",
+                name="A超過",
+                quantity=1.0,
+                current_price=1000.0,
+                current_value=1000.0,
+                pnl_pct=0.0,
+                target_pct=10.0,
+                actual_pct=15.0,
+                drift_pp=5.0,
+                classification="WARN",
+                is_adopted=True,
             ),
             # 採用外（戦略違反、閾値スルーで残る）
             HoldingSnapshot(
-                etf_code="X999", name="採用外", quantity=1.0,
-                current_price=1000.0, current_value=1000.0, pnl_pct=0.0,
-                target_pct=0.0, actual_pct=0.5, drift_pp=0.5,
-                classification="CRITICAL", is_adopted=False,
+                etf_code="X999",
+                name="採用外",
+                quantity=1.0,
+                current_price=1000.0,
+                current_value=1000.0,
+                pnl_pct=0.0,
+                target_pct=0.0,
+                actual_pct=0.5,
+                drift_pp=0.5,
+                classification="CRITICAL",
+                is_adopted=False,
             ),
             # 採用済み・閾値未満 buy（除外対象）
             HoldingSnapshot(
-                etf_code="B001", name="Bほぼ均衡", quantity=1.0,
-                current_price=1000.0, current_value=1000.0, pnl_pct=0.0,
-                target_pct=10.0, actual_pct=8.1, drift_pp=-1.9,
-                classification="OK", is_adopted=True,
+                etf_code="B001",
+                name="Bほぼ均衡",
+                quantity=1.0,
+                current_price=1000.0,
+                current_value=1000.0,
+                pnl_pct=0.0,
+                target_pct=10.0,
+                actual_pct=8.1,
+                drift_pp=-1.9,
+                classification="OK",
+                is_adopted=True,
             ),
             # 採用済み・閾値以上 buy（残る）
             HoldingSnapshot(
-                etf_code="B002", name="B不足", quantity=1.0,
-                current_price=1000.0, current_value=1000.0, pnl_pct=0.0,
-                target_pct=10.0, actual_pct=5.0, drift_pp=-5.0,
-                classification="WARN", is_adopted=True,
+                etf_code="B002",
+                name="B不足",
+                quantity=1.0,
+                current_price=1000.0,
+                current_value=1000.0,
+                pnl_pct=0.0,
+                target_pct=10.0,
+                actual_pct=5.0,
+                drift_pp=-5.0,
+                classification="WARN",
+                is_adopted=True,
             ),
         )
         sells = (
-            RebalanceAction(etf_code="A001", action_type="sell", quantity=1,
-                            amount=1000.0, reason="ほぼ均衡"),
-            RebalanceAction(etf_code="A002", action_type="sell", quantity=5,
-                            amount=50000.0, reason="超過"),
-            RebalanceAction(etf_code="X999", action_type="sell", quantity=1,
-                            amount=500.0, reason="採用外"),
+            RebalanceAction(
+                etf_code="A001",
+                action_type="sell",
+                quantity=1,
+                amount=1000.0,
+                reason="ほぼ均衡",
+            ),
+            RebalanceAction(
+                etf_code="A002",
+                action_type="sell",
+                quantity=5,
+                amount=50000.0,
+                reason="超過",
+            ),
+            RebalanceAction(
+                etf_code="X999",
+                action_type="sell",
+                quantity=1,
+                amount=500.0,
+                reason="採用外",
+            ),
         )
         buys = (
-            RebalanceAction(etf_code="B001", action_type="buy", quantity=1,
-                            amount=1000.0, reason="ほぼ均衡"),
-            RebalanceAction(etf_code="B002", action_type="buy", quantity=5,
-                            amount=50000.0, reason="不足"),
+            RebalanceAction(
+                etf_code="B001",
+                action_type="buy",
+                quantity=1,
+                amount=1000.0,
+                reason="ほぼ均衡",
+            ),
+            RebalanceAction(
+                etf_code="B002",
+                action_type="buy",
+                quantity=5,
+                amount=50000.0,
+                reason="不足",
+            ),
         )
         plan = RebalancePlan(
-            target_weights={}, current_weights={}, deviations={},
-            sell_actions=sells, buy_actions=buys,
+            target_weights={},
+            current_weights={},
+            deviations={},
+            sell_actions=sells,
+            buy_actions=buys,
             total_asset=1_000_000.0,
-            target_cash=100_000.0, target_cash_pct=10.0,
-            current_cash=100_000.0, cash_deviation_pp=0.0,
+            target_cash=100_000.0,
+            target_cash_pct=10.0,
+            current_cash=100_000.0,
+            cash_deviation_pp=0.0,
             days_to_next_rebalance=10,
             next_rebalance_date=date(2026, 6, 30),
-            is_rebalance_day=False, daily_pnl_pct=None,
-            holdings_snapshots=snapshots, warn_count=0, critical_count=0,
+            is_rebalance_day=False,
+            daily_pnl_pct=None,
+            holdings_snapshots=snapshots,
+            warn_count=0,
+            critical_count=0,
         )
 
         ctx = build_evening_context(
@@ -927,6 +1073,7 @@ class TestEveningContextRebalanceSummary:
 
 class _StubFilterSnapshot:
     """is_adopted / drift_pp を持つ最小スナップショット."""
+
     def __init__(self, etf_code: str, drift_pp: float, is_adopted: bool):
         self.etf_code = etf_code
         self.drift_pp = drift_pp
@@ -962,12 +1109,12 @@ class TestFilterActionsForDisplay:
         # +2.0pp で sell, -2.0pp で buy のいずれも >= 閾値で通過
         snaps_pos = [_StubFilterSnapshot("A002", drift_pp=2.0, is_adopted=True)]
         snaps_neg = [_StubFilterSnapshot("A002", drift_pp=-2.0, is_adopted=True)]
-        assert len(
-            filter_actions_for_display(actions, snaps_pos, action_type="sell")
-        ) == 1
-        assert len(
-            filter_actions_for_display(actions, snaps_neg, action_type="buy")
-        ) == 1
+        assert (
+            len(filter_actions_for_display(actions, snaps_pos, action_type="sell")) == 1
+        )
+        assert (
+            len(filter_actions_for_display(actions, snaps_neg, action_type="buy")) == 1
+        )
 
     def test_snapshot_missing_passes_through(self):
         """snapshot に該当 code が無い場合は保守的に通過."""
