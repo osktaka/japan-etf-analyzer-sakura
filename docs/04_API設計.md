@@ -208,6 +208,16 @@
 
 > 各エンドポイントの詳細仕様は [04a_エンドポイント詳細.md](./04a_エンドポイント詳細.md) を参照
 
+### 3.6 同期API（サーバ間・APIキー必須）
+
+| メソッド | パス | 説明 | 認証 |
+|---------|------|------|------|
+| GET | /sync/user-data?user_id=<user_id> | 指定ユーザーの取引・入出金を id 抜きで返す（件数・合計の summary 付き） | APIキー |
+
+- `api_key_required`（`Authorization: Bearer <NOTES_API_KEY>`）。対象ユーザーは環境変数 `SYNC_EXPORT_USER_IDS`（カンマ区切り、既定 `test`、`backend/src/routes/sync_routes.py`）の許可リスト内に限る
+- 呼び出し元は `backend/scripts/sync_trades_from_prod.py`（ローカルが本番から取得する。本番側は読み取りのみ）
+- 詳細仕様は `04a_エンドポイント詳細.md` の「32. GET /sync/user-data」
+
 ## 4. エラーコード一覧
 
 | コード | HTTPステータス | 説明 |

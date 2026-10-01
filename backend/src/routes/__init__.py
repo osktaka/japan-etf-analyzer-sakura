@@ -15,6 +15,7 @@ def register_routes(app):
     from .market_routes import create_market_bp
     from .portfolio_routes import create_portfolio_bp
     from .recommend_routes import create_recommend_bp
+    from .sync_routes import create_sync_bp
     from .tag_routes import create_tag_bp
     from .trade_routes import create_trade_bp
     from .admin_note_routes import create_admin_note_bp
@@ -29,6 +30,7 @@ def register_routes(app):
     api_v1.register_blueprint(create_category_bp())
     api_v1.register_blueprint(create_compare_bp())
     api_v1.register_blueprint(create_demo_bp())
+    api_v1.register_blueprint(create_sync_bp())
     api_v1.register_blueprint(create_tag_bp())
     api_v1.register_blueprint(create_etf_bp())
     api_v1.register_blueprint(create_recommend_bp())

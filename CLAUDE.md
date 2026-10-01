@@ -441,6 +441,35 @@ python backend/scripts/seed_demo_data.py
 - 実装: `backend/src/routes/demo_routes.py`
 - デモユーザーが存在しない場合は空データを返す（エラーにならない）
 
+## testユーザーの取引同期（本番→ローカル）
+
+testユーザーの取引・入出金は**本番で登録し、ローカルへ取り込む**（ローカルへの二重登録は不要）。本番が正でローカルは写し。
+
+```bash
+# 差分確認（既定は dry-run。消える行・追加される行を一覧表示する）
+docker compose exec -T backend python3 scripts/sync_trades_from_prod.py
+# 適用（etf.db を WAL 込みで data/backups/ へバックアップ（直近5件保持。`backend/src/services/user_data_sync_service.py` の `backup_sqlite` の `keep=5`）してから置換し、行単位で本番と照合する）
+docker compose exec -T backend python3 scripts/sync_trades_from_prod.py --execute
+```
+
+- 前提: ローカル `.env` の `NOTES_API_KEY` が本番と同じ値であること（`.env` を変えたら `docker compose up -d backend` で再作成する。`env_file` はコンテナ作成時に読まれる）。本番側は `GET /api/v1/sync/user-data`（`backend/src/routes/sync_routes.py`）を提供し、返せるユーザーは `SYNC_EXPORT_USER_IDS`（既定 `test`）に限る
+- 置換対象はローカルの `trades` / `cash_flows` のうち対象ユーザー分のみ。ローカルだけにある取引は消える（dry-run で事前に確認する）
+- 分割フラグ（`stock_splits` の `is_applied` / `is_chart_applied`）は同期しない。損益を本番と揃えるにはフラグの一致が前提
+- 同期済み判定は行単位（売買区分・日付・メモ・入出金区分の訂正も検出）。件数・合計の summary は表示用
+- ローカルの `etfs` マスタに無い `etf_code` を含む場合、本番が空の場合は中止する（空は `--allow-empty` で許可。マスタ不足は `sync_etf_from_jpx.py` で補う）
+- Docker コンテナ外（`/.dockerenv` が無い環境。本番シェルを含む）では実行を拒否する。`--url` は https のみ（localhost を除く）
+- 同期後も、起動中の backend は評価額履歴キャッシュ（`CACHE_TTL`、既定300秒、`backend/src/config/settings.py`）が切れるまで古い値を返す。すぐ確認するときは `docker compose restart backend`。ただし cron バッチは backend コンテナ内で動くため、実行中のバッチが無いことを確認してから行う（時間帯は「集約ジョブ一覧」「当日キャッチアップ機構」が正典）か、キャッシュ切れを待つ（`*/5` の直後に確認してすぐ止める）。確認コマンド（コンテナに `pgrep`/`ps` は無いため `/proc` を見る）: `docker compose exec -T backend bash -c 'for p in /proc/[0-9]*; do tr "\0" " " < $p/cmdline; echo; done | grep -E "scripts/[A-Za-z0-9_]+\.py|python3? -c"'`
+- **移行初回の `--execute` のバックアップは別名で残す**（二重登録時代のローカルにしか無い取引の唯一の記録。直近5件の保持で消えるため）: `docker compose exec -T backend cp data/backups/etf.db.backup_sync_<日時> data/backups/etf.db.pre_sync_first`
+- **バックアップからの復元（既定は対象ユーザー分のみ）**: `docker compose exec -T backend python3 scripts/sync_trades_from_prod.py --restore-from data/backups/<バックアップ名>`（dry-run で差分確認 → `--execute`）。取得元が本番ではなくバックアップになるだけで、検証・バックアップ・照合は同じ
+- **DB 全体の差し替えは最終手段**: バックアップ時点以降の全テーブルが戻る。当日分を戻すと catch-up でメールが再送される。DB は WAL モードのため稼働中の `cp` 単独は無効（`データ復旧手順` の `cp` 単独は使わない）
+  ```bash
+  # 実行中のバッチが無いことを上の確認コマンドで見てから止める
+  docker compose stop backend
+  docker compose run --rm --no-deps backend bash -c \
+    'rm -f data/etf.db-wal data/etf.db-shm && cp data/backups/<バックアップ名> data/etf.db'
+  docker compose start backend
+  ```
+
 ## 運用ルール
 
 開発中に以下を発見した場合、CLAUDE.mdへの追記を提案すること:
