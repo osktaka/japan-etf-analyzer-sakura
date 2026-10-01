@@ -1,22 +1,22 @@
 ---
-revision: 2026-06-04
+revision: 2026-10-01
 owner: test
 benchmark: ^N225
 review_frequency: weekly_friday
 
 target_buckets:
-  group_a: { label_ja: "A群（コア・ヘッジ）", weight_pct: 45.00 }
-  group_b: { label_ja: "B群（日本株テーマ）", weight_pct: 40.00 }
+  group_a: { label_ja: "A群（コア・ヘッジ）", weight_pct: 44.00 }
+  group_b: { label_ja: "B群（日本株テーマ）", weight_pct: 41.00 }
   cash:    { label_ja: "現金",              weight_pct: 15.00 }
 
 target_holdings:
   - { code: "1655", name: "S&P500米国株",   bucket: "group_a", weight_pct: 15.00 }
   - { code: "314A", name: "ゴールド",       bucket: "group_a", weight_pct: 15.00 }
-  - { code: "1629", name: "商社",           bucket: "group_a", weight_pct: 15.00 }
+  - { code: "1629", name: "商社",           bucket: "group_a", weight_pct: 14.00 }
   - { code: "1615", name: "銀行",           bucket: "group_b", weight_pct: 10.00 }
   - { code: "2646", name: "メタル",         bucket: "group_b", weight_pct: 10.00 }
   - { code: "1618", name: "エネルギー資源", bucket: "group_b", weight_pct: 10.00 }
-  - { code: "200A", name: "半導体",         bucket: "group_b", weight_pct: 10.00 }
+  - { code: "200A", name: "半導体",         bucket: "group_b", weight_pct: 11.00 }
 
 mechanical_rules:
   min_holding_months: 6
@@ -30,6 +30,7 @@ mechanical_rules:
   rebalance_check_basis: close
 
 revision_history:
+  - { date: "2026-10-01", note: "目標配分を微調整。1629 商社 15%→14%（A群44%）、200A 半導体 10%→11%（B群41%）。現金15%・合計100%は不変" }
   - { date: "2026-06-04", note: "利確ルール(take_profit_pct +50%/+100% 半数売却)を廃止。勝者の利確は四半期末の配分リバランス（目標比率＋drift超過分を portfolio_rebalance_service が自動で売却数量算出）へ一本化。+50%絶対トリガーは目標比率(各10%)未満でも売却を促し二重計上の矛盾を生むため撤廃（200Aで実害顕在化）。損切り(-20%)・N225急落・配分逸脱WARN/CRITICALは存続。DB既存 take_profit_1/2 イベントは履歴残置" }
   - { date: "2026-05-18", note: "A群を実保有実態に整合（未保有の 1547/1540 を撤廃し、既保有の 1655/314A を正式採用＝S&P500/ゴールド枠を継続）。B群 1306(TOPIX) 撤廃、残り4銘柄(1615/2646/1618/200A)を各10%・group_b=40%・cash=15%に再配分し合計100%整合。既存保有の正式採用化が主旨で新規売買は発生しない" }
   - { date: "2026-05-16", note: "200A 半導体をA群採用外売却対象からB群テーマ銘柄9%に変更。B群を5銘柄各9%に戻し、配分構造を2026-05-14版に近づける。A群（1547/1540/1629 各15%）は維持" }
@@ -55,8 +56,8 @@ revision_history:
 
 | 区分 | 配分 | 役割 |
 |------|------|------|
-| A群（コア・ヘッジ） | 45% | S&P500米国株1655(15%) + ゴールド314A(15%) + 商社1629(15%)。米国株コア + 金ヘッジ + 配当・資源敏感性の3軸で構成。10年バックテストでシャープ1.708/最大DD-11.71%を実証（旧 1547/1540 と同一エクスポージャーを既保有銘柄で継続） |
-| B群（日本株テーマ） | 40% | 銀行 / メタル / エネルギー資源 / 半導体 各10%。日本株4テーマに均等配分（TOPIXは撤廃、商社はA群、半導体はB群テーマ枠で保持） |
+| A群（コア・ヘッジ） | 44% | S&P500米国株1655(15%) + ゴールド314A(15%) + 商社1629(14%)。米国株コア + 金ヘッジ + 配当・資源敏感性の3軸で構成。10年バックテストでシャープ1.708/最大DD-11.71%を実証（旧 1547/1540 と同一エクスポージャーを既保有銘柄で継続） |
+| B群（日本株テーマ） | 41% | 銀行 / メタル / エネルギー資源 各10% + 半導体 11%。日本株4テーマ（半導体のみ+1pp）（TOPIXは撤廃、商社はA群、半導体はB群テーマ枠で保持） |
 | 現金 | 15% | 急落時の機動枠 |
 
 ベンチマークは **^N225（日経平均）** を継続。^N225 比較で α が ±10pp を超えて逸脱したら警告。

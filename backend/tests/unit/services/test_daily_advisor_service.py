@@ -33,17 +33,17 @@ owner: test
 benchmark: ^N225
 review_frequency: weekly_friday
 target_buckets:
-  group_a: { label_ja: "A群（コア・ヘッジ）", weight_pct: 45.00 }
-  group_b: { label_ja: "B群（日本株テーマ）", weight_pct: 40.00 }
+  group_a: { label_ja: "A群（コア・ヘッジ）", weight_pct: 44.00 }
+  group_b: { label_ja: "B群（日本株テーマ）", weight_pct: 41.00 }
   cash:    { label_ja: "現金",              weight_pct: 15.00 }
 target_holdings:
   - { code: "1655", name: "S&P500米国株",   bucket: "group_a", weight_pct: 15.00 }
   - { code: "314A", name: "ゴールド",       bucket: "group_a", weight_pct: 15.00 }
-  - { code: "1629", name: "商社",           bucket: "group_a", weight_pct: 15.00 }
+  - { code: "1629", name: "商社",           bucket: "group_a", weight_pct: 14.00 }
   - { code: "1615", name: "銀行",           bucket: "group_b", weight_pct: 10.00 }
   - { code: "2646", name: "メタル",         bucket: "group_b", weight_pct: 10.00 }
   - { code: "1618", name: "エネルギー資源", bucket: "group_b", weight_pct: 10.00 }
-  - { code: "200A", name: "半導体",         bucket: "group_b", weight_pct: 10.00 }
+  - { code: "200A", name: "半導体",         bucket: "group_b", weight_pct: 11.00 }
 mechanical_rules:
   min_holding_months: 6
   loss_cut_pct: -20.0
@@ -219,12 +219,12 @@ class TestMinHoldingPeriod:
 
 class TestAllocationDrift:
     def test_compute_drift(self, strategy):
-        # group_a target=0.45, group_b target=0.40, cash target=0.15
+        # group_a target=0.44, group_b target=0.41, cash target=0.15
         actual = {"group_a": 0.30, "group_b": 0.45, "cash": 0.25, "other": 0.0}
         drifts = compute_allocation_drift(strategy=strategy, actual_buckets=actual)
         d_map = {d.bucket: d for d in drifts}
-        assert d_map["group_a"].drift_pp == -15.0
-        assert d_map["group_b"].drift_pp == 5.0
+        assert d_map["group_a"].drift_pp == -14.0
+        assert d_map["group_b"].drift_pp == 4.0
         assert d_map["cash"].drift_pp == 10.0
         # other は actual=0 のため drift エントリは生成されない
         assert "other" not in d_map

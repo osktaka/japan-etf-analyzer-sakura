@@ -19,18 +19,18 @@ benchmark: ^N225
 review_frequency: weekly_friday
 
 target_buckets:
-  group_a: { label_ja: "A群（コア・ヘッジ）", weight_pct: 45.00 }
-  group_b: { label_ja: "B群（日本株テーマ）", weight_pct: 40.00 }
+  group_a: { label_ja: "A群（コア・ヘッジ）", weight_pct: 44.00 }
+  group_b: { label_ja: "B群（日本株テーマ）", weight_pct: 41.00 }
   cash:    { label_ja: "現金",              weight_pct: 15.00 }
 
 target_holdings:
   - { code: "1655", name: "S&P500米国株",   bucket: "group_a", weight_pct: 15.00 }
   - { code: "314A", name: "ゴールド",       bucket: "group_a", weight_pct: 15.00 }
-  - { code: "1629", name: "商社",           bucket: "group_a", weight_pct: 15.00 }
+  - { code: "1629", name: "商社",           bucket: "group_a", weight_pct: 14.00 }
   - { code: "1615", name: "銀行",           bucket: "group_b", weight_pct: 10.00 }
   - { code: "2646", name: "メタル",         bucket: "group_b", weight_pct: 10.00 }
   - { code: "1618", name: "エネルギー資源", bucket: "group_b", weight_pct: 10.00 }
-  - { code: "200A", name: "半導体",         bucket: "group_b", weight_pct: 10.00 }
+  - { code: "200A", name: "半導体",         bucket: "group_b", weight_pct: 11.00 }
 
 mechanical_rules:
   min_holding_months: 6
@@ -62,9 +62,9 @@ class TestStrategyLoaderLoads:
         s = StrategyLoader.loads(VALID_FRONTMATTER)
         assert set(s.target_buckets.keys()) == {"group_a", "group_b", "cash"}
         assert s.target_buckets["group_a"] == BucketDef(
-            code="group_a", label_ja="A群（コア・ヘッジ）", weight_pct=45.0
+            code="group_a", label_ja="A群（コア・ヘッジ）", weight_pct=44.0
         )
-        assert s.target_buckets["group_b"].weight_pct == 40.0
+        assert s.target_buckets["group_b"].weight_pct == 41.0
         assert s.target_buckets["cash"].weight_pct == 15.0
 
     def test_target_holdings_parsed(self):
